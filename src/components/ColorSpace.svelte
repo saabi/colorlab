@@ -77,4 +77,4 @@
 </style>
 
 <ThreeView {scene} {camera} {update} {run} bind:canvasId />
-<button on:click={() => run=!run}>Run</button>
+<!--<button on:click={() => run=!run}>Run</button>-->
