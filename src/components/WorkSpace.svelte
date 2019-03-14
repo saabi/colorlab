@@ -2,10 +2,16 @@
     export let panels;
     export let active;
     export let childProps = [];
+
+    let activePanel;
+    $: if (panels && active in panels) {
+        activePanel = panels[active];
+    }
+    else activePanel = null;
 </script>
 
 <div>
-    <svelte:component this={panels[active]} {...childProps}/>
+    <svelte:component this={activePanel} {...childProps}/>
 </div>
 
 <style>
