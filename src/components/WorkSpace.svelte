@@ -37,7 +37,7 @@
     <ul>
         {#each Object.keys(panels) as n}
             <li>
-                <input id={groupName+n} type='radio' value={n} name={groupName} on:change={change} />
+                <input id={groupName+n} type='radio' value={n} name={groupName} on:change={change} checked={n===active}/>
                 <label for={groupName+n}>{n}</label>
             </li>
         {/each}
