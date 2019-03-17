@@ -31,9 +31,7 @@
 <div>
     <svelte:component this={activePanel} {...childProps} />
 	<input type="checkbox" href="#" class="menuopener" id={menuId}/>
-    <label class="menu-open-button" for={menuId}>
-        Panels
-    </label>
+    <label class="menu-open-button" for={menuId}> </label>
     <ul>
         {#each Object.keys(panels) as n}
             <li>
@@ -87,5 +85,8 @@ li {
 }
 li label {
         cursor: pointer;
+}
+li input:checked ~ label {
+    background: silver;
 }
 </style>
