@@ -19,7 +19,7 @@
     let canvas;
     let renderer;
 
-    let lastResize;
+    let lastResize= Date.now();
     let lastSize = {w: 0, h: 0};
     let frame;
 
@@ -30,10 +30,10 @@
         // adjust displayBuffer size to match
         if (width !== lastSize.w || height !== lastSize.h) {
             lastResize = Date.now();
-            if (camera && camera.constructor.name ) {
+            if (camera) {
                 camera.aspect = width / height;
                 camera.updateProjectionMatrix();
-            } 
+            }
 
             // update any render target sizes here
         }
@@ -57,8 +57,9 @@
 
     function runOrNot(b) {
         if (process.browser) {
-            if (b) 
+            if (b) {
                 frame = requestAnimationFrame(loop)
+            }
             else
                 cancelAnimationFrame(frame);
         }
@@ -66,13 +67,13 @@
     $: runOrNot(run);
 
     onMount(() => {
-        lastSize.w = canvas.clientWidth;
-        lastSize.h = canvas.clientHeight;
+        let w = canvas.clientWidth;
+        let h = canvas.clientHeight;
 
         //let context = canvas.getContext( 'webgl2' );
         renderer = new THREE.WebGLRenderer({ antialias: true, canvas/*, context */});
 		renderer.setPixelRatio(window.devicePixelRatio);
-        renderer.setSize(lastSize.w, lastSize.h, false);
+        renderer.setSize(w, h, false);
 
 		return () => cancelAnimationFrame(frame);
 	});
