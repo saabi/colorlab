@@ -1,7 +1,7 @@
 {
   "name": "TODO",
-  "description": "TODO",
   "version": "0.0.1",
+  "description": "TODO",
   "scripts": {
     "dev": "sapper dev",
     "build": "sapper build --legacy",
@@ -12,34 +12,35 @@
     "test": "run-p --race dev cy:run"
   },
   "dependencies": {
-    "compression": "^1.7.1",
-    "polka": "^0.5.0",
-    "sirv": "^0.2.0"
+    "compression": "^1.7.4",
+    "polka": "^1.0.0-next.9",
+    "sirv": "^1.0.11"
   },
   "devDependencies": {
-    "@babel/core": "^7.0.0",
-    "@babel/plugin-syntax-dynamic-import": "^7.0.0",
-    "@babel/plugin-transform-runtime": "^7.0.0",
-    "@babel/preset-env": "^7.0.0",
-    "@babel/runtime": "^7.0.0",
-    "chokidar": "^2.0.4",
+    "@babel/core": "^7.13.14",
+    "@babel/plugin-syntax-dynamic-import": "^7.8.3",
+    "@babel/plugin-transform-runtime": "^7.13.10",
+    "@babel/preset-env": "^7.13.12",
+    "@babel/runtime": "^7.13.10",
+    "@rollup/plugin-babel": "^5.0.0",
+    "@rollup/plugin-commonjs": "^17.0.0",
+    "@rollup/plugin-json": "^4.1.0",
+    "@rollup/plugin-node-resolve": "^11.0.0",
+    "@rollup/plugin-replace": "^2.2.0",
+    "@sveltejs/svelte-subdivide": "github:saabi/svelte-subdivide#child-props",
+    "chokidar": "^3.5.1",
     "glsl-inverse": "^1.0.0",
     "glslify-import": "^3.1.0",
     "npm-run-all": "^4.1.5",
-    "rollup": "^1.6.0",
-    "rollup-plugin-babel": "^4.0.2",
-    "rollup-plugin-commonjs": "^9.1.6",
-    "rollup-plugin-glslify": "^1.1.0",
-    "rollup-plugin-node-resolve": "^4.0.0",
-    "rollup-plugin-replace": "^2.0.0",
-    "rollup-plugin-svelte": "^5.0.1",
-    "rollup-plugin-terser": "^4.0.4",
-    "rollup-plugin-typescript2": "^0.19.3",
-    "sapper": "alpha",
-    "svelte": "beta",
-    "@sveltejs/svelte-subdivide": "github:saabi/svelte-subdivide#child-props",
-    "three": "^0.102.1",
-    "typescript": "^3.3.3333"
+    "rollup": "^2.44.0",
+    "rollup-plugin-glslify": "^1.2.0",
+    "rollup-plugin-svelte": "^7.1.0",
+    "rollup-plugin-terser": "^7.0.2",
+    "rollup-plugin-typescript2": "^0.30.0",
+    "sapper": "^0.28.10",
+    "svelte": "^3.37.0",
+    "three": "^0.127.0",
+    "typescript": "^4.2.3"
   },
   "glslify": {
     "transform": [
