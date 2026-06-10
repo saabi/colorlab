@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { track } from '$lib/analytics/umami';
 
 	let { open = $bindable() } = $props<{ open: boolean }>();
 	let root: HTMLDivElement;
@@ -64,6 +65,7 @@
 		aria-controls="gesture-reference-panel"
 		onclick={() => {
 			open = !open;
+			if (open) track('gesture_reference_open', { mobile: window.matchMedia('(max-width: 760px)').matches });
 		}}
 	>
 		Gestures

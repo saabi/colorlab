@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { track } from '$lib/analytics/umami';
+
 	import type { ExplorerState } from '$lib/engine/types';
 
 	let {
@@ -26,6 +28,10 @@
 		{ value: 'smptec', label: 'SMPTE-C' },
 		{ value: 'cie', label: 'CIE RGB' }
 	] as const;
+
+	function onTouchToolChange() {
+		track('touch_tool_change', { tool: touchTool });
+	}
 </script>
 
 <div class="viewport-toolbar" aria-label="Viewport controls">
@@ -69,7 +75,7 @@
 
 	<label class="toolbar-touch-tool">
 		<span>Touch tool</span>
-		<select bind:value={touchTool}>
+		<select bind:value={touchTool} onchange={onTouchToolChange}>
 			<option value="auto">Auto</option>
 			<option value="slice">Slice</option>
 			<option value="cylinder">Radius</option>

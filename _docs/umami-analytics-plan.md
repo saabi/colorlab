@@ -73,7 +73,7 @@ Implementation options:
 
 1. **Svelte component in root layout**: preferred.
    - Create `fe/src/lib/components/UmamiTracker.svelte`.
-   - Use `<svelte:head>` to inject the script only when `PUBLIC_UMAMI_WEBSITE_ID` is set.
+   - Use `<svelte:head>` to inject the script only when both `PUBLIC_UMAMI_SRC` and `PUBLIC_UMAMI_WEBSITE_ID` are set.
    - Keeps app HTML generic and prevents committing a placeholder script with no id.
 
 2. **Direct `app.html` script**: acceptable but less flexible.
@@ -84,21 +84,26 @@ Preferred implementation:
 
 ```svelte
 <script lang="ts">
-  import { PUBLIC_UMAMI_SRC, PUBLIC_UMAMI_WEBSITE_ID } from '$env/static/public';
+  import { dev } from '$app/environment';
+  import { env } from '$env/dynamic/public';
+
+  const src = env.PUBLIC_UMAMI_SRC;
+  const websiteId = env.PUBLIC_UMAMI_WEBSITE_ID;
+  const enabled = !dev && !!src && !!websiteId;
 </script>
 
-{#if PUBLIC_UMAMI_SRC && PUBLIC_UMAMI_WEBSITE_ID}
-  <svelte:head>
+<svelte:head>
+  {#if enabled}
     <script
       defer
-      src={PUBLIC_UMAMI_SRC}
-      data-website-id={PUBLIC_UMAMI_WEBSITE_ID}
+      src={src}
+      data-website-id={websiteId}
       data-do-not-track="true"
       data-exclude-search="true"
       data-exclude-hash="true"
     ></script>
-  </svelte:head>
-{/if}
+  {/if}
+</svelte:head>
 ```
 
 Then render `<UmamiTracker />` from the root route or layout.

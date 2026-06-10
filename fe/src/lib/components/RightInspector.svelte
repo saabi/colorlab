@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 	import ControlGroup from './ControlGroup.svelte';
 	import PanelHeader from './PanelHeader.svelte';
+	import { track } from '$lib/analytics/umami';
 	import { drawConesPanel } from '$lib/panels/cones-panel';
 	import { drawTransferPanel } from '$lib/panels/transfer-panel';
 	import { drawXyPanel } from '$lib/panels/xy-panel';
@@ -45,6 +46,11 @@
 	});
 	const drawable = (canvas: HTMLCanvasElement | undefined) => !!canvas && canvas.clientWidth > 0 && canvas.clientHeight > 0;
 
+	function setActiveTab(tab: typeof activeTab) {
+		activeTab = tab;
+		track('inspector_tab', { tab });
+	}
+
 	function drawPanels() {
 		const ch = explorer.hover?.chain ?? null;
 		if (drawable(transferCanvas)) drawTransferPanel(transferCanvas, ch, explorer);
@@ -84,28 +90,28 @@
 			type="button"
 			class:active={activeTab === 'transfer'}
 			onclick={() => {
-				activeTab = 'transfer';
+				setActiveTab('transfer');
 			}}>Transfer</button
 		>
 		<button
 			type="button"
 			class:active={activeTab === 'cones'}
 			onclick={() => {
-				activeTab = 'cones';
+				setActiveTab('cones');
 			}}>LMS</button
 		>
 		<button
 			type="button"
 			class:active={activeTab === 'xy'}
 			onclick={() => {
-				activeTab = 'xy';
+				setActiveTab('xy');
 			}}>xy</button
 		>
 		<button
 			type="button"
 			class:active={activeTab === 'values'}
 			onclick={() => {
-				activeTab = 'values';
+				setActiveTab('values');
 			}}>Values</button
 		>
 	</div>

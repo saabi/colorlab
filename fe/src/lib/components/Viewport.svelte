@@ -2,6 +2,7 @@
 	import { onDestroy, onMount, untrack } from 'svelte';
 	import { selftest } from '$lib/color/selftest';
 	import { m3 } from '$lib/color/math';
+	import { track } from '$lib/analytics/umami';
 	import { WebGlRenderer } from '$lib/renderer/webgl-renderer';
 	import { rebuildMatrices, rebuildShell } from '$lib/renderer/uniforms';
 	import { chain, pick } from '$lib/engine/picking';
@@ -132,9 +133,10 @@
 	}
 
 	function onTouchEnd(event: TouchEvent) {
-		if (event.touches.length < 2) {
+		if (event.touches.length < 2 && pinching) {
 			pinching = false;
 			pinchSpan = 0;
+			track('canvas_zoom', { input: 'pinch' });
 		}
 	}
 
@@ -156,6 +158,10 @@
 		if (!armOverride) explorer.theme.arm = activeArm === 'A' ? 'B' : null;
 		buildRamp(explorer, matrices);
 		gestureStatus = `Theme ${activeArm} set`;
+		track('theme_anchor_set', {
+			arm: activeArm,
+			method: armOverride ? (touchTool === 'pickA' || touchTool === 'pickB' ? 'touch' : 'shortcut') : 'panel'
+		});
 		draw();
 		return true;
 	}
@@ -195,6 +201,7 @@
 	function onPointerUp(event: PointerEvent) {
 		if (pinching) return;
 		if (event.pointerType === 'touch') event.preventDefault();
+		const completedGesture = gesture.kind;
 		dragging = false;
 		if (moved < 5) {
 			let themed = false;
@@ -204,6 +211,14 @@
 			else if (event.pointerType === 'touch' && touchTool === 'pickB') themed = setThemeStopAt(event.clientX, event.clientY, 'B');
 			else themed = setThemeStopAt(event.clientX, event.clientY);
 			if (!themed && event.pointerType === 'touch') inspectAt(event.clientX, event.clientY);
+		} else if (completedGesture === 'pan') {
+			track('canvas_pan', { input: event.pointerType || 'mouse' });
+		} else if (completedGesture === 'slice-offset') {
+			track('canvas_slice_drag', { input: event.pointerType || 'mouse' });
+		} else if (completedGesture === 'cylinder-radius') {
+			track('canvas_cylinder_drag', { input: event.pointerType || 'mouse' });
+		} else if (completedGesture === 'inspect' && event.pointerType === 'touch') {
+			track('canvas_inspect', { input: 'touch' });
 		}
 		gesture = { kind: 'orbit' };
 		if (canvas.hasPointerCapture(event.pointerId)) canvas.releasePointerCapture(event.pointerId);

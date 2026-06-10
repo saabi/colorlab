@@ -2,6 +2,7 @@
 	import SegmentedControl from './SegmentedControl.svelte';
 	import SliderRow from './SliderRow.svelte';
 	import ToggleRow from './ToggleRow.svelte';
+	import { track } from '$lib/analytics/umami';
 	import { simulateCvdSrgb } from '$lib/color/cvd';
 	import { exportDTCG, exportTokens, fitEven, fitGamut, fitWcag } from '$lib/engine/theme';
 
@@ -14,6 +15,27 @@
 	function showExport(kind: 'css' | 'json') {
 		exportText = kind === 'css' ? exportTokens(explorer.theme.stops) : exportDTCG(explorer.theme.stops);
 		navigator.clipboard?.writeText(exportText).catch(() => {});
+		track('theme_export', { format: kind === 'css' ? 'css' : 'dtcg' });
+	}
+
+	function setThemeMode(mode: typeof explorer.theme.mode) {
+		explorer.theme.mode = mode;
+		track('theme_mode_change', { mode });
+	}
+
+	function fitGamutTracked() {
+		fitGamut(explorer, matrices);
+		track('theme_fit_gamut');
+	}
+
+	function fitWcagTracked() {
+		fitWcag(explorer, matrices);
+		track('theme_fit_wcag', { bg: explorer.theme.wcagBg, target: explorer.theme.aa });
+	}
+
+	function fitEvenTracked() {
+		fitEven(explorer, matrices);
+		track('theme_fit_even');
 	}
 
 	function rampChipStyle(stop: { srgbLin: [number, number, number]; inG: boolean }) {
@@ -52,6 +74,7 @@
 <div style="height: 4px"></div>
 <SegmentedControl
 	bind:value={explorer.theme.mode}
+	onchange={setThemeMode}
 	options={[
 		{ value: 'seg', label: 'Segment' },
 		{ value: 'arc', label: 'Hue arc' },
@@ -132,8 +155,8 @@
 
 <div class="separator">
 	<div class="panel-label" style="margin-top: 0">Auto-adjust</div>
-	<button type="button" onclick={() => fitGamut(explorer, matrices)}>Fit stops inside sRGB</button>
-	<button type="button" style="margin-top: 4px" onclick={() => fitWcag(explorer, matrices)}>Ensure WCAG AA on white</button>
+	<button type="button" onclick={fitGamutTracked}>Fit stops inside sRGB</button>
+	<button type="button" style="margin-top: 4px" onclick={fitWcagTracked}>Ensure WCAG AA on white</button>
 	<SliderRow
 		label="AA target"
 		bind:value={explorer.theme.aa}
@@ -142,7 +165,7 @@
 		step={0.5}
 		format={(value) => `${value.toFixed(1)}:1`}
 	/>
-	<button type="button" style="margin-top: 4px" onclick={() => fitEven(explorer, matrices)}>Even perceptual spacing</button>
+	<button type="button" style="margin-top: 4px" onclick={fitEvenTracked}>Even perceptual spacing</button>
 </div>
 
 <textarea class="export-box" class:visible={!!exportText} readonly spellcheck="false" bind:value={exportText}></textarea>

@@ -1,5 +1,6 @@
 import { listExampleDocuments } from './examples';
 import { applySnapshot, cloneSnapshot, defaultSnapshot, snapshotsEqual, toSnapshot } from './snapshot';
+import { track } from '$lib/analytics/umami';
 import {
 	deleteDocument,
 	listDocuments,
@@ -67,13 +68,14 @@ export function createDocumentSession(getAppState: () => AppState) {
 		return true;
 	}
 
-	function applyDocument(doc: NonNullable<ReturnType<typeof resolveDocument>>) {
+	function applyDocument(doc: NonNullable<ReturnType<typeof resolveDocument>>, tracked = false) {
 		applySnapshot(getAppState(), doc.snapshot);
 		setBaseline(doc.snapshot);
 		activeId = doc.id;
 		activeName = doc.name;
 		activeSource = doc.source;
 		writeSession({ lastDocumentId: doc.id });
+		if (tracked) track('document_load', { source: doc.source });
 	}
 
 	function applyDefaults(mobile = useMobileDefaults) {
@@ -136,7 +138,7 @@ export function createDocumentSession(getAppState: () => AppState) {
 		if (!doc) return false;
 		const ok = await confirmDiscardIfDirty(`Discard unsaved changes and open "${doc.name}"?`);
 		if (!ok) return false;
-		applyDocument(doc);
+		applyDocument(doc, true);
 		return true;
 	}
 
@@ -144,6 +146,7 @@ export function createDocumentSession(getAppState: () => AppState) {
 		const ok = await confirmDiscardIfDirty('Discard unsaved changes and create a new document?');
 		if (!ok) return false;
 		applyDefaults(useMobileDefaults);
+		track('document_new', { mobile: useMobileDefaults });
 		return true;
 	}
 
@@ -153,7 +156,10 @@ export function createDocumentSession(getAppState: () => AppState) {
 			const docName = name?.trim();
 			if (!docName) return false;
 			warnDuplicateName(docName);
-			return createUserDocument(docName, snapshot);
+			const source = activeSource === 'example' ? 'example' : 'new';
+			const saved = createUserDocument(docName, snapshot);
+			if (saved) track('document_save', { source });
+			return saved;
 		}
 
 		const doc: StoredDocument = {
@@ -167,6 +173,7 @@ export function createDocumentSession(getAppState: () => AppState) {
 		refreshUserDocuments();
 		setBaseline(snapshot);
 		writeSession({ lastDocumentId: activeId });
+		track('document_save', { source: 'existing' });
 		return true;
 	}
 
@@ -174,6 +181,7 @@ export function createDocumentSession(getAppState: () => AppState) {
 		const docName = name.trim();
 		if (!docName) return false;
 		warnDuplicateName(docName);
+		track('document_save_as', { from: activeId === null ? 'untitled' : activeSource });
 		return createUserDocument(docName, toSnapshot(getAppState()));
 	}
 
@@ -201,6 +209,7 @@ export function createDocumentSession(getAppState: () => AppState) {
 		deleteDocument(id);
 		refreshUserDocuments();
 		applyDefaults(useMobileDefaults);
+		track('document_delete', { source: 'user' });
 		return true;
 	}
 
