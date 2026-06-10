@@ -4,7 +4,7 @@ export function createExplorerState(): ExplorerState {
 	return {
 		spaceMode: 3,
 		gamut: 'srgb',
-		N: 128,
+		N: 256,
 		slice: true,
 		planeMode: 'L',
 		off: 0.5,
@@ -25,12 +25,12 @@ export function createExplorerState(): ExplorerState {
 		theme: {
 			A: null,
 			B: null,
-			steps: 7,
+			steps: 5,
 			arm: null,
 			mode: 'seg',
 			stops: [],
 			dh: 40,
-			dc: 0.1,
+			dc: 0.0,
 			cprof: 'linear',
 			aa: 4.5,
 			wcagBg: 'white'
