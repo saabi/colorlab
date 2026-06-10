@@ -27,13 +27,22 @@ export function drawTransferPanel(canvas: HTMLCanvasElement, ch: TransformChain 
 	ctx.stroke();
 	if (!ch) return;
 	const cols = ['#e0533d', '#39c46f', '#5b8def'];
-	ch.rgbLin.forEach((v, i) => {
-		const lin = Math.min(Math.max(v, 0), 1);
-		const X = x0 + lin * pw;
-		const Y = y0 - g.trc.enc(lin) * ph;
-		ctx.fillStyle = cols[i];
-		ctx.beginPath();
-		ctx.arc(X, Y, 4, 0, 7);
-		ctx.fill();
-	});
+	const drawMarkers = (values: [number, number, number], radius: number, stroke: string | null) => {
+		values.forEach((v, i) => {
+			const lin = Math.min(Math.max(v, 0), 1);
+			const X = x0 + lin * pw;
+			const Y = y0 - g.trc.enc(lin) * ph;
+			ctx.fillStyle = cols[i];
+			ctx.beginPath();
+			ctx.arc(X, Y, radius, 0, 7);
+			ctx.fill();
+			if (stroke) {
+				ctx.strokeStyle = stroke;
+				ctx.lineWidth = 1.2;
+				ctx.stroke();
+			}
+		});
+	};
+	drawMarkers(ch.rgbLin, 4, null);
+	if (state.cvd !== 'none' && state.cvdSev > 0.001) drawMarkers(ch.cvdLin, 2.5, '#fff');
 }

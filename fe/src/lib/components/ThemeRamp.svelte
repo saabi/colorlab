@@ -1,6 +1,7 @@
 <script lang="ts">
 	import SegmentedControl from './SegmentedControl.svelte';
 	import SliderRow from './SliderRow.svelte';
+	import { simulateCvdSrgb } from '$lib/color/cvd';
 	import { exportDTCG, exportTokens, fitEven, fitGamut, fitWcag } from '$lib/engine/theme';
 
 	import type { ExplorerState } from '$lib/engine/types';
@@ -12,6 +13,16 @@
 	function showExport(kind: 'css' | 'json') {
 		exportText = kind === 'css' ? exportTokens(explorer.theme.stops) : exportDTCG(explorer.theme.stops);
 		navigator.clipboard?.writeText(exportText).catch(() => {});
+	}
+
+	function rampChipStyle(stop: { srgbLin: [number, number, number]; inG: boolean }) {
+		const simulated = simulateCvdSrgb(stop.srgbLin, explorer.cvd, explorer.cvdSev);
+		const rgb = simulated.map((v) => {
+			const c = Math.min(Math.max(v, 0), 1);
+			const encoded = c <= 0.0031308 ? 12.92 * c : 1.055 * Math.pow(c, 1 / 2.4) - 0.055;
+			return Math.round(encoded * 255);
+		});
+		return `background: rgb(${rgb.join(',')}); ${stop.inG ? '' : 'outline: 1px dashed var(--warn); outline-offset: -2px;'}`;
 	}
 
 </script>
@@ -100,7 +111,8 @@
 		{#each explorer.theme.stops as stop}
 			<div
 				class="ramp-chip"
-				style={`background: ${stop.hex}; ${stop.inG ? '' : 'outline: 1px dashed var(--warn); outline-offset: -2px;'}`}
+				title={`${stop.hex}${explorer.cvd === 'none' ? '' : ' source, CVD preview shown'}`}
+				style={rampChipStyle(stop)}
 			></div>
 		{/each}
 	{:else}

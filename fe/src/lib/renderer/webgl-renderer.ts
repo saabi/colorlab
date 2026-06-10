@@ -1,5 +1,5 @@
 import { cross3, m3gl, norm3, type Mat3, type Vec3 } from '$lib/color/math';
-import { CVD } from '$lib/color/cvd';
+import { CVD, simulateCvdSrgb } from '$lib/color/cvd';
 import { CUBE_ROT, CUBE_ROTi, LMS2RGB, RGB2LMS, REC709_Y } from '$lib/color/pipeline';
 import { TRC } from '$lib/color/transfer';
 import { planeND } from '$lib/engine/plane';
@@ -121,7 +121,8 @@ export class WebGlRenderer {
 			gl.uniformMatrix4fv(this.U(this.markProgram, 'uProj'), false, proj);
 			gl.uniformMatrix4fv(this.U(this.markProgram, 'uView'), false, view);
 			for (const s of input.state.theme.stops) {
-				const c = s.srgbLin.map((v) => TRC.srgb.enc(Math.min(Math.max(v, 0), 1)));
+				const sim = simulateCvdSrgb(s.srgbLin, input.state.cvd, input.state.cvdSev);
+				const c = sim.map((v) => TRC.srgb.enc(Math.min(Math.max(v, 0), 1)));
 				gl.uniform3fv(this.U(this.markProgram, 'uPos'), s.world);
 				gl.uniform3fv(this.U(this.markProgram, 'uCol'), c);
 				gl.drawArrays(gl.POINTS, 0, 1);

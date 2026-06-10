@@ -1,3 +1,4 @@
+import { LMS2RGB, RGB2LMS } from './pipeline';
 import { m3, type Mat3, type Vec3 } from './math';
 
 import type { CvdMode } from '$lib/engine/types';
@@ -18,4 +19,9 @@ export function applyCVD(lms: Vec3, type: CvdMode, severity: number): Vec3 {
 		lms[1] + (sim[1] - lms[1]) * severity,
 		lms[2] + (sim[2] - lms[2]) * severity
 	];
+}
+
+export function simulateCvdSrgb(srgbLin: Vec3, type: CvdMode, severity: number): Vec3 {
+	if (!CVD[type] || severity <= 0.001) return srgbLin;
+	return m3.mulV(LMS2RGB, applyCVD(m3.mulV(RGB2LMS, srgbLin), type, severity));
 }

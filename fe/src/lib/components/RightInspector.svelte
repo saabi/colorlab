@@ -46,9 +46,9 @@
 		if (!transferCanvas || !conesCanvas || !xyCanvas || !spectrumCanvas) return;
 		const ch = explorer.hover?.chain ?? null;
 		drawTransferPanel(transferCanvas, ch, explorer);
-		drawConesPanel(conesCanvas, ch);
+		drawConesPanel(conesCanvas, ch, explorer);
 		drawXyPanel(xyCanvas, ch, explorer);
-		spectrumLabel = drawSpectrumPanel(spectrumCanvas, ch);
+		spectrumLabel = drawSpectrumPanel(spectrumCanvas, ch, explorer);
 	}
 
 	onMount(() => {

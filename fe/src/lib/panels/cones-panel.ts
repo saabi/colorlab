@@ -1,9 +1,10 @@
-import { coneLMS } from '$lib/color/pipeline';
+import { RGB2LMS, coneLMS } from '$lib/color/pipeline';
+import { m3 } from '$lib/color/math';
 import { fitCanvas } from './canvas';
 
-import type { TransformChain } from '$lib/engine/types';
+import type { ExplorerState, TransformChain } from '$lib/engine/types';
 
-export function drawConesPanel(canvas: HTMLCanvasElement, ch: TransformChain | null) {
+export function drawConesPanel(canvas: HTMLCanvasElement, ch: TransformChain | null, state: ExplorerState) {
 	const { ctx, w, h } = fitCanvas(canvas);
 	ctx.clearRect(0, 0, w, h);
 	const x0 = 6;
@@ -36,12 +37,20 @@ export function drawConesPanel(canvas: HTMLCanvasElement, ch: TransformChain | n
 	if (!ch) return;
 	const bw = 16;
 	const bx = w - 66;
-	const m = Math.max(...ch.lms.map(Math.abs), 1e-6);
+	const cvdLms = m3.mulV(RGB2LMS, ch.cvdLin);
+	const active = state.cvd !== 'none' && state.cvdSev > 0.001;
+	const m = Math.max(...ch.lms.map(Math.abs), ...(active ? cvdLms.map(Math.abs) : []), 1e-6);
 	ch.lms.forEach((v, i) => {
 		const bh = (Math.max(v, 0) / m) * ph;
 		ctx.fillStyle = cols[i];
 		ctx.fillRect(bx + i * (bw + 4), y0 - bh, bw, bh);
 		ctx.strokeStyle = '#26272b';
 		ctx.strokeRect(bx + i * (bw + 4), y0 - ph, bw, ph);
+		if (active) {
+			const simH = (Math.max(cvdLms[i], 0) / m) * ph;
+			ctx.strokeStyle = '#fff';
+			ctx.lineWidth = 1.4;
+			ctx.strokeRect(bx + i * (bw + 4) + 2, y0 - simH, bw - 4, simH);
+		}
 	});
 }

@@ -1,9 +1,10 @@
 import { m3 } from '$lib/color/math';
+import { simulateCvdSrgb } from '$lib/color/cvd';
 import { D65, GAMUTS, Primaries, White, rgbToXyzM, waveToXyz } from '$lib/color/pipeline';
 import { TRC } from '$lib/color/transfer';
 import { fitCanvas } from './canvas';
 
-import type { TransformChain } from '$lib/engine/types';
+import type { ExplorerState, TransformChain } from '$lib/engine/types';
 
 const smoothstep = (a: number, b: number, x: number) => {
 	const t = Math.min(Math.max((x - a) / (b - a), 0), 1);
@@ -13,7 +14,7 @@ const smoothstep = (a: number, b: number, x: number) => {
 const PLms = Primaries(0.73840145, 0.26159855, 1.32671635, -0.32671635, 0.15861916, 0);
 const whiteE = White(1 / 3, 1 / 3);
 const toLms = m3.inv(rgbToXyzM(PLms, whiteE));
-let specCache: { w: number; cv: HTMLCanvasElement } | null = null;
+let specCache: { key: string; cv: HTMLCanvasElement } | null = null;
 let locusNm: Array<{ nm: number; a: number }> | null = null;
 
 function spectrumColor(wave: number) {
@@ -71,9 +72,10 @@ function dominantWavelength(xyz: [number, number, number]) {
 	return f.r ? { nm: f.r.nm, purple } : null;
 }
 
-export function drawSpectrumPanel(canvas: HTMLCanvasElement, ch: TransformChain | null) {
+export function drawSpectrumPanel(canvas: HTMLCanvasElement, ch: TransformChain | null, state: ExplorerState) {
 	const { ctx, w, h } = fitCanvas(canvas);
-	if (!specCache || specCache.w !== w) {
+	const key = `${w}:${state.cvd}:${state.cvdSev.toFixed(3)}`;
+	if (!specCache || specCache.key !== key) {
 		const cv = document.createElement('canvas');
 		cv.width = w;
 		cv.height = 1;
@@ -83,13 +85,16 @@ export function drawSpectrumPanel(canvas: HTMLCanvasElement, ch: TransformChain 
 		for (let i = 0; i < w; i += 1) {
 			const nm = 402 + ((682 - 402) * i) / (w - 1);
 			const rgb = spectrumColor(nm);
-			img.data[i * 4] = rgb[0];
-			img.data[i * 4 + 1] = rgb[1];
-			img.data[i * 4 + 2] = rgb[2];
+			const lin = rgb.map((v) => TRC.srgb.dec(v / 255)) as [number, number, number];
+			const sim = simulateCvdSrgb(lin, state.cvd, state.cvdSev);
+			const enc = sim.map((v) => Math.round(TRC.srgb.enc(Math.min(Math.max(v, 0), 1)) * 255));
+			img.data[i * 4] = enc[0];
+			img.data[i * 4 + 1] = enc[1];
+			img.data[i * 4 + 2] = enc[2];
 			img.data[i * 4 + 3] = 255;
 		}
 		c2.putImageData(img, 0, 0);
-		specCache = { w, cv };
+		specCache = { key, cv };
 	}
 	ctx.clearRect(0, 0, w, h);
 	ctx.drawImage(specCache.cv, 0, 0, w, h);

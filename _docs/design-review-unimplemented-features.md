@@ -17,7 +17,8 @@ the core workflow:
 - analytic hover picking.
 - transform-chain readout.
 - transfer, LMS cone, xy chromaticity, and spectrum panels.
-- CVD simulation.
+- CVD simulation across the 3D solid, swatches, inspector panel previews, and
+  generated ramp previews.
 - theme ramp anchors, segment/arc/spread modes, exports, and auto-adjust tools.
 
 The remaining candidates below are new product surface, not migration parity
@@ -50,7 +51,7 @@ work.
 | Design §10/§11 | Okhsl/Okhsv picker coordinates | Not implemented | High-value for theme editing; should be sliders/coordinate readouts, not geometry modes. |
 | Design §10 | Custom display gamut/calibration | Not implemented | High-value and well-scoped; adds manual primary/white entry. |
 | Design §10 | Optional EDID-derived defaults | Not implemented | Requires external data/service; defer behind manual custom display. |
-| New review | Propagate CVD simulation through inspectors and ramps | Partially implemented; 3D solid and swatch are simulated | High priority consistency fix. Panels, ramp chips, and exports/metadata need explicit CVD-aware behavior. |
+| New review | Propagate CVD simulation through inspectors and ramps | Implemented across visual previews | Keep source values canonical; consider optional simulated-preview export metadata later. |
 | New review | Merge spectrum strip into cone fundamentals panel | Not implemented | Good visual simplification: use spectral colors as the cone panel background behind LMS curves. |
 | New review | Hide spectrum wavelength marker for non-spectral colors | Partially implemented; dominant/complementary estimate currently displays broadly | Worth fixing before relying on wavelength readouts. Non-spectral/purple/mixed stimuli should not imply a pure wavelength. |
 | New review | Chromaticity curve/intensity volume in 3D | Not implemented | Interesting advanced visualization: show spectral locus across intensities as a wide-gamut volume. Needs careful design to avoid clutter. |
@@ -105,6 +106,20 @@ Design notes:
   a short video tutorial could help most users understand monitor OSD steps,
   but the app still needs an interactive text-based fallback.
 
+Suggested calibration wizard shape:
+
+- Start with a monitor-mode decision screen. Users either choose "monitor sRGB
+  emulation" and keep the app on built-in sRGB, or choose "native/wide gamut"
+  and continue to custom primaries.
+- Show full-screen patch pages for monitor OSD adjustment, with one task per
+  page: black level, white clipping, per-channel clipping, white point, then
+  gamma.
+- Estimate gamma independently for red, green, and blue using alternating
+  stepped patches rather than a single combined gray ramp.
+- End with validation patches that show neutral gray tracking, saturated
+  primaries, near-black detail, near-white detail, and a reminder that measured
+  colorimeter data should override visual estimates.
+
 ### 2. CVD-Aware Inspectors And Ramps
 
 Extend color vision deficiency simulation beyond the 3D solid:
@@ -132,6 +147,9 @@ Design notes:
   appearance.
 - Exports should default to source tokens; optional simulated preview export can
   be a separate command if needed.
+- Implementation note: current visual propagation covers transfer markers, LMS
+  bars, xy marker, spectrum strip, ramp chips, and 3D ramp markers. Exported
+  token values remain source colors.
 
 ### 3. Conservative Spectrum Wavelength Indicator
 

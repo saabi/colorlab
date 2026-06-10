@@ -101,15 +101,21 @@ export function drawXyPanel(canvas: HTMLCanvasElement, ch: TransformChain | null
 	ctx.fillStyle = '#9a9ba1';
 	ctx.fillText('out: sRGB', x0 + 2, 23);
 	if (!ch) return;
-	const S = ch.xyz[0] + ch.xyz[1] + ch.xyz[2];
-	if (S > 1e-6) {
-		const X = sx(ch.xyz[0] / S);
-		const Y = sy(ch.xyz[1] / S);
-		ctx.fillStyle = '#fff';
+	const drawMarker = (xyz: [number, number, number], fill: string, radius: number, stroke: string) => {
+		const S = xyz[0] + xyz[1] + xyz[2];
+		if (S <= 1e-6) return;
+		const X = sx(xyz[0] / S);
+		const Y = sy(xyz[1] / S);
+		ctx.fillStyle = fill;
 		ctx.beginPath();
-		ctx.arc(X, Y, 3.5, 0, 7);
+		ctx.arc(X, Y, radius, 0, 7);
 		ctx.fill();
-		ctx.strokeStyle = '#5fb8c4';
+		ctx.strokeStyle = stroke;
 		ctx.stroke();
+	};
+	drawMarker(ch.xyz, '#fff', 3.5, '#5fb8c4');
+	if (state.cvd !== 'none' && state.cvdSev > 0.001) {
+		const simXyz = m3.mulV(rgbToXyzM(GAMUTS.srgb.P, GAMUTS.srgb.W), ch.cvdLin);
+		drawMarker(simXyz, 'transparent', 5, '#fff');
 	}
 }
