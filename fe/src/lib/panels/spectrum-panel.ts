@@ -17,7 +17,7 @@ const toLms = m3.inv(rgbToXyzM(PLms, whiteE));
 let specCache: { key: string; cv: HTMLCanvasElement } | null = null;
 let locusNm: Array<{ nm: number; a: number }> | null = null;
 
-function spectrumColor(wave: number) {
+export function spectrumColor(wave: number) {
 	let c = waveToXyz(wave).map((v) => v / 3.7 + 0.29) as [number, number, number];
 	const num = m3.mulV(toLms, D65);
 	const den = m3.mulV(toLms, whiteE);
@@ -35,7 +35,7 @@ function spectrumColor(wave: number) {
 	return rgb.map((v) => Math.round(TRC.srgb.enc(Math.min(Math.max(v, 0), 1)) * 255));
 }
 
-function dominantWavelength(xyz: [number, number, number]) {
+export function dominantWavelength(xyz: [number, number, number]) {
 	const S = xyz[0] + xyz[1] + xyz[2];
 	if (S < 1e-6) return null;
 	const x = xyz[0] / S;

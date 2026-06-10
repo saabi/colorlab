@@ -52,7 +52,7 @@ work.
 | Design §10 | Custom display gamut/calibration | Not implemented | High-value and well-scoped; adds manual primary/white entry. |
 | Design §10 | Optional EDID-derived defaults | Not implemented | Requires external data/service; defer behind manual custom display. |
 | New review | Propagate CVD simulation through inspectors and ramps | Implemented across visual previews | Keep source values canonical; consider optional simulated-preview export metadata later. |
-| New review | Merge spectrum strip into cone fundamentals panel | Not implemented | Good visual simplification: use spectral colors as the cone panel background behind LMS curves. |
+| New review | Merge spectrum strip into cone fundamentals panel | Implemented | Spectral colors now render as the LMS panel background with the wavelength marker in the merged panel. |
 | New review | Hide spectrum wavelength marker for non-spectral colors | Partially implemented; dominant/complementary estimate currently displays broadly | Worth fixing before relying on wavelength readouts. Non-spectral/purple/mixed stimuli should not imply a pure wavelength. |
 | New review | Chromaticity curve/intensity volume in 3D | Not implemented | Interesting advanced visualization: show spectral locus across intensities as a wide-gamut volume. Needs careful design to avoid clutter. |
 
@@ -184,6 +184,12 @@ Why it is worth doing:
 
 - It directly links wavelengths to cone response curves.
 - It frees inspector space for future picker coordinates or gradient controls.
+
+Implementation status:
+
+- Implemented in the Svelte inspector. The standalone spectrum panel was
+  removed; the LMS panel now renders the CVD-aware spectral background, cone
+  fundamentals, excitation bars, and wavelength marker together.
 
 Design notes:
 

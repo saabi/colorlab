@@ -1,8 +1,57 @@
 import { RGB2LMS, coneLMS } from '$lib/color/pipeline';
 import { m3 } from '$lib/color/math';
+import { TRC } from '$lib/color/transfer';
+import { simulateCvdSrgb } from '$lib/color/cvd';
 import { fitCanvas } from './canvas';
+import { dominantWavelength, spectrumColor } from './spectrum-panel';
 
 import type { ExplorerState, TransformChain } from '$lib/engine/types';
+
+let spectrumCache: { key: string; cv: HTMLCanvasElement } | null = null;
+
+function drawSpectrumBackground(
+	ctx: CanvasRenderingContext2D,
+	x: number,
+	y: number,
+	w: number,
+	h: number,
+	nmA: number,
+	nmB: number,
+	state: ExplorerState
+) {
+	const key = `${w}:${nmA}:${nmB}:${state.cvd}:${state.cvdSev.toFixed(3)}`;
+	if (!spectrumCache || spectrumCache.key !== key) {
+		const cv = document.createElement('canvas');
+		cv.width = w;
+		cv.height = 1;
+		const c2 = cv.getContext('2d');
+		if (!c2) return;
+		const img = c2.createImageData(w, 1);
+		for (let i = 0; i < w; i += 1) {
+			const nm = nmA + ((nmB - nmA) * i) / Math.max(w - 1, 1);
+			const rgb = spectrumColor(nm);
+			const lin = rgb.map((v) => TRC.srgb.dec(v / 255)) as [number, number, number];
+			const sim = simulateCvdSrgb(lin, state.cvd, state.cvdSev);
+			const enc = sim.map((v) => Math.round(TRC.srgb.enc(Math.min(Math.max(v, 0), 1)) * 255));
+			img.data[i * 4] = enc[0];
+			img.data[i * 4 + 1] = enc[1];
+			img.data[i * 4 + 2] = enc[2];
+			img.data[i * 4 + 3] = 255;
+		}
+		c2.putImageData(img, 0, 0);
+		spectrumCache = { key, cv };
+	}
+	ctx.save();
+	ctx.globalAlpha = 0.36;
+	ctx.drawImage(spectrumCache.cv, x, y, w, h);
+	ctx.globalAlpha = 1;
+	const fade = ctx.createLinearGradient(0, y, 0, y + h);
+	fade.addColorStop(0, 'rgba(17, 18, 22, 0.18)');
+	fade.addColorStop(1, 'rgba(17, 18, 22, 0.72)');
+	ctx.fillStyle = fade;
+	ctx.fillRect(x, y, w, h);
+	ctx.restore();
+}
 
 export function drawConesPanel(canvas: HTMLCanvasElement, ch: TransformChain | null, state: ExplorerState) {
 	const { ctx, w, h } = fitCanvas(canvas);
@@ -11,8 +60,9 @@ export function drawConesPanel(canvas: HTMLCanvasElement, ch: TransformChain | n
 	const y0 = h - 8;
 	const pw = w - 78;
 	const ph = h - 16;
-	const nmA = 390;
-	const nmB = 710;
+	const nmA = 402;
+	const nmB = 682;
+	drawSpectrumBackground(ctx, x0, y0 - ph, pw, ph, nmA, nmB, state);
 	const cols = ['#e0533d', '#39c46f', '#5b8def'];
 	let mx = 0;
 	const samp: Array<[number, number, number]> = [];
@@ -34,7 +84,25 @@ export function drawConesPanel(canvas: HTMLCanvasElement, ch: TransformChain | n
 		});
 		ctx.stroke();
 	}
-	if (!ch) return;
+	ctx.fillStyle = '#fffb';
+	ctx.font = '9px "IBM Plex Mono", monospace';
+	ctx.fillText(`${nmA}nm`, x0 + 2, y0 - 2);
+	ctx.textAlign = 'right';
+	ctx.fillText(`${nmB}nm`, x0 + pw - 2, y0 - 2);
+	ctx.textAlign = 'left';
+	if (!ch) return '';
+	const dom = dominantWavelength(ch.xyz);
+	let label = '';
+	if (dom) {
+		const X = x0 + ((dom.nm - nmA) / (nmB - nmA)) * pw;
+		ctx.strokeStyle = '#fff';
+		ctx.lineWidth = 1.5;
+		ctx.beginPath();
+		ctx.moveTo(X, 0);
+		ctx.lineTo(X, h);
+		ctx.stroke();
+		label = dom.purple ? `purple (c~${dom.nm.toFixed(0)}nm)` : `ld ~ ${dom.nm.toFixed(0)}nm`;
+	}
 	const bw = 16;
 	const bx = w - 66;
 	const cvdLms = m3.mulV(RGB2LMS, ch.cvdLin);
@@ -53,4 +121,5 @@ export function drawConesPanel(canvas: HTMLCanvasElement, ch: TransformChain | n
 			ctx.strokeRect(bx + i * (bw + 4) + 2, y0 - simH, bw - 4, simH);
 		}
 	});
+	return label;
 }

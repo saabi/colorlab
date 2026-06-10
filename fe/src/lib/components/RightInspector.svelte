@@ -2,7 +2,6 @@
 	import { onMount } from 'svelte';
 	import ControlGroup from './ControlGroup.svelte';
 	import { drawConesPanel } from '$lib/panels/cones-panel';
-	import { drawSpectrumPanel } from '$lib/panels/spectrum-panel';
 	import { drawTransferPanel } from '$lib/panels/transfer-panel';
 	import { drawXyPanel } from '$lib/panels/xy-panel';
 
@@ -13,7 +12,6 @@
 	let transferCanvas: HTMLCanvasElement;
 	let conesCanvas: HTMLCanvasElement;
 	let xyCanvas: HTMLCanvasElement;
-	let spectrumCanvas: HTMLCanvasElement;
 	let spectrumLabel = $state('');
 
 	const fmt = (value: number, places = 3) => (Math.abs(value) < 1e-4 ? 0 : value).toFixed(places);
@@ -43,17 +41,16 @@
 	});
 
 	function drawPanels() {
-		if (!transferCanvas || !conesCanvas || !xyCanvas || !spectrumCanvas) return;
+		if (!transferCanvas || !conesCanvas || !xyCanvas) return;
 		const ch = explorer.hover?.chain ?? null;
 		drawTransferPanel(transferCanvas, ch, explorer);
-		drawConesPanel(conesCanvas, ch, explorer);
+		spectrumLabel = drawConesPanel(conesCanvas, ch, explorer);
 		drawXyPanel(xyCanvas, ch, explorer);
-		spectrumLabel = drawSpectrumPanel(spectrumCanvas, ch, explorer);
 	}
 
 	onMount(() => {
 		const ro = new ResizeObserver(drawPanels);
-		[transferCanvas, conesCanvas, xyCanvas, spectrumCanvas].forEach((canvas) => ro.observe(canvas));
+		[transferCanvas, conesCanvas, xyCanvas].forEach((canvas) => ro.observe(canvas));
 		drawPanels();
 		return () => ro.disconnect();
 	});
@@ -85,14 +82,11 @@
 	<div class="panel-label">Transfer (encode to linear)</div>
 	<canvas bind:this={transferCanvas} class="panel-canvas" aria-label="Transfer curve panel"></canvas>
 
-	<div class="panel-label">Cone fundamentals L M S</div>
-	<canvas bind:this={conesCanvas} class="panel-canvas" aria-label="Cone fundamentals panel"></canvas>
+	<div class="panel-label">Cone fundamentals L M S <span style="float: right; text-transform: none">{spectrumLabel}</span></div>
+	<canvas bind:this={conesCanvas} class="panel-canvas tall" aria-label="Cone fundamentals and spectrum panel"></canvas>
 
 	<div class="panel-label">CIE xy chromaticity</div>
 	<canvas bind:this={xyCanvas} class="panel-canvas tall" aria-label="CIE xy chromaticity panel"></canvas>
-
-	<div class="panel-label">Spectrum <span style="float: right; text-transform: none">{spectrumLabel}</span></div>
-	<canvas bind:this={spectrumCanvas} class="panel-canvas short" aria-label="Spectrum panel"></canvas>
 
 	<p class="note">
 		Excitations are integrals: a general color is three magnitudes, not points on wavelength curves.
