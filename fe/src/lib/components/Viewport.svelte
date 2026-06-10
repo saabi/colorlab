@@ -465,12 +465,9 @@
 	{#if error}
 		<div class="viewport-placeholder">{error}</div>
 	{/if}
-	<div class="hint hint-desktop viewport-help">
-		<span>drag orbit&nbsp;&nbsp;shift drag pan&nbsp;&nbsp;alt drag slice&nbsp;&nbsp;ctrl drag cylinder</span>
-		<GestureReferencePopover bind:open={referenceOpen} />
-	</div>
-	<div class="hint hint-mobile viewport-help">
-		<span>drag orbit&nbsp;&nbsp;pinch zoom&nbsp;&nbsp;touch solid inspect</span>
+	<div class="hint viewport-help">
+		<span class="hint-desktop">drag orbit&nbsp;&nbsp;shift drag pan&nbsp;&nbsp;alt drag slice&nbsp;&nbsp;ctrl drag cylinder</span>
+		<span class="hint-mobile">drag orbit&nbsp;&nbsp;pinch zoom&nbsp;&nbsp;touch solid inspect</span>
 		<GestureReferencePopover bind:open={referenceOpen} />
 	</div>
 	{#if gestureStatus}

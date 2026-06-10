@@ -1116,7 +1116,7 @@ input[type="checkbox"] {
 		gap: 6px;
 	}
 
-	.viewport-help > span {
+	.viewport-help .hint-desktop {
 		display: none;
 	}
 

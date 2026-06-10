@@ -46,7 +46,9 @@
 	];
 
 	function onDocumentPointerDown(event: PointerEvent) {
-		if (!open || root?.contains(event.target as Node)) return;
+		if (!open) return;
+		const target = event.target;
+		if (target instanceof Node && root?.contains(target)) return;
 		open = false;
 	}
 
