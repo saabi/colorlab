@@ -16,6 +16,11 @@ interface DrawInput {
 	camera: Camera;
 }
 
+function smoothstep(edge0: number, edge1: number, x: number) {
+	const t = Math.min(1, Math.max(0, (x - edge0) / (edge1 - edge0)));
+	return t * t * (3 - 2 * t);
+}
+
 export class WebGlRenderer {
 	private gl: WebGL2RenderingContext;
 	private solidProgram: WebGLProgram;
@@ -143,6 +148,7 @@ export class WebGlRenderer {
 			gl.uniformMatrix4fv(this.U(this.markProgram, 'uView'), false, view);
 			gl.uniform3fv(this.U(this.markProgram, 'uPos'), input.state.hover.world);
 			gl.uniform3fv(this.U(this.markProgram, 'uCol'), input.state.hover.inGamut ? [0.37, 0.72, 0.77] : [0.88, 0.33, 0.24]);
+			gl.uniform3fv(this.U(this.markProgram, 'uBorder'), [1, 1, 1]);
 			gl.drawArrays(gl.POINTS, 0, 1);
 		}
 
@@ -153,8 +159,11 @@ export class WebGlRenderer {
 			for (const s of input.state.theme.stops) {
 				const sim = simulateCvdSrgb(s.srgbLin, input.state.cvd, input.state.cvdSev);
 				const c = sim.map((v) => TRC.srgb.enc(Math.min(Math.max(v, 0), 1)));
+				const y = 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
+				const border = 1 - smoothstep(0.42, 0.72, y);
 				gl.uniform3fv(this.U(this.markProgram, 'uPos'), s.world);
 				gl.uniform3fv(this.U(this.markProgram, 'uCol'), c);
+				gl.uniform3fv(this.U(this.markProgram, 'uBorder'), [border, border, border]);
 				gl.drawArrays(gl.POINTS, 0, 1);
 			}
 		}
