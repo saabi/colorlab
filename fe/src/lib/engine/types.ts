@@ -53,6 +53,9 @@ export interface ExplorerState {
 	lines: boolean;
 	cutAbove: boolean;
 	cutBelow: boolean;
+	cylSlice: boolean;
+	cylRad: number;
+	cylInside: boolean;
 	shell: ShellKey;
 	outline: boolean;
 	cvd: CvdMode;

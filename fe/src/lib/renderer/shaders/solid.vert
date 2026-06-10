@@ -8,6 +8,7 @@ uniform mat3 uOkM1i, uOkM2i;
 uniform vec3 uWhite, uLumaW;
 uniform mat3 uCubeRot, uCubeRoti;
 uniform vec3 uPlaneN; uniform float uPlaneD, uSliceEps, uSliceOn, uCutAbove, uCutBelow;
+uniform float uCylSlice, uCylInside, uCylRad;
 uniform mat4 uProj, uView;
 out vec3 vRgb; out vec3 vWorld;
 
@@ -56,20 +57,61 @@ void main(){
   vec2 uv=(vec2(float(cell%uN),float(cell/uN))+aCorner)/float(uN);
   vec3 rgb=faceToRgb(face,uv);
   vec3 p=toWorld(rgb);
-  if(uSliceOn>0.5 && (uCutAbove>0.5||uCutBelow>0.5)){
-    float smin = uCutBelow>0.5 ? -uSliceEps : -1.0e9;
-    float smax = uCutAbove>0.5 ?  uSliceEps :  1.0e9;
+  if ((uSliceOn > 0.5 && (uCutAbove > 0.5 || uCutBelow > 0.5)) || uCylSlice > 0.5) {
+    float smin = uCutBelow > 0.5 ? -uSliceEps : -1.0e9;
+    float smax = uCutAbove > 0.5 ?  uSliceEps :  1.0e9;
     for(int i=0;i<5;i++){
-      float s=dot(p,uPlaneN)-uPlaneD;
-      p-=uPlaneN*(s-clamp(s,smin,smax));
-      rgb=clamp(fromWorld(p),0.0,1.0);
-      p=toWorld(rgb);
+      if (uSliceOn > 0.5 && (uCutAbove > 0.5 || uCutBelow > 0.5)) {
+        float s = dot(p, uPlaneN) - uPlaneD;
+        p -= uPlaneN * (s - clamp(s, smin, smax));
+      }
+      if (uCylSlice > 0.5) {
+        float r = length(p.xz);
+        vec3 norm = vec3(0.0);
+        if (r > 1e-5) {
+          norm = vec3(p.x / r, 0.0, p.z / r);
+        } else {
+          norm = vec3(1.0, 0.0, 0.0);
+        }
+        if (uCylInside > 0.5) {
+          if (r > uCylRad) {
+            p -= norm * (r - uCylRad);
+          }
+        } else {
+          if (r < uCylRad) {
+            p -= norm * (r - uCylRad);
+          }
+        }
+      }
+      rgb = clamp(fromWorld(p), 0.0, 1.0);
+      p = toWorld(rgb);
     }
-    float s=dot(p,uPlaneN)-uPlaneD;
-    vec3 pf=p-uPlaneN*(s-clamp(s,smin,smax));
-    vec3 rf=fromWorld(pf);
-    if(all(greaterThanEqual(rf,vec3(-0.002)))&&all(lessThanEqual(rf,vec3(1.002)))){
-      p=pf; rgb=clamp(rf,0.0,1.0);
+    vec3 pf = p;
+    if (uSliceOn > 0.5 && (uCutAbove > 0.5 || uCutBelow > 0.5)) {
+      float s = dot(pf, uPlaneN) - uPlaneD;
+      pf -= uPlaneN * (s - clamp(s, smin, smax));
+    }
+    if (uCylSlice > 0.5) {
+      float r = length(pf.xz);
+      vec3 norm = vec3(0.0);
+      if (r > 1e-5) {
+        norm = vec3(pf.x / r, 0.0, pf.z / r);
+      } else {
+        norm = vec3(1.0, 0.0, 0.0);
+      }
+      if (uCylInside > 0.5) {
+        if (r > uCylRad) {
+          pf -= norm * (r - uCylRad);
+        }
+      } else {
+        if (r < uCylRad) {
+          pf -= norm * (r - uCylRad);
+        }
+      }
+    }
+    vec3 rf = fromWorld(pf);
+    if (all(greaterThanEqual(rf, vec3(-0.002))) && all(lessThanEqual(rf, vec3(1.002)))) {
+      p = pf; rgb = clamp(rf, 0.0, 1.0);
     }
   }
   vRgb=rgb; vWorld=p;

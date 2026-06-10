@@ -110,6 +110,9 @@
 		explorer.eps;
 		explorer.cutAbove;
 		explorer.cutBelow;
+		explorer.cylSlice;
+		explorer.cylRad;
+		explorer.cylInside;
 		explorer.outline;
 		untrack(() => {
 			explorer.hover = null;

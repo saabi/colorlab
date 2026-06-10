@@ -159,7 +159,10 @@ export class WebGlRenderer {
 			p0[1] + a * u[1] + b * v[1],
 			p0[2] + a * u[2] + b * v[2]
 		];
-		const inside = (a: number, b: number) => solidField(at(a, b), state, matrices).rgb.every((c) => c >= 0 && c <= 1);
+		const inside = (a: number, b: number) => {
+			const res = solidField(at(a, b), state, matrices);
+			return res.v <= 0;
+		};
 		const bisect = (a1: number, b1: number, a2: number, b2: number) => {
 			for (let i = 0; i < 10; i += 1) {
 				const am = (a1 + a2) / 2;
@@ -195,6 +198,38 @@ export class WebGlRenderer {
 				if (c10 !== c11) pts.push(bisect(a0 + cell, c10 ? b0 : b0 + cell, a0 + cell, c10 ? b0 + cell : b0));
 				if (c01 !== c11) pts.push(bisect(c01 ? a0 : a0 + cell, b0 + cell, c01 ? a0 + cell : a0, b0 + cell));
 				for (let k = 0; k + 1 < pts.length; k += 2) segs.push(...at(pts[k][0], pts[k][1]), ...at(pts[k + 1][0], pts[k + 1][1]));
+			}
+		}
+		if (state.cylSlice) {
+			const R = state.cylRad;
+			if (Math.abs(n[1]) >= 1e-4) {
+				const pts: Vec3[] = [];
+				const steps = 64;
+				for (let i = 0; i <= steps; i += 1) {
+					const th = (i * 2 * Math.PI) / steps;
+					const cx = R * Math.cos(th);
+					const cz = R * Math.sin(th);
+					const cy = (d - R * (n[0] * Math.cos(th) + n[2] * Math.sin(th))) / n[1];
+					pts.push([cx, cy, cz]);
+				}
+				for (let i = 0; i < steps; i += 1) {
+					segs.push(...pts[i], ...pts[i + 1]);
+				}
+			} else {
+				const dist = Math.abs(d);
+				if (R > dist) {
+					const h = Math.sqrt(R * R - d * d);
+					const px = d * n[0];
+					const pz = d * n[2];
+					const vx = -n[2];
+					const vz = n[0];
+					const q1x = px + h * vx;
+					const q1z = pz + h * vz;
+					const q2x = px - h * vx;
+					const q2z = pz - h * vz;
+					segs.push(q1x, -0.5, q1z, q1x, 0.5, q1z);
+					segs.push(q2x, -0.5, q2z, q2x, 0.5, q2z);
+				}
 			}
 		}
 		gl.bindVertexArray(this.lineVao);
@@ -329,6 +364,9 @@ export class WebGlRenderer {
 		gl.uniform1f(this.U(p, 'uSliceOn'), state.slice ? 1 : 0);
 		gl.uniform1f(this.U(p, 'uCutAbove'), state.cutAbove ? 1 : 0);
 		gl.uniform1f(this.U(p, 'uCutBelow'), state.cutBelow ? 1 : 0);
+		gl.uniform1f(this.U(p, 'uCylSlice'), state.cylSlice ? 1 : 0);
+		gl.uniform1f(this.U(p, 'uCylInside'), state.cylInside ? 1 : 0);
+		gl.uniform1f(this.U(p, 'uCylRad'), state.cylRad);
 		gl.uniform1f(this.U(p, 'uLines'), state.lines ? 1 : 0);
 		gl.uniform1f(this.U(p, 'uGhost'), ghost);
 		gl.uniform1f(this.U(p, 'uCvdSev'), CVD[state.cvd] ? state.cvdSev : 0);

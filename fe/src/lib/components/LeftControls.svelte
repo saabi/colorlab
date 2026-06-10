@@ -64,8 +64,8 @@
 		<SliderRow
 			label="Offset"
 			bind:value={state.off}
-			min={-0.6}
-			max={0.6}
+			min={0}
+			max={1}
 			step={0.005}
 			format={(value) => value.toFixed(2)}
 		/>
@@ -91,6 +91,19 @@
 			min={0.001}
 			max={0.08}
 			step={0.001}
+			format={(value) => value.toFixed(3)}
+		/>
+	</ControlGroup>
+
+	<ControlGroup title="Cylindrical cut">
+		<ToggleRow label="Enable cylindrical cut" bind:checked={state.cylSlice} />
+		<ToggleRow label="Keep inside" bind:checked={state.cylInside} />
+		<SliderRow
+			label={state.spaceMode === 2 || state.spaceMode === 3 ? 'Chroma radius' : 'Radial distance'}
+			bind:value={state.cylRad}
+			min={0}
+			max={0.8}
+			step={0.005}
 			format={(value) => value.toFixed(3)}
 		/>
 	</ControlGroup>
