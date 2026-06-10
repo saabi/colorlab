@@ -38,6 +38,7 @@ work.
 | Roadmap Graphs | Color Space: color fitting | Partially implemented through theme auto-adjust | Worth formalizing as reusable gamut projection/snap tools. |
 | Roadmap Graphs | Color Space: grid only | Partially implemented through surface/floor toggles | Could become a view preset; low effort, low impact. |
 | Roadmap Graphs | Color Space: color picking | Implemented through hover and anchor click | No major gap. |
+| Roadmap Graphs | Color Space: cylindrical saturation/chroma cutaway | Not implemented | High priority. Add radial clipping/cutaway of the 3D solid for constant saturation or chroma. |
 | Roadmap | Color Acumulator | Not implemented | Needs definition. Possible useful form: sampled color history/palette tray. |
 | Roadmap | Scheme Designer | Partially covered by theme ramp | Worth expanding into a first-class palette/scheme workflow. |
 | Roadmap | Gradient Designer | Partially covered by theme ramp | High-value next feature; can build on existing ramp model. |
@@ -120,7 +121,41 @@ Suggested calibration wizard shape:
   primaries, near-black detail, near-white detail, and a reminder that measured
   colorimeter data should override visual estimates.
 
-### 2. CVD-Aware Inspectors And Ramps
+### 2. Cylindrical Saturation/Chroma Cutaway
+
+Add a radial cutaway mode for the 3D color solid:
+
+- constant saturation or chroma radius around the active color-space neutral
+  axis.
+- reveal only colors inside or outside the selected radius.
+- keep the existing arbitrary plane slice as a separate cut mode.
+- show the cylinder boundary as a visible reference surface or ring where it
+  intersects the rendered solid.
+
+Why it is worth doing:
+
+- It is a high-value way to inspect gamut shape at a fixed saturation/chroma
+  level.
+- It complements the current plane slicing, which is good for cross-sections but
+  not for radial perceptual structure.
+- It directly supports palette and ramp work, where chroma constraints are often
+  more relevant than arbitrary planes.
+
+Design notes:
+
+- For Oklab/CIELAB-like spaces, the cylinder radius should be chroma:
+  `sqrt(a^2 + b^2)` around the L axis.
+- For RGB-like spaces, the UI should label the mode as saturation only if the
+  radius is actually derived from a saturation model; otherwise call it radial
+  distance to avoid misleading users.
+- Support at least two modes: "keep inside radius" and "cut away inside radius"
+  so users can inspect both muted cores and saturated shells.
+- Picking must respect the active cutaway, just as it currently respects the
+  plane slice and gamut boundary.
+- The renderer should compute the radial test in the active model/world space so
+  it stays aligned with the displayed geometry.
+
+### 3. CVD-Aware Inspectors And Ramps
 
 Extend color vision deficiency simulation beyond the 3D solid:
 
@@ -151,7 +186,7 @@ Design notes:
   bars, xy marker, spectrum strip, ramp chips, and 3D ramp markers. Exported
   token values remain source colors.
 
-### 3. Conservative Spectrum Wavelength Indicator
+### 4. Conservative Spectrum Wavelength Indicator
 
 Only display a wavelength marker when the current stimulus is actually close to
 the spectral locus.
@@ -170,7 +205,7 @@ Design notes:
 - Purple-line/complementary reporting should be opt-in or clearly labelled, not
   the default for every off-locus color.
 
-### 4. Spectrum As Cone-Panel Background
+### 5. Spectrum As Cone-Panel Background
 
 Merge the spectrum strip with the cone fundamentals panel:
 
@@ -197,7 +232,7 @@ Design notes:
 - Keep the dominant/pure wavelength marker behavior conservative; do not show a
   marker for colors that are not spectral stimuli.
 
-### 5. Gradient Designer
+### 6. Gradient Designer
 
 Promote the current ramp into a richer gradient tool:
 
@@ -221,7 +256,7 @@ Design notes:
 - Avoid turning the left panel into a full editor; consider tabs in the left
   panel or a bottom gradient band.
 
-### 6. Okhsl/Okhsv Picker Coordinates
+### 7. Okhsl/Okhsv Picker Coordinates
 
 Add Okhsl/Okhsv as picker/editing coordinates in the theme layer:
 
@@ -240,7 +275,7 @@ Design notes:
 - Use a tested implementation; the cusp math is easy to get subtly wrong.
 - Scope v1 to sRGB-relative coordinates, matching the model’s definition.
 
-### 7. Direct Chromaticity Panel Picking
+### 8. Direct Chromaticity Panel Picking
 
 Make the xy panel interactive:
 
@@ -260,7 +295,7 @@ Design notes:
 - Use current selected ramp stop as the target when present.
 - Show out-of-gamut feedback before fitting.
 
-### 8. Gamut Boundary Snap / Fitting Tools
+### 9. Gamut Boundary Snap / Fitting Tools
 
 Turn the rendered cross-section outline into an editing affordance:
 
@@ -279,7 +314,7 @@ Design notes:
 - Direct nearest-boundary projection in arbitrary world spaces should be a later
   iteration.
 
-### 9. Spectral/Chromaticity Intensity Volume
+### 10. Spectral/Chromaticity Intensity Volume
 
 Add a 3D visualization of the spectral locus across intensity:
 
@@ -337,15 +372,14 @@ Too vague to implement safely. Needs concrete workflows, inputs, and outputs.
 
 ## Suggested Implementation Order
 
-1. Custom display gamut.
-2. CVD-aware inspectors and ramps.
+1. Cylindrical saturation/chroma cutaway.
+2. Custom display gamut.
 3. Conservative spectrum wavelength indicator.
-4. Spectrum as cone-panel background.
-5. Gradient designer improvements.
-6. Okhsl/Okhsv picker coordinates.
-7. Direct xy chromaticity picking.
-8. Gamut boundary snap tools.
-9. Spectral/chromaticity intensity volume.
+4. Gradient designer improvements.
+5. Okhsl/Okhsv picker coordinates.
+6. Direct xy chromaticity picking.
+7. Gamut boundary snap tools.
+8. Spectral/chromaticity intensity volume.
 
 This order maximizes reuse of the current architecture while adding features
 that are visible and useful to users.

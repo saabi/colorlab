@@ -17,6 +17,7 @@
   * color fitting
   * grid only
   * color picking
+  * cylindrical cutaway to constant saturation/chroma
 * Color Acumulator
 * Scheme Designer
 * Gradient Designer
