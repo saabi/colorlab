@@ -58,7 +58,8 @@ export interface ExplorerState {
 	cylRad: number;
 	cylInside: boolean;
 	shell: ShellKey;
-	outline: boolean;
+	planeOutline: boolean;
+	cylinderOutline: boolean;
 	surfaceGrid: SurfaceGridMode;
 	cvd: CvdMode;
 	cvdSev: number;

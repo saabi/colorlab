@@ -127,7 +127,8 @@
 	<ControlGroup title="Display">
 		<ToggleRow label="Floor grid" bind:checked={state.floor} />
 		<ToggleRow label="Surface grid lines" bind:checked={state.lines} />
-		<ToggleRow label="Cross-section outline" bind:checked={state.outline} />
+		<ToggleRow label="Plane outline" bind:checked={state.planeOutline} />
+		<ToggleRow label="Cylinder outline" bind:checked={state.cylinderOutline} />
 		<label class="row" for="surface-grid-select"><span>Surface grid style</span></label>
 		<select id="surface-grid-select" bind:value={state.surfaceGrid}>
 			<option value="dark">Dark</option>

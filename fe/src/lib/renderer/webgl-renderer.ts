@@ -1,10 +1,9 @@
-import { cross3, m3gl, norm3, type Mat3, type Vec3 } from '$lib/color/math';
+import { cross3, dot3, m3, m3gl, norm3, type Mat3, type Vec3 } from '$lib/color/math';
 import { CVD, simulateCvdSrgb } from '$lib/color/cvd';
-import { CUBE_ROT, CUBE_ROTi, LMS2RGB, RGB2LMS, REC709_Y } from '$lib/color/pipeline';
+import { CUBE_ROT, CUBE_ROTi, LMS2RGB, RGB2LMS, REC709_Y, lsrgb2oklab, xyz2lab } from '$lib/color/pipeline';
 import { TRC } from '$lib/color/transfer';
 import { planeND } from '$lib/engine/plane';
 import { camEye, lookAt, persp, type Camera } from '$lib/engine/camera';
-import { solidField } from '$lib/engine/picking';
 import { FS_FLOOR, FS_LINE, FS_MARK, FS_SOLID, VS_FLOOR, VS_LINE, VS_MARK, VS_SOLID } from './shaders';
 
 import type { ExplorerState } from '$lib/engine/types';
@@ -161,7 +160,7 @@ export class WebGlRenderer {
 			}
 		}
 
-		if (this.lineVertCount > 0 && input.state.slice && input.state.outline) {
+		if (this.lineVertCount > 0 && input.state.slice && (input.state.planeOutline || input.state.cylinderOutline)) {
 			gl.useProgram(this.lineProgram);
 			gl.bindVertexArray(this.lineVao);
 			gl.uniformMatrix4fv(this.U(this.lineProgram, 'uProj'), false, proj);
@@ -176,63 +175,21 @@ export class WebGlRenderer {
 
 	rebuildBoundary(state: ExplorerState, matrices: DerivedMatrices) {
 		this.lineVertCount = 0;
-		if (!state.slice || !state.outline) return;
+		if (!state.slice || (!state.planeOutline && !state.cylinderOutline)) return;
 		const { gl } = this;
 		const { n, d } = planeND(state);
 		const ref: Vec3 = Math.abs(n[1]) < 0.9 ? [0, 1, 0] : [1, 0, 0];
 		const u = norm3(cross3(n, ref));
 		const v = cross3(n, u);
-		const p0: Vec3 = [n[0] * d, n[1] * d, n[2] * d];
-		const G = 110;
-		const EXT = 1.5;
 		const segs: number[] = [];
-		const at = (a: number, b: number): Vec3 => [
-			p0[0] + a * u[0] + b * v[0],
-			p0[1] + a * u[1] + b * v[1],
-			p0[2] + a * u[2] + b * v[2]
-		];
-		const inside = (a: number, b: number) => {
-			const res = solidField(at(a, b), state, matrices);
-			return res.v <= 0;
-		};
-		const bisect = (a1: number, b1: number, a2: number, b2: number) => {
-			for (let i = 0; i < 10; i += 1) {
-				const am = (a1 + a2) / 2;
-				const bm = (b1 + b2) / 2;
-				if (inside(am, bm)) {
-					a1 = am;
-					b1 = bm;
-				} else {
-					a2 = am;
-					b2 = bm;
-				}
-			}
-			return [(a1 + a2) / 2, (b1 + b2) / 2];
-		};
-		const cell = (2 * EXT) / G;
-		const grid = new Uint8Array((G + 1) * (G + 1));
-		for (let j = 0; j <= G; j += 1) {
-			for (let i = 0; i <= G; i += 1) grid[j * (G + 1) + i] = inside(-EXT + i * cell, -EXT + j * cell) ? 1 : 0;
-		}
-		for (let j = 0; j < G; j += 1) {
-			for (let i = 0; i < G; i += 1) {
-				const a0 = -EXT + i * cell;
-				const b0 = -EXT + j * cell;
-				const c00 = grid[j * (G + 1) + i];
-				const c10 = grid[j * (G + 1) + i + 1];
-				const c01 = grid[(j + 1) * (G + 1) + i];
-				const c11 = grid[(j + 1) * (G + 1) + i + 1];
-				const code = c00 | (c10 << 1) | (c01 << 2) | (c11 << 3);
-				if (code === 0 || code === 15) continue;
-				const pts: number[][] = [];
-				if (c00 !== c10) pts.push(bisect(c00 ? a0 : a0 + cell, b0, c00 ? a0 + cell : a0, b0));
-				if (c00 !== c01) pts.push(bisect(a0, c00 ? b0 : b0 + cell, a0, c00 ? b0 + cell : b0));
-				if (c10 !== c11) pts.push(bisect(a0 + cell, c10 ? b0 : b0 + cell, a0 + cell, c10 ? b0 + cell : b0));
-				if (c01 !== c11) pts.push(bisect(c01 ? a0 : a0 + cell, b0 + cell, c01 ? a0 + cell : a0, b0 + cell));
-				for (let k = 0; k + 1 < pts.length; k += 2) segs.push(...at(pts[k][0], pts[k][1]), ...at(pts[k + 1][0], pts[k + 1][1]));
+		if (state.planeOutline) {
+			if (!state.cylSlice && (state.spaceMode === 0 || state.spaceMode === 1 || state.spaceMode === 5)) {
+				this.buildAffinePlaneOutline(state, matrices, n, d, u, v, segs);
+			} else {
+				this.buildFacePlaneOutline(state, matrices, n, d, segs);
 			}
 		}
-		if (state.cylSlice) {
+		if (state.cylSlice && state.cylinderOutline) {
 			const R = state.cylRad;
 			if (Math.abs(n[1]) >= 1e-4) {
 				const pts: Vec3[] = [];
@@ -269,6 +226,134 @@ export class WebGlRenderer {
 		gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(segs), gl.DYNAMIC_DRAW);
 		gl.bindVertexArray(null);
 		this.lineVertCount = segs.length / 3;
+	}
+
+	private buildAffinePlaneOutline(
+		state: ExplorerState,
+		matrices: DerivedMatrices,
+		n: Vec3,
+		d: number,
+		u: Vec3,
+		v: Vec3,
+		segs: number[]
+	) {
+		const verts: Vec3[] = [];
+		for (let r = 0; r <= 1; r += 1) {
+			for (let g = 0; g <= 1; g += 1) {
+				for (let b = 0; b <= 1; b += 1) verts.push(this.rgbToWorld([r, g, b], state, matrices));
+			}
+		}
+		const edges = [
+			[0, 1],
+			[0, 2],
+			[0, 4],
+			[1, 3],
+			[1, 5],
+			[2, 3],
+			[2, 6],
+			[3, 7],
+			[4, 5],
+			[4, 6],
+			[5, 7],
+			[6, 7]
+		];
+		const pts: Vec3[] = [];
+		const add = (p: Vec3) => {
+			if (!pts.some((q) => Math.hypot(q[0] - p[0], q[1] - p[1], q[2] - p[2]) < 1e-5)) pts.push(p);
+		};
+		for (const [ia, ib] of edges) {
+			const a = verts[ia];
+			const b = verts[ib];
+			const sa = dot3(a, n) - d;
+			const sb = dot3(b, n) - d;
+			if (Math.abs(sa) < 1e-6) add(a);
+			if (Math.abs(sb) < 1e-6) add(b);
+			if (sa * sb < 0) {
+				const t = sa / (sa - sb);
+				add([a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t]);
+			}
+		}
+		if (pts.length < 2) return;
+		const c: Vec3 = [
+			pts.reduce((sum, p) => sum + p[0], 0) / pts.length,
+			pts.reduce((sum, p) => sum + p[1], 0) / pts.length,
+			pts.reduce((sum, p) => sum + p[2], 0) / pts.length
+		];
+		pts.sort((a, b) => {
+			const aa = Math.atan2(dot3([a[0] - c[0], a[1] - c[1], a[2] - c[2]], v), dot3([a[0] - c[0], a[1] - c[1], a[2] - c[2]], u));
+			const bb = Math.atan2(dot3([b[0] - c[0], b[1] - c[1], b[2] - c[2]], v), dot3([b[0] - c[0], b[1] - c[1], b[2] - c[2]], u));
+			return aa - bb;
+		});
+		for (let i = 0; i < pts.length; i += 1) segs.push(...pts[i], ...pts[(i + 1) % pts.length]);
+	}
+
+	private buildFacePlaneOutline(state: ExplorerState, matrices: DerivedMatrices, n: Vec3, d: number, segs: number[]) {
+		const N = 112;
+		const sample = (face: number, i: number, j: number) => {
+			const rgb = this.faceRgb(face, i / N, j / N);
+			const world = this.rgbToWorld(rgb, state, matrices);
+			return { world, s: dot3(world, n) - d };
+		};
+		const insideCylinder = (p: Vec3) => {
+			if (!state.cylSlice) return true;
+			const r = Math.hypot(p[0], p[2]);
+			return state.cylInside ? r <= state.cylRad + 1e-4 : r >= state.cylRad - 1e-4;
+		};
+		const edgePoint = (a: { world: Vec3; s: number }, b: { world: Vec3; s: number }) => {
+			const t = Math.abs(a.s - b.s) < 1e-9 ? 0.5 : a.s / (a.s - b.s);
+			return [
+				a.world[0] + (b.world[0] - a.world[0]) * t,
+				a.world[1] + (b.world[1] - a.world[1]) * t,
+				a.world[2] + (b.world[2] - a.world[2]) * t
+			] as Vec3;
+		};
+		for (let face = 0; face < 6; face += 1) {
+			let prevRow = Array.from({ length: N + 1 }, (_, i) => sample(face, i, 0));
+			for (let j = 0; j < N; j += 1) {
+				const nextRow = Array.from({ length: N + 1 }, (_, i) => sample(face, i, j + 1));
+				for (let i = 0; i < N; i += 1) {
+					const p00 = prevRow[i];
+					const p10 = prevRow[i + 1];
+					const p01 = nextRow[i];
+					const p11 = nextRow[i + 1];
+					const pts: Vec3[] = [];
+					if (p00.s * p10.s <= 0 && p00.s !== p10.s) pts.push(edgePoint(p00, p10));
+					if (p10.s * p11.s <= 0 && p10.s !== p11.s) pts.push(edgePoint(p10, p11));
+					if (p01.s * p11.s <= 0 && p01.s !== p11.s) pts.push(edgePoint(p01, p11));
+					if (p00.s * p01.s <= 0 && p00.s !== p01.s) pts.push(edgePoint(p00, p01));
+					for (let k = 0; k + 1 < pts.length; k += 2) {
+						const mid: Vec3 = [(pts[k][0] + pts[k + 1][0]) / 2, (pts[k][1] + pts[k + 1][1]) / 2, (pts[k][2] + pts[k + 1][2]) / 2];
+						if (insideCylinder(mid)) segs.push(...pts[k], ...pts[k + 1]);
+					}
+				}
+				prevRow = nextRow;
+			}
+		}
+	}
+
+	private faceRgb(face: number, u: number, v: number): Vec3 {
+		if (face === 0) return [0, u, v];
+		if (face === 1) return [1, u, v];
+		if (face === 2) return [u, 0, v];
+		if (face === 3) return [u, 1, v];
+		if (face === 4) return [u, v, 0];
+		return [u, v, 1];
+	}
+
+	private rgbToWorld(rgb: Vec3, state: ExplorerState, matrices: DerivedMatrices): Vec3 {
+		if (state.spaceMode === 0) return m3.mulV(CUBE_ROT, [rgb[0] - 0.5, rgb[1] - 0.5, rgb[2] - 0.5]);
+		if (state.spaceMode === 5) {
+			const p = m3.mulV(CUBE_ROT, [rgb[0] - 0.5, rgb[1] - 0.5, rgb[2] - 0.5]);
+			return [p[0], REC709_Y[0] * rgb[0] + REC709_Y[1] * rgb[1] + REC709_Y[2] * rgb[2] - 0.5, p[2]];
+		}
+		const xyz = m3.mulV(matrices.rgb2xyz, rgb);
+		if (state.spaceMode === 1) return [xyz[0] - 0.48, xyz[1] - 0.5, xyz[2] - 0.54];
+		if (state.spaceMode === 2) {
+			const lab = xyz2lab(xyz);
+			return [lab[1] * 0.01, (lab[0] - 50) * 0.01, lab[2] * 0.01];
+		}
+		const ok = lsrgb2oklab(m3.mulV(matrices.toSrgbLin.toSrgb, rgb));
+		return [ok[1] * 2.2, ok[0] - 0.5, ok[2] * 2.2];
 	}
 
 	dispose() {

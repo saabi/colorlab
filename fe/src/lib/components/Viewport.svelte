@@ -113,7 +113,8 @@
 		explorer.cylSlice;
 		explorer.cylRad;
 		explorer.cylInside;
-		explorer.outline;
+		explorer.planeOutline;
+		explorer.cylinderOutline;
 		untrack(() => {
 			explorer.hover = null;
 			buildRamp(explorer, matrices);
