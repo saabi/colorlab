@@ -11,6 +11,14 @@ const smoothstep = (a: number, b: number, x: number) => {
 	return t * t * (3 - 2 * t);
 };
 
+/** Cone fundamentals plot range (matches `_docs/index.html` `drawCones`). */
+export const CONE_PANEL_NM_MIN = 390;
+export const CONE_PANEL_NM_MAX = 710;
+
+/** Visible spectrum strip and locus sampling; cone-fit tails are unstable outside this. */
+export const SPECTRUM_NM_MIN = 402;
+export const SPECTRUM_NM_MAX = 682;
+
 const PLms = Primaries(0.73840145, 0.26159855, 1.32671635, -0.32671635, 0.15861916, 0);
 const whiteE = White(1 / 3, 1 / 3);
 const toLms = m3.inv(rgbToXyzM(PLms, whiteE));
@@ -45,7 +53,7 @@ export function dominantWavelength(xyz: [number, number, number]) {
 	const a = Math.atan2(y - wy, x - wx);
 	if (!locusNm) {
 		locusNm = [];
-		for (let nm = 402; nm <= 682; nm += 1) {
+		for (let nm = SPECTRUM_NM_MIN; nm <= SPECTRUM_NM_MAX; nm += 1) {
 			const z = waveToXyz(nm);
 			const Z = z[0] + z[1] + z[2];
 			if (Z > 5e-3) locusNm.push({ nm, a: Math.atan2(z[1] / Z - wy, z[0] / Z - wx) });
@@ -83,7 +91,7 @@ export function drawSpectrumPanel(canvas: HTMLCanvasElement, ch: TransformChain 
 		if (!c2) return '';
 		const img = c2.createImageData(w, 1);
 		for (let i = 0; i < w; i += 1) {
-			const nm = 402 + ((682 - 402) * i) / (w - 1);
+			const nm = SPECTRUM_NM_MIN + ((SPECTRUM_NM_MAX - SPECTRUM_NM_MIN) * i) / (w - 1);
 			const rgb = spectrumColor(nm);
 			const lin = rgb.map((v) => TRC.srgb.dec(v / 255)) as [number, number, number];
 			const sim = simulateCvdSrgb(lin, state.cvd, state.cvdSev);
@@ -101,7 +109,7 @@ export function drawSpectrumPanel(canvas: HTMLCanvasElement, ch: TransformChain 
 	if (!ch) return '';
 	const dom = dominantWavelength(ch.xyz);
 	if (!dom) return '';
-	const x = ((dom.nm - 402) / (682 - 402)) * w;
+	const x = ((dom.nm - SPECTRUM_NM_MIN) / (SPECTRUM_NM_MAX - SPECTRUM_NM_MIN)) * w;
 	ctx.strokeStyle = '#fff';
 	ctx.lineWidth = 1.5;
 	ctx.beginPath();

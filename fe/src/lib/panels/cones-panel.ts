@@ -3,7 +3,12 @@ import { m3 } from '$lib/color/math';
 import { TRC } from '$lib/color/transfer';
 import { simulateCvdSrgb } from '$lib/color/cvd';
 import { fitCanvas } from './canvas';
-import { dominantWavelength, spectrumColor } from './spectrum-panel';
+import {
+	CONE_PANEL_NM_MAX,
+	CONE_PANEL_NM_MIN,
+	dominantWavelength,
+	spectrumColor
+} from './spectrum-panel';
 
 import type { ExplorerState, TransformChain } from '$lib/engine/types';
 
@@ -60,8 +65,8 @@ export function drawConesPanel(canvas: HTMLCanvasElement, ch: TransformChain | n
 	const y0 = h - 8;
 	const pw = w - 78;
 	const ph = h - 16;
-	const nmA = 402;
-	const nmB = 682;
+	const nmA = CONE_PANEL_NM_MIN;
+	const nmB = CONE_PANEL_NM_MAX;
 	drawSpectrumBackground(ctx, x0, y0 - ph, pw, ph, nmA, nmB, state);
 	const cols = ['#e0533d', '#39c46f', '#5b8def'];
 	let mx = 0;

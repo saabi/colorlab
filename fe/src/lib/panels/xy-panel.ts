@@ -2,6 +2,7 @@ import { m3 } from '$lib/color/math';
 import { GAMUTS, rgbToXyzM, waveToXyz } from '$lib/color/pipeline';
 import { TRC } from '$lib/color/transfer';
 import { fitCanvas } from './canvas';
+import { SPECTRUM_NM_MAX, SPECTRUM_NM_MIN } from './spectrum-panel';
 
 import type { ExplorerState, TransformChain } from '$lib/engine/types';
 
@@ -19,7 +20,7 @@ export function drawXyPanel(canvas: HTMLCanvasElement, ch: TransformChain | null
 	const sy = (y: number) => y0 - (y / 0.9) * ph;
 	if (!locusCache) {
 		locusCache = [];
-		for (let nm = 402; nm <= 682; nm += 2) {
+		for (let nm = SPECTRUM_NM_MIN; nm <= SPECTRUM_NM_MAX; nm += 2) {
 			const xyz = waveToXyz(nm);
 			const S = xyz[0] + xyz[1] + xyz[2];
 			if (S > 5e-3) locusCache.push([xyz[0] / S, xyz[1] / S]);
