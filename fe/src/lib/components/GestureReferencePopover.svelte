@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onDestroy, onMount } from 'svelte';
+	import { onMount } from 'svelte';
 
 	let { open = $bindable() } = $props<{ open: boolean }>();
 	let root: HTMLDivElement;
@@ -54,9 +54,6 @@
 		return () => document.removeEventListener('pointerdown', onDocumentPointerDown);
 	});
 
-	onDestroy(() => {
-		document.removeEventListener('pointerdown', onDocumentPointerDown);
-	});
 </script>
 
 <div bind:this={root} class="gesture-reference">
