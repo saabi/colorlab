@@ -1,4 +1,4 @@
-import { cross3, dot3, norm3, sub3, type Vec3 } from '$lib/color/math';
+import { add3, cross3, dot3, norm3, scale3, sub3, type Vec3 } from '$lib/color/math';
 
 export interface Camera {
 	yaw: number;
@@ -19,7 +19,8 @@ export function persp(fovy: number, asp: number, n: number, f: number) {
 
 export function lookAt(eye: Vec3, ct: Vec3, up: Vec3) {
 	const z = norm3(sub3(eye, ct));
-	const x = norm3(cross3(up, z));
+	const upRef = Math.abs(dot3(z, up)) > 0.98 ? ([0, 0, 1] as Vec3) : up;
+	const x = norm3(cross3(upRef, z));
 	const y = cross3(z, x);
 	return new Float32Array([x[0], y[0], z[0], 0, x[1], y[1], z[1], 0, x[2], y[2], z[2], 0, -dot3(x, eye), -dot3(y, eye), -dot3(z, eye), 1]);
 }
@@ -36,19 +37,33 @@ export function camEye(cam: Camera): Vec3 {
 	];
 }
 
-export function camRay(px: number, py: number, w: number, h: number, cam: Camera) {
+export function cameraBasis(cam: Camera) {
 	const eye = camEye(cam);
-	const f = norm3(sub3(cam.target, eye));
-	const r = norm3(cross3(f, [0, 1, 0]));
-	const u = cross3(r, f);
+	const forward = norm3(sub3(cam.target, eye));
+	const worldUp: Vec3 = [0, 1, 0];
+	const upRef: Vec3 = Math.abs(dot3(forward, worldUp)) > 0.98 ? [0, 0, 1] : worldUp;
+	const right = norm3(cross3(forward, upRef));
+	const up = cross3(right, forward);
+	return { eye, forward, right, up };
+}
+
+export function panCamera(cam: Camera, dx: number, dy: number, viewportHeight: number) {
+	const { right, up } = cameraBasis(cam);
+	const worldPerPixel = (2 * cam.dist * Math.tan(cam.fov / 2)) / Math.max(viewportHeight, 1);
+	const move = add3(scale3(right, -dx * worldPerPixel), scale3(up, dy * worldPerPixel));
+	cam.target = add3(cam.target, move);
+}
+
+export function camRay(px: number, py: number, w: number, h: number, cam: Camera) {
+	const { eye, forward, right, up } = cameraBasis(cam);
 	const t = Math.tan(cam.fov / 2);
 	const a = w / h;
 	const nx = (px / w) * 2 - 1;
 	const ny = 1 - (py / h) * 2;
 	const rd = norm3([
-		f[0] + nx * t * a * r[0] + ny * t * u[0],
-		f[1] + nx * t * a * r[1] + ny * t * u[1],
-		f[2] + nx * t * a * r[2] + ny * t * u[2]
+		forward[0] + nx * t * a * right[0] + ny * t * up[0],
+		forward[1] + nx * t * a * right[1] + ny * t * up[1],
+		forward[2] + nx * t * a * right[2] + ny * t * up[2]
 	]);
 	return { ro: eye, rd };
 }

@@ -394,8 +394,31 @@ input[type="checkbox"] {
 	position: absolute;
 	inset: 0;
 	height: 100%;
-	cursor: crosshair;
 	touch-action: none;
+}
+
+.viewport canvas.cursor-orbit {
+	cursor: grab;
+}
+
+.viewport canvas.cursor-orbit:active {
+	cursor: grabbing;
+}
+
+.viewport canvas.cursor-inspect {
+	cursor: crosshair;
+}
+
+.viewport canvas.cursor-pan {
+	cursor: move;
+}
+
+.viewport canvas.cursor-slice-offset {
+	cursor: ns-resize;
+}
+
+.viewport canvas.cursor-cylinder-radius {
+	cursor: ew-resize;
 }
 
 .viewport-placeholder {
@@ -417,6 +440,103 @@ input[type="checkbox"] {
 	bottom: 10px;
 	color: var(--faint);
 	font-size: 11px;
+	pointer-events: none;
+}
+
+.viewport-help {
+	left: auto;
+	right: 12px;
+	z-index: 5;
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	max-width: calc(100% - 24px);
+	text-align: right;
+}
+
+.gesture-reference {
+	position: relative;
+	pointer-events: auto;
+}
+
+.gesture-reference-trigger {
+	width: auto;
+	padding: 3px 8px;
+	border-radius: 5px;
+	background: rgba(25, 26, 29, 0.86);
+	color: var(--dim);
+	font-size: 10.5px;
+}
+
+.gesture-reference-trigger:hover,
+.gesture-reference-trigger[aria-expanded="true"] {
+	border-color: var(--accent);
+	color: var(--accent);
+}
+
+.gesture-reference-panel {
+	position: absolute;
+	right: 0;
+	bottom: calc(100% + 8px);
+	width: min(360px, calc(100vw - 28px));
+	max-height: min(54vh, 420px);
+	overflow-y: auto;
+	padding: 10px;
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	background: rgba(18, 18, 20, 0.96);
+	box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+	text-align: left;
+	backdrop-filter: blur(10px);
+}
+
+.gesture-reference-panel section + section {
+	margin-top: 10px;
+}
+
+.gesture-reference-panel h2 {
+	margin: 0 0 5px;
+	color: var(--faint);
+	font-size: 10px;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.1em;
+}
+
+.gesture-reference-row {
+	display: grid;
+	grid-template-columns: minmax(90px, 1fr) minmax(0, 1.15fr);
+	gap: 10px;
+	align-items: center;
+	padding: 2px 0;
+	color: var(--dim);
+	font-size: 11px;
+}
+
+.gesture-reference-row kbd {
+	border: 1px solid #35363b;
+	border-radius: 4px;
+	background: #0d0e10;
+	color: var(--txt);
+	padding: 1px 5px;
+	font-family: "IBM Plex Mono", ui-monospace, monospace;
+	font-size: 10px;
+	font-weight: 500;
+}
+
+.gesture-status {
+	position: absolute;
+	z-index: 5;
+	left: 12px;
+	bottom: 10px;
+	max-width: calc(100% - 24px);
+	border: 1px solid rgba(214, 169, 58, 0.38);
+	border-radius: 6px;
+	background: rgba(18, 18, 20, 0.88);
+	color: var(--accent);
+	padding: 4px 8px;
+	font-family: "IBM Plex Mono", ui-monospace, monospace;
+	font-size: 10.5px;
 	pointer-events: none;
 }
 
@@ -479,6 +599,10 @@ input[type="checkbox"] {
 	font-weight: 500;
 	text-transform: none;
 	letter-spacing: 0;
+}
+
+.viewport-toolbar .toolbar-touch-tool {
+	flex: 1 1 88px;
 }
 
 .viewport-toolbar .toolbar-toggle input {
@@ -789,7 +913,7 @@ input[type="checkbox"] {
 		left: 8px;
 		right: 8px;
 		display: grid;
-		grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto auto;
+		grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto auto minmax(70px, 0.9fr);
 		align-items: end;
 		gap: 6px;
 		padding: 6px;
@@ -823,6 +947,20 @@ input[type="checkbox"] {
 		width: 100%;
 		height: 28px;
 		font-size: 11px;
+	}
+
+	.viewport-help {
+		right: 8px;
+		bottom: 8px;
+		gap: 6px;
+	}
+
+	.viewport-help > span {
+		display: none;
+	}
+
+	.gesture-reference-panel {
+		max-height: 42dvh;
 	}
 
 	.hint-desktop {

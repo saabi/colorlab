@@ -1,7 +1,13 @@
 <script lang="ts">
 	import type { ExplorerState } from '$lib/engine/types';
 
-	let { state = $bindable() } = $props<{ state: ExplorerState }>();
+	let {
+		state = $bindable(),
+		touchTool = $bindable()
+	} = $props<{
+		state: ExplorerState;
+		touchTool: 'auto' | 'slice' | 'cylinder' | 'pickA' | 'pickB';
+	}>();
 
 	const spaces = [
 		{ value: 3, label: 'Oklab' },
@@ -58,6 +64,17 @@
 			<option value="protan">Protan</option>
 			<option value="deutan">Deutan</option>
 			<option value="tritan">Tritan</option>
+		</select>
+	</label>
+
+	<label class="toolbar-touch-tool">
+		<span>Touch tool</span>
+		<select bind:value={touchTool}>
+			<option value="auto">Auto</option>
+			<option value="slice">Slice</option>
+			<option value="cylinder">Radius</option>
+			<option value="pickA">Pick A</option>
+			<option value="pickB">Pick B</option>
 		</select>
 	</label>
 </div>
