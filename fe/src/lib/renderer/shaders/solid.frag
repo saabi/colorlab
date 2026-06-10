@@ -1,7 +1,7 @@
 #version 300 es
 precision highp float;
 in vec3 vRgb; in vec3 vWorld; in float vCutDist; out vec4 frag;
-uniform float uLines, uGhost, uGridOnly, uCapGridOnly, uGridWhite, uGridHidden, uCvdSev;
+uniform float uLines, uGhost, uGridOnly, uCapGridOnly, uClippedGridAlpha, uCvdSev;
 uniform vec3 uMaskPlaneN;
 uniform float uMaskPlaneD, uMaskSliceEps, uMaskSliceOn, uMaskCutAbove, uMaskCutBelow;
 uniform float uMaskCylSlice, uMaskCylInside, uMaskCylRad;
@@ -57,8 +57,8 @@ void main(){
     if(uCapGridOnly>0.5){ v*=smoothstep(0.0005,0.003,abs(vCutDist)); }
     float clipped=clippedSurfaceMask(vWorld);
     if(uCapGridOnly>0.5){ clipped=0.0; }
-    vec3 gridColor=mix(vec3(0.0),vec3(1.0),uGridWhite*clipped);
-    float alpha=v*0.22*(1.0-uGridHidden*clipped);
+    vec3 gridColor=mix(vec3(0.0),vec3(1.0),clipped);
+    float alpha=v*0.22*mix(1.0,uClippedGridAlpha,clipped);
     frag=vec4(gridColor,alpha);
     return;
   }

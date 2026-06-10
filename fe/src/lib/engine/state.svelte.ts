@@ -21,7 +21,7 @@ export function createExplorerState(): ExplorerState {
 		shell: 'none',
 		planeOutline: true,
 		cylinderOutline: true,
-		surfaceGrid: 'dark',
+		surfaceGridAlpha: 0.5,
 		cvd: 'none',
 		cvdSev: 1,
 		theme: {

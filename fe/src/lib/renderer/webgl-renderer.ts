@@ -76,7 +76,7 @@ export class WebGlRenderer {
 		if (input.shellMatrices) {
 			gl.useProgram(this.solidProgram);
 			gl.bindVertexArray(this.solidVao);
-			this.uploadSolidUniforms(input.state, input.shellMatrices, proj, view, 1, 96, 0, 0, 0, 0, 0, 0);
+			this.uploadSolidUniforms(input.state, input.shellMatrices, proj, view, 1, 96, 0, 0, 0, 0, 0);
 			gl.disable(gl.DEPTH_TEST);
 			gl.depthMask(false);
 			gl.enable(gl.BLEND);
@@ -89,7 +89,7 @@ export class WebGlRenderer {
 
 		gl.useProgram(this.solidProgram);
 		gl.bindVertexArray(this.solidVao);
-		this.uploadSolidUniforms(input.state, input.matrices, proj, view, 0, input.state.N, 0, 0, 0, 0, 0, 0);
+		this.uploadSolidUniforms(input.state, input.matrices, proj, view, 0, input.state.N, 0, 0, 0, 0, 0);
 		gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, 6 * input.state.N * input.state.N);
 
 		if (input.state.lines) {
@@ -106,16 +106,15 @@ export class WebGlRenderer {
 				view,
 				0,
 				input.state.N,
-				1,
-				1,
-				0,
-				input.state.surfaceGrid === 'white' ? 1 : 0,
-				input.state.surfaceGrid === 'hidden' ? 1 : 0,
-				1
-			);
+					1,
+					1,
+					0,
+					input.state.surfaceGridAlpha,
+					1
+				);
 			gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, 6 * input.state.N * input.state.N);
 			if (input.state.slice || input.state.cylSlice) {
-				this.uploadSolidUniforms(input.state, input.matrices, proj, view, 0, input.state.N, 1, 1, 1, 0, 0, 0);
+				this.uploadSolidUniforms(input.state, input.matrices, proj, view, 0, input.state.N, 1, 1, 1, 0, 0);
 				gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, 6 * input.state.N * input.state.N);
 			}
 			gl.disable(gl.POLYGON_OFFSET_FILL);
@@ -460,8 +459,7 @@ export class WebGlRenderer {
 		lines: 0 | 1,
 		gridOnly: 0 | 1,
 		capGridOnly: 0 | 1,
-		gridWhite: 0 | 1,
-		gridHidden: 0 | 1,
+		clippedGridAlpha: number,
 		unclipped: 0 | 1
 	) {
 		const { gl } = this;
@@ -503,8 +501,7 @@ export class WebGlRenderer {
 		gl.uniform1f(this.U(p, 'uGhost'), ghost);
 		gl.uniform1f(this.U(p, 'uGridOnly'), gridOnly);
 		gl.uniform1f(this.U(p, 'uCapGridOnly'), capGridOnly);
-		gl.uniform1f(this.U(p, 'uGridWhite'), gridWhite);
-		gl.uniform1f(this.U(p, 'uGridHidden'), gridHidden);
+		gl.uniform1f(this.U(p, 'uClippedGridAlpha'), clippedGridAlpha);
 		gl.uniform1f(this.U(p, 'uCvdSev'), CVD[state.cvd] ? state.cvdSev : 0);
 		this.uploadMat3(p, 'uCvd', CVD[state.cvd] || [1, 0, 0, 0, 1, 0, 0, 0, 1]);
 		this.uploadMat3(p, 'uRgb2Lms', RGB2LMS);

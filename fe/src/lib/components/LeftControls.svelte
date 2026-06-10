@@ -129,12 +129,14 @@
 		<ToggleRow label="Surface grid lines" bind:checked={state.lines} />
 		<ToggleRow label="Plane outline" bind:checked={state.planeOutline} />
 		<ToggleRow label="Cylinder outline" bind:checked={state.cylinderOutline} />
-		<label class="row" for="surface-grid-select"><span>Surface grid style</span></label>
-		<select id="surface-grid-select" bind:value={state.surfaceGrid}>
-			<option value="dark">Dark</option>
-			<option value="white">White</option>
-			<option value="hidden">Hidden</option>
-		</select>
+		<SliderRow
+			label="Clipped grid alpha"
+			bind:value={state.surfaceGridAlpha}
+			min={0}
+			max={1}
+			step={0.05}
+			format={(value) => value.toFixed(2)}
+		/>
 		<label class="row" for="shell-select"><span>Wide-gamut shell</span></label>
 		<select id="shell-select" bind:value={state.shell}>
 			<option value="none">None</option>

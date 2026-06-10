@@ -5,7 +5,6 @@ export type ShellKey = 'none' | 'p3' | 'rec2020' | 'ntsc' | 'cie';
 export type CvdMode = 'none' | 'protan' | 'deutan' | 'tritan';
 export type ThemeMode = 'seg' | 'arc' | 'spread';
 export type ChromaProfile = 'linear' | 'mirror';
-export type SurfaceGridMode = 'dark' | 'hidden' | 'white';
 
 export interface ThemeAnchor {
 	srgbLin: [number, number, number];
@@ -60,7 +59,7 @@ export interface ExplorerState {
 	shell: ShellKey;
 	planeOutline: boolean;
 	cylinderOutline: boolean;
-	surfaceGrid: SurfaceGridMode;
+	surfaceGridAlpha: number;
 	cvd: CvdMode;
 	cvdSev: number;
 	theme: {
