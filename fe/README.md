@@ -1,42 +1,97 @@
-# sv
+# COLOR LAB frontend
 
-Everything you need to build a Svelte project, powered by [`sv`](https://github.com/sveltejs/cli).
+SvelteKit 5 + TypeScript frontend for **COLOR LAB — Gamut Explorer**.
 
-## Creating a project
+## Stack
 
-If you're seeing this, you've probably already done this step. Congrats!
+- [SvelteKit 2](https://svelte.dev/docs/kit) with Svelte 5 runes
+- [adapter-node](https://svelte.dev/docs/kit/adapter-node) for production SSR
+- WebGL2 renderer with GLSL shaders (`vite-plugin-glslify`)
+- Vitest for unit tests
+
+## Scripts
+
+| Command | Description |
+|---------|-------------|
+| `npm run dev` | Start Vite dev server |
+| `npm run build` | Production build (`fe/build/`) |
+| `npm start` | Run built Node server (`node build`) |
+| `npm run preview` | Preview production build locally |
+| `npm run check` | Type-check with `svelte-check` |
+| `npm test` | Run Vitest |
+
+## Development
 
 ```sh
-# create a new project
-npx sv create my-app
-```
-
-To recreate this project with the same configuration:
-
-```sh
-# recreate this project
-npx sv@0.16.1 create --template minimal --types ts --install npm fe
-```
-
-## Developing
-
-Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
-
-```sh
+npm install
 npm run dev
-
-# or start the server and open the app in a new browser tab
-npm run dev -- --open
 ```
 
-## Building
+Optional: copy `.env.example` to `.env` for local configuration (see below).
 
-To create a production version of your app:
+## Environment variables
+
+`vite.config.ts` sets `envPrefix: ['VITE_', 'PUBLIC_']`, so `PUBLIC_*` variables are inlined at **build time**.
+
+| Variable | Purpose |
+|----------|---------|
+| `PUBLIC_UMAMI_SRC` | Umami tracker script URL |
+| `PUBLIC_UMAMI_WEBSITE_ID` | Umami website ID |
+
+Set **both** to enable cookieless analytics; leave unset for zero tracking. See [`.env.example`](.env.example).
 
 ```sh
+PUBLIC_UMAMI_SRC=https://umami.example.com/script.js \
+PUBLIC_UMAMI_WEBSITE_ID=<uuid> \
 npm run build
 ```
 
-You can preview the production build with `npm run preview`.
+## Production build and run
 
-> To deploy your app, you may need to install an [adapter](https://svelte.dev/docs/kit/adapters) for your target environment.
+```sh
+npm run build
+npm start
+```
+
+The Node server listens on `PORT` (default `3000`) and `HOST` (default `0.0.0.0`). Set `ORIGIN` to the public URL when deploying behind a reverse proxy.
+
+### PM2
+
+From the repo root:
+
+```sh
+cd fe && npm run build
+pm2 start ../ecosystem.config.cjs
+```
+
+[`ecosystem.config.cjs`](../ecosystem.config.cjs) runs `fe/build/index.js` on port `5001`.
+
+## Project structure
+
+```
+src/
+  routes/           SvelteKit pages and root layout
+  lib/
+    analytics/      Umami injection and event tracking
+    color/          Color math, matrices, transfer functions
+    components/     UI shell, viewport, controls, inspector
+    documents/      Parameter-set persistence (localStorage)
+    engine/         Application state, picking, theme ramp logic
+    inspector/      Right-panel help copy and headers
+    panels/         2D canvas instruments (transfer, cones, xy, spectrum)
+    renderer/       WebGL2 setup, shaders, draw loop
+static/             PWA manifest, icons, robots.txt
+```
+
+## Features
+
+- **3D gamut explorer** — instanced WebGL2 solids for sRGB, P3, Rec.2020, NTSC, and more
+- **Arbitrary slice planes** — vertex-shader flattening with analytic ray picking
+- **Inspector panels** — OETF curve, cone fundamentals, CIE xy chromaticity, spectrum
+- **Theme ramp designer** — Oklab segment/arc/spread modes, sRGB fitting, WCAG AA, CSS/DTCG export
+- **Documents** — named parameter sets stored in browser `localStorage`
+- **PWA metadata** — `manifest.webmanifest`, favicon, and app icons in `static/`
+
+## Privacy
+
+Saved parameter sets stay in the browser. If Umami analytics are enabled at build time, the app collects anonymous usage events (no document names, color values, or exported tokens). See the in-app Privacy panel.
