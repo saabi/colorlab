@@ -17,6 +17,7 @@
 	let renderer: WebGlRenderer | null = null;
 	let error: string | null = $state(null);
 	let dragging = false;
+	let gesture: 'orbit' | 'inspect' = 'orbit';
 	let moved = 0;
 	let lastX = 0;
 	let lastY = 0;
@@ -29,37 +30,63 @@
 		renderer?.draw({ state: explorer, matrices, shellMatrices, camera });
 	}
 
+	function inspectAt(clientX: number, clientY: number) {
+		const rect = canvas.getBoundingClientRect();
+		const hit = pick(clientX - rect.left, clientY - rect.top, rect.width, rect.height, explorer, matrices, camera);
+		explorer.hover = hit ? { ...hit, chain: chain(hit.rgbLin, explorer, matrices) } : null;
+		draw();
+		return hit;
+	}
+
+	function setThemeStopAt(clientX: number, clientY: number) {
+		if (!explorer.theme.arm) return false;
+		const rect = canvas.getBoundingClientRect();
+		const hit = pick(clientX - rect.left, clientY - rect.top, rect.width, rect.height, explorer, matrices, camera);
+		if (!hit) return false;
+		const arm = explorer.theme.arm;
+		explorer.theme[arm] = { srgbLin: m3.mulV(matrices.toSrgbLin.toSrgb, hit.rgbLin) };
+		explorer.theme.arm = arm === 'A' ? 'B' : null;
+		buildRamp(explorer, matrices);
+		draw();
+		return true;
+	}
+
 	function onPointerDown(event: PointerEvent) {
+		if (event.pointerType === 'touch') event.preventDefault();
 		dragging = true;
+		gesture = 'orbit';
 		moved = 0;
 		lastX = event.clientX;
 		lastY = event.clientY;
 		canvas.setPointerCapture(event.pointerId);
+		if (event.pointerType === 'touch') {
+			gesture = inspectAt(event.clientX, event.clientY) ? 'inspect' : 'orbit';
+		}
 	}
 
 	function onPointerUp(event: PointerEvent) {
+		if (event.pointerType === 'touch') event.preventDefault();
 		dragging = false;
-		if (moved < 5 && explorer.theme.arm) {
-			const rect = canvas.getBoundingClientRect();
-			const hit = pick(event.clientX - rect.left, event.clientY - rect.top, rect.width, rect.height, explorer, matrices, camera);
-			if (hit) {
-				const arm = explorer.theme.arm;
-				explorer.theme[arm] = { srgbLin: m3.mulV(matrices.toSrgbLin.toSrgb, hit.rgbLin) };
-				explorer.theme.arm = arm === 'A' ? 'B' : null;
-				buildRamp(explorer, matrices);
-				draw();
-			}
+		if (moved < 5) {
+			const themed = setThemeStopAt(event.clientX, event.clientY);
+			if (!themed && event.pointerType === 'touch') inspectAt(event.clientX, event.clientY);
 		}
-		canvas.releasePointerCapture(event.pointerId);
+		gesture = 'orbit';
+		if (canvas.hasPointerCapture(event.pointerId)) canvas.releasePointerCapture(event.pointerId);
 	}
 
 	function onPointerMove(event: PointerEvent) {
 		if (dragging) {
+			if (event.pointerType === 'touch') event.preventDefault();
 			const dx = event.clientX - lastX;
 			const dy = event.clientY - lastY;
 			lastX = event.clientX;
 			lastY = event.clientY;
 			moved += Math.abs(dx) + Math.abs(dy);
+			if (event.pointerType === 'touch' && gesture === 'inspect') {
+				inspectAt(event.clientX, event.clientY);
+				return;
+			}
 			camera.yaw -= dx * 0.008;
 			camera.pitch = Math.min(1.45, Math.max(-0.2, camera.pitch + dy * 0.006));
 			draw();
@@ -69,6 +96,12 @@
 		const hit = pick(event.clientX - rect.left, event.clientY - rect.top, rect.width, rect.height, explorer, matrices, camera);
 		explorer.hover = hit ? { ...hit, chain: chain(hit.rgbLin, explorer, matrices) } : null;
 		draw();
+	}
+
+	function onPointerCancel(event: PointerEvent) {
+		if (canvas.hasPointerCapture(event.pointerId)) canvas.releasePointerCapture(event.pointerId);
+		dragging = false;
+		gesture = 'orbit';
 	}
 
 	function onWheel(event: WheelEvent) {
@@ -169,6 +202,7 @@
 		onpointerdown={onPointerDown}
 		onpointerup={onPointerUp}
 		onpointermove={onPointerMove}
+		onpointercancel={onPointerCancel}
 		onwheel={onWheel}
 	></canvas>
 	{#if error}

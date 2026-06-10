@@ -13,6 +13,7 @@
 	let conesCanvas: HTMLCanvasElement;
 	let xyCanvas: HTMLCanvasElement;
 	let spectrumLabel = $state('');
+	let activeTab = $state<'transfer' | 'cones' | 'xy' | 'values'>('transfer');
 
 	const fmt = (value: number, places = 3) => (Math.abs(value) < 1e-4 ? 0 : value).toFixed(places);
 	const fmtVec = (vec: Vec3, places = 3) => vec.map((v: number) => fmt(v, places)).join(' ');
@@ -39,13 +40,17 @@
 		const disp = ch.cvdLin.map((v: number) => Math.round(encSrgb(v) * 255));
 		return `background: rgb(${disp.join(',')}); color: ${explorer.hover?.inGamut ? '#0008' : '#fffb'};`;
 	});
+	const drawable = (canvas: HTMLCanvasElement | undefined) => !!canvas && canvas.clientWidth > 0 && canvas.clientHeight > 0;
 
 	function drawPanels() {
-		if (!transferCanvas || !conesCanvas || !xyCanvas) return;
 		const ch = explorer.hover?.chain ?? null;
-		drawTransferPanel(transferCanvas, ch, explorer);
-		spectrumLabel = drawConesPanel(conesCanvas, ch, explorer);
-		drawXyPanel(xyCanvas, ch, explorer);
+		if (drawable(transferCanvas)) drawTransferPanel(transferCanvas, ch, explorer);
+		if (drawable(conesCanvas)) spectrumLabel = drawConesPanel(conesCanvas, ch, explorer);
+		if (drawable(xyCanvas)) drawXyPanel(xyCanvas, ch, explorer);
+	}
+
+	function queueDrawPanels() {
+		requestAnimationFrame(drawPanels);
 	}
 
 	onMount(() => {
@@ -60,35 +65,75 @@
 		explorer.gamut;
 		explorer.cvd;
 		explorer.cvdSev;
-		drawPanels();
+		activeTab;
+		queueDrawPanels();
 	});
 </script>
 
 <aside class="side-panel right-panel">
-	<div class="panel-label">Transfer (encode to linear)</div>
-	<canvas bind:this={transferCanvas} class="panel-canvas" aria-label="Transfer curve panel"></canvas>
+	<div class="inspector-tabs" aria-label="Inspector panels">
+		<button
+			type="button"
+			class:active={activeTab === 'transfer'}
+			onclick={() => {
+				activeTab = 'transfer';
+			}}>Transfer</button
+		>
+		<button
+			type="button"
+			class:active={activeTab === 'cones'}
+			onclick={() => {
+				activeTab = 'cones';
+			}}>LMS</button
+		>
+		<button
+			type="button"
+			class:active={activeTab === 'xy'}
+			onclick={() => {
+				activeTab = 'xy';
+			}}>xy</button
+		>
+		<button
+			type="button"
+			class:active={activeTab === 'values'}
+			onclick={() => {
+				activeTab = 'values';
+			}}>Values</button
+		>
+	</div>
 
-	<div class="panel-label">Cone fundamentals L M S <span style="float: right; text-transform: none">{spectrumLabel}</span></div>
-	<canvas bind:this={conesCanvas} class="panel-canvas tall" aria-label="Cone fundamentals and spectrum panel"></canvas>
+	<section class:active={activeTab === 'transfer'} class="inspector-tab-panel">
+		<div class="panel-label">Transfer (encode to linear)</div>
+		<canvas bind:this={transferCanvas} class="panel-canvas" aria-label="Transfer curve panel"></canvas>
+	</section>
 
-	<div class="panel-label">CIE xy chromaticity</div>
-	<canvas bind:this={xyCanvas} class="panel-canvas tall" aria-label="CIE xy chromaticity panel"></canvas>
+	<section class:active={activeTab === 'cones'} class="inspector-tab-panel">
+		<div class="panel-label">Cone fundamentals L M S <span style="float: right; text-transform: none">{spectrumLabel}</span></div>
+		<canvas bind:this={conesCanvas} class="panel-canvas tall" aria-label="Cone fundamentals and spectrum panel"></canvas>
+	</section>
 
-	<p class="note">
-		Excitations are integrals: a general color is three magnitudes, not points on wavelength curves.
-	</p>
+	<section class:active={activeTab === 'xy'} class="inspector-tab-panel">
+		<div class="panel-label">CIE xy chromaticity</div>
+		<canvas bind:this={xyCanvas} class="panel-canvas tall" aria-label="CIE xy chromaticity panel"></canvas>
 
-	<ControlGroup title="Hovered stimulus">
-		<div class:oog={!!explorer.hover && !explorer.hover.inGamut} class="swatch" style={swatchStyle}>
-			<span>{explorer.hover ? (explorer.hover.inGamut ? '' : 'OUT OF GAMUT') : ''}</span>
-		</div>
-		<div class="chain">
-			{#each rows as row}
-				<div class="stage">
-					<b>{row[0]}</b>
-					<span>{row[1]}</span>
-				</div>
-			{/each}
-		</div>
-	</ControlGroup>
+		<p class="note">
+			Excitations are integrals: a general color is three magnitudes, not points on wavelength curves.
+		</p>
+	</section>
+
+	<section class:active={activeTab === 'values'} class="inspector-tab-panel values-panel">
+		<ControlGroup title="Hovered stimulus">
+			<div class:oog={!!explorer.hover && !explorer.hover.inGamut} class="swatch" style={swatchStyle}>
+				<span>{explorer.hover ? (explorer.hover.inGamut ? '' : 'OUT OF GAMUT') : ''}</span>
+			</div>
+			<div class="chain">
+				{#each rows as row}
+					<div class="stage">
+						<b>{row[0]}</b>
+						<span>{row[1]}</span>
+					</div>
+				{/each}
+			</div>
+		</ControlGroup>
+	</section>
 </aside>

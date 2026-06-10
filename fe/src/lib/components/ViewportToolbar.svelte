@@ -57,7 +57,7 @@
 		<span>Cylinder</span>
 	</label>
 
-	<label>
+	<label class="toolbar-vision">
 		<span>Vision</span>
 		<select bind:value={state.cvd}>
 			<option value="none">Normal</option>
