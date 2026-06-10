@@ -1,0 +1,40 @@
+{
+	"name": "COLOR LAB — Gamut Explorer",
+	"short_name": "COLOR LAB",
+	"description": "Explore color gamuts in 3D with WebGL2. Oklab workflows, WCAG checks, and theme ramp tools.",
+	"lang": "en",
+	"start_url": "/",
+	"scope": "/",
+	"display": "standalone",
+	"background_color": "#0a0a0b",
+	"theme_color": "#0a0a0b",
+	"icons": [
+		{
+			"src": "/favicon.ico",
+			"sizes": "48x48",
+			"type": "image/x-icon",
+			"purpose": "any"
+		},
+		{
+			"src": "/icon-192.png",
+			"sizes": "192x192",
+			"type": "image/png",
+			"purpose": "any"
+		},
+		{
+			"src": "/icon-512.png",
+			"sizes": "512x512",
+			"type": "image/png",
+			"purpose": "any"
+		}
+	],
+	"screenshots": [
+		{
+			"src": "/pwa-screenshot-wide.png",
+			"sizes": "1916x956",
+			"type": "image/png",
+			"form_factor": "wide",
+			"label": "COLOR LAB Gamut Explorer"
+		}
+	]
+}
