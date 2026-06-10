@@ -75,6 +75,9 @@
 		<div id={popoverId} class="panel-help-popover" class:open role="dialog" style={popoverStyle}>
 			<span class="panel-help-title">{content.title}</span>
 			<p class="panel-help-summary">{content.summary}</p>
+			{#each content.details ?? [] as paragraph}
+				<p class="panel-help-summary">{paragraph}</p>
+			{/each}
 			<span class="panel-help-sources-label">Sources</span>
 			<ul class="panel-help-sources">
 				{#each content.sources as source}
@@ -127,6 +130,8 @@
 		z-index: 1000;
 		display: grid;
 		gap: 6px;
+		max-height: min(70dvh, 480px);
+		overflow-y: auto;
 		border: 1px solid #35363b;
 		border-radius: 8px;
 		background: #111216;

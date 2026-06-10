@@ -10,6 +10,8 @@ export interface HelpSource {
 export interface PanelHelpContent {
 	title: string;
 	summary: string;
+	/** Optional extra paragraphs (e.g. pipeline scope, future work). */
+	details?: string[];
 	sources: HelpSource[];
 }
 
@@ -18,14 +20,25 @@ export const INSPECTOR_HELP: Record<InspectorPanelId, PanelHelpContent> = {
 		title: 'Transfer (encode to linear)',
 		summary:
 			'Plots the selected gamut\u2019s opto-electronic transfer function (encoded vs linear). RGB dots mark the hovered stimulus\u2019s linear channels on that curve; smaller white dots show the CVD-simulated path when vision simulation is active.',
+		details: [
+			'Pipeline role today: this is the encoding step only. Stored or display RGB codes are mapped to linear light through the active gamut\u2019s TRC (transfer.ts). Matrices, cone fundamentals, CIELAB/Oklab, and theme ramps all run downstream of this curve \u2014 nothing here uses a perceptual distance metric.',
+			'Non-Riemannian color geometry does not affect this panel or step. Bujack et al. model how perceived difference between two colors accumulates (diminishing returns: large steps are not the sum of small ones; geodesics in perceptual space need not be straight lines in Oklab or CIELAB). That belongs after linearization, where the values panel and theme tools operate.',
+			'Why it is cited here: the instrument chains physical display encoding (this curve) to perceptual readouts that inherit metric limitations. Theme \u201ceven Oklab spacing\u201d uses Euclidean arc length in Oklab \u2014 a practical local approximation, not the non-Riemannian metric from those papers.',
+			'Possible later integration: a non-Riemannian distance field on linear RGB or Oklab could drive geodesic theme paths, large-step interpolation, or spacing that respects diminishing returns, while standard TRCs remain for device encoding unless a custom display transfer is modeled explicitly.'
+		],
 		sources: [
+			{ label: 'IEC 61966-2-1 sRGB piecewise curve (sRGB / P3 / Rec.2020 gamuts)' },
+			{ label: 'Pure gamma 2.2 (NTSC, EBU, SMPTE-C); linear (CIE 1931 RGB)' },
 			{
 				label:
-					'Bujack, R. et al., The Geometry of Color in the Light of a Non-Riemannian Space, Computer Graphics Forum, 2025 (EuroVis)',
-				href: 'https://doi.org/10.1111/cgf.70136'
+					'Related (downstream): Bujack et al., non-Riemannian perceptual color space, PNAS 2022',
+				href: 'https://doi.org/10.1073/pnas.2119753119'
 			},
-			{ label: 'IEC 61966-2-1 sRGB piecewise curve (sRGB / P3 / Rec.2020 gamuts)' },
-			{ label: 'Pure gamma 2.2 (NTSC, EBU, SMPTE-C); linear (CIE 1931 RGB)' }
+			{
+				label:
+					'Related (downstream): Bujack et al., The Geometry of Color in the Light of a Non-Riemannian Space, CGF 2025 (EuroVis)',
+				href: 'https://doi.org/10.1111/cgf.70136'
+			}
 		]
 	},
 	cones: {
