@@ -4,7 +4,7 @@ in vec3 vRgb; in vec3 vWorld; in float vCutDist; out vec4 frag;
 uniform float uLines, uGhost, uGridOnly, uCapGridOnly, uClippedGridAlpha, uCvdSev;
 uniform vec3 uMaskPlaneN;
 uniform float uMaskPlaneD, uMaskSliceEps, uMaskSliceOn, uMaskCutAbove, uMaskCutBelow;
-uniform float uMaskCylSlice, uMaskCylInside, uMaskCylRad;
+uniform float uMaskCylSlice, uMaskCylRad;
 uniform mat3 uCvd;
 uniform mat3 uRgb2Lms, uLms2Rgb;
 float g1(float t){ return mix(1.055*pow(t,1.0/2.4)-0.055, 12.92*t, step(t,0.0031308)); }
@@ -25,11 +25,7 @@ float clippedSurfaceMask(vec3 p){
   }
   if(uMaskCylSlice>0.5){
     float r=length(p.xz);
-    if(uMaskCylInside>0.5){
-      if(r>uMaskCylRad){ clipped=1.0; }
-    }else{
-      if(r<uMaskCylRad){ clipped=1.0; }
-    }
+    if(r>uMaskCylRad){ clipped=1.0; }
   }
   return clipped;
 }

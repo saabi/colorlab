@@ -17,7 +17,6 @@ export function createExplorerState(): ExplorerState {
 		cutBelow: false,
 		cylSlice: false,
 		cylRad: 0.2,
-		cylInside: true,
 		shell: 'none',
 		planeOutline: true,
 		cylinderOutline: true,

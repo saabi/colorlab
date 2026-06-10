@@ -43,7 +43,6 @@ export function toSnapshot(explorer: ExplorerState, camera: Camera): ParameterSn
 			cutBelow: explorer.cutBelow,
 			cylSlice: explorer.cylSlice,
 			cylRad: explorer.cylRad,
-			cylInside: explorer.cylInside,
 			shell: explorer.shell,
 			planeOutline: explorer.planeOutline,
 			cylinderOutline: explorer.cylinderOutline,

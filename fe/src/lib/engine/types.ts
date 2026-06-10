@@ -55,7 +55,6 @@ export interface ExplorerState {
 	cutBelow: boolean;
 	cylSlice: boolean;
 	cylRad: number;
-	cylInside: boolean;
 	shell: ShellKey;
 	planeOutline: boolean;
 	cylinderOutline: boolean;

@@ -296,7 +296,7 @@ export class WebGlRenderer {
 		const insideCylinder = (p: Vec3) => {
 			if (!state.cylSlice) return true;
 			const r = Math.hypot(p[0], p[2]);
-			return state.cylInside ? r <= state.cylRad + 1e-4 : r >= state.cylRad - 1e-4;
+			return r <= state.cylRad + 1e-4;
 		};
 		const edgePoint = (a: { world: Vec3; s: number }, b: { world: Vec3; s: number }) => {
 			const t = Math.abs(a.s - b.s) < 1e-9 ? 0.5 : a.s / (a.s - b.s);
@@ -489,13 +489,11 @@ export class WebGlRenderer {
 		gl.uniform1f(this.U(p, 'uMaskCutAbove'), state.cutAbove ? 1 : 0);
 		gl.uniform1f(this.U(p, 'uMaskCutBelow'), state.cutBelow ? 1 : 0);
 		gl.uniform1f(this.U(p, 'uMaskCylSlice'), state.cylSlice ? 1 : 0);
-		gl.uniform1f(this.U(p, 'uMaskCylInside'), state.cylInside ? 1 : 0);
 		gl.uniform1f(this.U(p, 'uMaskCylRad'), state.cylRad);
 		gl.uniform1f(this.U(p, 'uSliceOn'), !unclipped && state.slice ? 1 : 0);
 		gl.uniform1f(this.U(p, 'uCutAbove'), !unclipped && state.cutAbove ? 1 : 0);
 		gl.uniform1f(this.U(p, 'uCutBelow'), !unclipped && state.cutBelow ? 1 : 0);
 		gl.uniform1f(this.U(p, 'uCylSlice'), !unclipped && state.cylSlice ? 1 : 0);
-		gl.uniform1f(this.U(p, 'uCylInside'), state.cylInside ? 1 : 0);
 		gl.uniform1f(this.U(p, 'uCylRad'), state.cylRad);
 		gl.uniform1f(this.U(p, 'uLines'), lines);
 		gl.uniform1f(this.U(p, 'uGhost'), ghost);

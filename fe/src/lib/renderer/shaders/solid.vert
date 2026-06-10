@@ -8,7 +8,7 @@ uniform mat3 uOkM1i, uOkM2i;
 uniform vec3 uWhite, uLumaW;
 uniform mat3 uCubeRot, uCubeRoti;
 uniform vec3 uPlaneN; uniform float uPlaneD, uSliceEps, uSliceOn, uCutAbove, uCutBelow;
-uniform float uCylSlice, uCylInside, uCylRad;
+uniform float uCylSlice, uCylRad;
 uniform mat4 uProj, uView;
 out vec3 vRgb; out vec3 vWorld; out float vCutDist;
 
@@ -74,14 +74,8 @@ void main(){
         } else {
           norm = vec3(1.0, 0.0, 0.0);
         }
-        if (uCylInside > 0.5) {
-          if (r > uCylRad) {
-            p -= norm * (r - uCylRad);
-          }
-        } else {
-          if (r < uCylRad) {
-            p -= norm * (r - uCylRad);
-          }
+        if (r > uCylRad) {
+          p -= norm * (r - uCylRad);
         }
       }
       rgb = clamp(fromWorld(p), 0.0, 1.0);
@@ -100,14 +94,8 @@ void main(){
       } else {
         norm = vec3(1.0, 0.0, 0.0);
       }
-      if (uCylInside > 0.5) {
-        if (r > uCylRad) {
-          pf -= norm * (r - uCylRad);
-        }
-      } else {
-        if (r < uCylRad) {
-          pf -= norm * (r - uCylRad);
-        }
+      if (r > uCylRad) {
+        pf -= norm * (r - uCylRad);
       }
     }
     vec3 rf = fromWorld(pf);

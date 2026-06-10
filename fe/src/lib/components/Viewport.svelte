@@ -223,7 +223,6 @@
 		explorer.cutBelow;
 		explorer.cylSlice;
 		explorer.cylRad;
-		explorer.cylInside;
 		explorer.planeOutline;
 		explorer.cylinderOutline;
 		untrack(() => {

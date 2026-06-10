@@ -100,7 +100,6 @@
 		<div class="separator">
 			<ToggleRow label="Enable cylindrical cut" bind:checked={state.cylSlice} />
 		</div>
-		<ToggleRow label="Keep inside" bind:checked={state.cylInside} />
 		<SliderRow
 			label={state.spaceMode === 2 || state.spaceMode === 3 ? 'Chroma radius' : 'Radial distance'}
 			bind:value={state.cylRad}

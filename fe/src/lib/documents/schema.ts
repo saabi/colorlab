@@ -119,7 +119,6 @@ function coerceExplorer(raw: unknown, defaults: PersistedExplorer): PersistedExp
 		cutBelow: typeof explorer.cutBelow === 'boolean' ? explorer.cutBelow : defaults.cutBelow,
 		cylSlice: typeof explorer.cylSlice === 'boolean' ? explorer.cylSlice : defaults.cylSlice,
 		cylRad: finiteNumber(explorer.cylRad, defaults.cylRad, 'cylRad'),
-		cylInside: typeof explorer.cylInside === 'boolean' ? explorer.cylInside : defaults.cylInside,
 		shell: enumOf(explorer.shell, SHELLS, defaults.shell, 'shell'),
 		planeOutline: typeof explorer.planeOutline === 'boolean' ? explorer.planeOutline : defaults.planeOutline,
 		cylinderOutline:
@@ -155,7 +154,6 @@ export function coerceSnapshot(raw: unknown): ParameterSnapshot | null {
 			cutBelow: factory.cutBelow,
 			cylSlice: factory.cylSlice,
 			cylRad: factory.cylRad,
-			cylInside: factory.cylInside,
 			shell: factory.shell,
 			planeOutline: factory.planeOutline,
 			cylinderOutline: factory.cylinderOutline,

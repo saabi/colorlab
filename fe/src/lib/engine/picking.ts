@@ -24,11 +24,7 @@ export function solidField(p: Vec3, state: ExplorerState, matrices: DerivedMatri
 	}
 	if (state.cylSlice) {
 		const r = Math.hypot(p[0], p[2]);
-		if (state.cylInside) {
-			v = Math.max(v, r - state.cylRad);
-		} else {
-			v = Math.max(v, state.cylRad - r);
-		}
+		v = Math.max(v, r - state.cylRad);
 	}
 	return { v, rgb };
 }
