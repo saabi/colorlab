@@ -20,6 +20,7 @@ export function createExplorerState(): ExplorerState {
 		cylInside: true,
 		shell: 'none',
 		outline: true,
+		surfaceGrid: 'dark',
 		cvd: 'none',
 		cvdSev: 1,
 		theme: {

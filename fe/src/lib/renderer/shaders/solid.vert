@@ -10,7 +10,7 @@ uniform mat3 uCubeRot, uCubeRoti;
 uniform vec3 uPlaneN; uniform float uPlaneD, uSliceEps, uSliceOn, uCutAbove, uCutBelow;
 uniform float uCylSlice, uCylInside, uCylRad;
 uniform mat4 uProj, uView;
-out vec3 vRgb; out vec3 vWorld;
+out vec3 vRgb; out vec3 vWorld; out float vCutDist;
 
 vec3 faceToRgb(int f, vec2 uv){
   if(f==0) return vec3(0.0,uv.x,uv.y);
@@ -57,6 +57,7 @@ void main(){
   vec2 uv=(vec2(float(cell%uN),float(cell/uN))+aCorner)/float(uN);
   vec3 rgb=faceToRgb(face,uv);
   vec3 p=toWorld(rgb);
+  vec3 p0=p;
   if ((uSliceOn > 0.5 && (uCutAbove > 0.5 || uCutBelow > 0.5)) || uCylSlice > 0.5) {
     float smin = uCutBelow > 0.5 ? -uSliceEps : -1.0e9;
     float smax = uCutAbove > 0.5 ?  uSliceEps :  1.0e9;
@@ -114,6 +115,6 @@ void main(){
       p = pf; rgb = clamp(rf, 0.0, 1.0);
     }
   }
-  vRgb=rgb; vWorld=p;
+  vRgb=rgb; vWorld=p; vCutDist=length(p-p0);
   gl_Position=uProj*uView*vec4(p,1.0);
 }

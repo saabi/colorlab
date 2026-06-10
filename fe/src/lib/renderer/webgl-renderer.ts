@@ -77,7 +77,7 @@ export class WebGlRenderer {
 		if (input.shellMatrices) {
 			gl.useProgram(this.solidProgram);
 			gl.bindVertexArray(this.solidVao);
-			this.uploadSolidUniforms(input.state, input.shellMatrices, proj, view, 1, 96);
+			this.uploadSolidUniforms(input.state, input.shellMatrices, proj, view, 1, 96, 0, 0, 0, 0, 0, 0);
 			gl.disable(gl.DEPTH_TEST);
 			gl.depthMask(false);
 			gl.enable(gl.BLEND);
@@ -90,8 +90,37 @@ export class WebGlRenderer {
 
 		gl.useProgram(this.solidProgram);
 		gl.bindVertexArray(this.solidVao);
-		this.uploadSolidUniforms(input.state, input.matrices, proj, view, 0, input.state.N);
+		this.uploadSolidUniforms(input.state, input.matrices, proj, view, 0, input.state.N, 0, 0, 0, 0, 0, 0);
 		gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, 6 * input.state.N * input.state.N);
+
+		if (input.state.lines) {
+			gl.depthMask(false);
+			gl.depthFunc(gl.LEQUAL);
+			gl.enable(gl.BLEND);
+			gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+			this.uploadSolidUniforms(
+				input.state,
+				input.matrices,
+				proj,
+				view,
+				0,
+				input.state.N,
+				1,
+				1,
+				0,
+				input.state.surfaceGrid === 'white' ? 1 : 0,
+				input.state.surfaceGrid === 'hidden' ? 1 : 0,
+				1
+			);
+			gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, 6 * input.state.N * input.state.N);
+			if (input.state.slice || input.state.cylSlice) {
+				this.uploadSolidUniforms(input.state, input.matrices, proj, view, 0, input.state.N, 1, 1, 1, 0, 0, 0);
+				gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, 6 * input.state.N * input.state.N);
+			}
+			gl.disable(gl.BLEND);
+			gl.depthFunc(gl.LESS);
+			gl.depthMask(true);
+		}
 
 		if (input.state.floor) {
 			gl.useProgram(this.floorProgram);
@@ -339,7 +368,13 @@ export class WebGlRenderer {
 		proj: Float32Array,
 		view: Float32Array,
 		ghost: 0 | 1,
-		N: number
+		N: number,
+		lines: 0 | 1,
+		gridOnly: 0 | 1,
+		capGridOnly: 0 | 1,
+		gridWhite: 0 | 1,
+		gridHidden: 0 | 1,
+		unclipped: 0 | 1
 	) {
 		const { gl } = this;
 		const { n, d } = planeND(state);
@@ -361,14 +396,27 @@ export class WebGlRenderer {
 		gl.uniform3fv(this.U(p, 'uPlaneN'), n);
 		gl.uniform1f(this.U(p, 'uPlaneD'), d);
 		gl.uniform1f(this.U(p, 'uSliceEps'), state.eps);
-		gl.uniform1f(this.U(p, 'uSliceOn'), state.slice ? 1 : 0);
-		gl.uniform1f(this.U(p, 'uCutAbove'), state.cutAbove ? 1 : 0);
-		gl.uniform1f(this.U(p, 'uCutBelow'), state.cutBelow ? 1 : 0);
-		gl.uniform1f(this.U(p, 'uCylSlice'), state.cylSlice ? 1 : 0);
+		gl.uniform3fv(this.U(p, 'uMaskPlaneN'), n);
+		gl.uniform1f(this.U(p, 'uMaskPlaneD'), d);
+		gl.uniform1f(this.U(p, 'uMaskSliceEps'), state.eps);
+		gl.uniform1f(this.U(p, 'uMaskSliceOn'), state.slice ? 1 : 0);
+		gl.uniform1f(this.U(p, 'uMaskCutAbove'), state.cutAbove ? 1 : 0);
+		gl.uniform1f(this.U(p, 'uMaskCutBelow'), state.cutBelow ? 1 : 0);
+		gl.uniform1f(this.U(p, 'uMaskCylSlice'), state.cylSlice ? 1 : 0);
+		gl.uniform1f(this.U(p, 'uMaskCylInside'), state.cylInside ? 1 : 0);
+		gl.uniform1f(this.U(p, 'uMaskCylRad'), state.cylRad);
+		gl.uniform1f(this.U(p, 'uSliceOn'), !unclipped && state.slice ? 1 : 0);
+		gl.uniform1f(this.U(p, 'uCutAbove'), !unclipped && state.cutAbove ? 1 : 0);
+		gl.uniform1f(this.U(p, 'uCutBelow'), !unclipped && state.cutBelow ? 1 : 0);
+		gl.uniform1f(this.U(p, 'uCylSlice'), !unclipped && state.cylSlice ? 1 : 0);
 		gl.uniform1f(this.U(p, 'uCylInside'), state.cylInside ? 1 : 0);
 		gl.uniform1f(this.U(p, 'uCylRad'), state.cylRad);
-		gl.uniform1f(this.U(p, 'uLines'), state.lines ? 1 : 0);
+		gl.uniform1f(this.U(p, 'uLines'), lines);
 		gl.uniform1f(this.U(p, 'uGhost'), ghost);
+		gl.uniform1f(this.U(p, 'uGridOnly'), gridOnly);
+		gl.uniform1f(this.U(p, 'uCapGridOnly'), capGridOnly);
+		gl.uniform1f(this.U(p, 'uGridWhite'), gridWhite);
+		gl.uniform1f(this.U(p, 'uGridHidden'), gridHidden);
 		gl.uniform1f(this.U(p, 'uCvdSev'), CVD[state.cvd] ? state.cvdSev : 0);
 		this.uploadMat3(p, 'uCvd', CVD[state.cvd] || [1, 0, 0, 0, 1, 0, 0, 0, 1]);
 		this.uploadMat3(p, 'uRgb2Lms', RGB2LMS);

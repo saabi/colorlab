@@ -128,6 +128,12 @@
 		<ToggleRow label="Floor grid" bind:checked={state.floor} />
 		<ToggleRow label="Surface grid lines" bind:checked={state.lines} />
 		<ToggleRow label="Cross-section outline" bind:checked={state.outline} />
+		<label class="row" for="surface-grid-select"><span>Surface grid style</span></label>
+		<select id="surface-grid-select" bind:value={state.surfaceGrid}>
+			<option value="dark">Dark</option>
+			<option value="white">White</option>
+			<option value="hidden">Hidden</option>
+		</select>
 		<label class="row" for="shell-select"><span>Wide-gamut shell</span></label>
 		<select id="shell-select" bind:value={state.shell}>
 			<option value="none">None</option>
