@@ -79,3 +79,22 @@ export interface ExplorerState {
 	hover: HoverHit | null;
 }
 import type { Vec3 } from '$lib/color/math';
+import type { Camera } from './camera';
+
+export const CURRENT_STATE_SCHEMA_VERSION = 2 as const;
+export type StateSchemaVersion = typeof CURRENT_STATE_SCHEMA_VERSION;
+
+export type PersistedTheme = Omit<ExplorerState['theme'], 'arm' | 'stops'>;
+export type PersistedExplorer = Omit<ExplorerState, 'hover' | 'theme'> & { theme: PersistedTheme };
+
+export interface AppState {
+	schemaVersion: StateSchemaVersion;
+	explorer: ExplorerState;
+	camera: Camera;
+}
+
+export interface PersistedAppState {
+	schemaVersion: StateSchemaVersion;
+	explorer: PersistedExplorer;
+	camera: Camera;
+}

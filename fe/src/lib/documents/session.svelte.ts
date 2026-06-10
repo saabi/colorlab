@@ -9,13 +9,12 @@ import {
 	writeSession
 } from './storage';
 
-import type { Camera } from '$lib/engine/camera';
-import type { ExplorerState } from '$lib/engine/types';
+import type { AppState } from '$lib/engine/types';
 import type { DocumentSource, ParameterSnapshot, StoredDocument } from './types';
 
 export const UNTITLED_SELECT_ID = '__untitled__';
 
-export function createDocumentSession(getExplorer: () => ExplorerState, getCamera: () => Camera) {
+export function createDocumentSession(getAppState: () => AppState) {
 	let activeId = $state<string | null>(null);
 	let activeName = $state('Untitled');
 	let activeSource = $state<DocumentSource>('user');
@@ -28,7 +27,7 @@ export function createDocumentSession(getExplorer: () => ExplorerState, getCamer
 	let confirmMessage = $state('');
 	let confirmResolve: ((discard: boolean) => void) | null = null;
 
-	const isDirty = $derived(!snapshotsEqual(toSnapshot(getExplorer(), getCamera()), savedSnapshot));
+	const isDirty = $derived(!snapshotsEqual(toSnapshot(getAppState()), savedSnapshot));
 	const activeSelectId = $derived(activeId ?? UNTITLED_SELECT_ID);
 	const canSave = $derived(isDirty || activeId === null);
 	const canSaveAs = true;
@@ -69,7 +68,7 @@ export function createDocumentSession(getExplorer: () => ExplorerState, getCamer
 	}
 
 	function applyDocument(doc: NonNullable<ReturnType<typeof resolveDocument>>) {
-		applySnapshot(getExplorer(), getCamera(), doc.snapshot);
+		applySnapshot(getAppState(), doc.snapshot);
 		setBaseline(doc.snapshot);
 		activeId = doc.id;
 		activeName = doc.name;
@@ -80,7 +79,7 @@ export function createDocumentSession(getExplorer: () => ExplorerState, getCamer
 	function applyDefaults(mobile = useMobileDefaults) {
 		const snapshot = defaultSnapshot();
 		if (mobile) snapshot.explorer.N = 128;
-		applySnapshot(getExplorer(), getCamera(), snapshot);
+		applySnapshot(getAppState(), snapshot);
 		setBaseline(snapshot);
 		activeId = null;
 		activeName = 'Untitled';
@@ -149,7 +148,7 @@ export function createDocumentSession(getExplorer: () => ExplorerState, getCamer
 	}
 
 	async function save(name?: string) {
-		const snapshot = toSnapshot(getExplorer(), getCamera());
+		const snapshot = toSnapshot(getAppState());
 		if (activeSource === 'example' || activeId === null) {
 			const docName = name?.trim();
 			if (!docName) return false;
@@ -175,7 +174,7 @@ export function createDocumentSession(getExplorer: () => ExplorerState, getCamer
 		const docName = name.trim();
 		if (!docName) return false;
 		warnDuplicateName(docName);
-		return createUserDocument(docName, toSnapshot(getExplorer(), getCamera()));
+		return createUserDocument(docName, toSnapshot(getAppState()));
 	}
 
 	async function rename(name: string) {
@@ -188,7 +187,7 @@ export function createDocumentSession(getExplorer: () => ExplorerState, getCamer
 			name: docName,
 			source: 'user',
 			updatedAt: Date.now(),
-			snapshot: toSnapshot(getExplorer(), getCamera())
+			snapshot: toSnapshot(getAppState())
 		};
 		upsertDocument(doc);
 		refreshUserDocuments();

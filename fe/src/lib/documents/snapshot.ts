@@ -1,7 +1,7 @@
-import { createCamera, type Camera } from '$lib/engine/camera';
-import { createExplorerState } from '$lib/engine/state.svelte';
+import { createAppState } from '$lib/engine/state.svelte';
 
-import type { ExplorerState, ThemeAnchor } from '$lib/engine/types';
+import type { AppState, ExplorerState, PersistedExplorer, ThemeAnchor } from '$lib/engine/types';
+import type { Camera } from '$lib/engine/camera';
 import { CURRENT_SNAPSHOT_VERSION, type ParameterSnapshot } from './types';
 
 function cloneAnchor(anchor: ThemeAnchor | null): ThemeAnchor | null {
@@ -23,58 +23,63 @@ export function cloneSnapshot(snapshot: ParameterSnapshot): ParameterSnapshot {
 	return JSON.parse(JSON.stringify(snapshot)) as ParameterSnapshot;
 }
 
-export function toSnapshot(explorer: ExplorerState, camera: Camera): ParameterSnapshot {
+export function toPersistedExplorer(explorer: ExplorerState): PersistedExplorer {
 	const theme = explorer.theme;
 	return {
-		schemaVersion: CURRENT_SNAPSHOT_VERSION,
-		explorer: {
-			spaceMode: explorer.spaceMode,
-			gamut: explorer.gamut,
-			N: explorer.N,
-			slice: explorer.slice,
-			planeMode: explorer.planeMode,
-			off: explorer.off,
-			az: explorer.az,
-			el: explorer.el,
-			eps: explorer.eps,
-			floor: explorer.floor,
-			lines: explorer.lines,
-			cutAbove: explorer.cutAbove,
-			cutBelow: explorer.cutBelow,
-			cylSlice: explorer.cylSlice,
-			cylRad: explorer.cylRad,
-			shell: explorer.shell,
-			planeOutline: explorer.planeOutline,
-			cylinderOutline: explorer.cylinderOutline,
-			outlineDepthTest: explorer.outlineDepthTest,
-			surfaceGridAlpha: explorer.surfaceGridAlpha,
-			cvd: explorer.cvd,
-			cvdSev: explorer.cvdSev,
-			theme: {
-				A: cloneAnchor(theme.A),
-				B: cloneAnchor(theme.B),
-				steps: theme.steps,
-				mode: theme.mode,
-				dh: theme.dh,
-				dc: theme.dc,
-				cprof: theme.cprof,
-				arcLong: theme.arcLong,
-				aa: theme.aa,
-				wcagBg: theme.wcagBg
-			}
-		},
-		camera: cloneCamera(camera)
+		spaceMode: explorer.spaceMode,
+		gamut: explorer.gamut,
+		N: explorer.N,
+		slice: explorer.slice,
+		planeMode: explorer.planeMode,
+		off: explorer.off,
+		az: explorer.az,
+		el: explorer.el,
+		eps: explorer.eps,
+		floor: explorer.floor,
+		lines: explorer.lines,
+		cutAbove: explorer.cutAbove,
+		cutBelow: explorer.cutBelow,
+		cylSlice: explorer.cylSlice,
+		cylRad: explorer.cylRad,
+		shell: explorer.shell,
+		planeOutline: explorer.planeOutline,
+		cylinderOutline: explorer.cylinderOutline,
+		outlineDepthTest: explorer.outlineDepthTest,
+		surfaceGridAlpha: explorer.surfaceGridAlpha,
+		cvd: explorer.cvd,
+		cvdSev: explorer.cvdSev,
+		theme: {
+			A: cloneAnchor(theme.A),
+			B: cloneAnchor(theme.B),
+			steps: theme.steps,
+			mode: theme.mode,
+			dh: theme.dh,
+			dc: theme.dc,
+			cprof: theme.cprof,
+			arcLong: theme.arcLong,
+			aa: theme.aa,
+			wcagBg: theme.wcagBg
+		}
 	};
 }
 
-export function applySnapshot(explorer: ExplorerState, camera: Camera, snapshot: ParameterSnapshot) {
+export function toSnapshot(appState: AppState): ParameterSnapshot {
+	return {
+		schemaVersion: CURRENT_SNAPSHOT_VERSION,
+		explorer: toPersistedExplorer(appState.explorer),
+		camera: cloneCamera(appState.camera)
+	};
+}
+
+export function applySnapshot(appState: AppState, snapshot: ParameterSnapshot) {
 	const { theme: themeSnap, ...explorerSnap } = snapshot.explorer;
-	Object.assign(explorer, explorerSnap);
-	Object.assign(explorer.theme, themeSnap);
-	explorer.theme.arm = null;
-	explorer.theme.stops = [];
-	explorer.hover = null;
-	Object.assign(camera, snapshot.camera);
+	appState.schemaVersion = CURRENT_SNAPSHOT_VERSION;
+	Object.assign(appState.explorer, explorerSnap);
+	Object.assign(appState.explorer.theme, themeSnap);
+	appState.explorer.theme.arm = null;
+	appState.explorer.theme.stops = [];
+	appState.explorer.hover = null;
+	Object.assign(appState.camera, snapshot.camera);
 }
 
 export function snapshotsEqual(a: ParameterSnapshot, b: ParameterSnapshot) {
@@ -82,7 +87,7 @@ export function snapshotsEqual(a: ParameterSnapshot, b: ParameterSnapshot) {
 }
 
 export function defaultSnapshot(): ParameterSnapshot {
-	return toSnapshot(createExplorerState(), createCamera());
+	return toSnapshot(createAppState());
 }
 
 export function mergeSnapshot(
@@ -91,7 +96,7 @@ export function mergeSnapshot(
 		explorer?: Partial<ParameterSnapshot['explorer']> & {
 			theme?: Partial<ParameterSnapshot['explorer']['theme']>;
 		};
-		camera?: Partial<Camera>;
+	camera?: Partial<Camera>;
 	}
 ): ParameterSnapshot {
 	const merged = cloneSnapshot(base);

@@ -1,17 +1,8 @@
-import type { Camera } from '$lib/engine/camera';
-import type { ExplorerState } from '$lib/engine/types';
+import type { PersistedAppState, StateSchemaVersion } from '$lib/engine/types';
+export { CURRENT_STATE_SCHEMA_VERSION as CURRENT_SNAPSHOT_VERSION } from '$lib/engine/types';
 
-export const CURRENT_SNAPSHOT_VERSION = 1 as const;
-export type SnapshotSchemaVersion = typeof CURRENT_SNAPSHOT_VERSION;
-
-export type PersistedTheme = Omit<ExplorerState['theme'], 'arm' | 'stops'>;
-export type PersistedExplorer = Omit<ExplorerState, 'hover' | 'theme'> & { theme: PersistedTheme };
-
-export interface ParameterSnapshot {
-	schemaVersion: SnapshotSchemaVersion;
-	explorer: PersistedExplorer;
-	camera: Camera;
-}
+export type SnapshotSchemaVersion = StateSchemaVersion;
+export type ParameterSnapshot = PersistedAppState;
 
 export type DocumentSource = 'user' | 'example';
 

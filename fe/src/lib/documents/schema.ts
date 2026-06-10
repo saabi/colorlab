@@ -1,17 +1,19 @@
-import { createCamera, type Camera } from '$lib/engine/camera';
-import { createExplorerState } from '$lib/engine/state.svelte';
+import { type Camera } from '$lib/engine/camera';
+import { createAppState } from '$lib/engine/state.svelte';
 
 import type {
 	ChromaProfile,
 	CvdMode,
 	GamutKey,
+	PersistedExplorer,
+	PersistedTheme,
 	PlaneMode,
 	ShellKey,
 	SpaceMode,
 	ThemeAnchor,
 	ThemeMode
 } from '$lib/engine/types';
-import { CURRENT_SNAPSHOT_VERSION, type ParameterSnapshot, type PersistedExplorer, type PersistedTheme } from './types';
+import { CURRENT_SNAPSHOT_VERSION, type ParameterSnapshot } from './types';
 
 const SPACE_MODES: readonly SpaceMode[] = [0, 1, 2, 3, 5];
 const GAMUTS: readonly GamutKey[] = ['srgb', 'p3', 'rec2020', 'ntsc', 'ebu', 'smptec', 'cie'];
@@ -136,47 +138,46 @@ export function coerceSnapshot(raw: unknown): ParameterSnapshot | null {
 	if (!isRecord(raw)) return null;
 	if (!isRecord(raw.explorer) && !isRecord(raw.camera)) return null;
 
-	const factory = createExplorerState();
-	const factoryCamera = createCamera();
+	const factory = createAppState();
 	const defaults: ParameterSnapshot = {
 		schemaVersion: CURRENT_SNAPSHOT_VERSION,
 		explorer: {
-			spaceMode: factory.spaceMode,
-			gamut: factory.gamut,
-			N: factory.N,
-			slice: factory.slice,
-			planeMode: factory.planeMode,
-			off: factory.off,
-			az: factory.az,
-			el: factory.el,
-			eps: factory.eps,
-			floor: factory.floor,
-			lines: factory.lines,
-			cutAbove: factory.cutAbove,
-			cutBelow: factory.cutBelow,
-			cylSlice: factory.cylSlice,
-			cylRad: factory.cylRad,
-			shell: factory.shell,
-			planeOutline: factory.planeOutline,
-			cylinderOutline: factory.cylinderOutline,
-			outlineDepthTest: factory.outlineDepthTest,
-			surfaceGridAlpha: factory.surfaceGridAlpha,
-			cvd: factory.cvd,
-			cvdSev: factory.cvdSev,
+			spaceMode: factory.explorer.spaceMode,
+			gamut: factory.explorer.gamut,
+			N: factory.explorer.N,
+			slice: factory.explorer.slice,
+			planeMode: factory.explorer.planeMode,
+			off: factory.explorer.off,
+			az: factory.explorer.az,
+			el: factory.explorer.el,
+			eps: factory.explorer.eps,
+			floor: factory.explorer.floor,
+			lines: factory.explorer.lines,
+			cutAbove: factory.explorer.cutAbove,
+			cutBelow: factory.explorer.cutBelow,
+			cylSlice: factory.explorer.cylSlice,
+			cylRad: factory.explorer.cylRad,
+			shell: factory.explorer.shell,
+			planeOutline: factory.explorer.planeOutline,
+			cylinderOutline: factory.explorer.cylinderOutline,
+			outlineDepthTest: factory.explorer.outlineDepthTest,
+			surfaceGridAlpha: factory.explorer.surfaceGridAlpha,
+			cvd: factory.explorer.cvd,
+			cvdSev: factory.explorer.cvdSev,
 			theme: {
-				A: factory.theme.A,
-				B: factory.theme.B,
-				steps: factory.theme.steps,
-				mode: factory.theme.mode,
-				dh: factory.theme.dh,
-				dc: factory.theme.dc,
-				cprof: factory.theme.cprof,
-				arcLong: factory.theme.arcLong,
-				aa: factory.theme.aa,
-				wcagBg: factory.theme.wcagBg
+				A: factory.explorer.theme.A,
+				B: factory.explorer.theme.B,
+				steps: factory.explorer.theme.steps,
+				mode: factory.explorer.theme.mode,
+				dh: factory.explorer.theme.dh,
+				dc: factory.explorer.theme.dc,
+				cprof: factory.explorer.theme.cprof,
+				arcLong: factory.explorer.theme.arcLong,
+				aa: factory.explorer.theme.aa,
+				wcagBg: factory.explorer.theme.wcagBg
 			}
 		},
-		camera: factoryCamera
+		camera: factory.camera
 	};
 
 	return {

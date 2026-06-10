@@ -1,14 +1,12 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import AppShell from '$lib/components/AppShell.svelte';
-	import { createCamera } from '$lib/engine/camera';
 	import { isMobileClient } from '$lib/engine/mobile';
-	import { createExplorerState } from '$lib/engine/state.svelte';
+	import { createAppState } from '$lib/engine/state.svelte';
 	import { createDocumentSession } from '$lib/documents/session.svelte';
 
-	let explorer = $state(createExplorerState());
-	let camera = $state(createCamera());
-	const session = createDocumentSession(() => explorer, () => camera);
+	let appState = $state(createAppState());
+	const session = createDocumentSession(() => appState);
 
 	onMount(() => {
 		session.init({ mobile: isMobileClient() });
@@ -21,4 +19,4 @@
 	});
 </script>
 
-<AppShell bind:state={explorer} bind:camera {session} />
+<AppShell bind:state={appState} {session} />

@@ -8,8 +8,16 @@ export interface Camera {
 	fov: number;
 }
 
+export const DEFAULT_CAMERA: Camera = { yaw: 0.7, pitch: 0.42, dist: 2.6, target: [0, -0.05, 0], fov: Math.PI / 4 };
+
 export function createCamera(): Camera {
-	return { yaw: 0.7, pitch: 0.42, dist: 2.6, target: [0, -0.05, 0], fov: Math.PI / 4 };
+	return {
+		yaw: DEFAULT_CAMERA.yaw,
+		pitch: DEFAULT_CAMERA.pitch,
+		dist: DEFAULT_CAMERA.dist,
+		target: [DEFAULT_CAMERA.target[0], DEFAULT_CAMERA.target[1], DEFAULT_CAMERA.target[2]],
+		fov: DEFAULT_CAMERA.fov
+	};
 }
 
 export function persp(fovy: number, asp: number, n: number, f: number) {

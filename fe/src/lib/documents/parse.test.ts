@@ -87,4 +87,13 @@ describe('parseSnapshot', () => {
 		expect(result.migrated).toBe(false);
 		expect(result.snapshot?.schemaVersion).toBe(CURRENT_SNAPSHOT_VERSION);
 	});
+
+	it('migrates explicit v1 snapshots to current app state schema', () => {
+		const v1 = { ...defaultSnapshot(), schemaVersion: 1 };
+		const result = parseSnapshot(v1);
+		expect(result.snapshot).not.toBeNull();
+		expect(result.migrated).toBe(true);
+		expect(result.fromVersion).toBe(1);
+		expect(result.snapshot?.schemaVersion).toBe(CURRENT_SNAPSHOT_VERSION);
+	});
 });

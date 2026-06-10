@@ -5,15 +5,15 @@
 	import DocumentBar from './DocumentBar.svelte';
 	import { rebuildMatrices } from '$lib/renderer/uniforms';
 
-	import type { Camera } from '$lib/engine/camera';
-	import type { ExplorerState } from '$lib/engine/types';
+	import type { AppState } from '$lib/engine/types';
 	import type { DocumentSession } from '$lib/documents/session.svelte';
 
 	let {
-		state: explorer = $bindable(),
-		camera = $bindable(),
+		state: appState = $bindable(),
 		session
-	} = $props<{ state: ExplorerState; camera: Camera; session: DocumentSession }>();
+	} = $props<{ state: AppState; session: DocumentSession }>();
+	const explorer = $derived(appState.explorer);
+	const camera = $derived(appState.camera);
 	const matrices = $derived(rebuildMatrices(explorer.gamut));
 	let drawerOpen = $state(false);
 </script>
@@ -47,7 +47,7 @@
 			drawerOpen = false;
 		}}
 	></button>
-	<LeftControls bind:state={explorer} {matrices} />
-	<Viewport bind:state={explorer} bind:camera />
+	<LeftControls state={explorer} {matrices} />
+	<Viewport state={explorer} {camera} />
 	<RightInspector state={explorer} />
 </div>
