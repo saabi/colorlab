@@ -6,6 +6,8 @@ Orbit gamuts from sRGB through P3 and Rec.2020 in linear RGB, CIELAB, Oklab, and
 
 Built with **SvelteKit 5**, **TypeScript**, and **WebGL2**. Parameter sets are saved in the browser; nothing is uploaded by default.
 
+**Live site:** [colorlab.ferreyrapons.com](https://colorlab.ferreyrapons.com)
+
 **Author:** [Sebastian Ferreyra Pons](https://ferreyrapons.com)
 
 ## Repository layout
