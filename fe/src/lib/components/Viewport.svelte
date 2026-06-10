@@ -1,10 +1,12 @@
 <script lang="ts">
-	import { onDestroy, onMount } from 'svelte';
+	import { onDestroy, onMount, untrack } from 'svelte';
 	import { createCamera } from '$lib/engine/camera';
 	import { selftest } from '$lib/color/selftest';
+	import { m3 } from '$lib/color/math';
 	import { WebGlRenderer } from '$lib/renderer/webgl-renderer';
 	import { rebuildMatrices, rebuildShell } from '$lib/renderer/uniforms';
 	import { chain, pick } from '$lib/engine/picking';
+	import { buildRamp } from '$lib/engine/theme';
 
 	import type { ExplorerState } from '$lib/engine/types';
 
@@ -14,6 +16,7 @@
 	let renderer: WebGlRenderer | null = null;
 	let error: string | null = $state(null);
 	let dragging = false;
+	let moved = 0;
 	let lastX = 0;
 	let lastY = 0;
 
@@ -27,6 +30,7 @@
 
 	function onPointerDown(event: PointerEvent) {
 		dragging = true;
+		moved = 0;
 		lastX = event.clientX;
 		lastY = event.clientY;
 		canvas.setPointerCapture(event.pointerId);
@@ -34,6 +38,17 @@
 
 	function onPointerUp(event: PointerEvent) {
 		dragging = false;
+		if (moved < 5 && explorer.theme.arm) {
+			const rect = canvas.getBoundingClientRect();
+			const hit = pick(event.clientX - rect.left, event.clientY - rect.top, rect.width, rect.height, explorer, matrices, camera);
+			if (hit) {
+				const arm = explorer.theme.arm;
+				explorer.theme[arm] = { srgbLin: m3.mulV(matrices.toSrgbLin.toSrgb, hit.rgbLin) };
+				explorer.theme.arm = arm === 'A' ? 'B' : null;
+				buildRamp(explorer, matrices);
+				draw();
+			}
+		}
 		canvas.releasePointerCapture(event.pointerId);
 	}
 
@@ -43,6 +58,7 @@
 			const dy = event.clientY - lastY;
 			lastX = event.clientX;
 			lastY = event.clientY;
+			moved += Math.abs(dx) + Math.abs(dy);
 			camera.yaw -= dx * 0.008;
 			camera.pitch = Math.min(1.45, Math.max(-0.2, camera.pitch + dy * 0.006));
 			draw();
@@ -66,6 +82,7 @@
 			renderer = new WebGlRenderer(canvas);
 			const ro = new ResizeObserver(draw);
 			ro.observe(canvas);
+			renderer.rebuildBoundary(explorer, matrices);
 			draw();
 			return () => {
 				ro.disconnect();
@@ -98,7 +115,21 @@
 		explorer.shell;
 		explorer.cvd;
 		explorer.cvdSev;
-		explorer.hover = null;
+		explorer.theme.steps;
+		explorer.theme.mode;
+		explorer.theme.dh;
+		explorer.theme.dc;
+		explorer.theme.cprof;
+		untrack(() => {
+			explorer.hover = null;
+			buildRamp(explorer, matrices);
+			renderer?.rebuildBoundary(explorer, matrices);
+			draw();
+		});
+	});
+
+	$effect(() => {
+		explorer.theme.stops;
 		draw();
 	});
 </script>

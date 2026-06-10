@@ -11,8 +11,13 @@ export interface ThemeAnchor {
 }
 
 export interface ThemeStop {
+	world: Vec3;
+	srgbLin: Vec3;
 	hex: string;
 	inG: boolean;
+	cw: number;
+	cb: number;
+	oklch: Vec3;
 }
 
 export interface TransformChain {

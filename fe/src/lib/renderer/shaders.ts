@@ -107,3 +107,48 @@ void main(){
   }
   frag=vec4(c*(1.0-v*0.2),1.0);
 }`;
+
+export const VS_LINE = `#version 300 es
+precision highp float;
+layout(location=0) in vec3 aPos;
+uniform mat4 uProj,uView;
+void main(){ gl_Position=uProj*uView*vec4(aPos,1.0); }`;
+
+export const FS_LINE = `#version 300 es
+precision highp float; out vec4 frag; uniform vec3 uCol;
+void main(){ frag=vec4(uCol,1.0); }`;
+
+export const VS_FLOOR = `#version 300 es
+precision highp float;
+layout(location=0) in vec2 aXZ;
+uniform mat4 uProj,uView; uniform float uY;
+out vec3 vW;
+void main(){ vW=vec3(aXZ.x,uY,aXZ.y); gl_Position=uProj*uView*vec4(vW,1.0); }`;
+
+export const FS_FLOOR = `#version 300 es
+precision highp float;
+in vec3 vW; out vec4 frag;
+void main(){
+  float dF=clamp(1.0/pow(length(vW)*1.4,2.0),0.0,1.0);
+  vec2 c=vW.xz*2.0;
+  vec2 g=abs(fract(c-0.5)-0.5)/fwidth(c*3.0);
+  float v=1.0-min(min(g.x,g.y),1.0);
+  c*=5.0;
+  g=abs(fract(c-0.5)-0.5)/fwidth(c);
+  v+=1.0-min(min(g.x,g.y),1.0);
+  float r=length(vW.xz)*4.0;
+  float ring=abs(fract(r-0.5)-0.5)/fwidth(r);
+  v+=1.0-min(ring,1.0);
+  frag=vec4(vec3(clamp(v,0.0,1.0)*dF*0.12),1.0);
+}`;
+
+export const VS_MARK = `#version 300 es
+precision highp float;
+uniform mat4 uProj,uView; uniform vec3 uPos;
+void main(){ gl_Position=uProj*uView*vec4(uPos,1.0); gl_PointSize=10.0; }`;
+
+export const FS_MARK = `#version 300 es
+precision highp float; out vec4 frag; uniform vec3 uCol;
+void main(){ vec2 d=gl_PointCoord-0.5; if(dot(d,d)>0.25) discard;
+  float edge=smoothstep(0.25,0.16,dot(d,d));
+  frag=vec4(mix(vec3(1.0),uCol,edge),1.0); }`;

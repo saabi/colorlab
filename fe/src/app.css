@@ -337,6 +337,10 @@ input[type="checkbox"] {
 	font-size: 10px;
 }
 
+.export-box.visible {
+	display: block;
+}
+
 .separator {
 	margin-top: 8px;
 	border-top: 1px solid var(--line);

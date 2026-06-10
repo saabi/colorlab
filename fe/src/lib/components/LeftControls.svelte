@@ -6,8 +6,9 @@
 	import ToggleRow from './ToggleRow.svelte';
 
 	import type { ExplorerState } from '$lib/engine/types';
+	import type { DerivedMatrices } from '$lib/renderer/uniforms';
 
-	let { state = $bindable() } = $props<{ state: ExplorerState }>();
+	let { state = $bindable(), matrices } = $props<{ state: ExplorerState; matrices: DerivedMatrices }>();
 
 	const spaces = [
 		{ value: 3, label: 'Oklab' },
@@ -104,7 +105,7 @@
 	</ControlGroup>
 
 	<ControlGroup title="Theme ramp (v0)">
-		<ThemeRamp bind:state />
+		<ThemeRamp bind:state {matrices} />
 	</ControlGroup>
 
 	<ControlGroup title="Display">
