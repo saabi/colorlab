@@ -65,6 +65,19 @@
 </script>
 
 <aside class="side-panel right-panel">
+	<div class="panel-label">Transfer (encode to linear)</div>
+	<canvas bind:this={transferCanvas} class="panel-canvas" aria-label="Transfer curve panel"></canvas>
+
+	<div class="panel-label">Cone fundamentals L M S <span style="float: right; text-transform: none">{spectrumLabel}</span></div>
+	<canvas bind:this={conesCanvas} class="panel-canvas tall" aria-label="Cone fundamentals and spectrum panel"></canvas>
+
+	<div class="panel-label">CIE xy chromaticity</div>
+	<canvas bind:this={xyCanvas} class="panel-canvas tall" aria-label="CIE xy chromaticity panel"></canvas>
+
+	<p class="note">
+		Excitations are integrals: a general color is three magnitudes, not points on wavelength curves.
+	</p>
+
 	<ControlGroup title="Hovered stimulus">
 		<div class:oog={!!explorer.hover && !explorer.hover.inGamut} class="swatch" style={swatchStyle}>
 			<span>{explorer.hover ? (explorer.hover.inGamut ? '' : 'OUT OF GAMUT') : ''}</span>
@@ -78,17 +91,4 @@
 			{/each}
 		</div>
 	</ControlGroup>
-
-	<div class="panel-label">Transfer (encode to linear)</div>
-	<canvas bind:this={transferCanvas} class="panel-canvas" aria-label="Transfer curve panel"></canvas>
-
-	<div class="panel-label">Cone fundamentals L M S <span style="float: right; text-transform: none">{spectrumLabel}</span></div>
-	<canvas bind:this={conesCanvas} class="panel-canvas tall" aria-label="Cone fundamentals and spectrum panel"></canvas>
-
-	<div class="panel-label">CIE xy chromaticity</div>
-	<canvas bind:this={xyCanvas} class="panel-canvas tall" aria-label="CIE xy chromaticity panel"></canvas>
-
-	<p class="note">
-		Excitations are integrals: a general color is three magnitudes, not points on wavelength curves.
-	</p>
 </aside>

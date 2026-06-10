@@ -33,16 +33,16 @@
 </script>
 
 <aside class="side-panel left-panel">
-	<ControlGroup title="Color space (world)">
-		<select bind:value={state.spaceMode}>
+	<ControlGroup title="Color model" collapsible>
+		<label class="row" for="space-select"><span>World space</span></label>
+		<select id="space-select" bind:value={state.spaceMode}>
 			{#each spaces as space}
 				<option value={space.value}>{space.label}</option>
 			{/each}
 		</select>
-	</ControlGroup>
 
-	<ControlGroup title="Gamut (cube primaries)">
-		<select bind:value={state.gamut}>
+		<label class="row separator" for="gamut-select"><span>Gamut (cube primaries)</span></label>
+		<select id="gamut-select" bind:value={state.gamut}>
 			{#each gamuts as gamut}
 				<option value={gamut.value}>{gamut.label}</option>
 			{/each}
@@ -52,7 +52,7 @@
 		</p>
 	</ControlGroup>
 
-	<ControlGroup title="Slice">
+	<ControlGroup title="Clipping" collapsible>
 		<ToggleRow label="Enable slice" bind:checked={state.slice} />
 		<ToggleRow label="Cut above plane" bind:checked={state.cutAbove} />
 		<ToggleRow label="Cut below plane" bind:checked={state.cutBelow} />
@@ -96,10 +96,10 @@
 			step={0.001}
 			format={(value) => value.toFixed(3)}
 		/>
-	</ControlGroup>
 
-	<ControlGroup title="Cylindrical cut">
-		<ToggleRow label="Enable cylindrical cut" bind:checked={state.cylSlice} />
+		<div class="separator">
+			<ToggleRow label="Enable cylindrical cut" bind:checked={state.cylSlice} />
+		</div>
 		<ToggleRow label="Keep inside" bind:checked={state.cylInside} />
 		<SliderRow
 			label={state.spaceMode === 2 || state.spaceMode === 3 ? 'Chroma radius' : 'Radial distance'}
@@ -111,20 +111,7 @@
 		/>
 	</ControlGroup>
 
-	<ControlGroup title="Tessellation">
-		<select bind:value={state.N}>
-			{#each resolutions as resolution}
-				<option value={resolution}>{resolution} x {resolution} / face</option>
-			{/each}
-		</select>
-		<p class="note">{(6 * state.N * state.N).toLocaleString()} instances - 1 quad in memory</p>
-	</ControlGroup>
-
-	<ControlGroup title="Theme ramp (v0)">
-		<ThemeRamp bind:state {matrices} />
-	</ControlGroup>
-
-	<ControlGroup title="Display">
+	<ControlGroup title="Display" collapsible>
 		<ToggleRow label="Floor grid" bind:checked={state.floor} />
 		<ToggleRow label="Surface grid lines" bind:checked={state.lines} />
 		<ToggleRow label="Plane outline" bind:checked={state.planeOutline} />
@@ -163,5 +150,19 @@
 		<p class="note">
 			Simulated at the LMS cone stage. 1.0 = dichromat, less than 1 = anomalous trichromat.
 		</p>
+	</ControlGroup>
+
+	<ControlGroup title="Theme" collapsible>
+		<ThemeRamp bind:state {matrices} />
+	</ControlGroup>
+
+	<ControlGroup title="Performance" collapsible>
+		<label class="row" for="resolution-select"><span>Tessellation</span></label>
+		<select id="resolution-select" bind:value={state.N}>
+			{#each resolutions as resolution}
+				<option value={resolution}>{resolution} x {resolution} / face</option>
+			{/each}
+		</select>
+		<p class="note">{(6 * state.N * state.N).toLocaleString()} instances - 1 quad in memory</p>
 	</ControlGroup>
 </aside>

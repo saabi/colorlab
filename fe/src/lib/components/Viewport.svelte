@@ -7,6 +7,7 @@
 	import { rebuildMatrices, rebuildShell } from '$lib/renderer/uniforms';
 	import { chain, pick } from '$lib/engine/picking';
 	import { buildRamp } from '$lib/engine/theme';
+	import ViewportToolbar from './ViewportToolbar.svelte';
 
 	import type { ExplorerState } from '$lib/engine/types';
 
@@ -141,6 +142,7 @@
 		explorer.lines;
 		explorer.floor;
 		explorer.shell;
+		explorer.surfaceGridAlpha;
 		draw();
 	});
 
@@ -160,6 +162,7 @@
 </script>
 
 <main class="viewport">
+	<ViewportToolbar bind:state={explorer} />
 	<canvas
 		bind:this={canvas}
 		aria-label="Gamut explorer WebGL viewport"
