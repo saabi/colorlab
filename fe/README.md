@@ -2,6 +2,8 @@
 
 SvelteKit 5 + TypeScript frontend for **COLOR LAB — Gamut Explorer**.
 
+**Live site:** [colorlab.ferreyrapons.com](https://colorlab.ferreyrapons.com)
+
 ## Stack
 
 - [SvelteKit 2](https://svelte.dev/docs/kit) with Svelte 5 runes
@@ -39,9 +41,10 @@ Optional: copy `.env.example` to `.env` for local configuration (see below).
 | `PUBLIC_UMAMI_SRC` | Umami tracker script URL |
 | `PUBLIC_UMAMI_WEBSITE_ID` | Umami website ID |
 
-Set `PUBLIC_SITE_URL` to the production origin so social preview image URLs are absolute and canonical. Set **both** Umami variables to enable cookieless analytics; leave them unset for zero tracking. See [`.env.example`](.env.example).
+Set `PUBLIC_SITE_URL` to the production origin (e.g. `https://colorlab.ferreyrapons.com`) so social preview image URLs are absolute and canonical. Set **both** Umami variables to enable cookieless analytics; leave them unset for zero tracking. See [`.env.example`](.env.example).
 
 ```sh
+PUBLIC_SITE_URL=https://colorlab.ferreyrapons.com \
 PUBLIC_UMAMI_SRC=https://umami.example.com/script.js \
 PUBLIC_UMAMI_WEBSITE_ID=<uuid> \
 npm run build
@@ -54,7 +57,7 @@ npm run build
 npm start
 ```
 
-The Node server listens on `PORT` (default `3000`) and `HOST` (default `0.0.0.0`). Set `ORIGIN` to the public URL when deploying behind a reverse proxy.
+The Node server listens on `PORT` (default `3000`) and `HOST` (default `0.0.0.0`). Set `ORIGIN` or `PUBLIC_SITE_URL` to the public URL (production: `https://colorlab.ferreyrapons.com`) when deploying behind a reverse proxy so SSR social preview tags do not point at the internal upstream.
 
 ### PM2
 

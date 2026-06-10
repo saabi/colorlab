@@ -14,7 +14,8 @@ module.exports = {
 				NODE_ENV: 'production',
 				PORT: 5001,
 				HOST: '0.0.0.0',
-				ORIGIN: 'http://localhost:5001'
+				ORIGIN: process.env.ORIGIN || 'https://colorlab.ferreyrapons.com',
+				PUBLIC_SITE_URL: process.env.PUBLIC_SITE_URL || 'https://colorlab.ferreyrapons.com'
 			}
 		}
 	]
