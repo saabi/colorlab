@@ -24,7 +24,9 @@ export class WebGlRenderer {
 	private lineProgram: WebGLProgram;
 	private markProgram: WebGLProgram;
 	private solidVao: WebGLVertexArrayObject;
+	private solidBuffer: WebGLBuffer;
 	private floorVao: WebGLVertexArrayObject;
+	private floorBuffer: WebGLBuffer;
 	private lineVao: WebGLVertexArrayObject;
 	private lineBuffer: WebGLBuffer;
 	private lineVertCount = 0;
@@ -38,8 +40,12 @@ export class WebGlRenderer {
 		this.floorProgram = this.compile(VS_FLOOR, FS_FLOOR);
 		this.lineProgram = this.compile(VS_LINE, FS_LINE);
 		this.markProgram = this.compile(VS_MARK, FS_MARK);
-		this.solidVao = this.createSolidVao();
-		this.floorVao = this.createFloorVao();
+		const solid = this.createSolidVao();
+		this.solidVao = solid.vao;
+		this.solidBuffer = solid.buffer;
+		const floor = this.createFloorVao();
+		this.floorVao = floor.vao;
+		this.floorBuffer = floor.buffer;
 		const line = this.createLineVao();
 		this.lineVao = line.vao;
 		this.lineBuffer = line.buffer;
@@ -206,6 +212,8 @@ export class WebGlRenderer {
 		gl.deleteVertexArray(this.solidVao);
 		gl.deleteVertexArray(this.floorVao);
 		gl.deleteVertexArray(this.lineVao);
+		gl.deleteBuffer(this.solidBuffer);
+		gl.deleteBuffer(this.floorBuffer);
 		gl.deleteBuffer(this.lineBuffer);
 	}
 
@@ -215,12 +223,13 @@ export class WebGlRenderer {
 		if (!vao) throw new Error('Unable to create WebGL vertex array');
 		gl.bindVertexArray(vao);
 		const bufQuad = gl.createBuffer();
+		if (!bufQuad) throw new Error('Unable to create WebGL solid buffer');
 		gl.bindBuffer(gl.ARRAY_BUFFER, bufQuad);
 		gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([0, 0, 1, 0, 0, 1, 1, 1]), gl.STATIC_DRAW);
 		gl.enableVertexAttribArray(0);
 		gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
 		gl.bindVertexArray(null);
-		return vao;
+		return { vao, buffer: bufQuad };
 	}
 
 	private createFloorVao() {
@@ -229,13 +238,14 @@ export class WebGlRenderer {
 		if (!vao) throw new Error('Unable to create WebGL vertex array');
 		gl.bindVertexArray(vao);
 		const bufFloor = gl.createBuffer();
+		if (!bufFloor) throw new Error('Unable to create WebGL floor buffer');
 		gl.bindBuffer(gl.ARRAY_BUFFER, bufFloor);
 		const FE = 6;
 		gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-FE, -FE, FE, -FE, -FE, FE, FE, FE]), gl.STATIC_DRAW);
 		gl.enableVertexAttribArray(0);
 		gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
 		gl.bindVertexArray(null);
-		return vao;
+		return { vao, buffer: bufFloor };
 	}
 
 	private createLineVao() {
@@ -266,9 +276,13 @@ export class WebGlRenderer {
 		};
 		const program = gl.createProgram();
 		if (!program) throw new Error('Unable to create WebGL program');
-		gl.attachShader(program, mk(gl.VERTEX_SHADER, vsrc));
-		gl.attachShader(program, mk(gl.FRAGMENT_SHADER, fsrc));
+		const vertex = mk(gl.VERTEX_SHADER, vsrc);
+		const fragment = mk(gl.FRAGMENT_SHADER, fsrc);
+		gl.attachShader(program, vertex);
+		gl.attachShader(program, fragment);
 		gl.linkProgram(program);
+		gl.deleteShader(vertex);
+		gl.deleteShader(fragment);
 		if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
 			throw new Error(gl.getProgramInfoLog(program) || 'Program link failed');
 		}

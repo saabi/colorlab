@@ -102,28 +102,48 @@
 	$effect(() => {
 		explorer.spaceMode;
 		explorer.gamut;
-		explorer.N;
 		explorer.slice;
 		explorer.planeMode;
 		explorer.off;
 		explorer.az;
 		explorer.el;
 		explorer.eps;
-		explorer.lines;
 		explorer.cutAbove;
 		explorer.cutBelow;
-		explorer.shell;
-		explorer.cvd;
-		explorer.cvdSev;
+		explorer.outline;
+		untrack(() => {
+			explorer.hover = null;
+			buildRamp(explorer, matrices);
+			renderer?.rebuildBoundary(explorer, matrices);
+			draw();
+		});
+	});
+
+	$effect(() => {
 		explorer.theme.steps;
 		explorer.theme.mode;
 		explorer.theme.dh;
 		explorer.theme.dc;
 		explorer.theme.cprof;
 		untrack(() => {
-			explorer.hover = null;
 			buildRamp(explorer, matrices);
-			renderer?.rebuildBoundary(explorer, matrices);
+			draw();
+		});
+	});
+
+	$effect(() => {
+		explorer.N;
+		explorer.lines;
+		explorer.floor;
+		explorer.shell;
+		draw();
+	});
+
+	$effect(() => {
+		explorer.cvd;
+		explorer.cvdSev;
+		untrack(() => {
+			if (explorer.hover) explorer.hover.chain = chain(explorer.hover.rgbLin, explorer, matrices);
 			draw();
 		});
 	});

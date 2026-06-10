@@ -38,7 +38,7 @@
 	const swatchStyle = $derived.by(() => {
 		const ch = explorer.hover?.chain;
 		if (!ch) return '';
-		const disp = ch.srgbLin.map((v: number) => Math.round(encSrgb(v) * 255));
+		const disp = ch.cvdLin.map((v: number) => Math.round(encSrgb(v) * 255));
 		return `background: rgb(${disp.join(',')}); color: ${explorer.hover?.inGamut ? '#0008' : '#fffb'};`;
 	});
 

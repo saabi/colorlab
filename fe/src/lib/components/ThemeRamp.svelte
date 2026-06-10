@@ -1,7 +1,7 @@
 <script lang="ts">
 	import SegmentedControl from './SegmentedControl.svelte';
 	import SliderRow from './SliderRow.svelte';
-	import { buildRamp, exportDTCG, exportTokens, fitEven, fitGamut, fitWcag } from '$lib/engine/theme';
+	import { exportDTCG, exportTokens, fitEven, fitGamut, fitWcag } from '$lib/engine/theme';
 
 	import type { ExplorerState } from '$lib/engine/types';
 	import type { DerivedMatrices } from '$lib/renderer/uniforms';
