@@ -20,6 +20,7 @@ export function createExplorerState(): ExplorerState {
 		shell: 'none',
 		planeOutline: true,
 		cylinderOutline: true,
+		outlineDepthTest: true,
 		surfaceGridAlpha: 0.25,
 		cvd: 'none',
 		cvdSev: 1,

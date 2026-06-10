@@ -165,9 +165,9 @@ export class WebGlRenderer {
 			gl.uniformMatrix4fv(this.U(this.lineProgram, 'uProj'), false, proj);
 			gl.uniformMatrix4fv(this.U(this.lineProgram, 'uView'), false, view);
 			gl.uniform3fv(this.U(this.lineProgram, 'uCol'), [0.94, 0.94, 0.96]);
-			gl.disable(gl.DEPTH_TEST);
+			if (!input.state.outlineDepthTest) gl.disable(gl.DEPTH_TEST);
 			gl.drawArrays(gl.LINES, 0, this.lineVertCount);
-			gl.enable(gl.DEPTH_TEST);
+			if (!input.state.outlineDepthTest) gl.enable(gl.DEPTH_TEST);
 		}
 		gl.bindVertexArray(null);
 	}

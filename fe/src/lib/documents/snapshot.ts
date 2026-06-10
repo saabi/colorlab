@@ -46,6 +46,7 @@ export function toSnapshot(explorer: ExplorerState, camera: Camera): ParameterSn
 			shell: explorer.shell,
 			planeOutline: explorer.planeOutline,
 			cylinderOutline: explorer.cylinderOutline,
+			outlineDepthTest: explorer.outlineDepthTest,
 			surfaceGridAlpha: explorer.surfaceGridAlpha,
 			cvd: explorer.cvd,
 			cvdSev: explorer.cvdSev,

@@ -115,6 +115,7 @@
 		<ToggleRow label="Surface grid lines" bind:checked={state.lines} />
 		<ToggleRow label="Plane outline" bind:checked={state.planeOutline} />
 		<ToggleRow label="Cylinder outline" bind:checked={state.cylinderOutline} />
+		<ToggleRow label="Depth-test cross-section outlines" bind:checked={state.outlineDepthTest} />
 		<SliderRow
 			label="Clipped grid alpha"
 			bind:value={state.surfaceGridAlpha}

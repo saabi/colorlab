@@ -58,6 +58,7 @@ export interface ExplorerState {
 	shell: ShellKey;
 	planeOutline: boolean;
 	cylinderOutline: boolean;
+	outlineDepthTest: boolean;
 	surfaceGridAlpha: number;
 	cvd: CvdMode;
 	cvdSev: number;

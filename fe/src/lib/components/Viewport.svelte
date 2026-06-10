@@ -406,6 +406,7 @@
 		explorer.floor;
 		explorer.shell;
 		explorer.surfaceGridAlpha;
+		explorer.outlineDepthTest;
 		draw();
 	});
 

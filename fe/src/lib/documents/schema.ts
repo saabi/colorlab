@@ -123,6 +123,8 @@ function coerceExplorer(raw: unknown, defaults: PersistedExplorer): PersistedExp
 		planeOutline: typeof explorer.planeOutline === 'boolean' ? explorer.planeOutline : defaults.planeOutline,
 		cylinderOutline:
 			typeof explorer.cylinderOutline === 'boolean' ? explorer.cylinderOutline : defaults.cylinderOutline,
+		outlineDepthTest:
+			typeof explorer.outlineDepthTest === 'boolean' ? explorer.outlineDepthTest : defaults.outlineDepthTest,
 		surfaceGridAlpha: finiteNumber(explorer.surfaceGridAlpha, defaults.surfaceGridAlpha, 'surfaceGridAlpha'),
 		cvd: enumOf(explorer.cvd, CVD_MODES, defaults.cvd, 'cvd'),
 		cvdSev: finiteNumber(explorer.cvdSev, defaults.cvdSev, 'cvdSev'),
@@ -157,6 +159,7 @@ export function coerceSnapshot(raw: unknown): ParameterSnapshot | null {
 			shell: factory.shell,
 			planeOutline: factory.planeOutline,
 			cylinderOutline: factory.cylinderOutline,
+			outlineDepthTest: factory.outlineDepthTest,
 			surfaceGridAlpha: factory.surfaceGridAlpha,
 			cvd: factory.cvd,
 			cvdSev: factory.cvdSev,
