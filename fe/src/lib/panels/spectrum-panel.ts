@@ -71,13 +71,9 @@ export function dominantWavelength(xyz: [number, number, number]) {
 		}
 		return { r, d };
 	};
-	let purple = false;
-	let f = find(a);
-	if (f.d > 0.06) {
-		purple = true;
-		f = find(a + Math.PI);
-	}
-	return f.r ? { nm: f.r.nm, purple } : null;
+	const f = find(a);
+	if (f.d > 0.06 || !f.r) return null;
+	return { nm: f.r.nm };
 }
 
 export function drawSpectrumPanel(canvas: HTMLCanvasElement, ch: TransformChain | null, state: ExplorerState) {
@@ -116,5 +112,5 @@ export function drawSpectrumPanel(canvas: HTMLCanvasElement, ch: TransformChain 
 	ctx.moveTo(x, 0);
 	ctx.lineTo(x, h);
 	ctx.stroke();
-	return dom.purple ? `purple (c~${dom.nm.toFixed(0)}nm)` : `ld ~ ${dom.nm.toFixed(0)}nm`;
+	return `ld ~ ${dom.nm.toFixed(0)}nm`;
 }

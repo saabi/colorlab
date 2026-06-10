@@ -106,7 +106,7 @@ export function drawConesPanel(canvas: HTMLCanvasElement, ch: TransformChain | n
 		ctx.moveTo(X, 0);
 		ctx.lineTo(X, h);
 		ctx.stroke();
-		label = dom.purple ? `purple (c~${dom.nm.toFixed(0)}nm)` : `ld ~ ${dom.nm.toFixed(0)}nm`;
+		label = `ld ~ ${dom.nm.toFixed(0)}nm`;
 	}
 	const bw = 16;
 	const bx = w - 66;
