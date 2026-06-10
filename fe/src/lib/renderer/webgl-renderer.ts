@@ -98,6 +98,8 @@ export class WebGlRenderer {
 			gl.depthFunc(gl.LEQUAL);
 			gl.enable(gl.BLEND);
 			gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+			gl.enable(gl.POLYGON_OFFSET_FILL);
+			gl.polygonOffset(-1, -1);
 			this.uploadSolidUniforms(
 				input.state,
 				input.matrices,
@@ -117,6 +119,7 @@ export class WebGlRenderer {
 				this.uploadSolidUniforms(input.state, input.matrices, proj, view, 0, input.state.N, 1, 1, 1, 0, 0, 0);
 				gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, 6 * input.state.N * input.state.N);
 			}
+			gl.disable(gl.POLYGON_OFFSET_FILL);
 			gl.disable(gl.BLEND);
 			gl.depthFunc(gl.LESS);
 			gl.depthMask(true);
