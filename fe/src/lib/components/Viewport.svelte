@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { onDestroy, onMount, untrack } from 'svelte';
-	import { createCamera } from '$lib/engine/camera';
 	import { selftest } from '$lib/color/selftest';
 	import { m3 } from '$lib/color/math';
 	import { WebGlRenderer } from '$lib/renderer/webgl-renderer';
@@ -11,7 +10,12 @@
 
 	import type { ExplorerState } from '$lib/engine/types';
 
-	let { state: explorer = $bindable() } = $props<{ state: ExplorerState }>();
+	import type { Camera } from '$lib/engine/camera';
+
+	let {
+		state: explorer = $bindable(),
+		camera = $bindable()
+	} = $props<{ state: ExplorerState; camera: Camera }>();
 
 	let canvas: HTMLCanvasElement;
 	let renderer: WebGlRenderer | null = null;
@@ -28,7 +32,6 @@
 	const MIN_DIST = 1.2;
 	const MAX_DIST = 8;
 
-	const camera = createCamera();
 	const matrices = $derived(rebuildMatrices(explorer.gamut));
 	const shellMatrices = $derived(rebuildShell(explorer.shell));
 
@@ -264,6 +267,15 @@
 
 	$effect(() => {
 		explorer.theme.stops;
+		draw();
+	});
+
+	$effect(() => {
+		camera.yaw;
+		camera.pitch;
+		camera.dist;
+		camera.target;
+		camera.fov;
 		draw();
 	});
 </script>

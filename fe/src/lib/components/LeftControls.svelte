@@ -33,7 +33,7 @@
 </script>
 
 <aside class="side-panel left-panel">
-	<ControlGroup title="Color model" collapsible>
+	<ControlGroup title="Color model" collapsible defaultOpen={false}>
 		<label class="row" for="space-select"><span>World space</span></label>
 		<select id="space-select" bind:value={state.spaceMode}>
 			{#each spaces as space}
@@ -52,7 +52,7 @@
 		</p>
 	</ControlGroup>
 
-	<ControlGroup title="Clipping" collapsible>
+	<ControlGroup title="Clipping" collapsible defaultOpen={false}>
 		<ToggleRow label="Enable slice" bind:checked={state.slice} />
 		<ToggleRow label="Cut above plane" bind:checked={state.cutAbove} />
 		<ToggleRow label="Cut below plane" bind:checked={state.cutBelow} />
@@ -111,7 +111,7 @@
 		/>
 	</ControlGroup>
 
-	<ControlGroup title="Display" collapsible>
+	<ControlGroup title="Display" collapsible defaultOpen={false}>
 		<ToggleRow label="Floor grid" bind:checked={state.floor} />
 		<ToggleRow label="Surface grid lines" bind:checked={state.lines} />
 		<ToggleRow label="Plane outline" bind:checked={state.planeOutline} />
@@ -152,11 +152,11 @@
 		</p>
 	</ControlGroup>
 
-	<ControlGroup title="Theme" collapsible>
+	<ControlGroup title="Theme" collapsible defaultOpen={true}>
 		<ThemeRamp bind:state {matrices} />
 	</ControlGroup>
 
-	<ControlGroup title="Performance" collapsible>
+	<ControlGroup title="Performance" collapsible defaultOpen={false}>
 		<label class="row" for="resolution-select"><span>Tessellation</span></label>
 		<select id="resolution-select" bind:value={state.N}>
 			{#each resolutions as resolution}

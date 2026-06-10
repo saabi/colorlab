@@ -2,11 +2,18 @@
 	import LeftControls from './LeftControls.svelte';
 	import RightInspector from './RightInspector.svelte';
 	import Viewport from './Viewport.svelte';
+	import DocumentBar from './DocumentBar.svelte';
 	import { rebuildMatrices } from '$lib/renderer/uniforms';
 
+	import type { Camera } from '$lib/engine/camera';
 	import type { ExplorerState } from '$lib/engine/types';
+	import type { DocumentSession } from '$lib/documents/session.svelte';
 
-	let { state: explorer = $bindable() } = $props<{ state: ExplorerState }>();
+	let {
+		state: explorer = $bindable(),
+		camera = $bindable(),
+		session
+	} = $props<{ state: ExplorerState; camera: Camera; session: DocumentSession }>();
 	const matrices = $derived(rebuildMatrices(explorer.gamut));
 	let drawerOpen = $state(false);
 </script>
@@ -28,6 +35,7 @@
 		</button>
 		<h1>GAMUT EXPLORER</h1>
 		<span class="sub">instanced color solids - arbitrary slices - transform chain</span>
+		<DocumentBar {session} />
 		<span class="badge">WebGL2 - Svelte migration</span>
 	</header>
 
@@ -40,6 +48,6 @@
 		}}
 	></button>
 	<LeftControls bind:state={explorer} {matrices} />
-	<Viewport bind:state={explorer} />
+	<Viewport bind:state={explorer} bind:camera />
 	<RightInspector state={explorer} />
 </div>
