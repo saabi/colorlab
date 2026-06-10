@@ -25,14 +25,14 @@
 			detail: cvd === 'none' ? 'LMS simulation disabled' : 'LMS deficiency transform',
 			disabled: cvd === 'none'
 		},
-		{ label: 'Display', detail: 'sRGB preview', disabled: false }
+		{ label: 'Display', detail: 'sRGB-compliant monitor', disabled: false }
 	]);
 
 	function placePopover(event: MouseEvent | FocusEvent) {
 		const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
 		const width = Math.min(520, window.innerWidth - 24);
 		const left = Math.max(12, Math.min(rect.left, window.innerWidth - width - 12));
-		const top = Math.min(rect.bottom + 8, window.innerHeight - 160);
+		const top = Math.min(rect.bottom + 8, window.innerHeight - 220);
 		popoverStyle = `left: ${left}px; top: ${top}px; width: ${width}px;`;
 		open = true;
 	}
@@ -60,6 +60,10 @@
 				{/if}
 			{/each}
 		</span>
+		<p class="pipeline-note">
+			The display step assumes an sRGB-compliant monitor. Future versions will let you set custom
+			chromaticities and gamma; the pipeline will update to match.
+		</p>
 	</span>
 </span>
 
@@ -166,5 +170,12 @@
 		color: var(--accent);
 		font-family: "IBM Plex Mono", ui-monospace, monospace;
 		font-size: 10px;
+	}
+
+	.pipeline-note {
+		margin: 0;
+		color: var(--dim);
+		font-size: 10px;
+		line-height: 1.35;
 	}
 </style>
