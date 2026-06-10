@@ -485,12 +485,6 @@ input[type="checkbox"] {
 	margin: 0;
 }
 
-.toolbar-pipeline {
-	align-self: center;
-	margin: 17px 2px 0 -2px;
-	white-space: nowrap;
-}
-
 .inspector-tabs {
 	display: none;
 }
@@ -808,7 +802,6 @@ input[type="checkbox"] {
 	}
 
 	.viewport-toolbar label > span,
-	.viewport-toolbar .toolbar-pipeline,
 	.viewport-toolbar .toolbar-vision {
 		display: none;
 	}

@@ -1,6 +1,4 @@
 <script lang="ts">
-	import PipelinePopover from './PipelinePopover.svelte';
-
 	import type { ExplorerState } from '$lib/engine/types';
 
 	let { state = $bindable() } = $props<{ state: ExplorerState }>();
@@ -42,10 +40,6 @@
 			{/each}
 		</select>
 	</label>
-
-	<span class="toolbar-pipeline">
-		<PipelinePopover cvd={state.cvd} cvdSev={state.cvdSev} />
-	</span>
 
 	<label class="toolbar-toggle">
 		<input type="checkbox" bind:checked={state.slice} />
