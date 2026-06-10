@@ -1,2 +1,8 @@
-<h1>Welcome to SvelteKit</h1>
-<p>Visit <a href="https://svelte.dev/docs/kit">svelte.dev/docs/kit</a> to read the documentation</p>
+<script lang="ts">
+	import AppShell from '$lib/components/AppShell.svelte';
+	import { createExplorerState } from '$lib/engine/state.svelte';
+
+	const state = createExplorerState();
+</script>
+
+<AppShell {state} />
