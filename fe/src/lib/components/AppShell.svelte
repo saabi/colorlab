@@ -2,6 +2,7 @@
 	import LeftControls from './LeftControls.svelte';
 	import RightInspector from './RightInspector.svelte';
 	import Viewport from './Viewport.svelte';
+	import AppInfo from './AppInfo.svelte';
 	import DocumentBar from './DocumentBar.svelte';
 	import { rebuildMatrices } from '$lib/renderer/uniforms';
 
@@ -36,6 +37,7 @@
 		<h1>COLOR LAB</h1>
 		<span class="sub">Gamut Explorer</span>
 		<DocumentBar {session} />
+		<AppInfo />
 		<span class="badge">WebGL2</span>
 	</header>
 
