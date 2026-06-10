@@ -1,5 +1,6 @@
 <script lang="ts">
 	import ControlGroup from './ControlGroup.svelte';
+	import PipelinePopover from './PipelinePopover.svelte';
 	import SegmentedControl from './SegmentedControl.svelte';
 	import SliderRow from './SliderRow.svelte';
 	import ThemeRamp from './ThemeRamp.svelte';
@@ -46,7 +47,9 @@
 				<option value={gamut.value}>{gamut.label}</option>
 			{/each}
 		</select>
-		<p class="note">The conserved museum: changing primaries reshapes the solid through the same pipeline.</p>
+		<p class="note">
+			Changing primaries reshapes the solid through the same <PipelinePopover cvd={state.cvd} cvdSev={state.cvdSev} />.
+		</p>
 	</ControlGroup>
 
 	<ControlGroup title="Slice">
