@@ -8,7 +8,7 @@ export function createExplorerState(): ExplorerState {
 		slice: true,
 		planeMode: 'L',
 		off: 0.5,
-		az: 25,
+		az: 0,
 		el: 90,
 		eps: 0.0,
 		floor: true,
@@ -20,7 +20,7 @@ export function createExplorerState(): ExplorerState {
 		shell: 'none',
 		planeOutline: true,
 		cylinderOutline: true,
-		surfaceGridAlpha: 0.5,
+		surfaceGridAlpha: 0.25,
 		cvd: 'none',
 		cvdSev: 1,
 		theme: {
