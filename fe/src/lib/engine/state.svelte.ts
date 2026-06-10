@@ -95,6 +95,60 @@ export function createExampleState(partial: ExamplePartial): AppState {
 
 export const EXAMPLE_STATES = [
 	{
+		id: 'example:large-color-ramp',
+		name: 'Large Color Ramp',
+		source: 'example' as const,
+		snapshot: createExampleState({
+			explorer: {
+				spaceMode: 3,
+				gamut: 'srgb',
+				N: 256,
+				slice: false,
+				planeMode: 'L',
+				off: 1,
+				az: 0,
+				el: 90,
+				eps: 0,
+				floor: true,
+				lines: true,
+				cutAbove: true,
+				cutBelow: false,
+				cylSlice: true,
+				cylRad: 0.361,
+				shell: 'none',
+				planeOutline: true,
+				cylinderOutline: true,
+				outlineDepthTest: true,
+				surfaceGridAlpha: 0.25,
+				cvd: 'none',
+				cvdSev: 1,
+				theme: {
+					A: {
+						srgbLin: [0.002353332407759444, 0.0038332058213883316, 0.17366576656361682]
+					},
+					B: {
+						srgbLin: [0.7610351858718939, 0.9402926643687034, 0.15604940886754892]
+					},
+					steps: 11,
+					mode: 'arc',
+					dh: 40,
+					dc: 0,
+					cprof: 'linear',
+					arcLong: true,
+					aa: 4.5,
+					wcagBg: 'white'
+				}
+			},
+			camera: {
+				yaw: 1.355999999999995,
+				pitch: 0.31399999999999906,
+				dist: 1.5765230034944007,
+				target: [0.05967533848186085, 0.09576925068959358, -0.09536971427920843],
+				fov: 0.7853981633974483
+			}
+		})
+	},
+	{
 		id: 'example:oklab-l-slice',
 		name: 'Oklab L-slice',
 		source: 'example' as const,
