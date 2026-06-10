@@ -87,6 +87,9 @@ export function buildRamp(state: ExplorerState, matrices: DerivedMatrices) {
 	let dth = cB.th - cA.th;
 	while (dth > Math.PI) dth -= 2 * Math.PI;
 	while (dth < -Math.PI) dth += 2 * Math.PI;
+	if (T.arcLong) {
+		dth = dth > 0 ? dth - 2 * Math.PI : dth + 2 * Math.PI;
+	}
 	for (let i = 0; i < T.steps; i += 1) {
 		const t = T.steps === 1 ? 0 : i / (T.steps - 1);
 		let w: Vec3;

@@ -1,6 +1,7 @@
 <script lang="ts">
 	import SegmentedControl from './SegmentedControl.svelte';
 	import SliderRow from './SliderRow.svelte';
+	import ToggleRow from './ToggleRow.svelte';
 	import { simulateCvdSrgb } from '$lib/color/cvd';
 	import { exportDTCG, exportTokens, fitEven, fitGamut, fitWcag } from '$lib/engine/theme';
 
@@ -57,6 +58,10 @@
 		{ value: 'spread', label: 'Spread A' }
 	]}
 />
+
+{#if explorer.theme.mode === 'arc'}
+	<ToggleRow label="Long path (other side)" bind:checked={explorer.theme.arcLong} />
+{/if}
 
 {#if explorer.theme.mode === 'spread'}
 	<SliderRow

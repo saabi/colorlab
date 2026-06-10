@@ -32,6 +32,7 @@ export function createExplorerState(): ExplorerState {
 			dh: 40,
 			dc: 0.0,
 			cprof: 'linear',
+			arcLong: false,
 			aa: 4.5,
 			wcagBg: 'white'
 		},

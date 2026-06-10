@@ -128,6 +128,7 @@
 		explorer.theme.dh;
 		explorer.theme.dc;
 		explorer.theme.cprof;
+		explorer.theme.arcLong;
 		untrack(() => {
 			buildRamp(explorer, matrices);
 			draw();

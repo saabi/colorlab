@@ -70,6 +70,7 @@ export interface ExplorerState {
 		dh: number;
 		dc: number;
 		cprof: ChromaProfile;
+		arcLong: boolean;
 		aa: number;
 		wcagBg: 'white' | 'black';
 	};
