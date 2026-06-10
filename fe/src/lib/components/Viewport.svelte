@@ -21,6 +21,12 @@
 	let moved = 0;
 	let lastX = 0;
 	let lastY = 0;
+	let pinching = false;
+	let pinchSpan = 0;
+	let capturedPointerId: number | null = null;
+
+	const MIN_DIST = 1.2;
+	const MAX_DIST = 8;
 
 	const camera = createCamera();
 	const matrices = $derived(rebuildMatrices(explorer.gamut));
@@ -28,6 +34,49 @@
 
 	function draw() {
 		renderer?.draw({ state: explorer, matrices, shellMatrices, camera });
+	}
+
+	function zoomCamera(factor: number) {
+		camera.dist = Math.min(MAX_DIST, Math.max(MIN_DIST, camera.dist * factor));
+		draw();
+	}
+
+	function touchSpan(touches: TouchList) {
+		const dx = touches[0].clientX - touches[1].clientX;
+		const dy = touches[0].clientY - touches[1].clientY;
+		return Math.hypot(dx, dy);
+	}
+
+	function releaseCapture() {
+		if (capturedPointerId !== null && canvas?.hasPointerCapture(capturedPointerId)) {
+			canvas.releasePointerCapture(capturedPointerId);
+		}
+		capturedPointerId = null;
+		dragging = false;
+	}
+
+	function onTouchStart(event: TouchEvent) {
+		if (event.touches.length !== 2) return;
+		event.preventDefault();
+		pinching = true;
+		pinchSpan = touchSpan(event.touches);
+		releaseCapture();
+		gesture = 'orbit';
+	}
+
+	function onTouchMove(event: TouchEvent) {
+		if (event.touches.length !== 2) return;
+		event.preventDefault();
+		const span = touchSpan(event.touches);
+		if (pinchSpan > 0) zoomCamera(pinchSpan / span);
+		pinchSpan = span;
+	}
+
+	function onTouchEnd(event: TouchEvent) {
+		if (event.touches.length < 2) {
+			pinching = false;
+			pinchSpan = 0;
+		}
 	}
 
 	function inspectAt(clientX: number, clientY: number) {
@@ -52,12 +101,14 @@
 	}
 
 	function onPointerDown(event: PointerEvent) {
+		if (pinching) return;
 		if (event.pointerType === 'touch') event.preventDefault();
 		dragging = true;
 		gesture = 'orbit';
 		moved = 0;
 		lastX = event.clientX;
 		lastY = event.clientY;
+		capturedPointerId = event.pointerId;
 		canvas.setPointerCapture(event.pointerId);
 		if (event.pointerType === 'touch') {
 			gesture = inspectAt(event.clientX, event.clientY) ? 'inspect' : 'orbit';
@@ -65,6 +116,7 @@
 	}
 
 	function onPointerUp(event: PointerEvent) {
+		if (pinching) return;
 		if (event.pointerType === 'touch') event.preventDefault();
 		dragging = false;
 		if (moved < 5) {
@@ -73,9 +125,11 @@
 		}
 		gesture = 'orbit';
 		if (canvas.hasPointerCapture(event.pointerId)) canvas.releasePointerCapture(event.pointerId);
+		if (capturedPointerId === event.pointerId) capturedPointerId = null;
 	}
 
 	function onPointerMove(event: PointerEvent) {
+		if (pinching) return;
 		if (dragging) {
 			if (event.pointerType === 'touch') event.preventDefault();
 			const dx = event.clientX - lastX;
@@ -100,17 +154,27 @@
 
 	function onPointerCancel(event: PointerEvent) {
 		if (canvas.hasPointerCapture(event.pointerId)) canvas.releasePointerCapture(event.pointerId);
+		if (capturedPointerId === event.pointerId) capturedPointerId = null;
 		dragging = false;
 		gesture = 'orbit';
 	}
 
 	function onWheel(event: WheelEvent) {
 		event.preventDefault();
-		camera.dist = Math.min(8, Math.max(1.2, camera.dist * (1 + Math.sign(event.deltaY) * 0.08)));
-		draw();
+		if (event.ctrlKey) {
+			zoomCamera(1 - event.deltaY * 0.01);
+		} else {
+			zoomCamera(1 + Math.sign(event.deltaY) * 0.08);
+		}
 	}
 
 	onMount(() => {
+		const touchOpts = { passive: false } as AddEventListenerOptions;
+		canvas.addEventListener('touchstart', onTouchStart, touchOpts);
+		canvas.addEventListener('touchmove', onTouchMove, touchOpts);
+		canvas.addEventListener('touchend', onTouchEnd);
+		canvas.addEventListener('touchcancel', onTouchEnd);
+
 		try {
 			selftest();
 			renderer = new WebGlRenderer(canvas);
@@ -119,12 +183,22 @@
 			renderer.rebuildBoundary(explorer, matrices);
 			draw();
 			return () => {
+				canvas.removeEventListener('touchstart', onTouchStart);
+				canvas.removeEventListener('touchmove', onTouchMove);
+				canvas.removeEventListener('touchend', onTouchEnd);
+				canvas.removeEventListener('touchcancel', onTouchEnd);
 				ro.disconnect();
 				renderer?.dispose();
 				renderer = null;
 			};
 		} catch (err) {
 			error = err instanceof Error ? err.message : String(err);
+			return () => {
+				canvas.removeEventListener('touchstart', onTouchStart);
+				canvas.removeEventListener('touchmove', onTouchMove);
+				canvas.removeEventListener('touchend', onTouchEnd);
+				canvas.removeEventListener('touchcancel', onTouchEnd);
+			};
 		}
 	});
 
@@ -208,7 +282,10 @@
 	{#if error}
 		<div class="viewport-placeholder">{error}</div>
 	{/if}
-	<div class="hint">
+	<div class="hint hint-desktop">
 		drag - orbit&nbsp;&nbsp;wheel - zoom&nbsp;&nbsp;hover solid - inspect chain
+	</div>
+	<div class="hint hint-mobile">
+		drag - orbit&nbsp;&nbsp;pinch - zoom&nbsp;&nbsp;touch solid - inspect chain
 	</div>
 </main>

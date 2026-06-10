@@ -32,6 +32,8 @@ body {
 	min-height: 100%;
 	background: var(--bg);
 	color: var(--txt);
+	overscroll-behavior: none;
+	touch-action: manipulation;
 }
 
 body {
@@ -217,6 +219,10 @@ input[type="checkbox"] {
 	color: var(--faint);
 	font-size: 11px;
 	pointer-events: none;
+}
+
+.hint-mobile {
+	display: none;
 }
 
 .viewport-toolbar {
@@ -611,8 +617,12 @@ input[type="checkbox"] {
 		font-size: 11px;
 	}
 
-	.hint {
+	.hint-desktop {
 		display: none;
+	}
+
+	.hint-mobile {
+		display: block;
 	}
 
 	.inspector-tabs {
