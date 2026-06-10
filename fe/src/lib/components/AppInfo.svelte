@@ -51,7 +51,6 @@
 				and feature interactions. Analytics events do not include document names, color values, exported tokens, or saved
 				parameter data.
 			</p>
-			<p>Analytics are disabled when your browser sends Do Not Track.</p>
 			<p>You can clear saved parameter sets from your browser storage at any time.</p>
 		</div>
 	{/if}

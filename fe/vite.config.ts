@@ -4,6 +4,7 @@ import { defineConfig } from 'vite';
 import { glslify } from 'vite-plugin-glslify';
 
 export default defineConfig({
+	envPrefix: ['VITE_', 'PUBLIC_'],
 	plugins: [
 		sveltekit({
 			compilerOptions: {
