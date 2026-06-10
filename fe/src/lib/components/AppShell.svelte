@@ -33,10 +33,10 @@
 			<span></span>
 			<span></span>
 		</button>
-		<h1>GAMUT EXPLORER</h1>
-		<span class="sub">instanced color solids - arbitrary slices - transform chain</span>
+		<h1>COLOR LAB</h1>
+		<span class="sub">Gamut Explorer</span>
 		<DocumentBar {session} />
-		<span class="badge">WebGL2 - Svelte migration</span>
+		<span class="badge">WebGL2</span>
 	</header>
 
 	<button
