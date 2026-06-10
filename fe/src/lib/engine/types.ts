@@ -15,6 +15,25 @@ export interface ThemeStop {
 	inG: boolean;
 }
 
+export interface TransformChain {
+	enc: Vec3;
+	rgbLin: Vec3;
+	xyz: Vec3;
+	lms: Vec3;
+	lab: Vec3;
+	ok: Vec3;
+	oklch: Vec3;
+	srgbLin: Vec3;
+	cvdLin: Vec3;
+}
+
+export interface HoverHit {
+	world: Vec3;
+	rgbLin: Vec3;
+	inGamut: boolean;
+	chain: TransformChain;
+}
+
 export interface ExplorerState {
 	spaceMode: SpaceMode;
 	gamut: GamutKey;
@@ -46,5 +65,6 @@ export interface ExplorerState {
 		aa: number;
 		wcagBg: 'white' | 'black';
 	};
-	hover: null;
+	hover: HoverHit | null;
 }
+import type { Vec3 } from '$lib/color/math';

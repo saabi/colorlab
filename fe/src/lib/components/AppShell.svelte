@@ -5,7 +5,7 @@
 
 	import type { ExplorerState } from '$lib/engine/types';
 
-	let { state } = $props<{ state: ExplorerState }>();
+	let { state = $bindable() } = $props<{ state: ExplorerState }>();
 </script>
 
 <div class="app-shell">
@@ -15,7 +15,7 @@
 		<span class="badge">WebGL2 - Svelte migration</span>
 	</header>
 
-	<LeftControls {state} />
-	<Viewport {state} />
+	<LeftControls bind:state />
+	<Viewport bind:state />
 	<RightInspector {state} />
 </div>

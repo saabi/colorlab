@@ -7,7 +7,7 @@
 
 	import type { ExplorerState } from '$lib/engine/types';
 
-	let { state } = $props<{ state: ExplorerState }>();
+	let { state = $bindable() } = $props<{ state: ExplorerState }>();
 
 	const spaces = [
 		{ value: 3, label: 'Oklab' },
@@ -104,7 +104,7 @@
 	</ControlGroup>
 
 	<ControlGroup title="Theme ramp (v0)">
-		<ThemeRamp {state} />
+		<ThemeRamp bind:state />
 	</ControlGroup>
 
 	<ControlGroup title="Display">

@@ -1,7 +1,7 @@
 import type { ExplorerState } from './types';
 
 export function createExplorerState(): ExplorerState {
-	const state = $state<ExplorerState>({
+	return {
 		spaceMode: 3,
 		gamut: 'srgb',
 		N: 128,
@@ -33,7 +33,5 @@ export function createExplorerState(): ExplorerState {
 			wcagBg: 'white'
 		},
 		hover: null
-	});
-
-	return state;
+	};
 }

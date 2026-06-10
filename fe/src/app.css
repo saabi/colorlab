@@ -263,6 +263,12 @@ input[type="checkbox"] {
 	letter-spacing: 0.06em;
 }
 
+.swatch.oog {
+	outline: 1px dashed var(--warn);
+	outline-offset: -4px;
+	text-shadow: none;
+}
+
 .chain {
 	display: flex;
 	flex-direction: column;

@@ -4,7 +4,7 @@
 
 	import type { ExplorerState } from '$lib/engine/types';
 
-	let { state } = $props<{ state: ExplorerState }>();
+	let { state = $bindable() } = $props<{ state: ExplorerState }>();
 </script>
 
 <div class="segmented" style="--segments: 2">
