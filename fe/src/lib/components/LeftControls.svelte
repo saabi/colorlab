@@ -6,10 +6,12 @@
 	import ThemeRamp from './ThemeRamp.svelte';
 	import ToggleRow from './ToggleRow.svelte';
 
+	import type { HelpId } from '$lib/inspector/help-copy';
 	import type { ExplorerState } from '$lib/engine/types';
 	import type { DerivedMatrices } from '$lib/renderer/uniforms';
 
-	let { state = $bindable(), matrices } = $props<{ state: ExplorerState; matrices: DerivedMatrices }>();
+	let { explorer, matrices } = $props<{ explorer: ExplorerState; matrices: DerivedMatrices }>();
+	let openHelp = $state(null as HelpId | null);
 
 	const spaces = [
 		{ value: 3, label: 'Oklab' },
@@ -33,31 +35,31 @@
 </script>
 
 <aside class="side-panel left-panel">
-	<ControlGroup title="Color model" collapsible defaultOpen={false}>
+	<ControlGroup title="Color model" helpId="colorModel" bind:openHelp collapsible defaultOpen={false}>
 		<label class="row" for="space-select"><span>World space</span></label>
-		<select id="space-select" bind:value={state.spaceMode}>
+		<select id="space-select" bind:value={explorer.spaceMode}>
 			{#each spaces as space}
 				<option value={space.value}>{space.label}</option>
 			{/each}
 		</select>
 
 		<label class="row separator" for="gamut-select"><span>Gamut (cube primaries)</span></label>
-		<select id="gamut-select" bind:value={state.gamut}>
+		<select id="gamut-select" bind:value={explorer.gamut}>
 			{#each gamuts as gamut}
 				<option value={gamut.value}>{gamut.label}</option>
 			{/each}
 		</select>
 		<p class="note">
-			Changing primaries reshapes the solid through the same <PipelinePopover cvd={state.cvd} cvdSev={state.cvdSev} />.
+			Changing primaries reshapes the solid through the same <PipelinePopover cvd={explorer.cvd} cvdSev={explorer.cvdSev} />.
 		</p>
 	</ControlGroup>
 
-	<ControlGroup title="Clipping" collapsible defaultOpen={false}>
-		<ToggleRow label="Enable slice" bind:checked={state.slice} />
-		<ToggleRow label="Cut above plane" bind:checked={state.cutAbove} />
-		<ToggleRow label="Cut below plane" bind:checked={state.cutBelow} />
+	<ControlGroup title="Clipping" helpId="clipping" bind:openHelp collapsible defaultOpen={false}>
+		<ToggleRow label="Enable slice" bind:checked={explorer.slice} />
+		<ToggleRow label="Cut above plane" bind:checked={explorer.cutAbove} />
+		<ToggleRow label="Cut below plane" bind:checked={explorer.cutBelow} />
 		<SegmentedControl
-			bind:value={state.planeMode}
+			bind:value={explorer.planeMode}
 			options={[
 				{ value: 'L', label: 'Lightness' },
 				{ value: 'H', label: 'Hue plane' },
@@ -66,7 +68,7 @@
 		/>
 		<SliderRow
 			label="Offset"
-			bind:value={state.off}
+			bind:value={explorer.off}
 			min={0}
 			max={1}
 			step={0.005}
@@ -74,7 +76,7 @@
 		/>
 		<SliderRow
 			label="Hue / azimuth"
-			bind:value={state.az}
+			bind:value={explorer.az}
 			min={0}
 			max={360}
 			step={1}
@@ -82,7 +84,7 @@
 		/>
 		<SliderRow
 			label="Elevation (custom)"
-			bind:value={state.el}
+			bind:value={explorer.el}
 			min={0}
 			max={90}
 			step={1}
@@ -90,7 +92,7 @@
 		/>
 		<SliderRow
 			label="Slab half-width eps"
-			bind:value={state.eps}
+			bind:value={explorer.eps}
 			min={0.001}
 			max={0.08}
 			step={0.001}
@@ -98,11 +100,11 @@
 		/>
 
 		<div class="separator">
-			<ToggleRow label="Enable cylindrical cut" bind:checked={state.cylSlice} />
+			<ToggleRow label="Enable cylindrical cut" bind:checked={explorer.cylSlice} />
 		</div>
 		<SliderRow
-			label={state.spaceMode === 2 || state.spaceMode === 3 ? 'Chroma radius' : 'Radial distance'}
-			bind:value={state.cylRad}
+			label={explorer.spaceMode === 2 || explorer.spaceMode === 3 ? 'Chroma radius' : 'Radial distance'}
+			bind:value={explorer.cylRad}
 			min={0}
 			max={0.8}
 			step={0.005}
@@ -110,22 +112,22 @@
 		/>
 	</ControlGroup>
 
-	<ControlGroup title="Display" collapsible defaultOpen={false}>
-		<ToggleRow label="Floor grid" bind:checked={state.floor} />
-		<ToggleRow label="Surface grid lines" bind:checked={state.lines} />
-		<ToggleRow label="Plane outline" bind:checked={state.planeOutline} />
-		<ToggleRow label="Cylinder outline" bind:checked={state.cylinderOutline} />
-		<ToggleRow label="Depth-test cross-section outlines" bind:checked={state.outlineDepthTest} />
+	<ControlGroup title="Display" helpId="display" bind:openHelp collapsible defaultOpen={false}>
+		<ToggleRow label="Floor grid" bind:checked={explorer.floor} />
+		<ToggleRow label="Surface grid lines" bind:checked={explorer.lines} />
+		<ToggleRow label="Plane outline" bind:checked={explorer.planeOutline} />
+		<ToggleRow label="Cylinder outline" bind:checked={explorer.cylinderOutline} />
+		<ToggleRow label="Depth-test cross-section outlines" bind:checked={explorer.outlineDepthTest} />
 		<SliderRow
 			label="Clipped grid alpha"
-			bind:value={state.surfaceGridAlpha}
+			bind:value={explorer.surfaceGridAlpha}
 			min={0}
 			max={1}
 			step={0.05}
 			format={(value) => value.toFixed(2)}
 		/>
 		<label class="row" for="shell-select"><span>Wide-gamut shell</span></label>
-		<select id="shell-select" bind:value={state.shell}>
+		<select id="shell-select" bind:value={explorer.shell}>
 			<option value="none">None</option>
 			<option value="p3">DCI-P3 D65</option>
 			<option value="rec2020">Rec.2020</option>
@@ -133,7 +135,7 @@
 			<option value="cie">CIE 1931 RGB</option>
 		</select>
 		<label class="row" for="cvd-select"><span>Color vision</span></label>
-		<select id="cvd-select" bind:value={state.cvd}>
+		<select id="cvd-select" bind:value={explorer.cvd}>
 			<option value="none">Normal trichromat</option>
 			<option value="protan">Protan (L-cone)</option>
 			<option value="deutan">Deutan (M-cone)</option>
@@ -141,7 +143,7 @@
 		</select>
 		<SliderRow
 			label="Severity"
-			bind:value={state.cvdSev}
+			bind:value={explorer.cvdSev}
 			min={0}
 			max={1}
 			step={0.05}
@@ -152,17 +154,17 @@
 		</p>
 	</ControlGroup>
 
-	<ControlGroup title="Theme" collapsible defaultOpen={true}>
-		<ThemeRamp bind:state {matrices} />
+	<ControlGroup title="Theme" helpId="theme" bind:openHelp collapsible defaultOpen={true}>
+		<ThemeRamp state={explorer} {matrices} />
 	</ControlGroup>
 
-	<ControlGroup title="Performance" collapsible defaultOpen={false}>
+	<ControlGroup title="Performance" helpId="performance" bind:openHelp collapsible defaultOpen={false}>
 		<label class="row" for="resolution-select"><span>Tessellation</span></label>
-		<select id="resolution-select" bind:value={state.N}>
+		<select id="resolution-select" bind:value={explorer.N}>
 			{#each resolutions as resolution}
 				<option value={resolution}>{resolution} x {resolution} / face</option>
 			{/each}
 		</select>
-		<p class="note">{(6 * state.N * state.N).toLocaleString()} instances - 1 quad in memory</p>
+		<p class="note">{(6 * explorer.N * explorer.N).toLocaleString()} instances - 1 quad in memory</p>
 	</ControlGroup>
 </aside>

@@ -47,7 +47,7 @@
 			drawerOpen = false;
 		}}
 	></button>
-	<LeftControls state={explorer} {matrices} />
+	<LeftControls explorer={appState.explorer} {matrices} />
 	<Viewport state={explorer} {camera} />
 	<RightInspector state={explorer} />
 </div>

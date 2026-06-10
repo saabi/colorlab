@@ -1,10 +1,12 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import ControlGroup from './ControlGroup.svelte';
+	import PanelHeader from './PanelHeader.svelte';
 	import { drawConesPanel } from '$lib/panels/cones-panel';
 	import { drawTransferPanel } from '$lib/panels/transfer-panel';
 	import { drawXyPanel } from '$lib/panels/xy-panel';
 
+	import type { HelpId } from '$lib/inspector/help-copy';
 	import type { ExplorerState } from '$lib/engine/types';
 	import type { Vec3 } from '$lib/color/math';
 
@@ -14,6 +16,7 @@
 	let xyCanvas: HTMLCanvasElement;
 	let spectrumLabel = $state('');
 	let activeTab = $state<'transfer' | 'cones' | 'xy' | 'values'>('transfer');
+	let openHelp = $state<HelpId | null>(null);
 
 	const fmt = (value: number, places = 3) => (Math.abs(value) < 1e-4 ? 0 : value).toFixed(places);
 	const fmtVec = (vec: Vec3, places = 3) => vec.map((v: number) => fmt(v, places)).join(' ');
@@ -68,6 +71,11 @@
 		activeTab;
 		queueDrawPanels();
 	});
+
+	$effect(() => {
+		activeTab;
+		openHelp = null;
+	});
 </script>
 
 <aside class="side-panel right-panel">
@@ -103,17 +111,26 @@
 	</div>
 
 	<section class:active={activeTab === 'transfer'} class="inspector-tab-panel">
-		<div class="panel-label">Transfer (encode to linear)</div>
+		<PanelHeader
+			label="Transfer (encode to linear)"
+			panelId="transfer"
+			bind:openHelp
+		/>
 		<canvas bind:this={transferCanvas} class="panel-canvas" aria-label="Transfer curve panel"></canvas>
 	</section>
 
 	<section class:active={activeTab === 'cones'} class="inspector-tab-panel">
-		<div class="panel-label">Cone fundamentals L M S <span style="float: right; text-transform: none">{spectrumLabel}</span></div>
+		<PanelHeader
+			label="Cone fundamentals L M S"
+			panelId="cones"
+			meta={spectrumLabel}
+			bind:openHelp
+		/>
 		<canvas bind:this={conesCanvas} class="panel-canvas tall" aria-label="Cone fundamentals and spectrum panel"></canvas>
 	</section>
 
 	<section class:active={activeTab === 'xy'} class="inspector-tab-panel">
-		<div class="panel-label">CIE xy chromaticity</div>
+		<PanelHeader label="CIE xy chromaticity" panelId="xy" bind:openHelp />
 		<canvas bind:this={xyCanvas} class="panel-canvas tall" aria-label="CIE xy chromaticity panel"></canvas>
 
 		<p class="note">
@@ -122,6 +139,7 @@
 	</section>
 
 	<section class:active={activeTab === 'values'} class="inspector-tab-panel values-panel">
+		<PanelHeader label="Hovered stimulus" panelId="values" bind:openHelp />
 		<ControlGroup title="Hovered stimulus">
 			<div class:oog={!!explorer.hover && !explorer.hover.inGamut} class="swatch" style={swatchStyle}>
 				<span>{explorer.hover ? (explorer.hover.inGamut ? '' : 'OUT OF GAMUT') : ''}</span>
