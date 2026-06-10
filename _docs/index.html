@@ -1,0 +1,1251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gamut Explorer · instanced color solids</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0a0a0b; --panel:#121214; --panel2:#191a1d; --line:#26272b;
+    --txt:#ededee; --dim:#9a9ba1; --faint:#5c5d63;
+    --accent:#d6a93a; --cool:#5fb8c4; --warn:#e0533d;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--txt);font:13px/1.45 "IBM Plex Sans",sans-serif;overflow:hidden}
+  #app{display:grid;grid-template-columns:280px 1fr 300px;grid-template-rows:48px 1fr;height:100vh}
+  header{grid-column:1/4;display:flex;align-items:center;gap:12px;padding:0 16px;border-bottom:1px solid var(--line);background:rgba(10,10,11,.9)}
+  header h1{font-size:14px;font-weight:600;letter-spacing:.04em}
+  header .sub{color:var(--dim);font-size:11px}
+  header .badge{margin-left:auto;font-size:10px;color:var(--accent);border:1px solid #3a2f12;background:#d6a93a14;padding:2px 8px;border-radius:99px}
+  aside,#right{background:var(--panel);border-right:1px solid var(--line);overflow-y:auto;padding:14px}
+  #right{border-right:none;border-left:1px solid var(--line)}
+  #viewwrap{position:relative;background:var(--bg)}
+  canvas#gl{position:absolute;inset:0;width:100%;height:100%;display:block;cursor:crosshair}
+  .grp{margin-bottom:16px}
+  .grp h2{font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--faint);margin-bottom:8px}
+  label.row{display:flex;justify-content:space-between;align-items:center;margin:6px 0;color:var(--dim);font-size:12px}
+  label.row span.val{font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--txt)}
+  select,button{background:var(--panel2);color:var(--txt);border:1px solid var(--line);border-radius:6px;padding:5px 8px;font:12px "IBM Plex Sans";width:100%}
+  select:focus,button:focus{outline:1px solid var(--accent)}
+  button{cursor:pointer} button:hover{border-color:var(--accent)}
+  input[type=range]{width:100%;accent-color:var(--accent)}
+  input[type=checkbox]{accent-color:var(--accent)}
+  .seg{display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px}
+  .seg button{padding:5px 2px;font-size:11px}
+  .seg button.on{background:var(--accent);color:#0a0a0b;border-color:var(--accent);font-weight:600}
+  .mono{font-family:"IBM Plex Mono",monospace;font-size:11px}
+  #chain{display:flex;flex-direction:column;gap:3px}
+  #chain .stage{display:flex;justify-content:space-between;border-bottom:1px solid #1c1d21;padding:3px 0}
+  #chain .stage b{color:var(--dim);font-weight:500;font-size:11px}
+  #chain .stage span{font-family:"IBM Plex Mono",monospace;font-size:10.5px}
+  #swatch{height:34px;border-radius:6px;border:1px solid var(--line);margin-bottom:6px;display:flex;align-items:center;justify-content:center;font-size:10px;letter-spacing:.06em;color:#0008;text-shadow:0 0 2px #fff5}
+  #swatch.oog{color:#fffb;text-shadow:none;outline:1px dashed var(--warn);outline-offset:-4px}
+  .panel-cv{width:100%;height:110px;background:var(--bg);border:1px solid var(--line);border-radius:6px;display:block}
+  .pl{font-size:10px;color:var(--faint);margin:8px 0 4px;text-transform:uppercase;letter-spacing:.08em}
+  #hint{position:absolute;left:12px;bottom:10px;font-size:11px;color:var(--faint);pointer-events:none}
+  .note{font-size:10.5px;color:var(--faint);line-height:1.4;margin-top:4px}
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <h1>GAMUT EXPLORER</h1><span class="sub">instanced color solids · arbitrary slices · transform chain</span>
+    <span class="badge">WebGL2 · zero deps</span>
+  </header>
+
+  <aside>
+    <div class="grp"><h2>Color space (world)</h2>
+      <select id="selSpace">
+        <option value="3" selected>Oklab</option>
+        <option value="2">CIELAB (deprecated)</option>
+        <option value="1">CIE XYZ</option>
+        <option value="0">Linear RGB cube</option>
+        <option value="5">Luminance romboid</option>
+      </select>
+    </div>
+    <div class="grp"><h2>Gamut (cube primaries)</h2>
+      <select id="selGamut"></select>
+      <p class="note">The conserved museum: changing primaries reshapes the solid through the same pipeline.</p>
+    </div>
+    <div class="grp"><h2>Slice</h2>
+      <label class="row"><span>Enable slice</span><input type="checkbox" id="ckSlice" checked></label>
+      <label class="row"><span>Cut above plane</span><input type="checkbox" id="ckAbove" checked></label>
+      <label class="row"><span>Cut below plane</span><input type="checkbox" id="ckBelow" checked></label>
+      <div class="seg" id="planeSeg">
+        <button data-p="L" class="on">Lightness</button><button data-p="H">Hue plane</button><button data-p="C">Custom</button>
+      </div>
+      <label class="row"><span>Offset</span><span class="val" id="vOff">0.00</span></label>
+      <input type="range" id="slOff" min="-0.6" max="0.6" step="0.005" value="0">
+      <label class="row"><span>Hue / azimuth</span><span class="val" id="vAz">25°</span></label>
+      <input type="range" id="slAz" min="0" max="360" step="1" value="25">
+      <label class="row"><span>Elevation (custom)</span><span class="val" id="vEl">90°</span></label>
+      <input type="range" id="slEl" min="0" max="90" step="1" value="90">
+      <label class="row"><span>Slab half-width ε</span><span class="val" id="vEps">0.010</span></label>
+      <input type="range" id="slEps" min="0.001" max="0.08" step="0.001" value="0.01">
+    </div>
+    <div class="grp"><h2>Tessellation</h2>
+      <select id="selRes">
+        <option value="64">64 × 64 / face</option>
+        <option value="128" selected>128 × 128 / face</option>
+        <option value="192">192 × 192 / face</option>
+        <option value="256">256 × 256 / face</option>
+      </select>
+      <p class="note" id="instCount"></p>
+    </div>
+    <div class="grp"><h2>Theme ramp (v0)</h2>
+      <div class="seg" style="grid-template-columns:1fr 1fr">
+        <button id="btnA">Set A</button><button id="btnB">Set B</button>
+      </div>
+      <div class="seg" style="grid-template-columns:1fr 1fr 1fr;margin-top:4px">
+        <button id="btnSeg" class="on">Segment</button><button id="btnArc">Hue arc</button><button id="btnSpread">Spread A</button>
+      </div>
+      <div id="sprdCtl" style="display:none">
+        <label class="row"><span>Δ hue</span><span class="val" id="vDh">40°</span></label>
+        <input type="range" id="slDh" min="0" max="180" step="1" value="40">
+        <label class="row"><span>Δ chroma</span><span class="val" id="vDc">0.10</span></label>
+        <input type="range" id="slDc" min="0" max="0.40" step="0.005" value="0.10">
+        <div class="seg" style="grid-template-columns:1fr 1fr;margin-top:4px">
+          <button id="btnCLin" class="on">Linear ±Δc</button><button id="btnCMir">Mirror −|Δc|</button>
+        </div>
+      </div>
+      <label class="row"><span>Steps</span><span class="val" id="vSteps">7</span></label>
+      <input type="range" id="slSteps" min="2" max="12" step="1" value="7">
+      <div id="ramp" style="display:flex;gap:2px;margin:8px 0;height:26px"></div>
+      <button id="btnExport">Export CSS tokens (oklch)</button>
+      <button id="btnExportJson" style="margin-top:4px">Export DTCG JSON</button>
+      <div style="margin-top:8px;border-top:1px solid var(--line);padding-top:8px">
+        <div class="pl" style="margin:0 0 4px">Auto-adjust</div>
+        <button id="btnFitGamut">Fit stops inside sRGB</button>
+        <button id="btnFitWcag" style="margin-top:4px">Ensure WCAG AA on <span id="wcagBgLbl">white</span></button>
+        <label class="row" style="margin-top:4px"><span>AA target</span><span class="val" id="vAA">4.5:1</span></label>
+        <input type="range" id="slAA" min="3" max="7" step="0.5" value="4.5">
+        <button id="btnFitEven" style="margin-top:4px">Even perceptual spacing</button>
+      </div>
+      <textarea id="exportTa" readonly spellcheck="false" style="width:100%;height:96px;margin-top:6px;background:var(--panel2);color:var(--txt);border:1px solid var(--line);border-radius:6px;font:10px 'IBM Plex Mono',monospace;padding:6px;display:none;resize:vertical"></textarea>
+      <p class="note">Arm an anchor, then click the solid or slice cap to drop it. Segment = straight through the space; Hue arc = cylindrical sweep around the neutral axis (constant chroma when both anchors share a radius — meaningful in CIELAB/Oklab). Choose Oklab for near-perceptual spacing. Dashed = outside the active gamut.</p>
+    </div>
+    <div class="grp"><h2>Display</h2>
+      <label class="row"><span>Floor grid</span><input type="checkbox" id="ckFloor" checked></label>
+      <label class="row"><span>Surface grid lines</span><input type="checkbox" id="ckLines" checked></label>
+      <label class="row"><span>Cross-section outline</span><input type="checkbox" id="ckOutline" checked></label>
+      <label class="row"><span>Wide-gamut shell</span></label>
+      <select id="selShell">
+        <option value="none" selected>None</option>
+        <option value="p3">DCI-P3 D65</option>
+        <option value="rec2020">Rec.2020</option>
+        <option value="ntsc">NTSC 1953</option>
+        <option value="cie">CIE 1931 RGB</option>
+      </select>
+      <label class="row"><span>Color vision</span></label>
+      <select id="selCvd">
+        <option value="none" selected>Normal trichromat</option>
+        <option value="protan">Protan (L-cone)</option>
+        <option value="deutan">Deutan (M-cone)</option>
+        <option value="tritan">Tritan (S-cone)</option>
+      </select>
+      <label class="row"><span>Severity</span><span class="val" id="vCvd">1.00</span></label>
+      <input type="range" id="slCvd" min="0" max="1" step="0.05" value="1">
+      <p class="note">Simulated at the LMS cone stage. 1.0 = dichromat, &lt;1 = anomalous trichromat. Affects the solid and all stimulus readouts.</p>
+    </div>
+  </aside>
+
+  <div id="viewwrap">
+    <canvas id="gl"></canvas>
+    <div id="hint">drag · orbit&nbsp;&nbsp;wheel · zoom&nbsp;&nbsp;hover solid · inspect chain</div>
+  </div>
+
+  <div id="right">
+    <div class="grp"><h2>Hovered stimulus</h2>
+      <div id="swatch"><span id="swlabel"></span></div>
+      <div id="chain"></div>
+    </div>
+    <div class="pl">Transfer (encode ↔ linear)</div>
+    <canvas class="panel-cv" id="cvTrc"></canvas>
+    <div class="pl">Cone fundamentals L·M·S <span style="float:right;text-transform:none">bars = excitations</span></div>
+    <canvas class="panel-cv" id="cvCone"></canvas>
+    <div class="pl">CIE xy chromaticity</div>
+    <canvas class="panel-cv" id="cvXY" style="height:150px"></canvas>
+    <div class="pl">Spectrum <span style="float:right;text-transform:none" id="domL"></span></div>
+    <canvas class="panel-cv" id="cvSpec" style="height:30px"></canvas>
+    <p class="note">Excitations are integrals: a general color is three magnitudes, not points on λ-curves. Only spectral stimuli sit on the curves.</p>
+  </div>
+</div>
+
+<script>
+"use strict";
+/* ============================================================
+   == module: pipeline ==  SINGLE SOURCE OF TRUTH
+   All matrices row-major; m3gl() transposes for WebGL upload.
+   ============================================================ */
+const V3=(x,y,z)=>[x,y,z];
+const m3 = {
+  mulV:(m,v)=>[ m[0]*v[0]+m[1]*v[1]+m[2]*v[2], m[3]*v[0]+m[4]*v[1]+m[5]*v[2], m[6]*v[0]+m[7]*v[1]+m[8]*v[2] ],
+  mul:(a,b)=>{const r=new Array(9);for(let i=0;i<3;i++)for(let j=0;j<3;j++){let s=0;for(let k=0;k<3;k++)s+=a[i*3+k]*b[k*3+j];r[i*3+j]=s;}return r;},
+  inv:(m)=>{
+    const [a,b,c,d,e,f,g,h,i]=m;
+    const A=e*i-f*h, B=-(d*i-f*g), C=d*h-e*g;
+    const det=a*A+b*B+c*C;
+    return [A/det,(c*h-b*i)/det,(b*f-c*e)/det, B/det,(a*i-c*g)/det,(c*d-a*f)/det, C/det,(b*g-a*h)/det,(a*e-b*d)/det];
+  },
+  diag:(v)=>[v[0],0,0, 0,v[1],0, 0,0,v[2]],
+};
+const m3gl = m => new Float32Array([m[0],m[3],m[6], m[1],m[4],m[7], m[2],m[5],m[8]]); // -> column-major
+
+/* -- cube orientation: rotate so the RGB neutral diagonal [1,1,1] -> world +Y
+   (black bottom, white top). Standard yaw 45° then tilt by atan(1/√2). -- */
+const _ry=(a)=>[Math.cos(a),0,Math.sin(a), 0,1,0, -Math.sin(a),0,Math.cos(a)];
+const _rx=(a)=>[1,0,0, 0,Math.cos(a),-Math.sin(a), 0,Math.sin(a),Math.cos(a)];
+const _cubeRaw=m3.mul(_rx(-Math.atan(Math.SQRT2)), _ry(-Math.PI/4)); // (1,1,1) -> +Y, white top
+const CUBE_ROT=_cubeRaw.map(v=>v*(0.5/0.8660254)); // scale so |white.y|=0.5 (rests on floor like other spaces)
+const CUBE_ROTi=m3.inv(CUBE_ROT);
+const REC709_Y=[0.2126,0.7152,0.0722]; // luminance weights for the romboid mode
+const TRC = {
+  srgb:{ enc:v=>v<=0.0031308?12.92*v:1.055*Math.pow(v,1/2.4)-0.055,
+         dec:v=>v<=0.04045?v/12.92:Math.pow((v+0.055)/1.055,2.4) },
+  g22:{ enc:v=>Math.pow(Math.max(v,0),1/2.2), dec:v=>Math.pow(Math.max(v,0),2.2) },
+  lin:{ enc:v=>v, dec:v=>v },
+};
+
+/* -- Primaries/White algebra (same construction as colorspaces.glsl) -- */
+const Primaries=(r1,r2,g1,g2,b1,b2)=>[ r1,g1,b1, r2,g2,b2, 1-r1-r2,1-g1-g2,1-b1-b2 ]; // columns are xyz of R,G,B (row-major)
+const White=(x,y)=>[x/y,1,(1-x-y)/y];
+function rgbToXyzM(primaries,white){ const s=m3.mulV(m3.inv(primaries),white); return m3.mul(primaries,m3.diag(s)); }
+
+/* -- gamut museum (conserved from colorspaces.glsl; Samsung typo NOT carried) -- */
+const GAMUTS = {
+  srgb:   {label:"sRGB / Rec.709", P:Primaries(0.64,0.33, 0.30,0.60, 0.15,0.06),  W:White(0.312713,0.329016), trc:TRC.srgb},
+  p3:     {label:"DCI-P3 D65",     P:Primaries(0.68,0.32, 0.265,0.69, 0.15,0.06), W:White(0.312713,0.329016), trc:TRC.srgb},
+  rec2020:{label:"Rec.2020",       P:Primaries(0.708,0.292,0.17,0.797, 0.131,0.046),W:White(0.312713,0.329016),trc:TRC.srgb},
+  ntsc:   {label:"NTSC 1953",      P:Primaries(0.67,0.33, 0.21,0.71, 0.14,0.08),  W:White(0.310063,0.316158), trc:TRC.g22},
+  ebu:    {label:"EBU (Rec.601-625)",P:Primaries(0.64,0.33, 0.29,0.60, 0.15,0.06),W:White(0.312713,0.329016), trc:TRC.g22},
+  smptec: {label:"SMPTE-C",        P:Primaries(0.63,0.34, 0.31,0.595, 0.155,0.07),W:White(0.312713,0.329016), trc:TRC.g22},
+  cie:    {label:"CIE 1931 RGB",   P:Primaries(0.72329,0.27671,0.28557,0.71045,0.15235,0.02),W:White(1/3,1/3),trc:TRC.lin},
+};
+
+/* -- CIELAB, CORRECTED: a* = 500(fx - fy)  [bug in colorspaces.glsl: was fx - fz] -- */
+const D65 = White(0.312713,0.329016);
+const labF = t => t>0.008856 ? Math.cbrt(t) : 7.787*t + 16/116;
+const labFi= t => { const t3=t*t*t; return t3>0.008856 ? t3 : (t-16/116)/7.787; };
+function xyz2lab(xyz, w=D65){
+  const fx=labF(xyz[0]/w[0]), fy=labF(xyz[1]/w[1]), fz=labF(xyz[2]/w[2]);
+  return [116*fy-16, 500*(fx-fy), 200*(fy-fz)];
+}
+function lab2xyz(lab, w=D65){
+  const fy=(lab[0]+16)/116, fx=lab[1]/500+fy, fz=fy-lab[2]/200;   // fx from fy (corrected inverse)
+  return [w[0]*labFi(fx), w[1]*labFi(fy), w[2]*labFi(fz)];
+}
+
+/* -- Oklab (Ottosson 2021): defined from LINEAR sRGB -- */
+const OK_M1=[0.4122214708,0.5363325363,0.0514459929, 0.2119034982,0.6806995451,0.1073969566, 0.0883024619,0.2817188376,0.6299787005];
+const OK_M2=[0.2104542553,0.7936177850,-0.0040720468, 1.9779984951,-2.4285922050,0.4505937099, 0.0259040371,0.7827717662,-0.8086757660];
+const OK_M1i=m3.inv(OK_M1), OK_M2i=m3.inv(OK_M2);
+const scbrt=v=>Math.sign(v)*Math.cbrt(Math.abs(v));
+function lsrgb2oklab(rgb){ const l=m3.mulV(OK_M1,rgb).map(scbrt); return m3.mulV(OK_M2,l); }
+function oklab2lsrgb(lab){ const l=m3.mulV(OK_M2i,lab).map(v=>v*v*v); return m3.mulV(OK_M1i,l); }
+
+/* -- cone fundamentals (multi-gauss fits ported from colorspaces.glsl) -- */
+const LN2=Math.LN2;
+const gauss2=(x,A,x0,dx)=>A*Math.exp(-LN2*((x-x0)/dx)**2);
+const dgauss=(x,A,x0,dx)=>-2*LN2*A*(x-x0)*Math.exp(-LN2*(x-x0)**2/dx**2)/dx**2;
+function coneL(nm){return gauss2(nm,104344.92193406945,569.5078040786743,54.651444860776735)
+ +dgauss(nm,-156430.21591338454,590.1108598846736,26.58929437546323)
+ +dgauss(nm,-145288.27503926188,512.6297253843892,19.260656047167043)
+ +gauss2(nm,-7591.194203449524,641.0781271336464,37.920029730475456)
+ +gauss2(nm,1905.4399959767024,434.408633321614,17.7321868069511);}
+function coneM(nm){return gauss2(nm,108991.4133,547.2395,40.8751)
+ +dgauss(nm,486896.0939,504.2192,42.5372)
+ +dgauss(nm,-58768.3624,508.3118,13.5221)
+ +dgauss(nm,97877.6717,540.9401,19.0589);}
+function coneS(nm){return gauss2(nm,221368.60076492612,444.9973131221829,12.37472521822061)
+ +dgauss(nm,2185498.6747593815,442.0889660569674,17.327094668813405)
+ +dgauss(nm,-628537.5904831715,463.27066341009333,25.92687407427804)
+ +dgauss(nm,-2253931.2636179845,451.54166499032675,15.502068959529584)
+ +dgauss(nm,-7463.1094212072485,447.91353164623615,3.692212735536991);}
+const coneLMS=nm=>[coneL(nm)/1e5,coneM(nm)/1e5,coneS(nm)/1e5];
+/* basis pairing rule (see DESIGN §7): curves and bars share LMS2XYZ2 */
+const LMS2XYZ2=[1.94735469,-1.41445123,0.36476327, 0.68990272,0.34832189,0, 0,0,1.93485343];
+const XYZ2LMS2=m3.inv(LMS2XYZ2);
+const waveToXyz=nm=>m3.mulV(LMS2XYZ2,coneLMS(nm));
+const SRGB2XYZ=rgbToXyzM(GAMUTS.srgb.P,GAMUTS.srgb.W);
+const RGB2LMS=m3.mul(XYZ2LMS2,SRGB2XYZ);   // sRGB-linear -> cone LMS
+const LMS2RGB=m3.inv(RGB2LMS);
+
+/* -- color vision deficiency: simulate at the LMS stage (Viénot/Brettel
+   dichromat projections; anomalous trichromats interpolate by severity).
+   Derived from THIS project's cone fits + D65 white so the neutral axis is
+   fixed exactly (grays stay gray) — verified white-drift < 1e-15. -- */
+const CVD = {
+  none:null,
+  protan:[0,1.33975219,-0.26447683, 0,1,0, 0,0,1],          // L := f(M,S), W fixed
+  deutan:[1,0,0, 0.74640669,0,0.19740728, 0,0,1],           // M := f(L,S), W fixed
+  tritan:[1,0,0, 0,1,0, -0.7407034,1.51463889,0],           // S := f(L,M), W fixed
+};
+function applyCVD(lms,type,severity){
+  if(!CVD[type]) return lms;
+  const sim=m3.mulV(CVD[type],lms);
+  return [lms[0]+(sim[0]-lms[0])*severity, lms[1]+(sim[1]-lms[1])*severity, lms[2]+(sim[2]-lms[2])*severity];
+}
+function selftest(){
+  const M=rgbToXyzM(GAMUTS.srgb.P,GAMUTS.srgb.W), Mi=m3.inv(M);
+  let worst=0;
+  for(let i=0;i<200;i++){
+    const rgb=[Math.random(),Math.random(),Math.random()];
+    const a=m3.mulV(Mi,lab2xyz(xyz2lab(m3.mulV(M,rgb))));
+    const b=oklab2lsrgb(lsrgb2oklab(rgb));
+    for(let k=0;k<3;k++) worst=Math.max(worst,Math.abs(a[k]-rgb[k]),Math.abs(b[k]-rgb[k]));
+  }
+  console[(worst<1e-6)?"log":"error"](`pipeline selftest: max round-trip error ${worst.toExponential(2)}`);
+}
+
+/* ============================================================
+   == module: registry ==  spaces are data, not code paths
+   mode is the shader switch; arrange = world placement (scale,offset)
+   inv(world)->space coords->linear rgb implemented per space in JS.
+   ============================================================ */
+const SPACES = {
+  0:{label:"Linear RGB cube", // rotated onto black–white diagonal (black bottom, white top)
+     fromWorld:(p,M)=>{const c=m3.mulV(CUBE_ROTi,p);return[c[0]+.5,c[1]+.5,c[2]+.5];}},
+  5:{label:"Luminance romboid", // rotated cube, vertical position = Rec709 luminance
+     fromWorld:(p,M)=>{const c=m3.mulV(CUBE_ROTi,p);return[c[0]+.5,c[1]+.5,c[2]+.5];}},
+  1:{label:"CIE XYZ", arrange:{perm:[0,1,2],scale:[1,1,1],off:[-.48,-.5,-.54]},
+     fromWorld:(p,M)=>m3.mulV(m3.inv(M),[p[0]+.48,p[1]+.5,p[2]+.54])},
+  2:{label:"CIELAB (deprecated)", arrange:{perm:[1,0,2],scale:[.01,.01,.01],off:[0,-.5,0]},
+     fromWorld:(p,M)=>m3.mulV(m3.inv(M),lab2xyz([p[1]*100+50,p[0]*100,p[2]*100]))},
+  3:{label:"Oklab", arrange:{perm:[1,0,2],scale:[2.2,1,2.2],off:[0,-.5,0]},    // world=(2.2a,L-.5,2.2b)
+     fromWorld:(p,M,toSrgbLin)=>{const lab=[p[1]+.5,p[0]/2.2,p[2]/2.2]; const s=oklab2lsrgb(lab);
+       return m3.mulV(toSrgbLin.fromSrgb, s);}},  // sRGB-linear -> gamut-linear
+};
+
+/* ============================================================
+   == module: shaders ==  matrices arrive as uniforms only
+   ============================================================ */
+const VS_SOLID = `#version 300 es
+precision highp float; precision highp int;
+layout(location=0) in vec2 aCorner;
+uniform int uN, uSpaceMode;
+uniform mat3 uRgbToXyz, uXyzToRgb;   // gamut-linear RGB <-> XYZ
+uniform mat3 uOkM1, uOkM2;           // gamut-linear RGB -> Oklab (M1 composed on CPU)
+uniform mat3 uOkM1i, uOkM2i;         // inverses (computed in pipeline.js)
+uniform vec3 uWhite, uLumaW;
+uniform mat3 uCubeRot, uCubeRoti;
+uniform vec3 uPlaneN; uniform float uPlaneD, uSliceEps, uSliceOn, uCutAbove, uCutBelow;
+uniform mat4 uProj, uView;
+out vec3 vRgb; out vec3 vWorld;
+
+vec3 faceToRgb(int f, vec2 uv){
+  if(f==0) return vec3(0.0,uv.x,uv.y);
+  if(f==1) return vec3(1.0,uv.x,uv.y);
+  if(f==2) return vec3(uv.x,0.0,uv.y);
+  if(f==3) return vec3(uv.x,1.0,uv.y);
+  if(f==4) return vec3(uv.x,uv.y,0.0);
+  return vec3(uv.x,uv.y,1.0);
+}
+float labF(float t){ return t>0.008856 ? pow(t,1.0/3.0) : 7.787*t+16.0/116.0; }
+float labFi(float t){ float t3=t*t*t; return t3>0.008856 ? t3 : (t-16.0/116.0)/7.787; }
+vec3 toWorld(vec3 rgb){
+  if(uSpaceMode==0) return uCubeRot*(rgb-0.5);
+  if(uSpaceMode==5){ // luminance romboid: rotated cube with vertical = Rec709 luma
+    vec3 p=uCubeRot*(rgb-0.5);
+    float luma=dot(rgb,uLumaW);
+    return vec3(p.x, luma-0.5, p.z);
+  }
+  vec3 xyz = uRgbToXyz*rgb;
+  if(uSpaceMode==1) return xyz-vec3(0.48,0.5,0.54);
+  if(uSpaceMode==2){
+    vec3 f=vec3(labF(xyz.x/uWhite.x),labF(xyz.y/uWhite.y),labF(xyz.z/uWhite.z));
+    vec3 lab=vec3(116.0*f.y-16.0, 500.0*(f.x-f.y), 200.0*(f.y-f.z)); // corrected a*
+    return vec3(lab.y, lab.x-50.0, lab.z)*0.01;
+  }
+  vec3 lms=uOkM1*rgb; lms=sign(lms)*pow(abs(lms),vec3(1.0/3.0));
+  vec3 lab=uOkM2*lms;
+  return vec3(lab.y*2.2, lab.x-0.5, lab.z*2.2);
+}
+vec3 fromWorld(vec3 p){
+  if(uSpaceMode==0||uSpaceMode==5) return uCubeRoti*p+0.5; // romboid inverts via rotated cube
+  if(uSpaceMode==1) return uXyzToRgb*(p+vec3(0.48,0.5,0.54));
+  if(uSpaceMode==2){
+    float L=p.y*100.0+50.0, a=p.x*100.0, b=p.z*100.0;
+    float fy=(L+16.0)/116.0, fx=a/500.0+fy, fz=fy-b/200.0; // corrected inverse: fx from fy
+    return uXyzToRgb*vec3(uWhite.x*labFi(fx), uWhite.y*labFi(fy), uWhite.z*labFi(fz));
+  }
+  vec3 lab=vec3(p.y+0.5, p.x/2.2, p.z/2.2);
+  vec3 lms=uOkM2i*lab; lms=lms*lms*lms;
+  return uOkM1i*lms;
+}
+void main(){
+  int cells=uN*uN; int face=gl_InstanceID/cells; int cell=gl_InstanceID-face*cells;
+  vec2 uv=(vec2(float(cell%uN),float(cell/uN))+aCorner)/float(uN);
+  vec3 rgb=faceToRgb(face,uv);
+  vec3 p=toWorld(rgb);
+  if(uSliceOn>0.5 && (uCutAbove>0.5||uCutBelow>0.5)){
+    float smin = uCutBelow>0.5 ? -uSliceEps : -1.0e9;
+    float smax = uCutAbove>0.5 ?  uSliceEps :  1.0e9;
+    // generalized form of the original colorspace.vert loop. CRITICAL ORDER:
+    // the loop must END on the cube clamp so every vertex carries a real
+    // color. The cap is then flattened CONDITIONALLY — only where the
+    // snapped point is still a valid color. An unconditional final snap
+    // parks non-converged far-side vertices on the plane OUTSIDE the cube
+    // (the overflow sheet).
+    for(int i=0;i<5;i++){
+      float s=dot(p,uPlaneN)-uPlaneD;
+      p-=uPlaneN*(s-clamp(s,smin,smax));
+      rgb=clamp(fromWorld(p),0.0,1.0);
+      p=toWorld(rgb);
+    }
+    float s=dot(p,uPlaneN)-uPlaneD;
+    vec3 pf=p-uPlaneN*(s-clamp(s,smin,smax));
+    vec3 rf=fromWorld(pf);
+    if(all(greaterThanEqual(rf,vec3(-0.002)))&&all(lessThanEqual(rf,vec3(1.002)))){
+      p=pf; rgb=clamp(rf,0.0,1.0);
+    }
+  }
+  vRgb=rgb; vWorld=p;
+  gl_Position=uProj*uView*vec4(p,1.0);
+}`;
+
+const FS_SOLID = `#version 300 es
+precision highp float;
+in vec3 vRgb; in vec3 vWorld; out vec4 frag;
+uniform float uLines, uGhost, uCvdSev;
+uniform mat3 uCvd;            // identity when no deficiency
+uniform mat3 uRgb2Lms, uLms2Rgb; // sRGB-linear <-> cone LMS (composed on CPU)
+float g1(float t){ return mix(1.055*pow(t,1.0/2.4)-0.055, 12.92*t, step(t,0.0031308)); }
+vec3 srgbGamma(vec3 c){ return vec3(g1(c.x),g1(c.y),g1(c.z)); }
+vec3 cvd(vec3 lin){
+  if(uCvdSev<0.001) return lin;
+  vec3 lms=uRgb2Lms*lin;
+  vec3 sim=uCvd*lms;
+  lms=mix(lms,sim,uCvdSev);
+  return uLms2Rgb*lms;
+}
+void main(){
+  vec3 lin=clamp(vRgb,0.0,1.0);
+  vec3 c=srgbGamma(clamp(cvd(lin),0.0,1.0));
+  if(uGhost>0.5){ frag=vec4(c*0.085,1.0); return; }   // additive wide-gamut shell
+  float v=0.0;
+  if(uLines>0.5){
+    vec3 coord=mod(srgbGamma(lin),0.9999)+1.0;          // grid keyed to true color (not CVD-shifted)
+    vec3 grid=abs(fract(coord-0.5)-0.5)/fwidth(coord*3.0);
+    v=1.0-min(min(min(grid.x,grid.y),grid.z),1.0);
+    coord*=10.0;
+    grid=abs(fract(coord-0.5)-0.5)/fwidth(coord*1.0);
+    v+=1.0-min(min(min(grid.x,grid.y),grid.z),1.0);
+    v=clamp(v,0.0,1.0)*clamp(1.0/pow(length(vWorld)+0.6,2.0),0.0,1.0)*0.9;
+  }
+  frag=vec4(c*(1.0-v*0.2),1.0);
+}`;
+
+const VS_LINE = `#version 300 es
+precision highp float;
+layout(location=0) in vec3 aPos;
+uniform mat4 uProj,uView;
+void main(){ gl_Position=uProj*uView*vec4(aPos,1.0); }`;
+const FS_LINE = `#version 300 es
+precision highp float; out vec4 frag; uniform vec3 uCol;
+void main(){ frag=vec4(uCol,1.0); }`;
+
+const VS_FLOOR = `#version 300 es
+precision highp float;
+layout(location=0) in vec2 aXZ;
+uniform mat4 uProj,uView; uniform float uY;
+out vec3 vW;
+void main(){ vW=vec3(aXZ.x,uY,aXZ.y); gl_Position=uProj*uView*vec4(vW,1.0); }`;
+
+const FS_FLOOR = `#version 300 es
+precision highp float;
+in vec3 vW; out vec4 frag;
+void main(){                                            // port of grid.frag, rings ENABLED
+  float dF=clamp(1.0/pow(length(vW)*1.4,2.0),0.0,1.0);
+  vec2 c=vW.xz*2.0;
+  vec2 g=abs(fract(c-0.5)-0.5)/fwidth(c*3.0);
+  float v=1.0-min(min(g.x,g.y),1.0);
+  c*=5.0;
+  g=abs(fract(c-0.5)-0.5)/fwidth(c);
+  v+=1.0-min(min(g.x,g.y),1.0);
+  float r=length(vW.xz)*4.0;
+  float ring=abs(fract(r-0.5)-0.5)/fwidth(r);
+  v+=1.0-min(ring,1.0);
+  frag=vec4(vec3(clamp(v,0.0,1.0)*dF*0.12),1.0);
+}`;
+
+const VS_MARK = `#version 300 es
+precision highp float;
+uniform mat4 uProj,uView; uniform vec3 uPos;
+void main(){ gl_Position=uProj*uView*vec4(uPos,1.0); gl_PointSize=10.0; }`;
+const FS_MARK = `#version 300 es
+precision highp float; out vec4 frag; uniform vec3 uCol;
+void main(){ vec2 d=gl_PointCoord-0.5; if(dot(d,d)>0.25) discard;
+  float edge=smoothstep(0.25,0.16,dot(d,d));
+  frag=vec4(mix(vec3(1.0),uCol,edge),1.0); }`;
+
+/* ============================================================
+   == module: camera ==  minimal mat4 + orbit
+   ============================================================ */
+function persp(fovy,asp,n,f){const t=1/Math.tan(fovy/2);
+  return new Float32Array([t/asp,0,0,0, 0,t,0,0, 0,0,(f+n)/(n-f),-1, 0,0,2*f*n/(n-f),0]);}
+function lookAt(eye,ct,up){
+  const z=norm3(sub3(eye,ct)), x=norm3(cross3(up,z)), y=cross3(z,x);
+  return new Float32Array([x[0],y[0],z[0],0, x[1],y[1],z[1],0, x[2],y[2],z[2],0,
+    -dot3(x,eye),-dot3(y,eye),-dot3(z,eye),1]);}
+const sub3=(a,b)=>[a[0]-b[0],a[1]-b[1],a[2]-b[2]];
+const dot3=(a,b)=>a[0]*b[0]+a[1]*b[1]+a[2]*b[2];
+const cross3=(a,b)=>[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]];
+const norm3=a=>{const l=Math.hypot(...a)||1;return[a[0]/l,a[1]/l,a[2]/l];};
+
+const cam={yaw:0.7,pitch:0.42,dist:2.6,target:[0,-0.05,0],fov:Math.PI/4};
+function camEye(){const cp=Math.cos(cam.pitch),sp=Math.sin(cam.pitch),cy=Math.cos(cam.yaw),sy=Math.sin(cam.yaw);
+  return [cam.target[0]+cam.dist*cp*sy, cam.target[1]+cam.dist*sp, cam.target[2]+cam.dist*cp*cy];}
+function camRay(px,py,w,h){ // analytic ray, no mat4 inverse (DESIGN §6)
+  const eye=camEye(), f=norm3(sub3(cam.target,eye)), r=norm3(cross3(f,[0,1,0])), u=cross3(r,f);
+  const t=Math.tan(cam.fov/2), a=w/h, nx=(px/w)*2-1, ny=1-(py/h)*2;
+  const d=norm3([f[0]+nx*t*a*r[0]+ny*t*u[0], f[1]+nx*t*a*r[1]+ny*t*u[1], f[2]+nx*t*a*r[2]+ny*t*u[2]]);
+  return {ro:eye, rd:d};
+}
+
+/* ============================================================
+   == module: renderer ==
+   ============================================================ */
+const glc=document.getElementById('gl');
+const gl=glc.getContext('webgl2',{antialias:true});
+if(!gl){ document.getElementById('viewwrap').innerHTML='<p style="padding:2em">WebGL2 unavailable.</p>'; throw new Error('no webgl2'); }
+
+function compile(vsrc,fsrc){
+  const mk=(t,s)=>{const sh=gl.createShader(t);gl.shaderSource(sh,s);gl.compileShader(sh);
+    if(!gl.getShaderParameter(sh,gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(sh)); return sh;};
+  const p=gl.createProgram();
+  gl.attachShader(p,mk(gl.VERTEX_SHADER,vsrc)); gl.attachShader(p,mk(gl.FRAGMENT_SHADER,fsrc));
+  gl.linkProgram(p);
+  if(!gl.getProgramParameter(p,gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(p));
+  return p;
+}
+const progSolid=compile(VS_SOLID,FS_SOLID), progFloor=compile(VS_FLOOR,FS_FLOOR),
+      progMark=compile(VS_MARK,FS_MARK), progLine=compile(VS_LINE,FS_LINE);
+const U=(p,n)=>gl.getUniformLocation(p,n);
+
+/* the entire solid geometry: ONE unit quad (8 floats). everything else is gl_InstanceID. */
+const vaoSolid=gl.createVertexArray(); gl.bindVertexArray(vaoSolid);
+const bufQuad=gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER,bufQuad);
+gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([0,0, 1,0, 0,1, 1,1]),gl.STATIC_DRAW);
+gl.enableVertexAttribArray(0); gl.vertexAttribPointer(0,2,gl.FLOAT,false,0,0);
+
+const vaoFloor=gl.createVertexArray(); gl.bindVertexArray(vaoFloor);
+const bufFloor=gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER,bufFloor);
+const FE=6;
+gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-FE,-FE, FE,-FE, -FE,FE, FE,FE]),gl.STATIC_DRAW);
+gl.enableVertexAttribArray(0); gl.vertexAttribPointer(0,2,gl.FLOAT,false,0,0);
+
+const vaoLine=gl.createVertexArray(); gl.bindVertexArray(vaoLine);
+const bufLine=gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER,bufLine);
+gl.bufferData(gl.ARRAY_BUFFER,4,gl.DYNAMIC_DRAW);
+gl.enableVertexAttribArray(0); gl.vertexAttribPointer(0,3,gl.FLOAT,false,0,0);
+let lineVertCount=0;
+gl.bindVertexArray(null);
+
+/* ============================================================
+   == module: state + ui ==
+   ============================================================ */
+const state={ spaceMode:3, gamut:'srgb', N:128, slice:true, planeMode:'L',
+  off:0, az:25, el:90, eps:0.01, floor:true, lines:true,
+  cutAbove:true, cutBelow:true, shell:'none', outline:true,
+  cvd:'none', cvdSev:1.0,
+  theme:{ A:null, B:null, steps:7, arm:null, mode:'seg', stops:[],
+          dh:40, dc:0.10, cprof:'linear', aa:4.5, wcagBg:'white' },
+  hover:null /* {world, rgbLin, inGamut} */ };
+
+const selGamut=document.getElementById('selGamut');
+for(const k in GAMUTS){const o=document.createElement('option');o.value=k;o.textContent=GAMUTS[k].label;selGamut.appendChild(o);}
+selGamut.value='srgb';
+
+/* derived per-gamut matrices (recomputed on gamut change; uploaded as uniforms) */
+let MAT={};
+function rebuildMatrices(){
+  const g=GAMUTS[state.gamut];
+  const rgb2xyz=rgbToXyzM(g.P,g.W);
+  const srgb2xyz=rgbToXyzM(GAMUTS.srgb.P,GAMUTS.srgb.W);
+  const xyz2srgb=m3.inv(srgb2xyz);
+  const gamut2srgbLin=m3.mul(xyz2srgb,rgb2xyz);          // gamut-linear -> sRGB-linear
+  MAT={ rgb2xyz, xyz2rgb:m3.inv(rgb2xyz),
+        okM1:m3.mul(OK_M1,gamut2srgbLin), okM2:OK_M2,    // Oklab stays sRGB-defined; composed on CPU (DESIGN §4)
+        toSrgbLin:{ toSrgb:gamut2srgbLin, fromSrgb:m3.inv(gamut2srgbLin) },
+        white:g.W };
+  MAT.okM1i=m3.inv(MAT.okM1); MAT.okM2i=OK_M2i;          // shader fromWorld inverses (single source)
+}
+let SHELLMAT=null;
+function rebuildShell(){
+  if(state.shell==='none'){SHELLMAT=null;return;}
+  const g=GAMUTS[state.shell];
+  const rgb2xyz=rgbToXyzM(g.P,g.W);
+  const xyz2srgb=m3.inv(rgbToXyzM(GAMUTS.srgb.P,GAMUTS.srgb.W));
+  const g2s=m3.mul(xyz2srgb,rgb2xyz);
+  SHELLMAT={rgb2xyz, xyz2rgb:m3.inv(rgb2xyz), okM1:m3.mul(OK_M1,g2s),
+            okM1i:m3.inv(m3.mul(OK_M1,g2s)), okM2:OK_M2, okM2i:OK_M2i, white:g.W};
+}
+rebuildMatrices();
+
+/* plane (world space) from UI */
+function planeND(){
+  if(state.planeMode==='L') return {n:[0,1,0], d:state.off};
+  const azr=state.az*Math.PI/180;
+  if(state.planeMode==='H') return {n:[Math.cos(azr),0,Math.sin(azr)], d:state.off};
+  const elr=state.el*Math.PI/180;
+  const n=[Math.cos(elr)*Math.cos(azr), Math.sin(elr), Math.cos(elr)*Math.sin(azr)];
+  return {n, d:state.off};
+}
+
+/* ============================================================
+   == module: pick ==  analytic, CPU-side, single evaluation feeds everything
+   ============================================================ */
+/* visible-surface field: a point is inside the rendered solid iff its color
+   exists in the cube AND it survives the cut. Boundary = cube faces ∪ slice cap. */
+function solidField(p){
+  const rgb=SPACES[state.spaceMode].fromWorld(p,MAT.rgb2xyz,MAT.toSrgbLin);
+  let v=-Infinity;
+  for(let k=0;k<3;k++) v=Math.max(v,-rgb[k],rgb[k]-1);
+  if(state.slice&&(state.cutAbove||state.cutBelow)){
+    const {n,d}=planeND(), s=dot3(n,p)-d;
+    if(state.cutAbove) v=Math.max(v, s-state.eps);
+    if(state.cutBelow) v=Math.max(v,-s-state.eps);
+  }
+  return {v,rgb};
+}
+function pick(px,py,w,h){
+  const {ro,rd}=camRay(px,py,w,h);
+  const at=t=>[ro[0]+rd[0]*t, ro[1]+rd[1]*t, ro[2]+rd[2]*t];
+  if(solidField(ro).v<=0) return null;          // camera inside the solid: bail
+  const tMax=cam.dist+2.5, steps=220;
+  let tPrev=0;
+  for(let i=1;i<=steps;i++){
+    const t=i/steps*tMax;
+    if(solidField(at(t)).v<=0){                 // entered: bisect the boundary
+      let a=tPrev,b=t;
+      for(let j=0;j<20;j++){const m=(a+b)/2; (solidField(at(m)).v<=0)?b=m:a=m;}
+      const p=at(b), res=solidField(p);
+      const tol=2e-3, inG=res.rgb.every(v=>v>=-tol&&v<=1+tol);
+      const rgbLin=res.rgb.map(v=>Math.min(Math.max(v,0),1)); // surface ⇒ real color
+      return {world:p, rgbLin, inGamut:inG};
+    }
+    tPrev=t;
+  }
+  return null;
+}
+
+/* full chain from one stimulus (gamut-linear rgb), DESIGN §6 */
+function chain(rgbLin){
+  const g=GAMUTS[state.gamut];
+  const enc=rgbLin.map(v=>g.trc.enc(Math.min(Math.max(v,0),1)));
+  const xyz=m3.mulV(MAT.rgb2xyz,rgbLin);
+  const lms=m3.mulV(XYZ2LMS2,xyz);
+  const lab=xyz2lab(xyz);
+  const srgbLin=m3.mulV(MAT.toSrgbLin.toSrgb,rgbLin);
+  const ok=lsrgb2oklab(srgbLin);
+  const C=Math.hypot(ok[1],ok[2]), Hh=(Math.atan2(ok[2],ok[1])*180/Math.PI+360)%360;
+  // CVD-simulated display color (what a deficient viewer perceives)
+  let cvdLin=srgbLin;
+  if(CVD[state.cvd]&&state.cvdSev>0.001){
+    const lms=m3.mulV(RGB2LMS,srgbLin), sim=applyCVD(lms,state.cvd,state.cvdSev);
+    cvdLin=m3.mulV(LMS2RGB,sim);
+  }
+  return {enc,rgbLin,xyz,lms,lab,ok,oklch:[ok[0],C,Hh],srgbLin,cvdLin};
+}
+
+/* ============================================================
+   == module: panels ==  2D-canvas instruments (one stimulus, N instruments)
+   ============================================================ */
+function fitCanvas(cv){const d=Math.min(devicePixelRatio||1,2);
+  const w=cv.clientWidth,h=cv.clientHeight;
+  if(cv.width!==w*d||cv.height!==h*d){cv.width=w*d;cv.height=h*d;}
+  const ctx=cv.getContext('2d');ctx.setTransform(d,0,0,d,0,0);return{ctx,w,h};}
+
+function drawTrc(ch){
+  const{ctx,w,h}=fitCanvas(document.getElementById('cvTrc'));
+  ctx.clearRect(0,0,w,h);
+  const g=GAMUTS[state.gamut], x0=8,y0=h-10,pw=w-16,ph=h-18;
+  ctx.strokeStyle='#26272b';ctx.strokeRect(x0,y0-ph,pw,ph);
+  ctx.strokeStyle='#d6a93a';ctx.lineWidth=1.6;ctx.beginPath();
+  for(let i=0;i<=pw;i++){const lin=i/pw,e=g.trc.enc(lin);
+    const X=x0+i,Y=y0-e*ph; i?ctx.lineTo(X,Y):ctx.moveTo(X,Y);}
+  ctx.stroke();
+  if(ch){const cols=['#e0533d','#39c46f','#5b8def'];
+    ch.rgbLin.forEach((v,i)=>{const lin=Math.min(Math.max(v,0),1);
+      const X=x0+lin*pw, Y=y0-g.trc.enc(lin)*ph;
+      ctx.fillStyle=cols[i];ctx.beginPath();ctx.arc(X,Y,4,0,7);ctx.fill();
+      if(v<0||v>1){ctx.strokeStyle='#e0533d';ctx.lineWidth=1;
+        ctx.strokeRect(X-6,Y-6,12,12);} // out-of-range: clipped marker, flagged
+    });}
+}
+function drawCones(ch){
+  const{ctx,w,h}=fitCanvas(document.getElementById('cvCone'));
+  ctx.clearRect(0,0,w,h);
+  const x0=6,y0=h-8,pw=w-78,ph=h-16, nmA=390,nmB=710;
+  const cols=['#e0533d','#39c46f','#5b8def'];
+  let mx=0; const samp=[];
+  for(let i=0;i<=pw;i++){const nm=nmA+(nmB-nmA)*i/pw;const c=coneLMS(nm);samp.push(c);
+    mx=Math.max(mx,c[0],c[1],c[2]);}
+  for(let k=0;k<3;k++){ctx.strokeStyle=cols[k];ctx.lineWidth=1.4;ctx.beginPath();
+    samp.forEach((c,i)=>{const X=x0+i,Y=y0-Math.max(c[k],0)/mx*ph;i?ctx.lineTo(X,Y):ctx.moveTo(X,Y);});
+    ctx.stroke();}
+  if(ch){ /* excitations as bars — basis-consistent with the curves (XYZ2LMS2) */
+    const bw=16,bx=w-66;
+    const m=Math.max(...ch.lms.map(Math.abs),1e-6);
+    ch.lms.forEach((v,i)=>{const bh=Math.max(v,0)/m*ph;
+      ctx.fillStyle=cols[i];ctx.fillRect(bx+i*(bw+4),y0-bh,bw,bh);
+      ctx.strokeStyle='#26272b';ctx.strokeRect(bx+i*(bw+4),y0-ph,bw,ph);});
+  }
+}
+let locusCache=null, srgbFill=null;
+
+/* ---- spectrum strip: JS port of spectrum.frag (single source: same fits) ---- */
+const smoothstep=(a,b,x)=>{const t=Math.min(Math.max((x-a)/(b-a),0),1);return t*t*(3-2*t);};
+const PLms=Primaries(0.73840145,0.26159855, 1.32671635,-0.32671635, 0.15861916,0.0);
+const whiteE=White(1/3,1/3);
+const toLms=m3.inv(rgbToXyzM(PLms,whiteE));
+function spectrumColor(wave){
+  // convert(): brighten/offset, LMS white balance E->D65, to sRGB, gamutScale
+  let c=waveToXyz(wave).map(v=>v/3.70+0.29);
+  const num=m3.mulV(toLms,D65), den=m3.mulV(toLms,whiteE);
+  const WB=m3.mul(m3.inv(toLms),m3.mul(m3.diag([num[0]/den[0],num[1]/den[1],num[2]/den[2]]),toLms));
+  c=m3.mulV(WB,c);
+  const luma=c[1];
+  let rgb=m3.mulV(m3.inv(rgbToXyzM(GAMUTS.srgb.P,GAMUTS.srgb.W)),c);
+  { // gamutScale port
+    const low=Math.min(rgb[0],rgb[1],rgb[2],0), high=Math.max(rgb[0],rgb[1],rgb[2],1);
+    const sc=Math.max(low/(low-luma), Math.max((high-1)/(high-luma),0));
+    rgb=rgb.map(v=>v+sc*(luma-v));
+  }
+  const bk=(1-smoothstep(380,519,wave)+smoothstep(519,730,wave))*0.29;
+  const br=0.82-smoothstep(443,535,wave)*0.03+smoothstep(535,605,wave)*0.21;
+  rgb=rgb.map(v=>(v-bk)*1.12/br);
+  return rgb.map(v=>Math.round(TRC.srgb.enc(Math.min(Math.max(v,0),1))*255));
+}
+let specCache=null, locusNm=null;
+function drawSpectrum(ch){
+  const{ctx,w,h}=fitCanvas(document.getElementById('cvSpec'));
+  if(!specCache||specCache.w!==w){
+    const cv=document.createElement('canvas');cv.width=w;cv.height=1;
+    const c2=cv.getContext('2d'),img=c2.createImageData(w,1);
+    for(let i=0;i<w;i++){const nm=402+(682-402)*i/(w-1);const rgb=spectrumColor(nm);
+      img.data[i*4]=rgb[0];img.data[i*4+1]=rgb[1];img.data[i*4+2]=rgb[2];img.data[i*4+3]=255;}
+    c2.putImageData(img,0,0); specCache={w,cv};
+  }
+  ctx.clearRect(0,0,w,h);
+  ctx.drawImage(specCache.cv,0,0,w,h);
+  const dl=document.getElementById('domL');
+  if(ch){
+    const dom=dominantWavelength(ch.xyz);
+    if(dom){
+      const x=(dom.nm-402)/(682-402)*w;
+      ctx.strokeStyle='#fff';ctx.lineWidth=1.5;
+      ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,h);ctx.stroke();
+      dl.textContent=dom.purple?`purple (c≈${dom.nm.toFixed(0)}nm)`:`λd ≈ ${dom.nm.toFixed(0)}nm`;
+    } else dl.textContent='';
+  } else dl.textContent='';
+}
+function dominantWavelength(xyz){
+  const S=xyz[0]+xyz[1]+xyz[2]; if(S<1e-6) return null;
+  const x=xyz[0]/S, y=xyz[1]/S, wx=0.312713, wy=0.329016;
+  const a=Math.atan2(y-wy,x-wx);
+  if(!locusNm){locusNm=[];
+    for(let nm=402;nm<=682;nm+=1){const z=waveToXyz(nm),Z=z[0]+z[1]+z[2];
+      if(Z>5e-3)locusNm.push({nm,a:Math.atan2(z[1]/Z-wy,z[0]/Z-wx)});}}
+  let best=null,bd=1e9,purple=false,aa=a;
+  const find=ang=>{let r=null,d=1e9;for(const p of locusNm){
+    let dd=Math.abs(((ang-p.a+Math.PI)%(2*Math.PI)+2*Math.PI)%(2*Math.PI)-Math.PI);
+    if(dd<d){d=dd;r=p;}}return{r,d};};
+  let f=find(a);
+  if(f.d>0.06){ purple=true; f=find(a+Math.PI); }   // purple side: report complementary
+  return f.r?{nm:f.r.nm,purple}:null;
+}
+
+/* ---- WCAG contrast (relative luminance straight from sRGB-linear Y) ---- */
+function wcag(srgbLin,other){ // other: [r,g,b] linear
+  const Y=c=>0.2126*c[0]+0.7152*c[1]+0.0722*c[2];
+  const a=Y(srgbLin.map(v=>Math.min(Math.max(v,0),1))), b=Y(other);
+  const[hi,lo]=a>b?[a,b]:[b,a];
+  return (hi+0.05)/(lo+0.05);
+}
+
+/* ---- cross-section outline: marching squares on the slice plane (DESIGN §10.3) ---- */
+function rebuildBoundary(){
+  lineVertCount=0;
+  if(!state.slice||!state.outline) return;
+  const {n,d}=planeND();
+  const ref=Math.abs(n[1])<0.9?[0,1,0]:[1,0,0];
+  const u=norm3(cross3(n,ref)), v=cross3(n,u);
+  const p0=[n[0]*d,n[1]*d,n[2]*d];
+  const G=110, EXT=1.5, segs=[];
+  const at=(a,b)=>[p0[0]+a*u[0]+b*v[0], p0[1]+a*u[1]+b*v[1], p0[2]+a*u[2]+b*v[2]];
+  const inside=(a,b)=>{
+    const rgb=SPACES[state.spaceMode].fromWorld(at(a,b),MAT.rgb2xyz,MAT.toSrgbLin);
+    return rgb.every(c=>c>=0&&c<=1);
+  };
+  const bisect=(a1,b1,a2,b2)=>{ // refine crossing along a grid edge
+    for(let i=0;i<10;i++){const am=(a1+a2)/2,bm=(b1+b2)/2;
+      if(inside(am,bm)){a1=am;b1=bm;}else{a2=am;b2=bm;}}
+    return [(a1+a2)/2,(b1+b2)/2];
+  };
+  const cell=2*EXT/G;
+  const grid=new Uint8Array((G+1)*(G+1));
+  for(let j=0;j<=G;j++)for(let i=0;i<=G;i++)
+    grid[j*(G+1)+i]=inside(-EXT+i*cell,-EXT+j*cell)?1:0;
+  for(let j=0;j<G;j++)for(let i=0;i<G;i++){
+    const a0=-EXT+i*cell, b0=-EXT+j*cell;
+    const c00=grid[j*(G+1)+i],c10=grid[j*(G+1)+i+1],c01=grid[(j+1)*(G+1)+i],c11=grid[(j+1)*(G+1)+i+1];
+    const code=c00|(c10<<1)|(c01<<2)|(c11<<3);
+    if(code===0||code===15)continue;
+    const pts=[];
+    if(c00!==c10)pts.push(bisect(c00?a0:a0+cell,b0, c00?a0+cell:a0,b0));
+    if(c00!==c01)pts.push(bisect(a0,c00?b0:b0+cell, a0,c00?b0+cell:b0));
+    if(c10!==c11)pts.push(bisect(a0+cell,c10?b0:b0+cell, a0+cell,c10?b0+cell:b0));
+    if(c01!==c11)pts.push(bisect(c01?a0:a0+cell,b0+cell, c01?a0+cell:a0,b0+cell));
+    for(let k=0;k+1<pts.length;k+=2){
+      segs.push(...at(pts[k][0],pts[k][1]),...at(pts[k+1][0],pts[k+1][1]));
+    }
+  }
+  const data=new Float32Array(segs);
+  gl.bindVertexArray(vaoLine);
+  gl.bindBuffer(gl.ARRAY_BUFFER,bufLine);
+  gl.bufferData(gl.ARRAY_BUFFER,data,gl.DYNAMIC_DRAW);
+  gl.bindVertexArray(null);
+  lineVertCount=data.length/3;
+}
+function drawXY(ch){
+  const{ctx,w,h}=fitCanvas(document.getElementById('cvXY'));
+  ctx.clearRect(0,0,w,h);
+  const x0=10,y0=h-8,pw=w-20,ph=h-16, sx=x=>x0+x/0.8*pw, sy=y=>y0-y/0.9*ph;
+  if(!locusCache){locusCache=[];
+    // cone-fit tails are unstable: clamp λ-range and require a real Σ,
+    // otherwise normalized xy wanders and draws a stray arc (bug #3)
+    for(let nm=402;nm<=682;nm+=2){const xyz=waveToXyz(nm),S=xyz[0]+xyz[1]+xyz[2];
+      if(S>5e-3)locusCache.push([xyz[0]/S,xyz[1]/S]);}}
+  /* colored fill of the OUTPUT (sRGB display) triangle — always displayable, cached */
+  if(!srgbFill||srgbFill.w!==w||srgbFill.h!==h){
+    const cv=document.createElement('canvas');cv.width=w;cv.height=h;
+    const c2=cv.getContext('2d'),img=c2.createImageData(w,h);
+    const P=GAMUTS.srgb.P,R=[P[0],P[3]],G=[P[1],P[4]],B=[P[2],P[5]];
+    const Mi=m3.inv(rgbToXyzM(GAMUTS.srgb.P,GAMUTS.srgb.W));
+    const det=(R[0]-B[0])*(G[1]-B[1])-(G[0]-B[0])*(R[1]-B[1]);
+    for(let j=0;j<h;j++)for(let i=0;i<w;i++){
+      const x=(i-x0)*0.8/pw, y=(y0-j)*0.9/ph;
+      if(y<=1e-4)continue;
+      const l1=((G[1]-B[1])*(x-B[0])+(B[0]-G[0])*(y-B[1]))/det;
+      const l2=((B[1]-R[1])*(x-B[0])+(R[0]-B[0])*(y-B[1]))/det;
+      if(l1<0||l2<0||l1+l2>1)continue;
+      let rgb=m3.mulV(Mi,[x/y,1,(1-x-y)/y]).map(v=>Math.max(v,0));
+      const mx=Math.max(...rgb,1e-6); rgb=rgb.map(v=>TRC.srgb.enc(v/mx));
+      const idx=(j*w+i)*4;
+      img.data[idx]=rgb[0]*255;img.data[idx+1]=rgb[1]*255;img.data[idx+2]=rgb[2]*255;img.data[idx+3]=185;
+    }
+    c2.putImageData(img,0,0);
+    srgbFill={w,h,cv};
+  }
+  ctx.drawImage(srgbFill.cv,0,0,w,h);
+  /* spectral locus + line of purples */
+  ctx.strokeStyle='#5c5d63';ctx.lineWidth=1.2;ctx.beginPath();
+  locusCache.forEach((p,i)=>{i?ctx.lineTo(sx(p[0]),sy(p[1])):ctx.moveTo(sx(p[0]),sy(p[1]));});
+  ctx.closePath();ctx.stroke();
+  /* OUTPUT triangle outline (sRGB display) */
+  const Ps=GAMUTS.srgb.P;
+  ctx.strokeStyle='#9a9ba1';ctx.lineWidth=1;ctx.beginPath();
+  for(let i=0;i<3;i++){const X=sx(Ps[i]),Y=sy(Ps[3+i]); i?ctx.lineTo(X,Y):ctx.moveTo(X,Y);}
+  ctx.closePath();ctx.stroke();
+  /* INPUT triangle (cube primaries) — dashed when it coincides with the output */
+  const P=GAMUTS[state.gamut].P;
+  ctx.strokeStyle='#d6a93a';ctx.lineWidth=1.3;
+  if(state.gamut==='srgb')ctx.setLineDash([4,3]);
+  ctx.beginPath();
+  for(let i=0;i<3;i++){const X=sx(P[i]),Y=sy(P[3+i]); i?ctx.lineTo(X,Y):ctx.moveTo(X,Y);}
+  ctx.closePath();ctx.stroke();ctx.setLineDash([]);
+  /* legend */
+  ctx.font='9px "IBM Plex Mono",monospace';
+  ctx.fillStyle='#d6a93a';ctx.fillText('△ in: '+GAMUTS[state.gamut].label,x0+2,12);
+  ctx.fillStyle='#9a9ba1';ctx.fillText('△ out: sRGB',x0+2,23);
+  if(ch){const S=ch.xyz[0]+ch.xyz[1]+ch.xyz[2];
+    if(S>1e-6){const X=sx(ch.xyz[0]/S),Y=sy(ch.xyz[1]/S);
+      ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(X,Y,3.5,0,7);ctx.fill();
+      ctx.strokeStyle='#5fb8c4';ctx.stroke();}}
+}
+const fmt=(v,n=3)=>(Math.abs(v)<1e-4?0:v).toFixed(n);
+function drawChainText(ch,inG){
+  const el=document.getElementById('chain'), sw=document.getElementById('swatch');
+  if(!ch){el.innerHTML='<div class="stage"><b>hover the solid…</b><span></span></div>';
+    sw.style.background='transparent';sw.classList.remove('oog');
+    document.getElementById('swlabel').textContent='';return;}
+  const rows=[
+    ['encoded RGB', ch.enc.map(v=>fmt(v)).join(' ')],
+    ['linear RGB',  ch.rgbLin.map(v=>fmt(v)).join(' ')],
+    ['CIE XYZ',     ch.xyz.map(v=>fmt(v)).join(' ')],
+    ['LMS',         ch.lms.map(v=>fmt(v)).join(' ')],
+    ['CIELAB',      ch.lab.map(v=>fmt(v,1)).join(' ')],
+    ['Oklab',       ch.ok.map(v=>fmt(v)).join(' ')],
+    ['OKLCh',       `${fmt(ch.oklch[0])} ${fmt(ch.oklch[1])} ${fmt(ch.oklch[2],1)}°`],
+  ];
+  el.innerHTML=rows.map(r=>`<div class="stage"><b>${r[0]}</b><span>${r[1]}</span></div>`).join('');
+  const disp=ch.srgbLin.map(v=>Math.round(TRC.srgb.enc(Math.min(Math.max(v,0),1))*255));
+  sw.style.background=`rgb(${disp.join(',')})`;
+  sw.classList.toggle('oog',!inG);
+  document.getElementById('swlabel').textContent=inG?'':'OUT OF GAMUT (display clamped)';
+}
+
+/* ============================================================
+   == module: theme ==  v0 of the ramp designer (DESIGN §10.4)
+   Anchors are stored as sRGB-LINEAR (absolute color truth), so they
+   survive space and gamut switches. Stops are a segment in the current
+   space's WORLD coordinates — in-plane by construction when both anchors
+   were picked on the slice.
+   ============================================================ */
+function jsToWorld(gamutRgb){ // mirror of the shader toWorld, from pipeline primitives
+  const m=state.spaceMode;
+  if(m===0) return [gamutRgb[0]-.5, gamutRgb[1]-.5, gamutRgb[2]-.5];
+  const xyz=m3.mulV(MAT.rgb2xyz,gamutRgb);
+  if(m===1) return [xyz[0]-.48, xyz[1]-.5, xyz[2]-.54];
+  if(m===2){ const lab=xyz2lab(xyz); return [lab[1]*.01,(lab[0]-50)*.01,lab[2]*.01]; }
+  const ok=lsrgb2oklab(m3.mulV(MAT.toSrgbLin.toSrgb,gamutRgb));
+  return [ok[1]*2.2, ok[0]-.5, ok[2]*2.2];
+}
+const srgbHex=s=>'#'+s.map(v=>Math.round(TRC.srgb.enc(Math.min(Math.max(v,0),1))*255)
+  .toString(16).padStart(2,'0')).join('');
+
+function anchorWorld(a){ return jsToWorld(m3.mulV(MAT.toSrgbLin.fromSrgb,a.srgbLin)); }
+
+function buildRamp(){
+  const T=state.theme; T.stops=[];
+  if(!T.A||(!T.B&&T.mode!=='spread')){ renderRampUI(); return; }
+  const wA=anchorWorld(T.A);
+  const cyl=w=>({r:Math.hypot(w[0],w[2]), th:Math.atan2(w[2],w[0]), y:w[1]});
+  const pushStop=w=>{
+    const rgb=SPACES[state.spaceMode].fromWorld(w,MAT.rgb2xyz,MAT.toSrgbLin); // gamut-linear, unclamped
+    const tol=1e-3, inG=rgb.every(v=>v>=-tol&&v<=1+tol);
+    const srgbLin=m3.mulV(MAT.toSrgbLin.toSrgb,rgb);
+    const ok=lsrgb2oklab(srgbLin.map(v=>Math.min(Math.max(v,0),1)));
+    T.stops.push({world:w, srgbLin, hex:srgbHex(srgbLin), inG,
+      cw:wcag(srgbLin,[1,1,1]), cb:wcag(srgbLin,[0,0,0]),
+      oklch:[ok[0],Math.hypot(ok[1],ok[2]),(Math.atan2(ok[2],ok[1])*180/Math.PI+360)%360]});
+  };
+  if(T.mode==='spread'){
+    /* set spread ± around the primary A: hue offsets sweep −Δh..+Δh; chroma
+       profile Linear (c−Δc → c+Δc) or Mirror (flanks desaturate by |Δc|,
+       center stop IS the primary). Lightness held at A's. */
+    const cA=cyl(wA), dh=T.dh*Math.PI/180;
+    for(let i=0;i<T.steps;i++){
+      const t=T.steps===1?0.5:i/(T.steps-1);
+      const th=cA.th+dh*(2*t-1);
+      const r=Math.max(0, T.cprof==='linear' ? cA.r+T.dc*(2*t-1)
+                                             : cA.r-T.dc*Math.abs(2*t-1));
+      pushStop([r*Math.cos(th), cA.y, r*Math.sin(th)]);
+    }
+    renderRampUI(); return;
+  }
+  const wB=anchorWorld(T.B);
+  const cB=cyl(wB), cA2=cyl(wA);
+  let dth=cB.th-cA2.th;
+  while(dth> Math.PI)dth-=2*Math.PI;
+  while(dth<-Math.PI)dth+=2*Math.PI;
+  for(let i=0;i<T.steps;i++){
+    const t=T.steps===1?0:i/(T.steps-1);
+    let w;
+    if(T.mode==='arc'){
+      const r=cA2.r+(cB.r-cA2.r)*t, th=cA2.th+dth*t, y=cA2.y+(cB.y-cA2.y)*t;
+      w=[r*Math.cos(th), y, r*Math.sin(th)];
+    } else {
+      w=[wA[0]+(wB[0]-wA[0])*t, wA[1]+(wB[1]-wA[1])*t, wA[2]+(wB[2]-wA[2])*t];
+    }
+    pushStop(w);
+  }
+  renderRampUI();
+}
+function renderRampUI(){
+  const el=document.getElementById('ramp');
+  el.innerHTML='';
+  for(const s of state.theme.stops){
+    const d=document.createElement('div');
+    d.style.cssText=`flex:1;border-radius:4px;background:${s.hex};`+
+      (s.inG?'':'outline:1px dashed var(--warn);outline-offset:-2px;');
+    d.title=`${s.hex}  oklch(${(s.oklch[0]*100).toFixed(1)}% ${s.oklch[1].toFixed(3)} ${s.oklch[2].toFixed(1)})`+
+      `\nWCAG vs white ${s.cw.toFixed(2)}:1 · vs black ${s.cb.toFixed(2)}:1`+
+      (s.inG?'':'\nOUT OF GAMUT');
+    el.appendChild(d);
+  }
+}
+function exportTokens(){
+  const ta=document.getElementById('exportTa');
+  if(!state.theme.stops.length){ta.style.display='block';ta.value='/* place anchors A and B on the slice first */';return;}
+  const lines=[':root {'];
+  state.theme.stops.forEach((s,i)=>{
+    lines.push(`  --ramp-${i+1}: oklch(${(s.oklch[0]*100).toFixed(2)}% ${s.oklch[1].toFixed(4)} ${s.oklch[2].toFixed(2)}); /* ${s.hex}${s.inG?'':' OOG'} */`);
+  });
+  lines.push('}');
+  ta.style.display='block'; ta.value=lines.join('\n');
+  ta.select(); try{ document.execCommand('copy'); }catch(e){}
+}
+function exportDTCG(){
+  const ta=document.getElementById('exportTa');
+  ta.style.display='block';
+  if(!state.theme.stops.length){ta.value='/* place anchors first */';return;}
+  const ramp={};
+  state.theme.stops.forEach((s,i)=>{
+    ramp[String((i+1)*100)]={ "$value":s.hex,
+      "$extensions":{ "gamut.explorer":{
+        oklch:{l:+(s.oklch[0]).toFixed(4),c:+(s.oklch[1]).toFixed(4),h:+(s.oklch[2]).toFixed(2)},
+        wcagOnWhite:+s.cw.toFixed(2), wcagOnBlack:+s.cb.toFixed(2), inGamut:s.inG } } };
+  });
+  ta.value=JSON.stringify({ramp:{"$type":"color",...ramp}},null,2);
+  ta.select(); try{ document.execCommand('copy'); }catch(e){}
+}
+/* ---- auto-adjust heuristics (operate on stops in Oklab; DESIGN §10.5) ---- */
+function stopFromOklab(ok){
+  const srgbLin=oklab2lsrgb(ok);
+  const tol=1e-3, inG=srgbLin.every(v=>v>=-tol&&v<=1+tol);
+  // world position recomputed for the marker, in the current view space
+  const gamutRgb=m3.mulV(MAT.toSrgbLin.fromSrgb,srgbLin);
+  return {srgbLin, hex:srgbHex(srgbLin), inG,
+    cw:wcag(srgbLin,[1,1,1]), cb:wcag(srgbLin,[0,0,0]),
+    world:jsToWorld(gamutRgb),
+    oklch:[ok[0],Math.hypot(ok[1],ok[2]),(Math.atan2(ok[2],ok[1])*180/Math.PI+360)%360]};
+}
+function fitGamut(){ // hold L,h; bisect chroma down until sRGB-displayable
+  if(!state.theme.stops.length)return;
+  state.theme.stops=state.theme.stops.map(s=>{
+    let ok=lsrgb2oklab(s.srgbLin.map(v=>Math.min(Math.max(v,0),1)));
+    if(s.inG) return s;
+    const L=ok[0], h=Math.atan2(ok[2],ok[1]); let lo=0,hi=Math.hypot(ok[1],ok[2]);
+    for(let i=0;i<24;i++){const C=(lo+hi)/2; const t=oklab2lsrgb([L,C*Math.cos(h),C*Math.sin(h)]);
+      (t.every(v=>v>=-1e-3&&v<=1.001))?lo=C:hi=C;}
+    return stopFromOklab([L,lo*Math.cos(h),lo*Math.sin(h)]);
+  });
+  renderRampUI();draw();
+}
+function fitWcag(){ // push L away from background until target contrast met; keep C,h
+  if(!state.theme.stops.length)return;
+  const target=state.theme.aa, onWhite=state.theme.wcagBg!=='black';
+  state.theme.stops=state.theme.stops.map(s=>{
+    let ok=lsrgb2oklab(s.srgbLin.map(v=>Math.min(Math.max(v,0),1)));
+    const C=Math.hypot(ok[1],ok[2]), h=Math.atan2(ok[2],ok[1]);
+    const ratio=L=>wcag(oklab2lsrgb([L,C*Math.cos(h),C*Math.sin(h)]),onWhite?[1,1,1]:[0,0,0]);
+    let L=ok[0];
+    if(ratio(L)>=target) return stopFromOklab([L,ok[1],ok[2]]);
+    // search toward darker (on white) or lighter (on black)
+    const dir=onWhite?-1:1; let step=0.04, best=L;
+    for(let i=0;i<60&&L>=0&&L<=1;i++){ L+=dir*step; if(ratio(L)>=target){best=L;break;} }
+    best=Math.min(Math.max(best,0),1);
+    return stopFromOklab([best,C*Math.cos(h),C*Math.sin(h)]);
+  });
+  renderRampUI();draw();
+}
+function fitEven(){ // re-space stops at equal Oklab arc length between endpoints
+  const st=state.theme.stops; if(st.length<3)return;
+  const oks=st.map(s=>lsrgb2oklab(s.srgbLin.map(v=>Math.min(Math.max(v,0),1))));
+  const cum=[0]; for(let i=1;i<oks.length;i++)
+    cum.push(cum[i-1]+Math.hypot(oks[i][0]-oks[i-1][0],oks[i][1]-oks[i-1][1],oks[i][2]-oks[i-1][2]));
+  const total=cum[cum.length-1]; if(total<1e-6)return;
+  const sample=f=>{const tgt=f*total; for(let i=1;i<cum.length;i++)if(cum[i]>=tgt){
+    const seg=cum[i]-cum[i-1]||1e-9,l=(tgt-cum[i-1])/seg;
+    return oks[i-1].map((v,k)=>v+(oks[i][k]-v)*l);} return oks[oks.length-1];};
+  state.theme.stops=st.map((_,i)=>stopFromOklab(sample(i/(st.length-1))));
+  renderRampUI();draw();
+}
+function setArm(which){
+  state.theme.arm = (state.theme.arm===which)?null:which;
+  document.getElementById('btnA').classList.toggle('on',state.theme.arm==='A');
+  document.getElementById('btnB').classList.toggle('on',state.theme.arm==='B');
+}
+
+/* ============================================================
+   == module: main ==  frame loop, uniforms, events
+   ============================================================ */
+let DPR=1;
+function resize(){DPR=Math.min(devicePixelRatio||1,2);
+  const w=glc.clientWidth,h=glc.clientHeight;
+  glc.width=Math.round(w*DPR);glc.height=Math.round(h*DPR);}
+addEventListener('resize',()=>{resize();draw();});
+
+function draw(){
+  gl.viewport(0,0,glc.width,glc.height);
+  gl.clearColor(0.039,0.039,0.043,1);
+  gl.enable(gl.DEPTH_TEST);gl.disable(gl.CULL_FACE);
+  gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
+  const proj=persp(cam.fov,glc.width/glc.height,0.05,40), view=lookAt(camEye(),cam.target,[0,1,0]);
+  const {n,d}=planeND();
+
+  function solidUniforms(M,ghost,N){
+    gl.uniformMatrix4fv(U(progSolid,'uProj'),false,proj);
+    gl.uniformMatrix4fv(U(progSolid,'uView'),false,view);
+    gl.uniform1i(U(progSolid,'uN'),N);
+    gl.uniform1i(U(progSolid,'uSpaceMode'),state.spaceMode);
+    gl.uniformMatrix3fv(U(progSolid,'uRgbToXyz'),false,m3gl(M.rgb2xyz));
+    gl.uniformMatrix3fv(U(progSolid,'uXyzToRgb'),false,m3gl(M.xyz2rgb));
+    gl.uniformMatrix3fv(U(progSolid,'uOkM1'),false,m3gl(M.okM1));
+    gl.uniformMatrix3fv(U(progSolid,'uOkM2'),false,m3gl(M.okM2));
+    gl.uniformMatrix3fv(U(progSolid,'uOkM1i'),false,m3gl(M.okM1i));
+    gl.uniformMatrix3fv(U(progSolid,'uOkM2i'),false,m3gl(M.okM2i));
+    gl.uniform3fv(U(progSolid,'uWhite'),M.white);
+    gl.uniform3fv(U(progSolid,'uLumaW'),REC709_Y);
+    gl.uniformMatrix3fv(U(progSolid,'uCubeRot'),false,m3gl(CUBE_ROT));
+    gl.uniformMatrix3fv(U(progSolid,'uCubeRoti'),false,m3gl(CUBE_ROTi));
+    gl.uniform3fv(U(progSolid,'uPlaneN'),n);
+    gl.uniform1f(U(progSolid,'uPlaneD'),d);
+    gl.uniform1f(U(progSolid,'uSliceEps'),state.eps);
+    gl.uniform1f(U(progSolid,'uSliceOn'),state.slice?1:0);
+    gl.uniform1f(U(progSolid,'uCutAbove'),state.cutAbove?1:0);
+    gl.uniform1f(U(progSolid,'uCutBelow'),state.cutBelow?1:0);
+    gl.uniform1f(U(progSolid,'uLines'),state.lines?1:0);
+    gl.uniform1f(U(progSolid,'uGhost'),ghost);
+    gl.uniform1f(U(progSolid,'uCvdSev'),CVD[state.cvd]?state.cvdSev:0);
+    gl.uniformMatrix3fv(U(progSolid,'uCvd'),false,m3gl(CVD[state.cvd]||[1,0,0,0,1,0,0,0,1]));
+    gl.uniformMatrix3fv(U(progSolid,'uRgb2Lms'),false,m3gl(RGB2LMS));
+    gl.uniformMatrix3fv(U(progSolid,'uLms2Rgb'),false,m3gl(LMS2RGB));
+  }
+
+  if(SHELLMAT){            // wide-gamut ghost drawn FIRST, depth-test off so it never
+    const NS=96;           // fights the main solid; additive, behind everything opaque
+    gl.useProgram(progSolid);gl.bindVertexArray(vaoSolid);
+    solidUniforms(SHELLMAT,1,NS);
+    gl.disable(gl.DEPTH_TEST);gl.depthMask(false);
+    gl.enable(gl.BLEND);gl.blendFunc(gl.ONE,gl.ONE);
+    gl.drawArraysInstanced(gl.TRIANGLE_STRIP,0,4,6*NS*NS);
+    gl.disable(gl.BLEND);gl.enable(gl.DEPTH_TEST);gl.depthMask(true);
+  }
+
+  gl.useProgram(progSolid);gl.bindVertexArray(vaoSolid);
+  solidUniforms(MAT,0,state.N);
+  gl.drawArraysInstanced(gl.TRIANGLE_STRIP,0,4,6*state.N*state.N);
+
+  if(state.floor){
+    gl.useProgram(progFloor);gl.bindVertexArray(vaoFloor);
+    gl.uniformMatrix4fv(U(progFloor,'uProj'),false,proj);
+    gl.uniformMatrix4fv(U(progFloor,'uView'),false,view);
+    gl.uniform1f(U(progFloor,'uY'),-0.502); // black corner is at world y=-0.5 in every space; rest on the grid
+    gl.depthMask(false);gl.enable(gl.BLEND);gl.blendFunc(gl.ONE,gl.ONE);
+    gl.drawArrays(gl.TRIANGLE_STRIP,0,4);
+    gl.disable(gl.BLEND);gl.depthMask(true);
+  }
+  if(state.hover){
+    gl.useProgram(progMark);
+    gl.uniformMatrix4fv(U(progMark,'uProj'),false,proj);
+    gl.uniformMatrix4fv(U(progMark,'uView'),false,view);
+    gl.uniform3fv(U(progMark,'uPos'),state.hover.world);
+    gl.uniform3fv(U(progMark,'uCol'),state.hover.inGamut?[0.37,0.72,0.77]:[0.88,0.33,0.24]);
+    gl.drawArrays(gl.POINTS,0,1);
+  }
+  if(state.theme.stops.length){                       // ramp stops as markers (≤12 draws)
+    gl.useProgram(progMark);
+    gl.uniformMatrix4fv(U(progMark,'uProj'),false,proj);
+    gl.uniformMatrix4fv(U(progMark,'uView'),false,view);
+    for(const s of state.theme.stops){
+      const c=s.srgbLin.map(v=>TRC.srgb.enc(Math.min(Math.max(v,0),1)));
+      gl.uniform3fv(U(progMark,'uPos'),s.world);
+      gl.uniform3fv(U(progMark,'uCol'),c);
+      gl.drawArrays(gl.POINTS,0,1);
+    }
+  }
+  if(lineVertCount>0&&state.slice&&state.outline){    // outline LAST, depth off, always visible
+    gl.useProgram(progLine);gl.bindVertexArray(vaoLine);
+    gl.uniformMatrix4fv(U(progLine,'uProj'),false,proj);
+    gl.uniformMatrix4fv(U(progLine,'uView'),false,view);
+    gl.uniform3fv(U(progLine,'uCol'),[0.94,0.94,0.96]);
+    gl.disable(gl.DEPTH_TEST);
+    gl.drawArrays(gl.LINES,0,lineVertCount);
+    gl.enable(gl.DEPTH_TEST);
+    gl.bindVertexArray(null);
+  }
+  gl.bindVertexArray(null);
+  document.getElementById('instCount').textContent=
+    `${(6*state.N*state.N).toLocaleString()} instances · 1 quad in memory`;
+}
+
+/* -- pointer: orbit vs hover -- */
+let dragging=false,lx=0,ly=0,moved=0;
+glc.addEventListener('pointerdown',e=>{dragging=true;moved=0;lx=e.clientX;ly=e.clientY;glc.setPointerCapture(e.pointerId);});
+glc.addEventListener('pointerup',e=>{
+  dragging=false;
+  if(moved<5 && state.theme.arm){                   // click, not drag: drop the armed anchor
+    const r=glc.getBoundingClientRect();
+    const hit=pick(e.clientX-r.left,e.clientY-r.top,r.width,r.height);
+    if(hit){
+      const srgbLin=m3.mulV(MAT.toSrgbLin.toSrgb,hit.rgbLin);
+      state.theme[state.theme.arm]={srgbLin};
+      setArm(state.theme.arm==='A'?'B':null);       // A then B, then disarm
+      buildRamp(); draw();
+    }
+  }
+});
+glc.addEventListener('pointermove',e=>{
+  if(dragging){
+    const dx=e.clientX-lx,dy=e.clientY-ly;lx=e.clientX;ly=e.clientY;moved+=Math.abs(dx)+Math.abs(dy);
+    cam.yaw-=dx*0.008;cam.pitch=Math.min(1.45,Math.max(-0.2,cam.pitch+dy*0.006));
+    draw();return;
+  }
+  const r=glc.getBoundingClientRect();
+  state.hover=pick(e.clientX-r.left,e.clientY-r.top,r.width,r.height);
+  const ch=state.hover?chain(state.hover.rgbLin):null;
+  drawChainText(ch,state.hover?state.hover.inGamut:true);
+  drawTrc(ch);drawCones(ch);drawXY(ch);drawSpectrum(ch);
+  draw();
+});
+glc.addEventListener('wheel',e=>{e.preventDefault();
+  cam.dist=Math.min(8,Math.max(1.2,cam.dist*(1+Math.sign(e.deltaY)*0.08)));draw();},{passive:false});
+
+/* -- controls -- */
+const $=id=>document.getElementById(id);
+$('selSpace').onchange=e=>{state.spaceMode=+e.target.value;buildRamp();repick();};
+$('selGamut').onchange=e=>{state.gamut=e.target.value;rebuildMatrices();buildRamp();repick();};
+$('selRes').onchange=e=>{state.N=+e.target.value;draw();};
+$('ckSlice').onchange=e=>{state.slice=e.target.checked;repick();};
+$('ckAbove').onchange=e=>{state.cutAbove=e.target.checked;repick();};
+$('ckBelow').onchange=e=>{state.cutBelow=e.target.checked;repick();};
+$('ckFloor').onchange=e=>{state.floor=e.target.checked;draw();};
+$('ckLines').onchange=e=>{state.lines=e.target.checked;draw();};
+$('btnA').onclick=()=>setArm('A');
+$('btnB').onclick=()=>setArm('B');
+function setPathMode(m){
+  state.theme.mode=m;
+  $('btnSeg').classList.toggle('on',m==='seg');
+  $('btnArc').classList.toggle('on',m==='arc');
+  $('btnSpread').classList.toggle('on',m==='spread');
+  $('sprdCtl').style.display=m==='spread'?'':'none';
+  buildRamp();draw();
+}
+$('btnSeg').onclick=()=>setPathMode('seg');
+$('btnArc').onclick=()=>setPathMode('arc');
+$('btnSpread').onclick=()=>setPathMode('spread');
+$('btnCLin').onclick=()=>{state.theme.cprof='linear';
+  $('btnCLin').classList.add('on');$('btnCMir').classList.remove('on');buildRamp();draw();};
+$('btnCMir').onclick=()=>{state.theme.cprof='mirror';
+  $('btnCMir').classList.add('on');$('btnCLin').classList.remove('on');buildRamp();draw();};
+$('slDh').oninput=e=>{state.theme.dh=+e.target.value;
+  $('vDh').textContent=state.theme.dh+'°';buildRamp();draw();};
+$('slDc').oninput=e=>{state.theme.dc=+e.target.value;
+  $('vDc').textContent=state.theme.dc.toFixed(2);buildRamp();draw();};
+$('btnExportJson').onclick=exportDTCG;
+$('btnFitGamut').onclick=fitGamut;
+$('btnFitWcag').onclick=fitWcag;
+$('btnFitEven').onclick=fitEven;
+$('slAA').oninput=e=>{state.theme.aa=+e.target.value;$('vAA').textContent=state.theme.aa.toFixed(1)+':1';};
+$('selShell').onchange=e=>{state.shell=e.target.value;rebuildShell();draw();};
+$('ckOutline').onchange=e=>{state.outline=e.target.checked;rebuildBoundary();draw();};
+$('selCvd').onchange=e=>{state.cvd=e.target.value;draw();};
+$('slCvd').oninput=e=>{state.cvdSev=+e.target.value;$('vCvd').textContent=state.cvdSev.toFixed(2);draw();};
+$('btnExport').onclick=exportTokens;
+$('slSteps').oninput=e=>{state.theme.steps=+e.target.value;
+  $('vSteps').textContent=state.theme.steps;buildRamp();draw();};
+document.querySelectorAll('#planeSeg button').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('#planeSeg button').forEach(x=>x.classList.remove('on'));
+  b.classList.add('on');state.planeMode=b.dataset.p;repick();});
+const bind=(slider,key,label,fmtFn)=>{$(slider).oninput=e=>{state[key]=+e.target.value;
+  $(label).textContent=fmtFn(state[key]);repick();};};
+bind('slOff','off','vOff',v=>v.toFixed(2));
+bind('slAz','az','vAz',v=>v.toFixed(0)+'°');
+bind('slEl','el','vEl',v=>v.toFixed(0)+'°');
+bind('slEps','eps','vEps',v=>v.toFixed(3));
+function repick(){state.hover=null;rebuildBoundary();drawChainText(null,true);drawTrc(null);drawCones(null);drawXY(null);drawSpectrum(null);draw();}
+
+/* -- boot -- */
+selftest();
+resize();
+rebuildBoundary();
+drawChainText(null,true);drawTrc(null);drawCones(null);drawXY(null);drawSpectrum(null);
+draw();
+</script>
+</body>
+</html>
