@@ -194,7 +194,7 @@ export const PIPELINE_HELP: Record<PipelineHelpId, PanelHelpContent> = {
 		title: 'Sources',
 		summary: 'Pick, list, and edit the ordered source colors the ramps are built from — one or more source lists.',
 		stageRows: stageRows(
-			'Pick hits on the solid or clipped surface (Add point, A + click, drag).',
+			'Pick hits on the solid or clipped surface (+ Pick on solid, A + click, drag) or use the color picker.',
 			'The source lists: add/remove lists, then add, select, drag, reorder, duplicate, delete points in the active list. Every point shapes its list’s ramp.',
 			'Linear-sRGB source points feeding interpolation.',
 			'Interpolation method, adjustment policy, gamut mapping, or export format.'

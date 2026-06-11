@@ -1,6 +1,6 @@
 # Plan: Sources step layout rework
 
-Status: proposed (owner review). Follow-up to the multi-list work in
+Status: **implemented**. Follow-up to the multi-list work in
 [picker-and-multilist-plan.md](./picker-and-multilist-plan.md) and the Set A/B
 removal.
 

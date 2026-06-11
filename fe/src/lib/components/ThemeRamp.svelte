@@ -224,7 +224,13 @@
 		}
 	}
 
-	function openPickerForNewPoint() {
+	// "+ Color picker": open the picker staging a new point; clicking it again
+	// while staging closes it. From edit mode it switches to staging instead.
+	function togglePickerForNewPoint() {
+		if (pickerOpen && explorer.theme.selectedPoint === null) {
+			pickerOpen = false;
+			return;
+		}
 		explorer.theme.selectedPoint = null;
 		explorer.theme.arm = null;
 		pickerOpen = true;
@@ -281,24 +287,8 @@
 </script>
 
 {#if showSources}
-	<div class="panel-label">Pick source colors</div>
-	<button type="button" class:active={explorer.theme.arm === 'add'} onclick={toggleAddPoint}>
-		{explorer.theme.arm === 'add' ? 'Adding… click the solid' : '+ Add point'}
-	</button>
-	<label class="field-row">
-		<span>Touch tool</span>
-		<select bind:value={touchTool}>
-			{#each touchToolOptions as tool}
-				<option value={tool.value}>{tool.label}</option>
-			{/each}
-		</select>
-	</label>
-	<p class="note">
-		Add points by arming + Add point (or holding A) and clicking the solid or slice cap. Drag a point to move it; click it to select, Delete to remove. All points in the active list shape its ramp.
-	</p>
-	<ToggleRow label="Show points in 3D" bind:checked={explorer.theme.showPoints} />
-
-	<div class="panel-label" style="margin-top: 8px">Source lists</div>
+	<!-- Order follows the edit flow: choose list -> see its points -> add/edit -> aux. -->
+	<div class="panel-label">Lists</div>
 	<div class="list-chips" role="tablist" aria-label="Source lists">
 		{#each explorer.theme.lists as list, i}
 			<button
@@ -322,10 +312,10 @@
 		<p class="note">Each list is its own ramp. Picking, dragging, and the rows below edit list {explorer.theme.activeList + 1}.</p>
 	{/if}
 
+	<div class="panel-label" style="margin-top: 8px">
+		Points{explorer.theme.lists.length > 1 ? ` — list ${explorer.theme.activeList + 1}` : ''}
+	</div>
 	{#if points.length}
-		<div class="panel-label" style="margin-top: 8px">
-			Points{explorer.theme.lists.length > 1 ? ` — list ${explorer.theme.activeList + 1}` : ''}
-		</div>
 		<div class="cp-list">
 			{#each points as cp, i}
 				<div class="cp-row" class:active={explorer.theme.selectedPoint === i}>
@@ -356,16 +346,20 @@
 			{/each}
 		</div>
 	{:else}
-		<p class="note">No source points yet — pick from the solid to add them.</p>
+		<p class="note">No points yet — add below, or hold A and click the solid.</p>
 	{/if}
-
-	<div class="picker-toggle">
-		<button type="button" onclick={openPickerForNewPoint}>
-			{pickerOpen && explorer.theme.selectedPoint === null ? 'Staging new point' : 'Open color picker'}
+	<!-- Add actions are the footer of the points list: two sibling ways to append. -->
+	<div class="add-actions">
+		<button type="button" class:active={explorer.theme.arm === 'add'} onclick={toggleAddPoint}>
+			{explorer.theme.arm === 'add' ? 'Adding… click the solid' : '+ Pick on solid'}
 		</button>
-		{#if pickerOpen}
-			<button type="button" class="cp-action" onclick={() => (pickerOpen = false)}>Close</button>
-		{/if}
+		<button
+			type="button"
+			class:active={pickerOpen && explorer.theme.selectedPoint === null}
+			onclick={togglePickerForNewPoint}
+		>
+			{pickerOpen && explorer.theme.selectedPoint === null ? 'Staging new point' : '+ Color picker'}
+		</button>
 	</div>
 	{#if pickerOpen}
 		<div class="source-picker">
@@ -375,13 +369,27 @@
 						? `Editing point ${explorer.theme.selectedPoint + 1}`
 						: 'New source point'}
 				</span>
-				{#if explorer.theme.selectedPoint === null}
-					<button type="button" class="cp-action" onclick={addStagedPickerPoint}>Add as new point</button>
-				{/if}
+				<span class="picker-actions">
+					{#if explorer.theme.selectedPoint === null}
+						<button type="button" class="cp-action" onclick={addStagedPickerPoint}>Add as new point</button>
+					{/if}
+					<button type="button" class="cp-action" onclick={() => (pickerOpen = false)}>Close</button>
+				</span>
 			</div>
 			<ColorPicker value={pickerValue} onchange={setPickerColor} />
 		</div>
 	{/if}
+
+	<ToggleRow label="Show points in 3D" bind:checked={explorer.theme.showPoints} />
+	<label class="field-row">
+		<span>Touch tool</span>
+		<select bind:value={touchTool}>
+			{#each touchToolOptions as tool}
+				<option value={tool.value}>{tool.label}</option>
+			{/each}
+		</select>
+	</label>
+	<p class="note">Drag a point in 3D to move it · click selects · Delete removes · A + click adds.</p>
 {/if}
 
 {#if showInterpolate}
@@ -688,11 +696,16 @@
 		line-height: 1;
 		font-size: 16px;
 	}
-	.picker-toggle {
+	.add-actions {
 		display: grid;
-		grid-template-columns: minmax(0, 1fr) auto;
+		grid-template-columns: 1fr 1fr;
 		gap: 6px;
 		margin-top: 6px;
+	}
+	.picker-actions {
+		display: flex;
+		gap: 4px;
+		flex: none;
 	}
 	.source-picker {
 		display: grid;
