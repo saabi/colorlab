@@ -64,6 +64,8 @@ export function toPersistedExplorer(explorer: ExplorerState): PersistedExplorer 
 			splineSpace: theme.splineSpace,
 			gamutMap: theme.gamutMap,
 			steps: theme.steps,
+			interpolateOn: theme.interpolateOn,
+			placeOn: theme.placeOn,
 			mode: theme.mode,
 			arcLong: theme.arcLong,
 			place: theme.place,

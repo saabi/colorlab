@@ -124,6 +124,10 @@ export interface ExplorerState {
 		rawStops: ThemeStop[];
 		steps: number;
 		arm: 'A' | 'B' | 'add' | null;
+		/** Interpolate stage enabled (persisted). Off = source anchors pass through as stops. */
+		interpolateOn: boolean;
+		/** Place stage enabled (persisted). Off = stops are the exact picked colors. */
+		placeOn: boolean;
 		mode: ThemeMode;
 		stops: ThemeStop[];
 		arcLong: boolean;

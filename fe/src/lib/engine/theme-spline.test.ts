@@ -210,6 +210,25 @@ describe('buildSplineRamp', () => {
 		});
 	});
 
+	it('disabled stages pass the picked colors through', () => {
+		// Interpolate off: no curve; stops are the exact anchors.
+		const state = splineState('oklch', 'free', 9);
+		state.theme.interpolateOn = false;
+		buildRamp(state, matrices);
+		expect(state.theme.splineCurve).toEqual([]);
+		expect(state.theme.stops.length).toBe(3);
+		state.theme.stops.forEach((s, i) => {
+			state.theme.points[i].srgbLin.forEach((v, k) => expect(Math.abs(s.srgbLin[k] - v)).toBeLessThan(1e-9));
+		});
+
+		// Place off (interpolate on): curve drawn, stops are still the anchors.
+		state.theme.interpolateOn = true;
+		state.theme.placeOn = false;
+		buildRamp(state, matrices);
+		expect(state.theme.splineCurve.length).toBeGreaterThan(1);
+		expect(state.theme.stops.length).toBe(3);
+	});
+
 	it('every place policy yields the requested number of finite stops', () => {
 		for (const place of ['even', 'uniform', 'tones', 'contrast'] as const) {
 			const state = splineState('oklch', 'free', 8);

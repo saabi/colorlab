@@ -675,6 +675,8 @@
 		explorer.theme.wcagBg;
 		explorer.theme.contrastMin;
 		explorer.theme.contrastMax;
+		explorer.theme.interpolateOn;
+		explorer.theme.placeOn;
 		explorer.theme.expandOn;
 		// Track every nested Spread field (count + per-axis delta/dir).
 		JSON.stringify(explorer.theme.expandRows);

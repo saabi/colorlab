@@ -70,8 +70,14 @@ function stopFromWorld(world: Vec3, state: ExplorerState, matrices: DerivedMatri
 // Sources (theme.points) -> Interpolate (hi-res curve) -> Place (stops) ->
 // Gamut-map (terminal per-cell policy) -> Expand (2-D grid) -> Export reads the result.
 export function buildRamp(state: ExplorerState, matrices: DerivedMatrices) {
-	interpolateRamp(state, matrices); // anchors -> theme.splineCurve
-	placeStops(state, matrices); // curve -> theme.stops
+	const T = state.theme;
+	// Interpolate: anchors -> hi-res curve (off -> no curve; anchors pass through).
+	if (T.interpolateOn) interpolateRamp(state, matrices);
+	else T.splineCurve = [];
+	// Place: curve -> stops. With either stage off, the stops are the exact picked
+	// source colors (the curve, when present, remains a visual aid).
+	if (T.interpolateOn && T.placeOn) placeStops(state, matrices);
+	else T.stops = T.points.map((p) => stopFromSrgbLin(p.srgbLin, state, matrices));
 	finalizeRamp(state, matrices); // gamut-map stops + curve (theme.rawStops kept)
 	buildExpand(state, matrices); // stops -> theme.grid
 }

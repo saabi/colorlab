@@ -51,6 +51,8 @@ function createExplorerDefaults(): ExplorerState {
 			rawStops: [],
 			steps: 5,
 			arm: null,
+			interpolateOn: true,
+			placeOn: true,
 			mode: 'linear',
 			stops: [],
 			arcLong: false,

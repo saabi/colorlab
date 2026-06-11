@@ -282,6 +282,10 @@
 {/if}
 
 {#if showInterpolate}
+	<ToggleRow label="Enable interpolation" bind:checked={explorer.theme.interpolateOn} />
+	{#if !explorer.theme.interpolateOn}
+		<p class="note">Off: the picked source colors pass through as the stops (no curve).</p>
+	{:else}
 	<!-- Presets: quick (path type + space) combinations over the one interpolator. -->
 	<div class="segmented" style="--segments: 3">
 		<button type="button" onclick={() => applyPreset('segment')}>Segment</button>
@@ -332,12 +336,18 @@
 		Builds the ramp path from the source points. A single point yields one seed stop — useful with the spread expander.
 	</p>
 	<ToggleRow label="Show curve in 3D" bind:checked={explorer.theme.showCurve} />
+	{/if}
 {/if}
 
 {#if showAdjust}
 	<div class:separator={!showAll}>
 		<div class="panel-label" style="margin-top: 0">Place / sampling</div>
+		{#if !explorer.theme.interpolateOn}
+			<p class="note" style="margin-top: 0">Requires interpolation — the picked colors pass through unchanged.</p>
+		{:else}
 		<p class="note" style="margin-top: 0">Where the stops land on the interpolated curve. Runs after interpolation, before gamut mapping.</p>
+		<ToggleRow label="Enable placement" bind:checked={explorer.theme.placeOn} />
+		{#if explorer.theme.placeOn}
 		<label class="field-row">
 			<span>Sampling</span>
 			<select bind:value={explorer.theme.place}>
@@ -357,6 +367,8 @@
 			</div>
 			<SliderRow label="Min contrast" bind:value={explorer.theme.contrastMin} min={1} max={21} step={0.5} format={(value) => `${value.toFixed(1)}:1`} />
 			<SliderRow label="Max contrast" bind:value={explorer.theme.contrastMax} min={1} max={21} step={0.5} format={(value) => `${value.toFixed(1)}:1`} />
+		{/if}
+		{/if}
 		{/if}
 		<ToggleRow label="Show stops in 3D" bind:checked={explorer.theme.showStops} />
 	</div>
