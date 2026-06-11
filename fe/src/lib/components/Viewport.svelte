@@ -7,7 +7,7 @@
 	import { rebuildMatrices, rebuildShell } from '$lib/renderer/uniforms';
 	import { chain, pick } from '$lib/engine/picking';
 	import { anchorWorld, buildRamp } from '$lib/engine/theme';
-	import { createCamera, panCamera, projectToScreen } from '$lib/engine/camera';
+	import { MAX_CAMERA_DIST, MAX_CAMERA_PITCH, MIN_CAMERA_DIST, panCamera, projectToScreen, resetCamera as resetCameraState } from '$lib/engine/camera';
 	import GestureReferencePopover from './GestureReferencePopover.svelte';
 	import ViewportToolbar from './ViewportToolbar.svelte';
 
@@ -15,7 +15,7 @@
 	import type { Camera } from '$lib/engine/camera';
 
 	type ThemeArm = 'A' | 'B';
-	type TouchTool = 'auto' | 'slice' | 'cylinder' | 'pickA' | 'pickB';
+	export type TouchTool = 'auto' | 'slice' | 'cylinder' | 'pickA' | 'pickB';
 	type CanvasGesture =
 		| { kind: 'orbit' }
 		| { kind: 'inspect' }
@@ -26,8 +26,9 @@
 
 	let {
 		state: explorer = $bindable(),
-		camera = $bindable()
-	} = $props<{ state: ExplorerState; camera: Camera }>();
+		camera = $bindable(),
+		touchTool = $bindable('auto')
+	} = $props<{ state: ExplorerState; camera: Camera; touchTool: TouchTool }>();
 
 	let canvas: HTMLCanvasElement;
 	let renderer: WebGlRenderer | null = null;
@@ -44,12 +45,8 @@
 	let capturedPointerId: number | null = null;
 	let referenceOpen = $state(false);
 	let gestureStatus: string | null = $state(null);
-	let touchTool: TouchTool = $state('auto');
 	let keys = { space: false, pickA: false, pickB: false };
 
-	const MIN_DIST = 1.2;
-	const MAX_DIST = 8;
-	const PITCH_LIMIT = Math.PI / 2 - 0.04;
 	const RESOLUTIONS = [64, 128, 192, 256] as const;
 	const PERF_SAMPLE_COUNT = 12;
 	const PERF_MARGIN = 1.1;
@@ -163,17 +160,12 @@
 	}
 
 	function zoomCamera(factor: number) {
-		camera.dist = Math.min(MAX_DIST, Math.max(MIN_DIST, camera.dist * factor));
+		camera.dist = Math.min(MAX_CAMERA_DIST, Math.max(MIN_CAMERA_DIST, camera.dist * factor));
 		draw();
 	}
 
 	function resetCamera() {
-		const next = createCamera();
-		camera.yaw = next.yaw;
-		camera.pitch = next.pitch;
-		camera.dist = next.dist;
-		camera.target = next.target;
-		camera.fov = next.fov;
+		resetCameraState(camera);
 		gestureStatus = 'Camera reset';
 		draw();
 	}
@@ -464,7 +456,7 @@
 				return;
 			}
 			camera.yaw -= dx * 0.008;
-			camera.pitch = clamp(camera.pitch + dy * 0.006, -PITCH_LIMIT, PITCH_LIMIT);
+			camera.pitch = clamp(camera.pitch + dy * 0.006, -MAX_CAMERA_PITCH, MAX_CAMERA_PITCH);
 			draw();
 			return;
 		}

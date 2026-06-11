@@ -1,17 +1,17 @@
 <script lang="ts">
 	import PanelHelp from './PanelHelp.svelte';
-	import type { HelpId, InspectorPanelId } from '$lib/inspector/help-copy';
+	import type { InspectorPanelId } from '$lib/inspector/help-copy';
 
 	let {
 		label,
 		panelId,
 		meta = '',
-		openHelp = $bindable(null as HelpId | null)
+		openHelp = $bindable(null as string | null)
 	} = $props<{
 		label: string;
 		panelId: InspectorPanelId;
 		meta?: string;
-		openHelp?: HelpId | null;
+		openHelp?: string | null;
 	}>();
 </script>
 

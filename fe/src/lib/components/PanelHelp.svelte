@@ -4,18 +4,21 @@
 
 	let {
 		helpId,
-		openHelp = $bindable(null as HelpId | null)
+		instanceId = helpId,
+		openHelp = $bindable(null as string | null)
 	}: {
 		helpId: HelpId;
-		openHelp?: HelpId | null;
+		instanceId?: string;
+		openHelp?: string | null;
 	} = $props();
 
 	let popoverStyle = $state('');
 	let buttonEl = $state<HTMLButtonElement | null>(null);
-	let popoverId = $derived(`panel-help-${helpId}`);
+	const openKey = $derived(`${helpId}:${instanceId}`);
+	let popoverId = $derived(`panel-help-${openKey.replace(/[^a-zA-Z0-9_-]+/g, '-')}`);
 
 	const content = $derived(HELP_BY_ID[helpId]);
-	const open = $derived(openHelp === helpId);
+	const open = $derived(openHelp === openKey);
 
 	function placePopover() {
 		if (!buttonEl) return;
@@ -32,7 +35,7 @@
 			return;
 		}
 		placePopover();
-		openHelp = helpId;
+		openHelp = openKey;
 	}
 
 	function close() {

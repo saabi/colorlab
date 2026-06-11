@@ -9,6 +9,11 @@ export interface Camera {
 }
 
 export const DEFAULT_CAMERA: Camera = { yaw: 0.7, pitch: 0.42, dist: 2.6, target: [0, -0.05, 0], fov: Math.PI / 4 };
+export const MIN_CAMERA_DIST = 1.2;
+export const MAX_CAMERA_DIST = 8;
+export const MAX_CAMERA_PITCH = Math.PI / 2 - 0.04;
+export const MIN_CAMERA_FOV = Math.PI / 8;
+export const MAX_CAMERA_FOV = Math.PI / 2;
 
 export function createCamera(): Camera {
 	return {
@@ -18,6 +23,15 @@ export function createCamera(): Camera {
 		target: [DEFAULT_CAMERA.target[0], DEFAULT_CAMERA.target[1], DEFAULT_CAMERA.target[2]],
 		fov: DEFAULT_CAMERA.fov
 	};
+}
+
+export function resetCamera(camera: Camera) {
+	const next = createCamera();
+	camera.yaw = next.yaw;
+	camera.pitch = next.pitch;
+	camera.dist = next.dist;
+	camera.target = next.target;
+	camera.fov = next.fov;
 }
 
 export function persp(fovy: number, asp: number, n: number, f: number) {

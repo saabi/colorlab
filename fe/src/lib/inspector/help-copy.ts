@@ -1,6 +1,19 @@
 export type InspectorPanelId = 'transfer' | 'cones' | 'xy' | 'values';
-export type SidebarGroupId = 'colorModel' | 'clipping' | 'display' | 'theme' | 'performance';
-export type HelpId = InspectorPanelId | SidebarGroupId;
+export type PipelineHelpId =
+	| 'pipelineGamut'
+	| 'pipelineWorld'
+	| 'pipelineClip'
+	| 'pipelineVision'
+	| 'pipelineDisplay'
+	| 'pipelinePick'
+	| 'pipelinePoints'
+	| 'pipelineInterpolate'
+	| 'pipelineAdjust'
+	| 'pipelineGamutMap'
+	| 'pipelineExport'
+	| 'pipelineView'
+	| 'pipelinePerformance';
+export type HelpId = InspectorPanelId | PipelineHelpId;
 
 export interface HelpSource {
 	label: string;
@@ -79,72 +92,199 @@ export const INSPECTOR_HELP: Record<InspectorPanelId, PanelHelpContent> = {
 	}
 };
 
-export const SIDEBAR_HELP: Record<SidebarGroupId, PanelHelpContent> = {
-	colorModel: {
-		title: 'Color model',
-		summary:
-			'Choose how the RGB cube is arranged in world space (Oklab by default) and which primaries define the solid. Changing gamut recomputes RGB\u2194XYZ from chromaticities and reshapes the volume through the same transform pipeline.',
-		sources: [
-			{ label: 'Space registry and gamut matrices (registry.ts, pipeline.ts GAMUTS)' },
-			{ label: 'Single-source pipeline design (design.md \u00a74)' },
-			{ label: 'Bj\u00f6rn Ottosson, Oklab (2020)' },
-			{
-				label:
-					'Bujack, R. et al., The Geometry of Color in the Light of a Non-Riemannian Space, CGF 2025',
-				href: 'https://doi.org/10.1111/cgf.70136'
-			}
-		]
-	},
-	clipping: {
-		title: 'Clipping',
-		summary:
-			'Slice the solid with an arbitrary plane \u2014 lightness, hue plane, or custom azimuth/elevation \u2014 plus an optional cylindrical radial cut. The vertex shader flattens vertices onto the true cross-section boundary by inverting world\u2192RGB and re-clamping to the cube.',
-		sources: [
-			{ label: 'Slice mathematics (design.md \u00a75)' },
-			{ label: 'Clamp/project loop in solid.vert' }
-		]
-	},
-	display: {
-		title: 'Display',
-		summary:
-			'Toggle the floor grid, in-shader surface grid lines, plane and cylinder cross-section outlines (with optional depth test), a wide-gamut ghost shell, and LMS-stage color-vision simulation that propagates to the solid and all readouts.',
-		sources: [
-			{ label: 'CVD at LMS stage (design.md \u00a714)' },
-			{ label: 'Vi\u00e9not/Brettel-style dichromat projection' },
-			{ label: 'Outline z-order (design.md \u00a716)' }
-		]
-	},
-	theme: {
-		title: 'Theme',
-		summary:
-			'Build perceptual color ramps between anchors using straight segments, cylindrical hue arcs, spread mode, or a Catmull-Rom spline through any number of control points. Spline mode interpolates in a selectable color space (Oklab, OKLCH, OKLrCH, OKHSV, CIELAB/CIELCh, CIELUV/CIELCh(uv), linear sRGB). A single Gamut mapping policy reconciles out-of-gamut colors for every mode; WCAG and even-spacing adjustments run before it.',
+export const PIPELINE_HELP: Record<PipelineHelpId, PanelHelpContent> = {
+	pipelineGamut: {
+		title: 'Gamut / encoding',
+		summary: "Selects the RGB primary set and transfer assumptions used to decode the cube's encoded RGB values into linear-light RGB.",
 		details: [
-			'Pipeline order: interpolate \u2192 WCAG / even adjust \u2192 gamut-map \u2192 encode. The Gamut mapping policy is the one place out-of-gamut colors are handled, for all modes and export: "None" leaves them (flagged by the dashed outline); "Clip" clamps per channel; the projection options apply Ottosson\u2019s sRGB gamut-clipping in Oklab, differing in the focus L0 \u2014 preserve chroma (constant lightness), project to L=0.5, project to the hue cusp, or adaptive blends that trade a little lightness for chroma. Clip targets sRGB regardless of the displayed gamut.',
-			'Spline curve constraint is separate geometry: "Surface (radial shell)" snaps each sample radially to the active solid boundary at constant lightness (assumes a star-shaped cross-section about the neutral axis); "Free" interpolates inside the volume. It composes with the gamut mapping policy.'
+			'Input: encoded RGB cube coordinates.',
+			'Changes: RGB primaries, RGB-to-XYZ matrices, and the transfer curve summary used by the explorer pipeline.',
+			'Output: linear RGB and XYZ basis for downstream world-space conversion.',
+			'Does not affect: ramp-only gamut mapping, CVD preview severity, camera, or display-aid visibility.'
 		],
 		sources: [
-			{ label: 'Theme heuristics (design.md \u00a715)' },
-			{ label: 'theme.ts ramp + finalizeRamp gamut-map; color/interp.ts interpolation spaces; color/gamut-map.ts mapping policies' },
-			{ label: 'Bj\u00f6rn Ottosson, Oklab (2020)' },
-			{
-				label: 'Bj\u00f6rn Ottosson, Okhsv/Okhsl and the Lr lightness (ok_color.h)',
-				href: 'https://bottosson.github.io/posts/colorpicker/'
-			},
-			{
-				label: 'Bj\u00f6rn Ottosson, sRGB gamut clipping (ok_color.h)',
-				href: 'https://bottosson.github.io/posts/gamutclipping/'
-			}
+			{ label: 'pipeline.ts gamut registry' },
+			{ label: 'transfer.ts transfer curves' },
+			{ label: 'Single-source pipeline design (design.md)' }
 		]
 	},
-	performance: {
+	pipelineWorld: {
+		title: 'World space',
+		summary: 'Chooses how colorimetric data is placed in the 3D viewport.',
+		details: [
+			'Input: linear RGB converted through the active gamut matrices.',
+			'Changes: geometric position of colors in RGB, XYZ, CIELAB, Oklab, or luminance layout.',
+			'Output: world coordinates used by the renderer, picking, clipping, and ramp anchor placement.',
+			'Does not affect: source color values, exported ramp tokens, or display simulation.'
+		],
+		sources: [
+			{ label: 'registry.ts space registry' },
+			{ label: 'theme.ts jsToWorld' },
+			{ label: 'Oklab and CIELAB references' }
+		]
+	},
+	pipelineClip: {
+		title: 'Clip / cut',
+		summary: 'Controls which part of the already-positioned color solid is visible.',
+		details: [
+			'Input: world-space solid geometry.',
+			'Changes: slice plane, cut direction, slab width, and cylindrical/chroma cut radius.',
+			'Output: visible subset of the solid plus pickable clipped surfaces.',
+			'Does not affect: stored colors, ramp stops, export output, or display overlays such as outline visibility.'
+		],
+		sources: [
+			{ label: 'Slice mathematics (design.md)' },
+			{ label: 'plane.ts' },
+			{ label: 'WebGL solid shader clipping uniforms' }
+		]
+	},
+	pipelineVision: {
+		title: 'Vision preview',
+		summary: 'Applies LMS-stage color-vision-deficiency simulation to visual previews.',
+		details: [
+			'Input: display-bound linear sRGB colors.',
+			'Changes: preview colors according to protan, deutan, or tritan deficiency severity.',
+			'Output: simulated colors in viewport, inspector panels, and ramp previews.',
+			'Does not affect: source RGB values, saved anchors, generated ramp stops, or exported tokens.'
+		],
+		sources: [
+			{ label: 'cvd.ts' },
+			{ label: 'LMS/cone fundamentals implementation' },
+			{ label: 'CVD simulation notes (design.md)' }
+		]
+	},
+	pipelineDisplay: {
+		title: 'Display aids',
+		summary: 'Toggles visual overlays and reference geometry around the viewport.',
+		details: [
+			'Input: rendered color solid and clip result.',
+			'Changes: floor grid, surface grid, clipped surface grid alpha, outlines, outline depth testing, and wide-gamut reference shell.',
+			'Output: viewport aids for orientation and comparison.',
+			'Does not affect: color transforms, ramp generation, export output, or CVD simulation settings.'
+		],
+		sources: [
+			{ label: 'WebGL renderer draw order' },
+			{ label: 'Outline and shell notes (design.md)' }
+		]
+	},
+	pipelinePick: {
+		title: 'Pick',
+		summary: 'Selects where the next viewport click or tap writes a picked color into the ramp workflow.',
+		details: [
+			'Input: currently visible pick hit on the solid or clipped surface.',
+			'Changes: active target, such as anchor A, anchor B, or adding a spline control point.',
+			'Output: linear-sRGB source colors stored as ramp inputs.',
+			'Does not affect: interpolation mode, adjustment policy, gamut mapping, or export format.'
+		],
+		sources: [
+			{ label: 'Viewport.svelte picking handlers' },
+			{ label: 'theme.ts anchor representation' }
+		]
+	},
+	pipelinePoints: {
+		title: 'Anchors / points',
+		summary: 'Shows and edits the source colors used by ramp generation.',
+		details: [
+			'Input: picked linear-sRGB anchors and spline control points.',
+			'Changes: point selection, ordering, duplication, deletion, and keyboard nudging.',
+			'Output: ordered ramp source points for interpolation.',
+			'Does not affect: interpolation method, WCAG/even adjustments, gamut mapping policy, or final export format.'
+		],
+		sources: [
+			{ label: 'ThemeRamp.svelte control point panel' },
+			{ label: 'Spline gesture plan' }
+		]
+	},
+	pipelineInterpolate: {
+		title: 'Interpolate',
+		summary: 'Builds raw ramp samples from anchors or spline control points.',
+		details: [
+			'Input: anchors A/B or ordered spline control points.',
+			'Changes: ramp mode, step count, hue-arc direction, spread parameters, spline interpolation space, and spline surface constraint.',
+			'Output: raw ramp stops before adjustment and final gamut mapping.',
+			'Does not affect: final export serialization or CVD preview; out-of-gamut colors may still exist at this stage.'
+		],
+		sources: [
+			{ label: 'theme.ts buildRawRamp' },
+			{ label: 'interp.ts interpolation spaces' },
+			{ label: 'spline-surface-ramp-plan.md' }
+		]
+	},
+	pipelineAdjust: {
+		title: 'Adjust',
+		summary: 'Post-processes generated ramp stops for contrast or perceptual spacing.',
+		details: [
+			'Input: raw interpolated ramp stops.',
+			'Changes: WCAG AA fitting target and even perceptual spacing.',
+			'Output: adjusted ramp stops that still pass through final gamut mapping afterward.',
+			'Does not affect: source anchors/control points, interpolation mode, or viewport color solid.'
+		],
+		sources: [
+			{ label: 'theme.ts fitWcag and fitEven' },
+			{ label: 'WCAG contrast references' },
+			{ label: 'Oklab references' }
+		]
+	},
+	pipelineGamutMap: {
+		title: 'Gamut map',
+		summary: 'Applies the terminal ramp-only policy for out-of-gamut generated stops.',
+		details: [
+			'Input: adjusted ramp stops, possibly outside sRGB.',
+			'Changes: clipping or Oklab projection method used to bring stops into the export gamut.',
+			'Output: final in-gamut ramp colors for preview and export.',
+			'Does not affect: the 3D explorer gamut, hover readouts, CVD simulation, or source anchors.'
+		],
+		sources: [
+			{ label: 'gamut-map.ts' },
+			{ label: 'theme.ts finalizeRamp' },
+			{ label: 'Bjorn Ottosson, sRGB gamut clipping', href: 'https://bottosson.github.io/posts/gamutclipping/' }
+		]
+	},
+	pipelineExport: {
+		title: 'Export',
+		summary: 'Serializes final ramp colors after interpolation, adjustment, and gamut mapping.',
+		details: [
+			'Input: final ramp stops.',
+			'Changes: export action and output text format.',
+			'Output: CSS OKLCH tokens or DTCG JSON.',
+			'Does not affect: ramp source points, viewport display, or upstream pipeline settings.'
+		],
+		sources: [
+			{ label: 'theme.ts exportTokens' },
+			{ label: 'theme.ts exportDTCG' }
+		]
+	},
+	pipelineView: {
+		title: 'View / camera',
+		summary: 'Edits camera position and touch interaction mode for the viewport.',
+		details: [
+			'Input: current camera and gesture state.',
+			'Changes: camera orientation, distance, field of view, target position, and touch tool.',
+			'Output: a different view or interaction mode for the same color model.',
+			'Does not affect: color values, clipping parameters, ramp generation, or exports.'
+		],
+		sources: [
+			{ label: 'Viewport.svelte camera and gesture handlers' },
+			{ label: 'camera-and-canvas-gesture-plan.md' }
+		]
+	},
+	pipelinePerformance: {
 		title: 'Performance',
-		summary:
-			'Tessellation density N per cube face (64\u2013256). The solid is one unit quad instanced 6\u00b7N\u00b2 times \u2014 no per-cell vertex buffers, keeping memory use flat as resolution increases. Auto-adjust samples recent redraw times and only steps N downward after a sustained miss against the selected average FPS target.',
-		sources: [{ label: 'Instanced rendering (design.md \u00a78)' }]
+		summary: 'Controls rendering density and automatic tessellation reduction.',
+		details: [
+			'Input: renderer frame timing and selected tessellation.',
+			'Changes: tessellation, auto-adjust enablement, and minimum average FPS target.',
+			'Output: lower or higher rendering density for the same color model.',
+			'Does not affect: color math, ramp stops, clipping parameters, or exported tokens.'
+		],
+		sources: [
+			{ label: 'Viewport.svelte performance sampler' },
+			{ label: 'Instanced rendering design notes' }
+		]
 	}
 };
 
 export const HELP_BY_ID: Record<HelpId, PanelHelpContent> = {
 	...INSPECTOR_HELP,
-	...SIDEBAR_HELP
+	...PIPELINE_HELP
 };

@@ -1,6 +1,6 @@
 <script lang="ts">
 	import PanelHelp from './PanelHelp.svelte';
-	import type { HelpId, SidebarGroupId } from '$lib/inspector/help-copy';
+	import type { HelpId } from '$lib/inspector/help-copy';
 
 	let {
 		title,
@@ -8,14 +8,14 @@
 		collapsible = false,
 		defaultOpen = true,
 		helpId,
-		openHelp = $bindable(null as HelpId | null)
+		openHelp = $bindable(null as string | null)
 	} = $props<{
 		title: string;
 		children: import('svelte').Snippet;
 		collapsible?: boolean;
 		defaultOpen?: boolean;
-		helpId?: SidebarGroupId;
-		openHelp?: HelpId | null;
+		helpId?: HelpId;
+		openHelp?: string | null;
 	}>();
 
 	let open = $state(false);
@@ -46,11 +46,16 @@
 				<span class="group-chevron" aria-hidden="true">▾</span>
 			</button>
 			{#if helpId}
-				<PanelHelp {helpId} bind:openHelp />
+				<PanelHelp {helpId} instanceId={contentId} bind:openHelp />
 			{/if}
 		</div>
 	{:else}
-		<h2>{title}</h2>
+		<div class="group-header">
+			<h2>{title}</h2>
+			{#if helpId}
+				<PanelHelp {helpId} instanceId={contentId} bind:openHelp />
+			{/if}
+		</div>
 	{/if}
 
 	{#if !collapsible || open}

@@ -7,7 +7,6 @@
 	import { drawTransferPanel } from '$lib/panels/transfer-panel';
 	import { drawXyPanel } from '$lib/panels/xy-panel';
 
-	import type { HelpId } from '$lib/inspector/help-copy';
 	import type { ExplorerState } from '$lib/engine/types';
 	import type { Vec3 } from '$lib/color/math';
 
@@ -17,7 +16,7 @@
 	let xyCanvas: HTMLCanvasElement;
 	let spectrumLabel = $state('');
 	let activeTab = $state<'transfer' | 'cones' | 'xy' | 'values'>('transfer');
-	let openHelp = $state<HelpId | null>(null);
+	let openHelp = $state<string | null>(null);
 
 	const fmt = (value: number, places = 3) => (Math.abs(value) < 1e-4 ? 0 : value).toFixed(places);
 	const fmtVec = (vec: Vec3, places = 3) => vec.map((v: number) => fmt(v, places)).join(' ');

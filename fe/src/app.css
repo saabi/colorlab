@@ -89,7 +89,7 @@ input[type="checkbox"] {
 .app-shell {
 	display: grid;
 	grid-template-columns: 280px minmax(0, 1fr) 300px;
-	grid-template-rows: 48px minmax(0, 1fr);
+	grid-template-rows: 48px auto minmax(0, 1fr);
 	height: 100vh;
 	min-width: 900px;
 	background: var(--bg);
@@ -432,6 +432,7 @@ input[type="checkbox"] {
 }
 
 .side-panel {
+	grid-row: 2 / 4;
 	min-width: 0;
 	background: var(--panel);
 	overflow-y: auto;
@@ -443,10 +444,21 @@ input[type="checkbox"] {
 }
 
 .right-panel {
+	grid-column: 3;
 	border-left: 1px solid var(--line);
 }
 
+.pipeline-graph-region {
+	grid-column: 2;
+	grid-row: 2;
+	min-width: 0;
+	border-bottom: 1px solid var(--line);
+	background: rgba(10, 10, 11, 0.92);
+}
+
 .viewport {
+	grid-column: 2;
+	grid-row: 3;
 	position: relative;
 	min-width: 0;
 	min-height: 0;
@@ -455,6 +467,124 @@ input[type="checkbox"] {
 		linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
 		var(--bg);
 	background-size: 36px 36px;
+}
+
+.pipeline-graph {
+	display: grid;
+	grid-template-columns: minmax(0, 1.15fr) minmax(0, 1.35fr) minmax(0, 0.85fr);
+	gap: 8px;
+	padding: 8px 10px;
+	overflow-x: auto;
+}
+
+.pipeline-lane {
+	display: grid;
+	min-width: 0;
+	gap: 4px;
+}
+
+.pipeline-lane-label,
+.node-panel-kicker {
+	color: var(--faint);
+	font-size: 9px;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.08em;
+}
+
+.pipeline-node-row {
+	display: flex;
+	gap: 5px;
+	min-width: max-content;
+}
+
+.pipeline-node {
+	display: grid;
+	gap: 3px;
+	width: 86px;
+	min-height: 44px;
+	border: 1px solid var(--line);
+	border-radius: 7px;
+	background: var(--panel2);
+	padding: 6px;
+	text-align: left;
+}
+
+.pipeline-node:hover {
+	border-color: color-mix(in srgb, var(--accent), var(--line) 35%);
+}
+
+.pipeline-node.active {
+	border-color: var(--accent);
+	background: #211b10;
+	box-shadow: inset 0 0 0 1px rgba(214, 169, 58, 0.18);
+}
+
+.pipeline-node.disabled {
+	border-style: dashed;
+	opacity: 0.5;
+}
+
+.pipeline-node-main {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 4px;
+	min-width: 0;
+}
+
+.pipeline-node-label {
+	overflow: hidden;
+	color: var(--txt);
+	font-size: 11px;
+	font-weight: 650;
+	line-height: 1.1;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.pipeline-node-scope {
+	flex: none;
+	border: 1px solid rgba(255, 255, 255, 0.1);
+	border-radius: 999px;
+	color: var(--dim);
+	padding: 1px 4px;
+	font-size: 8px;
+	line-height: 1.2;
+	text-transform: uppercase;
+}
+
+.pipeline-node-status {
+	overflow: hidden;
+	color: var(--dim);
+	font-family: "IBM Plex Mono", ui-monospace, monospace;
+	font-size: 9px;
+	line-height: 1.15;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.node-panel-heading {
+	display: grid;
+	gap: 4px;
+	margin-bottom: 14px;
+	border-bottom: 1px solid var(--line);
+	padding-bottom: 12px;
+}
+
+.node-panel-heading h2 {
+	margin: 0;
+	color: var(--txt);
+	font-size: 14px;
+	font-weight: 650;
+	line-height: 1.2;
+}
+
+.node-panel-heading p {
+	margin: 0;
+	color: var(--dim);
+	font-size: 11px;
+	line-height: 1.35;
 }
 
 .viewport canvas,
@@ -814,6 +944,21 @@ input[type="checkbox"] {
 	white-space: nowrap;
 }
 
+.field-row {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+	margin: 6px 0;
+	font-size: 12px;
+}
+
+.field-row input,
+.field-row select {
+	flex: 1;
+	max-width: 60%;
+}
+
 .segmented {
 	display: grid;
 	grid-template-columns: repeat(var(--segments, 3), minmax(0, 1fr));
@@ -954,7 +1099,7 @@ input[type="checkbox"] {
 
 	.app-shell {
 		grid-template-columns: minmax(0, 1fr);
-		grid-template-rows: 44px 50dvh minmax(0, 1fr);
+		grid-template-rows: 44px auto 50dvh minmax(0, 1fr);
 		height: 100dvh;
 		min-width: 0;
 		overflow: hidden;
@@ -1057,16 +1202,51 @@ input[type="checkbox"] {
 
 	.viewport {
 		grid-column: 1;
-		grid-row: 2;
+		grid-row: 3;
 	}
 
 	.right-panel {
 		grid-column: 1;
-		grid-row: 3;
+		grid-row: 4;
 		min-height: 0;
 		border-top: 1px solid var(--line);
 		border-left: 0;
 		padding: 8px 10px 10px;
+	}
+
+	.pipeline-graph-region {
+		grid-column: 1;
+		grid-row: 2;
+	}
+
+	.pipeline-graph {
+		display: flex;
+		gap: 10px;
+		padding: 6px 8px;
+		overflow-x: auto;
+	}
+
+	.pipeline-lane {
+		min-width: max-content;
+	}
+
+	.pipeline-node {
+		width: 72px;
+		min-height: 38px;
+		padding: 5px;
+	}
+
+	.pipeline-node-label {
+		font-size: 10px;
+	}
+
+	.pipeline-node-scope,
+	.pipeline-lane-label {
+		display: none;
+	}
+
+	.pipeline-node-status {
+		font-size: 8.5px;
 	}
 
 	.viewport-toolbar {

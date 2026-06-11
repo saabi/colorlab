@@ -5,13 +5,24 @@
 	import SliderRow from './SliderRow.svelte';
 	import ThemeRamp from './ThemeRamp.svelte';
 	import ToggleRow from './ToggleRow.svelte';
+	import { MAX_CAMERA_DIST, MAX_CAMERA_FOV, MAX_CAMERA_PITCH, MIN_CAMERA_DIST, MIN_CAMERA_FOV, resetCamera } from '$lib/engine/camera';
+	import { getPipelineNode, hasRampSource, type PipelineNodeId } from './pipeline-nodes';
 
-	import type { HelpId } from '$lib/inspector/help-copy';
 	import type { ExplorerState } from '$lib/engine/types';
+	import type { Camera } from '$lib/engine/camera';
 	import type { DerivedMatrices } from '$lib/renderer/uniforms';
+	import type { TouchTool } from './Viewport.svelte';
 
-	let { explorer, matrices } = $props<{ explorer: ExplorerState; matrices: DerivedMatrices }>();
-	let openHelp = $state(null as HelpId | null);
+	let {
+		explorer,
+		matrices,
+		camera,
+		touchTool = $bindable('auto'),
+		selectedNode = 'all'
+	} = $props<{ explorer: ExplorerState; matrices: DerivedMatrices; camera: Camera; touchTool: TouchTool; selectedNode?: PipelineNodeId }>();
+	let openHelp = $state<string | null>(null);
+	const activeNode = $derived(getPipelineNode(selectedNode));
+	const sourceMissing = $derived(!!activeNode.requiresSource && !hasRampSource(explorer));
 
 	const spaces = [
 		{ value: 3, label: 'Oklab' },
@@ -33,18 +44,36 @@
 
 	const resolutions = [64, 128, 192, 256] as const;
 	const minAverageFpsOptions = [15, 30, 60] as const;
+
+	const showAll = $derived(selectedNode === 'all');
+	const showGamut = $derived(showAll || selectedNode === 'gamut');
+	const showWorld = $derived(showAll || selectedNode === 'world');
+	const showClipping = $derived(showAll || selectedNode === 'clip');
+	const showVision = $derived(showAll || selectedNode === 'cvd');
+	const showDisplay = $derived(showAll || selectedNode === 'display');
+	const showView = $derived(showAll || selectedNode === 'view');
+	const showPerformance = $derived(showAll || selectedNode === 'performance');
+
+	function setCameraTarget(index: 0 | 1 | 2, value: number) {
+		const next: [number, number, number] = [camera.target[0], camera.target[1], camera.target[2]];
+		next[index] = value;
+		camera.target = next;
+	}
 </script>
 
 <aside class="side-panel left-panel">
-	<ControlGroup title="Color model" helpId="colorModel" bind:openHelp collapsible defaultOpen={false}>
-		<label class="row" for="space-select"><span>World space</span></label>
-		<select id="space-select" bind:value={explorer.spaceMode}>
-			{#each spaces as space}
-				<option value={space.value}>{space.label}</option>
-			{/each}
-		</select>
+	<div class="node-panel-heading">
+		<span class="node-panel-kicker">{activeNode.lane} lane · affects {activeNode.affects}</span>
+		<h2>{activeNode.label}</h2>
+		<p>{activeNode.description}</p>
+		{#if sourceMissing}
+			<p class="note">Pick anchor A or B (or add a spline point) first — this stage has nothing to act on yet.</p>
+		{/if}
+	</div>
 
-		<label class="row separator" for="gamut-select"><span>Gamut (cube primaries)</span></label>
+	{#if showGamut}
+	<ControlGroup title="Gamut / encoding" helpId="pipelineGamut" bind:openHelp collapsible={showAll} defaultOpen={!showAll}>
+		<label class="row" for="gamut-select"><span>Gamut (cube primaries)</span></label>
 		<select id="gamut-select" bind:value={explorer.gamut}>
 			{#each gamuts as gamut}
 				<option value={gamut.value}>{gamut.label}</option>
@@ -54,8 +83,22 @@
 			Changing primaries reshapes the solid through the same <PipelinePopover cvd={explorer.cvd} cvdSev={explorer.cvdSev} />.
 		</p>
 	</ControlGroup>
+	{/if}
 
-	<ControlGroup title="Clipping" helpId="clipping" bind:openHelp collapsible defaultOpen={false}>
+	{#if showWorld}
+	<ControlGroup title="World space" helpId="pipelineWorld" bind:openHelp collapsible={showAll} defaultOpen={!showAll}>
+		<label class="row" for="space-select"><span>World space</span></label>
+		<select id="space-select" bind:value={explorer.spaceMode}>
+			{#each spaces as space}
+				<option value={space.value}>{space.label}</option>
+			{/each}
+		</select>
+		<p class="note">World space changes the 3D geometry, not the source RGB values or exported ramp tokens.</p>
+	</ControlGroup>
+	{/if}
+
+	{#if showClipping}
+	<ControlGroup title="Clipping" helpId="pipelineClip" bind:openHelp collapsible={showAll} defaultOpen={!showAll}>
 		<ToggleRow label="Enable slice" bind:checked={explorer.slice} />
 		<ToggleRow label="Cut above plane" bind:checked={explorer.cutAbove} />
 		<ToggleRow label="Cut below plane" bind:checked={explorer.cutBelow} />
@@ -112,8 +155,10 @@
 			format={(value) => value.toFixed(3)}
 		/>
 	</ControlGroup>
+	{/if}
 
-	<ControlGroup title="Display" helpId="display" bind:openHelp collapsible defaultOpen={false}>
+	{#if showDisplay}
+	<ControlGroup title="Display aids" helpId="pipelineDisplay" bind:openHelp collapsible={showAll} defaultOpen={!showAll}>
 		<ToggleRow label="Floor grid" bind:checked={explorer.floor} />
 		<ToggleRow label="Surface grid lines" bind:checked={explorer.lines} />
 		<ToggleRow label="Plane outline" bind:checked={explorer.planeOutline} />
@@ -135,6 +180,11 @@
 			<option value="ntsc">NTSC 1953</option>
 			<option value="cie">CIE 1931 RGB</option>
 		</select>
+	</ControlGroup>
+	{/if}
+
+	{#if showVision}
+	<ControlGroup title="Vision preview" helpId="pipelineVision" bind:openHelp collapsible={showAll} defaultOpen={!showAll}>
 		<label class="row" for="cvd-select"><span>Color vision</span></label>
 		<select id="cvd-select" bind:value={explorer.cvd}>
 			<option value="none">Normal trichromat</option>
@@ -154,12 +204,115 @@
 			Simulated at the LMS cone stage. 1.0 = dichromat, less than 1 = anomalous trichromat.
 		</p>
 	</ControlGroup>
+	{/if}
 
-	<ControlGroup title="Theme" helpId="theme" bind:openHelp collapsible defaultOpen={true}>
-		<ThemeRamp state={explorer} {matrices} />
+	{#if showAll || selectedNode === 'pick'}
+	<ControlGroup title="Pick" helpId="pipelinePick" bind:openHelp collapsible={showAll} defaultOpen={!showAll}>
+		<ThemeRamp state={explorer} {matrices} panel="pick" bind:touchTool />
 	</ControlGroup>
+	{/if}
 
-	<ControlGroup title="Performance" helpId="performance" bind:openHelp collapsible defaultOpen={false}>
+	{#if showAll || selectedNode === 'points'}
+	<ControlGroup title="Anchors / points" helpId="pipelinePoints" bind:openHelp collapsible={showAll} defaultOpen={!showAll}>
+		<ThemeRamp state={explorer} {matrices} panel="points" />
+	</ControlGroup>
+	{/if}
+
+	{#if showAll || selectedNode === 'interpolate'}
+	<ControlGroup title="Interpolate" helpId="pipelineInterpolate" bind:openHelp collapsible={showAll} defaultOpen={!showAll}>
+		<ThemeRamp state={explorer} {matrices} panel="interpolate" />
+	</ControlGroup>
+	{/if}
+
+	{#if showAll || selectedNode === 'adjust'}
+	<ControlGroup title="Adjust" helpId="pipelineAdjust" bind:openHelp collapsible={showAll} defaultOpen={!showAll}>
+		<ThemeRamp state={explorer} {matrices} panel="adjust" />
+	</ControlGroup>
+	{/if}
+
+	{#if showAll || selectedNode === 'gamut-map'}
+	<ControlGroup title="Gamut map" helpId="pipelineGamutMap" bind:openHelp collapsible={showAll} defaultOpen={!showAll}>
+		<ThemeRamp state={explorer} {matrices} panel="gamut-map" />
+	</ControlGroup>
+	{/if}
+
+	{#if showAll || selectedNode === 'export'}
+	<ControlGroup title="Export" helpId="pipelineExport" bind:openHelp collapsible={showAll} defaultOpen={!showAll}>
+		<ThemeRamp state={explorer} {matrices} panel="export" />
+	</ControlGroup>
+	{/if}
+
+	{#if showView}
+	<ControlGroup title="View" helpId="pipelineView" bind:openHelp collapsible={showAll} defaultOpen={!showAll}>
+		<button type="button" onclick={() => resetCamera(camera)}>Reset camera</button>
+		<SliderRow
+			label="Yaw"
+			bind:value={camera.yaw}
+			min={-Math.PI}
+			max={Math.PI}
+			step={0.01}
+			format={(value) => `${((value * 180) / Math.PI).toFixed(0)} deg`}
+		/>
+		<SliderRow
+			label="Pitch"
+			bind:value={camera.pitch}
+			min={-MAX_CAMERA_PITCH}
+			max={MAX_CAMERA_PITCH}
+			step={0.01}
+			format={(value) => `${((value * 180) / Math.PI).toFixed(0)} deg`}
+		/>
+		<SliderRow
+			label="Distance"
+			bind:value={camera.dist}
+			min={MIN_CAMERA_DIST}
+			max={MAX_CAMERA_DIST}
+			step={0.01}
+			format={(value) => value.toFixed(2)}
+		/>
+		<SliderRow
+			label="Field of view"
+			bind:value={camera.fov}
+			min={MIN_CAMERA_FOV}
+			max={MAX_CAMERA_FOV}
+			step={0.01}
+			format={(value) => `${((value * 180) / Math.PI).toFixed(0)} deg`}
+		/>
+		<div class="separator">
+			<div class="panel-label" style="margin-top: 0">Target</div>
+			<label class="field-row">
+				<span>X</span>
+				<input
+					type="number"
+					value={camera.target[0]}
+					step="0.01"
+					oninput={(event) => setCameraTarget(0, Number((event.currentTarget as HTMLInputElement).value))}
+				/>
+			</label>
+			<label class="field-row">
+				<span>Y</span>
+				<input
+					type="number"
+					value={camera.target[1]}
+					step="0.01"
+					oninput={(event) => setCameraTarget(1, Number((event.currentTarget as HTMLInputElement).value))}
+				/>
+			</label>
+			<label class="field-row">
+				<span>Z</span>
+				<input
+					type="number"
+					value={camera.target[2]}
+					step="0.01"
+					oninput={(event) => setCameraTarget(2, Number((event.currentTarget as HTMLInputElement).value))}
+				/>
+			</label>
+		</div>
+		<p class="note">Gestures remain active in the viewport; these controls edit the same camera state directly. Touch tool lives in the Pick stage.</p>
+	</ControlGroup>
+	{/if}
+
+	{#if showPerformance}
+	<ControlGroup title="Performance" helpId="pipelinePerformance" bind:openHelp collapsible={showAll} defaultOpen={!showAll}>
 		<ToggleRow label="Auto-adjust tessellation" bind:checked={explorer.autoPerformance} />
 		<label class="row" for="min-average-fps-select"><span>Minimum average FPS</span></label>
 		<select id="min-average-fps-select" bind:value={explorer.minAverageFps} disabled={!explorer.autoPerformance}>
@@ -176,4 +329,5 @@
 		<p class="note">{(6 * explorer.N * explorer.N).toLocaleString()} instances - 1 quad in memory</p>
 		<p class="note">Auto-adjust only lowers tessellation after sustained redraw misses.</p>
 	</ControlGroup>
+	{/if}
 </aside>
