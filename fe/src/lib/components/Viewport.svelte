@@ -15,8 +15,7 @@
 	import type { ExplorerState, ThemeAnchor } from '$lib/engine/types';
 	import type { Camera } from '$lib/engine/camera';
 
-	type ThemeArm = 'A' | 'B';
-	export type TouchTool = 'auto' | 'slice' | 'cylinder' | 'pickA' | 'pickB';
+	export type TouchTool = 'auto' | 'slice' | 'cylinder' | 'add';
 	type CanvasGesture =
 		| { kind: 'orbit' }
 		| { kind: 'inspect' }
@@ -46,7 +45,7 @@
 	let capturedPointerId: number | null = null;
 	let referenceOpen = $state(false);
 	let gestureStatus: string | null = $state(null);
-	let keys = { space: false, pickA: false, pickB: false };
+	let keys = { space: false, addPoint: false };
 
 	const RESOLUTIONS = [64, 128, 192, 256] as const;
 	const PERF_SAMPLE_COUNT = 12;
@@ -254,29 +253,6 @@
 		return hit;
 	}
 
-	function setThemeStopAt(clientX: number, clientY: number, armOverride?: ThemeArm) {
-		const activeArm = armOverride ?? explorer.theme.arm;
-		if (!activeArm) return false;
-		const rect = canvas.getBoundingClientRect();
-		const hit = pick(clientX - rect.left, clientY - rect.top, rect.width, rect.height, explorer, matrices, camera);
-		if (!hit) return false;
-		const srgbLin = m3.mulV(matrices.toSrgbLin.toSrgb, hit.rgbLin) as [number, number, number];
-		const index = activeArm === 'A' ? 0 : 1;
-		const next = [...themePoints];
-		while (next.length <= index) next.push({ srgbLin: [...srgbLin] as [number, number, number] });
-		next[index] = { srgbLin };
-		setThemePoints(next);
-		if (!armOverride) explorer.theme.arm = activeArm === 'A' ? 'B' : null;
-		buildRamp(explorer, matrices);
-		gestureStatus = `Theme ${activeArm} set`;
-		track('theme_anchor_set', {
-			arm: activeArm,
-			method: armOverride ? (touchTool === 'pickA' || touchTool === 'pickB' ? 'touch' : 'shortcut') : 'panel'
-		});
-		draw();
-		return true;
-	}
-
 	let rampRebuildQueued = false;
 	function scheduleRampRebuild() {
 		if (rampRebuildQueued) return;
@@ -369,7 +345,7 @@
 		if (event.pointerType === 'touch') {
 			if (touchTool === 'slice' && explorer.slice) return { kind: 'slice-offset', startY: event.clientY, startOff: explorer.off };
 			if (touchTool === 'cylinder' && explorer.cylSlice) return { kind: 'cylinder-radius', startX: event.clientX, startRadius: explorer.cylRad };
-			if (touchTool === 'pickA' || touchTool === 'pickB') return { kind: 'inspect' };
+			if (touchTool === 'add') return { kind: 'inspect' };
 			return inspectAt(event.clientX, event.clientY) ? { kind: 'inspect' } : { kind: 'orbit' };
 		}
 		if (event.shiftKey || keys.space) return { kind: 'pan' };
@@ -409,15 +385,10 @@
 		const completedGesture = gesture.kind;
 		dragging = false;
 		if (moved < 5) {
-			// Unified click handling across all ramp modes (points[] is the single source list).
-			if (explorer.theme.arm === 'add') {
+			// Unified click handling: armed/A-key/touch-tool clicks append a point to
+			// the active list; a plain click selects or clears.
+			if (explorer.theme.arm === 'add' || keys.addPoint || (event.pointerType === 'touch' && touchTool === 'add')) {
 				addControlPointAt(event.clientX, event.clientY);
-			} else if (keys.pickA || (event.pointerType === 'touch' && touchTool === 'pickA')) {
-				setThemeStopAt(event.clientX, event.clientY, 'A');
-			} else if (keys.pickB || (event.pointerType === 'touch' && touchTool === 'pickB')) {
-				setThemeStopAt(event.clientX, event.clientY, 'B');
-			} else if (explorer.theme.arm === 'A' || explorer.theme.arm === 'B') {
-				setThemeStopAt(event.clientX, event.clientY);
 			} else if (completedGesture !== 'drag-control-point') {
 				// Click selects an existing source point; empty space clears selection (and inspects on touch).
 				const idx = getControlPointAtScreen(event.clientX, event.clientY, event.pointerType);
@@ -556,8 +527,7 @@
 			keys.space = true;
 			event.preventDefault();
 		}
-		if (event.key.toLowerCase() === 'a') keys.pickA = true;
-		if (event.key.toLowerCase() === 'b') keys.pickB = true;
+		if (event.key.toLowerCase() === 'a') keys.addPoint = true;
 		if (event.repeat) return;
 		if (event.key === 'Escape') {
 			referenceOpen = false;
@@ -602,8 +572,7 @@
 
 	function onKeyUp(event: KeyboardEvent) {
 		if (event.code === 'Space') keys.space = false;
-		if (event.key.toLowerCase() === 'a') keys.pickA = false;
-		if (event.key.toLowerCase() === 'b') keys.pickB = false;
+		if (event.key.toLowerCase() === 'a') keys.addPoint = false;
 	}
 
 	onMount(() => {

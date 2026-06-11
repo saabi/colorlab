@@ -21,8 +21,7 @@
 			items: [
 				['Hover solid', 'inspect'],
 				['Touch solid + drag', 'inspect'],
-				['A + click', 'set theme A'],
-				['B + click', 'set theme B']
+				['A + click', 'add source point']
 			]
 		},
 		{

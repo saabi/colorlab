@@ -434,7 +434,7 @@ export function finalizeRamp(state: ExplorerState, matrices: DerivedMatrices) {
 }
 
 export function exportTokens(stops: ThemeStop[]) {
-	if (!stops.length) return '/* place anchors A and B (or two spline control points) on the slice first */';
+	if (!stops.length) return '/* add source points on the solid or slice first */';
 	return [':root {', ...stops.map((s, i) => `  --ramp-${i + 1}: oklch(${(s.oklch[0] * 100).toFixed(2)}% ${s.oklch[1].toFixed(4)} ${s.oklch[2].toFixed(2)}); /* ${s.hex}${s.inG ? '' : ' OOG'} */`), '}'].join('\n');
 }
 
@@ -474,7 +474,7 @@ export function exportDTCGGrid(grid: ThemeStop[][]) {
 }
 
 export function exportDTCG(stops: ThemeStop[]) {
-	if (!stops.length) return '/* place anchors (or two spline control points) first */';
+	if (!stops.length) return '/* add source points first */';
 	const ramp: Record<string, unknown> = {};
 	stops.forEach((s, i) => {
 		ramp[String((i + 1) * 100)] = {

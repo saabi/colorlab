@@ -42,8 +42,7 @@
 		{ value: 'auto', label: 'Auto inspect' },
 		{ value: 'slice', label: 'Slice offset' },
 		{ value: 'cylinder', label: 'Cylinder radius' },
-		{ value: 'pickA', label: 'Pick A' },
-		{ value: 'pickB', label: 'Pick B' }
+		{ value: 'add', label: 'Add point' }
 	];
 
 	// Spline curve geometry constraint (separate from gamut handling).
@@ -283,26 +282,6 @@
 
 {#if showSources}
 	<div class="panel-label">Pick source colors</div>
-	<div class="segmented" style="--segments: 2">
-		<button
-			type="button"
-			class:active={explorer.theme.arm === 'A'}
-			onclick={() => {
-				explorer.theme.arm = explorer.theme.arm === 'A' ? null : 'A';
-			}}
-		>
-			Set A
-		</button>
-		<button
-			type="button"
-			class:active={explorer.theme.arm === 'B'}
-			onclick={() => {
-				explorer.theme.arm = explorer.theme.arm === 'B' ? null : 'B';
-			}}
-		>
-			Set B
-		</button>
-	</div>
 	<button type="button" class:active={explorer.theme.arm === 'add'} onclick={toggleAddPoint}>
 		{explorer.theme.arm === 'add' ? 'Adding… click the solid' : '+ Add point'}
 	</button>
@@ -315,7 +294,7 @@
 		</select>
 	</label>
 	<p class="note">
-		Arm a target, then click the solid or slice cap. Drag a point to move it; click it to select, Delete to remove. Segment/arc use the first two (A, B); spline uses all.
+		Add points by arming + Add point (or holding A) and clicking the solid or slice cap. Drag a point to move it; click it to select, Delete to remove. All points in the active list shape its ramp.
 	</p>
 	<ToggleRow label="Show points in 3D" bind:checked={explorer.theme.showPoints} />
 
@@ -351,7 +330,7 @@
 			{#each points as cp, i}
 				<div class="cp-row" class:active={explorer.theme.selectedPoint === i}>
 					<button type="button" class="cp-select" onclick={() => selectControlPoint(i)}>
-						<span class="anchor-label">{explorer.theme.mode !== 'spline' && i < 2 ? (i === 0 ? 'A' : 'B') : i + 1}</span>
+						<span class="anchor-label">{i + 1}</span>
 						<span class="cp-chip" style={rampChipStyle({ srgbLin: cp.srgbLin, inG: true })}></span>
 						<span class="cp-hex">{srgbHex(cp.srgbLin)}</span>
 					</button>

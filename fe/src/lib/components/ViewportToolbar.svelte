@@ -8,7 +8,7 @@
 		touchTool = $bindable()
 	} = $props<{
 		state: ExplorerState;
-		touchTool: 'auto' | 'slice' | 'cylinder' | 'pickA' | 'pickB';
+		touchTool: 'auto' | 'slice' | 'cylinder' | 'add';
 	}>();
 
 	const spaces = [
@@ -84,8 +84,7 @@
 			<option value="auto">Auto</option>
 			<option value="slice">Slice</option>
 			<option value="cylinder">Radius</option>
-			<option value="pickA">Pick A</option>
-			<option value="pickB">Pick B</option>
+			<option value="add">Add point</option>
 		</select>
 	</label>
 </div>

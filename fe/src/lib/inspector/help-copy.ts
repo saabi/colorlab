@@ -192,10 +192,10 @@ export const PIPELINE_HELP: Record<PipelineHelpId, PanelHelpContent> = {
 	},
 	pipelineSources: {
 		title: 'Sources',
-		summary: 'Pick, list, and edit the ordered source colors the ramp is built from — one unified points list.',
+		summary: 'Pick, list, and edit the ordered source colors the ramps are built from — one or more source lists.',
 		stageRows: stageRows(
-			'Pick hits on the solid or clipped surface (click, drag, Set A/B, or Add point).',
-			'The points list: add, select, drag, reorder, duplicate, delete. Segment/arc use the first two (A, B); spline uses all.',
+			'Pick hits on the solid or clipped surface (Add point, A + click, drag).',
+			'The source lists: add/remove lists, then add, select, drag, reorder, duplicate, delete points in the active list. Every point shapes its list’s ramp.',
 			'Linear-sRGB source points feeding interpolation.',
 			'Interpolation method, adjustment policy, gamut mapping, or export format.'
 		),

@@ -3,6 +3,12 @@
 Status: **implemented** (P1 picker + sidebar integration; P2 multi-list engine,
 schema v8, migration, tests; P3 list-chip UI, multi-list 3D rendering).
 
+Follow-up (owner decision): the legacy **Set A / Set B** anchors were removed —
+lists made them obsolete (the interpolator uses *all* points in every mode, and
+A/B wrote to fixed indices 0/1 of the active list). Picking is now: + Add point
+(armed), **A + click** (keyboard), or the **Add point** touch tool; mentions of
+Set A/B below are historical.
+
 ## Feature 1 — Multi-space color picker
 
 A classic 2-D plane + vertical bar picker that works in **any registered color

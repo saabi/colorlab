@@ -131,7 +131,8 @@ export interface ExplorerState {
 		/** Active list's pre-map stops — alias of rawRows[activeList] (runtime, not persisted). */
 		rawStops: ThemeStop[];
 		steps: number;
-		arm: 'A' | 'B' | 'add' | null;
+		/** Armed click action on the solid: append a point to the active list (runtime, not persisted). */
+		arm: 'add' | null;
 		/** Interpolate stage enabled (persisted). Off = source anchors pass through as stops. */
 		interpolateOn: boolean;
 		/** Place stage enabled (persisted). Off = stops are the exact picked colors. */
