@@ -5,17 +5,30 @@
 	let {
 		title,
 		children,
-		collapsible = false,
-		defaultOpen = true,
+		defaultOpen = false,
 		helpId,
-		openHelp = $bindable(null as string | null)
+		openHelp = $bindable(null as string | null),
+		index,
+		status,
+		affects,
+		warn = null,
+		disabled = false
 	} = $props<{
 		title: string;
 		children: import('svelte').Snippet;
-		collapsible?: boolean;
 		defaultOpen?: boolean;
 		helpId?: HelpId;
 		openHelp?: string | null;
+		/** 1-based step number within the lane; renders the connector marker when set. */
+		index?: number;
+		/** Compact status value shown on the collapsed header. */
+		status?: string;
+		/** Effect badge (Viewport / Ramp / Export / …). */
+		affects?: string;
+		/** Warning chip (e.g. out-of-gamut count); null when nothing to warn. */
+		warn?: string | null;
+		/** Dim the step when its controls have nothing to act on yet. */
+		disabled?: boolean;
 	}>();
 
 	let open = $state(false);
@@ -28,10 +41,27 @@
 			initialized = true;
 		}
 	});
+
+	// Pulse the marker when the status value changes ("what changed?" feedback).
+	let pulse = $state(false);
+	let prevStatus: string | undefined;
+	$effect(() => {
+		const s = status;
+		if (prevStatus !== undefined && s !== prevStatus) {
+			pulse = true;
+			setTimeout(() => (pulse = false), 650);
+		}
+		prevStatus = s;
+	});
 </script>
 
-<section class:collapsed={collapsible && !open} class="group">
-	{#if collapsible}
+<section class="group" class:collapsed={!open} class:disabled class:has-rail={index != null}>
+	{#if index != null}
+		<div class="group-rail" aria-hidden="true">
+			<span class="step-marker" class:pulse>{index}</span>
+		</div>
+	{/if}
+	<div class="group-col">
 		<div class="group-header">
 			<button
 				type="button"
@@ -42,25 +72,23 @@
 					open = !open;
 				}}
 			>
-				<span>{title}</span>
-				<span class="group-chevron" aria-hidden="true">▾</span>
+				<span class="group-name">{title}</span>
+				<span class="group-meta">
+					{#if warn}<span class="group-warn" title="Out of gamut">{warn}</span>{/if}
+					{#if affects}<span class="group-affects">{affects}</span>{/if}
+					{#if status}<span class="group-status">{status}</span>{/if}
+					<span class="group-chevron" aria-hidden="true">▾</span>
+				</span>
 			</button>
 			{#if helpId}
 				<PanelHelp {helpId} instanceId={contentId} bind:openHelp />
 			{/if}
 		</div>
-	{:else}
-		<div class="group-header">
-			<h2>{title}</h2>
-			{#if helpId}
-				<PanelHelp {helpId} instanceId={contentId} bind:openHelp />
-			{/if}
-		</div>
-	{/if}
 
-	{#if !collapsible || open}
-		<div id={contentId} class="group-body">
-			{@render children()}
-		</div>
-	{/if}
+		{#if open}
+			<div id={contentId} class="group-body">
+				{@render children()}
+			</div>
+		{/if}
+	</div>
 </section>

@@ -89,7 +89,7 @@ input[type="checkbox"] {
 .app-shell {
 	display: grid;
 	grid-template-columns: 280px minmax(0, 1fr) 300px;
-	grid-template-rows: 48px auto minmax(0, 1fr);
+	grid-template-rows: 48px minmax(0, 1fr);
 	height: 100vh;
 	min-width: 900px;
 	background: var(--bg);
@@ -432,7 +432,7 @@ input[type="checkbox"] {
 }
 
 .side-panel {
-	grid-row: 2 / 4;
+	grid-row: 2;
 	min-width: 0;
 	background: var(--panel);
 	overflow-y: auto;
@@ -440,6 +440,7 @@ input[type="checkbox"] {
 }
 
 .left-panel {
+	grid-column: 1;
 	border-right: 1px solid var(--line);
 }
 
@@ -448,17 +449,9 @@ input[type="checkbox"] {
 	border-left: 1px solid var(--line);
 }
 
-.pipeline-graph-region {
-	grid-column: 2;
-	grid-row: 2;
-	min-width: 0;
-	border-bottom: 1px solid var(--line);
-	background: rgba(10, 10, 11, 0.92);
-}
-
 .viewport {
 	grid-column: 2;
-	grid-row: 3;
+	grid-row: 2;
 	position: relative;
 	min-width: 0;
 	min-height: 0;
@@ -469,64 +462,47 @@ input[type="checkbox"] {
 	background-size: 36px 36px;
 }
 
-.pipeline-graph {
-	display: grid;
-	grid-template-columns: minmax(0, 1.15fr) minmax(0, 1.35fr) minmax(0, 0.85fr);
-	gap: 8px;
-	padding: 8px 10px;
-	overflow-x: auto;
+/* Pipeline lanes in the left sidebar */
+.lane-band {
+	margin-bottom: 18px;
 }
 
-.pipeline-lane {
-	display: grid;
-	min-width: 0;
-	gap: 4px;
+.lane-band-title {
+	display: flex;
+	align-items: baseline;
+	flex-wrap: wrap;
+	gap: 6px;
+	margin-bottom: 10px;
+	padding-bottom: 6px;
+	border-bottom: 1px solid var(--line);
 }
 
-.pipeline-lane-label,
-.node-panel-kicker {
-	color: var(--faint);
-	font-size: 9px;
+.lane-band-name {
+	color: var(--txt);
+	font-size: 11px;
 	font-weight: 700;
 	text-transform: uppercase;
-	letter-spacing: 0.08em;
+	letter-spacing: 0.1em;
 }
 
-.pipeline-node-row {
-	display: flex;
-	gap: 5px;
-	min-width: max-content;
+.lane-band-sub {
+	color: var(--dim);
+	font-size: 10px;
 }
 
-.pipeline-node {
-	display: grid;
-	gap: 3px;
-	width: 86px;
-	min-height: 44px;
-	border: 1px solid var(--line);
-	border-radius: 7px;
-	background: var(--panel2);
-	padding: 6px;
-	text-align: left;
+/* Continuous connector line behind the numbered step markers */
+.lane-steps {
+	position: relative;
 }
 
-.pipeline-node:hover {
-	border-color: color-mix(in srgb, var(--accent), var(--line) 35%);
-}
-
-.pipeline-node.active {
-	border-color: var(--accent);
-	background: #211b10;
-	box-shadow: inset 0 0 0 1px rgba(214, 169, 58, 0.18);
-}
-
-.pipeline-node.disabled {
-	border-style: dashed;
-	opacity: 0.5;
-}
-
-.pipeline-node.pulse {
-	animation: pipeline-pulse 0.65s ease-out;
+.lane-steps::before {
+	content: '';
+	position: absolute;
+	left: 10px;
+	top: 12px;
+	bottom: 14px;
+	width: 2px;
+	background: var(--line);
 }
 
 @keyframes pipeline-pulse {
@@ -540,91 +516,9 @@ input[type="checkbox"] {
 }
 
 @media (prefers-reduced-motion: reduce) {
-	.pipeline-node.pulse {
+	.step-marker.pulse {
 		animation: none;
 	}
-}
-
-.pipeline-node-main {
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	gap: 4px;
-	min-width: 0;
-}
-
-.pipeline-node-label {
-	overflow: hidden;
-	color: var(--txt);
-	font-size: 11px;
-	font-weight: 650;
-	line-height: 1.1;
-	text-overflow: ellipsis;
-	white-space: nowrap;
-}
-
-.pipeline-node-scope {
-	flex: none;
-	border: 1px solid rgba(255, 255, 255, 0.1);
-	border-radius: 999px;
-	color: var(--dim);
-	padding: 1px 4px;
-	font-size: 8px;
-	line-height: 1.2;
-	text-transform: uppercase;
-}
-
-.pipeline-node-footer {
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	gap: 4px;
-	min-width: 0;
-}
-
-.pipeline-node-status {
-	overflow: hidden;
-	color: var(--dim);
-	font-family: "IBM Plex Mono", ui-monospace, monospace;
-	font-size: 9px;
-	line-height: 1.15;
-	text-overflow: ellipsis;
-	white-space: nowrap;
-}
-
-.pipeline-node-warn {
-	flex: none;
-	border-radius: 999px;
-	background: color-mix(in srgb, var(--warn) 22%, transparent);
-	color: var(--warn);
-	padding: 0 4px;
-	font-size: 8px;
-	font-weight: 600;
-	line-height: 1.4;
-	white-space: nowrap;
-}
-
-.node-panel-heading {
-	display: grid;
-	gap: 4px;
-	margin-bottom: 14px;
-	border-bottom: 1px solid var(--line);
-	padding-bottom: 12px;
-}
-
-.node-panel-heading h2 {
-	margin: 0;
-	color: var(--txt);
-	font-size: 14px;
-	font-weight: 650;
-	line-height: 1.2;
-}
-
-.node-panel-heading p {
-	margin: 0;
-	color: var(--dim);
-	font-size: 11px;
-	line-height: 1.35;
 }
 
 .viewport canvas,
@@ -865,8 +759,56 @@ input[type="checkbox"] {
 	margin-bottom: 16px;
 }
 
+/* Pipeline step: numbered rail marker + content column */
+.group.has-rail {
+	display: grid;
+	grid-template-columns: 22px 1fr;
+	column-gap: 8px;
+	align-items: start;
+	margin-bottom: 6px;
+}
+
+.group-rail {
+	display: flex;
+	justify-content: center;
+	padding-top: 1px;
+}
+
+.step-marker {
+	position: relative;
+	z-index: 1;
+	display: grid;
+	place-items: center;
+	width: 20px;
+	height: 20px;
+	border: 1px solid var(--line);
+	border-radius: 50%;
+	background: var(--panel2);
+	color: var(--dim);
+	font-size: 10px;
+	font-weight: 600;
+	font-variant-numeric: tabular-nums;
+}
+
+.group.has-rail:not(.collapsed) .step-marker {
+	border-color: color-mix(in srgb, var(--accent), var(--line) 35%);
+	color: var(--txt);
+}
+
+.step-marker.pulse {
+	animation: pipeline-pulse 0.65s ease-out;
+}
+
+.group-col {
+	min-width: 0;
+}
+
+.group.disabled .group-col {
+	opacity: 0.5;
+}
+
 .group h2,
-.group-toggle,
+.group-name,
 .panel-label {
 	margin: 0 0 8px;
 	color: var(--faint);
@@ -874,6 +816,56 @@ input[type="checkbox"] {
 	font-weight: 600;
 	text-transform: uppercase;
 	letter-spacing: 0.1em;
+}
+
+.group-name {
+	margin: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.group-meta {
+	display: flex;
+	align-items: center;
+	gap: 5px;
+	min-width: 0;
+}
+
+.group-affects {
+	flex: none;
+	border: 1px solid rgba(255, 255, 255, 0.1);
+	border-radius: 999px;
+	color: var(--dim);
+	padding: 1px 5px;
+	font-size: 8px;
+	line-height: 1.3;
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+}
+
+.group-status {
+	overflow: hidden;
+	max-width: 90px;
+	color: var(--dim);
+	font-family: "IBM Plex Mono", ui-monospace, monospace;
+	font-size: 9px;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	text-transform: none;
+	letter-spacing: 0;
+}
+
+.group-warn {
+	flex: none;
+	border-radius: 999px;
+	background: color-mix(in srgb, var(--warn) 22%, transparent);
+	color: var(--warn);
+	padding: 0 5px;
+	font-size: 8px;
+	font-weight: 600;
+	line-height: 1.4;
+	white-space: nowrap;
 }
 
 .group-header {
@@ -1139,7 +1131,7 @@ input[type="checkbox"] {
 
 	.app-shell {
 		grid-template-columns: minmax(0, 1fr);
-		grid-template-rows: 44px auto 50dvh minmax(0, 1fr);
+		grid-template-rows: 44px 50dvh minmax(0, 1fr);
 		height: 100dvh;
 		min-width: 0;
 		overflow: hidden;
@@ -1242,51 +1234,16 @@ input[type="checkbox"] {
 
 	.viewport {
 		grid-column: 1;
-		grid-row: 3;
+		grid-row: 2;
 	}
 
 	.right-panel {
 		grid-column: 1;
-		grid-row: 4;
+		grid-row: 3;
 		min-height: 0;
 		border-top: 1px solid var(--line);
 		border-left: 0;
 		padding: 8px 10px 10px;
-	}
-
-	.pipeline-graph-region {
-		grid-column: 1;
-		grid-row: 2;
-	}
-
-	.pipeline-graph {
-		display: flex;
-		gap: 10px;
-		padding: 6px 8px;
-		overflow-x: auto;
-	}
-
-	.pipeline-lane {
-		min-width: max-content;
-	}
-
-	.pipeline-node {
-		width: 72px;
-		min-height: 38px;
-		padding: 5px;
-	}
-
-	.pipeline-node-label {
-		font-size: 10px;
-	}
-
-	.pipeline-node-scope,
-	.pipeline-lane-label {
-		display: none;
-	}
-
-	.pipeline-node-status {
-		font-size: 8.5px;
 	}
 
 	.viewport-toolbar {
