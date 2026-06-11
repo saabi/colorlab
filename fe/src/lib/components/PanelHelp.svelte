@@ -19,6 +19,11 @@
 
 	const content = $derived(HELP_BY_ID[helpId]);
 	const open = $derived(openHelp === openKey);
+	const visibleSources = $derived(content.sources.filter((source) => !isRepoInternalSource(source.label)));
+
+	function isRepoInternalSource(label: string) {
+		return /\b[\w-]+\.(?:ts|svelte|md|glsl|vert|frag)\b/.test(label) || /\bdesign\.md\b/.test(label) || /\bWebGL renderer\b/.test(label) || /\bshader\b/i.test(label);
+	}
 
 	function placePopover() {
 		if (!buttonEl) return;
@@ -92,18 +97,20 @@
 					<p class="panel-help-summary">{paragraph}</p>
 				{/each}
 			{/if}
-			<span class="panel-help-sources-label">Sources</span>
-			<ul class="panel-help-sources">
-				{#each content.sources as source}
-					<li>
-						{#if source.href}
-							<a href={source.href} target="_blank" rel="noopener noreferrer">{source.label}</a>
-						{:else}
-							{source.label}
-						{/if}
-					</li>
-				{/each}
-			</ul>
+			{#if visibleSources.length}
+				<span class="panel-help-sources-label">Sources</span>
+				<ul class="panel-help-sources">
+					{#each visibleSources as source}
+						<li>
+							{#if source.href}
+								<a href={source.href} target="_blank" rel="noopener noreferrer">{source.label}</a>
+							{:else}
+								{source.label}
+							{/if}
+						</li>
+					{/each}
+				</ul>
+			{/if}
 		</div>
 	{/if}
 </span>
