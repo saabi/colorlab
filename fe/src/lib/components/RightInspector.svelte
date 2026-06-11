@@ -18,9 +18,10 @@
 	let activeTab = $state<'transfer' | 'cones' | 'xy' | 'values' | 'palette'>('transfer');
 	let openHelp = $state<string | null>(null);
 
-	// The exported palette (2-D grid when expanded, else the 1-D ramp as one row).
+	// The exported palette (2-D grid when present — Expand or multiple lists — else
+	// the 1-D active ramp as one row).
 	const paletteRows = $derived(
-		explorer.theme.expandOn && explorer.theme.grid.length
+		explorer.theme.grid.length
 			? explorer.theme.grid
 			: explorer.theme.stops.length
 				? [explorer.theme.stops]

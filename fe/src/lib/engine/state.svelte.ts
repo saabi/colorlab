@@ -42,11 +42,15 @@ function createExplorerDefaults(): ExplorerState {
 		cvd: 'none',
 		cvdSev: 1,
 		theme: {
-			points: [],
+			lists: [[]],
+			activeList: 0,
 			selectedPoint: null,
 			splineConstraint: 'surface',
 			splineSpace: 'world',
 			gamutMap: 'none',
+			curves: [],
+			rawRows: [],
+			rows: [],
 			splineCurve: [],
 			rawStops: [],
 			steps: 5,
@@ -100,7 +104,7 @@ export function cloneAppState(state: AppState): AppState {
 
 export function createAppState(options: { mobile?: boolean } = {}): AppState {
 	const state: AppState = {
-		schemaVersion: 7,
+		schemaVersion: 8,
 		explorer: createExplorerDefaults(),
 		camera: createCamera()
 	};
@@ -154,9 +158,11 @@ export const EXAMPLE_STATES = [
 				cvd: 'none',
 				cvdSev: 1,
 				theme: {
-					points: [
-						{ srgbLin: [0.002353332407759444, 0.0038332058213883316, 0.17366576656361682] },
-						{ srgbLin: [0.7610351858718939, 0.9402926643687034, 0.15604940886754892] }
+					lists: [
+						[
+							{ srgbLin: [0.002353332407759444, 0.0038332058213883316, 0.17366576656361682] },
+							{ srgbLin: [0.7610351858718939, 0.9402926643687034, 0.15604940886754892] }
+						]
 					],
 					splineConstraint: 'surface',
 					splineSpace: 'oklch',
@@ -204,14 +210,16 @@ export const EXAMPLE_STATES = [
 				cvd: 'none',
 				cvdSev: 1,
 				theme: {
-					points: [
-						{ srgbLin: [0.15179282277131012, 0.9422662580510375, 0.9999999850358002] },
-						{ srgbLin: [0.03671407394983858, 0.3714108130672565, 0.9929783888548199] },
-						{ srgbLin: [0.028253499683098458, 0.012408419728036454, 0.24351054921984353] },
-						{ srgbLin: [0.9423321273143955, 0.4093936585477751, 0.007526737942892326] },
-						{ srgbLin: [0.6632663753802132, 0.7751983959873612, 0.09314133134117958] },
-						{ srgbLin: [0.01902375407757991, 0.23677381868771052, 0.01243050656641337] },
-						{ srgbLin: [1.460307339678016e-9, 0.020102723338920343, 0.0007882480511984311] }
+					lists: [
+						[
+							{ srgbLin: [0.15179282277131012, 0.9422662580510375, 0.9999999850358002] },
+							{ srgbLin: [0.03671407394983858, 0.3714108130672565, 0.9929783888548199] },
+							{ srgbLin: [0.028253499683098458, 0.012408419728036454, 0.24351054921984353] },
+							{ srgbLin: [0.9423321273143955, 0.4093936585477751, 0.007526737942892326] },
+							{ srgbLin: [0.6632663753802132, 0.7751983959873612, 0.09314133134117958] },
+							{ srgbLin: [0.01902375407757991, 0.23677381868771052, 0.01243050656641337] },
+							{ srgbLin: [1.460307339678016e-9, 0.020102723338920343, 0.0007882480511984311] }
+						]
 					],
 					splineConstraint: 'surface',
 					splineSpace: 'oklch',

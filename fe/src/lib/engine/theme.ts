@@ -66,20 +66,34 @@ function stopFromWorld(world: Vec3, state: ExplorerState, matrices: DerivedMatri
 	};
 }
 
-// Pipeline v2: explicit stage chain over one grid of ramps (rows) x stops (cols).
-// Sources (theme.points) -> Interpolate (hi-res curve) -> Place (stops) ->
+/** The source list edits/selection/picking target. activeList is clamped on load,
+ *  but list removal can transiently leave it out of range — guard anyway. */
+export function activeAnchors(theme: ExplorerState['theme']): ThemeAnchor[] {
+	return theme.lists[theme.activeList] ?? theme.lists[0] ?? [];
+}
+
+// Pipeline v2: explicit stage chain, run per source list (each list is one ramp).
+// Sources (theme.lists) -> Interpolate (hi-res curves) -> Place (stops per list) ->
 // Gamut-map (terminal per-cell policy) -> Expand (2-D grid) -> Export reads the result.
+// splineCurve/rawStops/stops stay maintained as the active list's row so single-ramp
+// UI (gamut panel, export fallback, inspector) is list-count agnostic.
 export function buildRamp(state: ExplorerState, matrices: DerivedMatrices) {
 	const T = state.theme;
-	// Interpolate: anchors -> hi-res curve (off -> no curve; anchors pass through).
-	if (T.interpolateOn) interpolateRamp(state, matrices);
-	else T.splineCurve = [];
+	if (!T.lists.length) T.lists = [[]];
+	T.activeList = Math.min(Math.max(T.activeList, 0), T.lists.length - 1);
+	// Interpolate: anchors -> hi-res curve per list (off -> no curves; anchors pass through).
+	T.curves = T.interpolateOn
+		? T.lists.map((pts) => interpolateList(pts, state, matrices))
+		: T.lists.map(() => []);
 	// Place: curve -> stops. With either stage off, the stops are the exact picked
 	// source colors (the curve, when present, remains a visual aid).
-	if (T.interpolateOn && T.placeOn) placeStops(state, matrices);
-	else T.stops = T.points.map((p) => stopFromSrgbLin(p.srgbLin, state, matrices));
-	finalizeRamp(state, matrices); // gamut-map stops + curve (theme.rawStops kept)
-	buildExpand(state, matrices); // stops -> theme.grid
+	T.rawRows = T.lists.map((pts, i) =>
+		T.interpolateOn && T.placeOn
+			? placeList(T.curves[i], state, matrices)
+			: pts.map((p) => stopFromSrgbLin(p.srgbLin, state, matrices))
+	);
+	finalizeRamp(state, matrices); // gamut-map rows + curves; sets active-list aliases
+	buildExpand(state, matrices); // rows -> theme.grid
 }
 
 // Expand stage (generalized Spread): one mechanism in Oklch. The row generator
@@ -109,26 +123,32 @@ function spreadColor(srgbLin: Vec3, dh: number, dC: number, dL: number): Vec3 {
 
 function buildExpand(state: ExplorerState, matrices: DerivedMatrices) {
 	const T = state.theme;
+	// Base rows: every non-empty list's final ramp. With Expand off (or inert), the
+	// grid is the base itself whenever output is genuinely 2-D (more than one ramp),
+	// so display and export stay 2-D-consistent for multi-list documents.
+	const base = T.rows.filter((row) => row.length);
 	const rowsId = spreadIdentity(T.expandRows);
 	const colsId = spreadIdentity(T.expandCols);
-	if (!T.expandOn || !T.stops.length || (rowsId && colsId)) {
-		T.grid = [];
+	if (!T.expandOn || !base.length || (rowsId && colsId)) {
+		T.grid = base.length > 1 ? base : [];
 		return;
 	}
 	const mapCell = (lin: Vec3) => (T.gamutMap !== 'none' ? mapToGamut(lin, T.gamutMap) : lin);
 	const cell = (srgbLin: Vec3, dh: number, dC: number, dL: number) =>
 		stopFromSrgbLin(mapCell(spreadColor(srgbLin, dh, dC, dL)), state, matrices);
 
-	// 1. Row generator: R related ramps (R x S).
+	// 1. Row generator: R related ramps per base ramp (L·R x S).
 	const ramps: ThemeStop[][] = rowsId
-		? [T.stops]
-		: Array.from({ length: T.expandRows.count }, (_, r) => {
-				const t = T.expandRows.count === 1 ? 0 : r / (T.expandRows.count - 1);
-				const dh = spreadOffset(T.expandRows.hue, t);
-				const dC = spreadOffset(T.expandRows.chroma, t);
-				const dL = spreadOffset(T.expandRows.light, t);
-				return T.stops.map((s) => cell(s.srgbLin, dh, dC, dL));
-			});
+		? base
+		: base.flatMap((stops) =>
+				Array.from({ length: T.expandRows.count }, (_, r) => {
+					const t = T.expandRows.count === 1 ? 0 : r / (T.expandRows.count - 1);
+					const dh = spreadOffset(T.expandRows.hue, t);
+					const dC = spreadOffset(T.expandRows.chroma, t);
+					const dL = spreadOffset(T.expandRows.light, t);
+					return stops.map((s) => cell(s.srgbLin, dh, dC, dL));
+				})
+			);
 
 	// 2. Column generator: each stop -> K variants; grid flattens to (R*S) x K.
 	if (colsId) {
@@ -224,12 +244,10 @@ function snapToSurface(p: Vec3, state: ExplorerState, matrices: DerivedMatrices)
 }
 
 // Unified interpolator for 'linear' and 'spline' path types over any interpolation
-// space (incl. stateful "world"). Builds a hi-res curve, then arc-length resamples.
-function interpolateRamp(state: ExplorerState, matrices: DerivedMatrices) {
+// space (incl. stateful "world"). Pure per-list: source points in, hi-res curve out.
+function interpolateList(cps: ThemeAnchor[], state: ExplorerState, matrices: DerivedMatrices): SplineSample[] {
 	const T = state.theme;
-	T.splineCurve = [];
-	const cps = T.points;
-	if (!cps.length) return;
+	if (!cps.length) return [];
 
 	// Space accessors. "world" interpolates directly in the active 3D geometry;
 	// every other space round-trips through the interp registry.
@@ -249,8 +267,7 @@ function interpolateRamp(state: ExplorerState, matrices: DerivedMatrices) {
 	// it to one seed stop (useful with the spread Expand operator).
 	if (cps.length === 1) {
 		const stop = stopFromWorld(worldAt(toCoord(cps[0].srgbLin)), state, matrices);
-		T.splineCurve = [{ world: stop.world, srgbLin: stop.srgbLin }];
-		return;
+		return [{ world: stop.world, srgbLin: stop.srgbLin }];
 	}
 
 	// 1. Source points -> interpolation coordinates (hue unwrapped for cyclic spaces).
@@ -294,7 +311,7 @@ function interpolateRamp(state: ExplorerState, matrices: DerivedMatrices) {
 			curve.push({ world: stop.world, srgbLin: stop.srgbLin });
 		}
 	}
-	T.splineCurve = curve;
+	return curve;
 }
 
 // Place (declarative sampling) — choose where the N stops land on the hi-res curve:
@@ -302,17 +319,13 @@ function interpolateRamp(state: ExplorerState, matrices: DerivedMatrices) {
 //   uniform  -> equidistant in curve parameter.
 //   tones    -> equidistant in Oklab lightness L (Material/Tailwind-style tonal ramp).
 //   contrast -> equidistant in WCAG contrast vs the chosen background (Leonardo-style).
-function placeStops(state: ExplorerState, matrices: DerivedMatrices) {
+function placeList(curve: SplineSample[], state: ExplorerState, matrices: DerivedMatrices): ThemeStop[] {
 	const T = state.theme;
-	const curve = T.splineCurve;
 	const steps = T.steps;
-	T.stops = [];
+	const stops: ThemeStop[] = [];
 	// Degenerate single-sample curve (one source point): one seed stop.
-	if (curve.length === 1) {
-		T.stops = [stopFromWorld(curve[0].world, state, matrices)];
-		return;
-	}
-	if (!curve.length) return;
+	if (curve.length === 1) return [stopFromWorld(curve[0].world, state, matrices)];
+	if (!curve.length) return stops;
 
 	// Contrast ladder: place stops at explicit WCAG target ratios spanning
 	// [contrastMin, contrastMax] vs the chosen background (Leonardo-style). Each
@@ -333,9 +346,9 @@ function placeStops(state: ExplorerState, matrices: DerivedMatrices) {
 					best = i;
 				}
 			}
-			T.stops.push(stopFromWorld(curve[best].world, state, matrices));
+			stops.push(stopFromWorld(curve[best].world, state, matrices));
 		}
-		return;
+		return stops;
 	}
 
 	const oks = curve.map((s) => lsrgb2oklab(s.srgbLin.map(clamp01) as Vec3));
@@ -372,8 +385,9 @@ function placeStops(state: ExplorerState, matrices: DerivedMatrices) {
 
 	for (let s = 0; s < steps; s += 1) {
 		const t = steps === 1 ? 0 : s / (steps - 1);
-		T.stops.push(stopFromWorld(worldAtTarget(lo + (hi - lo) * t), state, matrices));
+		stops.push(stopFromWorld(worldAtTarget(lo + (hi - lo) * t), state, matrices));
 	}
+	return stops;
 }
 
 function stopFromSrgbLin(srgbLin: Vec3, state: ExplorerState, matrices: DerivedMatrices): ThemeStop {
@@ -394,20 +408,29 @@ function stopFromSrgbLin(srgbLin: Vec3, state: ExplorerState, matrices: DerivedM
 
 // Terminal gamut-map stage: the single place out-of-gamut colors are reconciled.
 // Runs last in every recompute (after interpolation and any WCAG/even adjustment),
-// so the policy governs all theme modes and the hi-res spline curve uniformly.
+// so the policy governs all lists, theme modes, and the hi-res curves uniformly.
+// Also refreshes the active-list aliases (splineCurve / rawStops / stops).
 export function finalizeRamp(state: ExplorerState, matrices: DerivedMatrices) {
-	const method = state.theme.gamutMap;
-	// Keep the pre-map stops for the raw-vs-final preview. The mapping below
-	// replaces `stops` with new objects, so the old array is safe to retain.
-	state.theme.rawStops = state.theme.stops;
-	if (method === 'none') return;
-	state.theme.stops = state.theme.stops.map((s) => stopFromSrgbLin(mapToGamut(s.srgbLin, method), state, matrices));
-	if (state.theme.mode === 'spline' && state.theme.splineCurve.length) {
-		state.theme.splineCurve = state.theme.splineCurve.map((s) => {
-			const mapped = mapToGamut(s.srgbLin, method);
-			return { world: jsToWorld(m3.mulV(matrices.toSrgbLin.fromSrgb, mapped), state, matrices), srgbLin: mapped };
-		});
+	const T = state.theme;
+	const method = T.gamutMap;
+	// rawRows keeps the pre-map stops for the raw-vs-final preview; the mapping
+	// below builds new rows, so the raw arrays are safe to retain.
+	if (method === 'none') {
+		T.rows = T.rawRows;
+	} else {
+		T.rows = T.rawRows.map((row) => row.map((s) => stopFromSrgbLin(mapToGamut(s.srgbLin, method), state, matrices)));
+		if (T.mode === 'spline') {
+			T.curves = T.curves.map((curve) =>
+				curve.map((s) => {
+					const mapped = mapToGamut(s.srgbLin, method);
+					return { world: jsToWorld(m3.mulV(matrices.toSrgbLin.fromSrgb, mapped), state, matrices), srgbLin: mapped };
+				})
+			);
+		}
 	}
+	T.splineCurve = T.curves[T.activeList] ?? [];
+	T.rawStops = T.rawRows[T.activeList] ?? [];
+	T.stops = T.rows[T.activeList] ?? [];
 }
 
 export function exportTokens(stops: ThemeStop[]) {

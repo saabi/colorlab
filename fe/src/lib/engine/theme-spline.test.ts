@@ -24,10 +24,12 @@ function splineState(
 	state.theme.splineConstraint = constraint;
 	state.theme.gamutMap = gamutMap;
 	state.theme.steps = steps;
-	state.theme.points = [
-		{ srgbLin: [0.02, 0.01, 0.2] },
-		{ srgbLin: [0.6, 0.05, 0.05] },
-		{ srgbLin: [0.7, 0.85, 0.1] }
+	state.theme.lists = [
+		[
+			{ srgbLin: [0.02, 0.01, 0.2] },
+			{ srgbLin: [0.6, 0.05, 0.05] },
+			{ srgbLin: [0.7, 0.85, 0.1] }
+		]
 	];
 	return state;
 }
@@ -88,13 +90,13 @@ describe('buildSplineRamp', () => {
 		// The endpoints of the free curve must equal the first/last control points.
 		const first = state.theme.splineCurve[0].srgbLin;
 		const last = state.theme.splineCurve[state.theme.splineCurve.length - 1].srgbLin;
-		state.theme.points[0].srgbLin.forEach((v: number, k: number) => expect(Math.abs(first[k] - v)).toBeLessThan(1e-6));
-		state.theme.points[2].srgbLin.forEach((v: number, k: number) => expect(Math.abs(last[k] - v)).toBeLessThan(1e-6));
+		state.theme.lists[0][0].srgbLin.forEach((v: number, k: number) => expect(Math.abs(first[k] - v)).toBeLessThan(1e-6));
+		state.theme.lists[0][2].srgbLin.forEach((v: number, k: number) => expect(Math.abs(last[k] - v)).toBeLessThan(1e-6));
 	});
 
 	it('clears the curve and stops when there are no source points', () => {
 		const state = splineState('oklch', 'free');
-		state.theme.points = [];
+		state.theme.lists = [[]];
 		buildRamp(state, matrices);
 		expect(state.theme.stops).toEqual([]);
 		expect(state.theme.splineCurve).toEqual([]);
@@ -102,7 +104,7 @@ describe('buildSplineRamp', () => {
 
 	it('emits a single seed stop for exactly one source point', () => {
 		const state = splineState('oklch', 'free');
-		state.theme.points = [{ srgbLin: [0.3, 0.3, 0.3] }];
+		state.theme.lists = [[{ srgbLin: [0.3, 0.3, 0.3] }]];
 		buildRamp(state, matrices);
 		expect(state.theme.stops.length).toBe(1);
 		expect(state.theme.splineCurve.length).toBe(1);
@@ -135,7 +137,7 @@ describe('buildSplineRamp', () => {
 	it('a single source point + spread columns fans the seed into a 1-row palette', () => {
 		const state = createAppState().explorer;
 		state.theme.mode = 'linear';
-		state.theme.points = [{ srgbLin: [0.4, 0.2, 0.5] }];
+		state.theme.lists = [[{ srgbLin: [0.4, 0.2, 0.5] }]];
 		state.theme.expandOn = true;
 		state.theme.expandCols = {
 			count: 7,
@@ -197,7 +199,7 @@ describe('buildSplineRamp', () => {
 		// Tints oracle (mid-L colors, no clamping): old walked L from L+0.32 down to L-0.32.
 		state.theme.expandRows = { count: 1, hue: offAxis(), chroma: offAxis(), light: offAxis() };
 		state.theme.expandCols = { count: 5, hue: offAxis(), chroma: offAxis(), light: { delta: -0.32, dir: 'sym' } };
-		state.theme.points = [{ srgbLin: [0.2, 0.18, 0.22] }, { srgbLin: [0.25, 0.22, 0.2] }];
+		state.theme.lists = [[{ srgbLin: [0.2, 0.18, 0.22] }, { srgbLin: [0.25, 0.22, 0.2] }]];
 		buildRamp(state, matrices);
 		state.theme.grid.forEach((row, si) => {
 			const ok = lsrgb2oklab(state.theme.stops[si].srgbLin.map((v) => Math.min(Math.max(v, 0), 1)) as [number, number, number]);
@@ -218,7 +220,7 @@ describe('buildSplineRamp', () => {
 		expect(state.theme.splineCurve).toEqual([]);
 		expect(state.theme.stops.length).toBe(3);
 		state.theme.stops.forEach((s, i) => {
-			state.theme.points[i].srgbLin.forEach((v, k) => expect(Math.abs(s.srgbLin[k] - v)).toBeLessThan(1e-9));
+			state.theme.lists[0][i].srgbLin.forEach((v: number, k: number) => expect(Math.abs(s.srgbLin[k] - v)).toBeLessThan(1e-9));
 		});
 
 		// Place off (interpolate on): curve drawn, stops are still the anchors.
@@ -246,9 +248,11 @@ describe('buildSplineRamp', () => {
 			state.theme.splineConstraint = 'free';
 			state.theme.splineSpace = space;
 			state.theme.steps = 7;
-			state.theme.points = [
-				{ srgbLin: [0.05, 0.05, 0.4] },
-				{ srgbLin: [0.7, 0.8, 0.1] }
+			state.theme.lists = [
+				[
+					{ srgbLin: [0.05, 0.05, 0.4] },
+					{ srgbLin: [0.7, 0.8, 0.1] }
+				]
 			];
 			buildRamp(state, matrices);
 			expect(state.theme.stops.length).toBe(7);
@@ -258,6 +262,73 @@ describe('buildSplineRamp', () => {
 			const last = state.theme.stops[6].srgbLin;
 			[0.05, 0.05, 0.4].forEach((v, k) => expect(Math.abs(first[k] - v)).toBeLessThan(1e-3));
 			[0.7, 0.8, 0.1].forEach((v, k) => expect(Math.abs(last[k] - v)).toBeLessThan(1e-3));
+		}
+	});
+});
+
+describe('multiple source lists', () => {
+	it('builds one curve and one row of stops per list; aliases track the active list', () => {
+		const state = splineState('oklch', 'free', 5);
+		state.theme.lists.push([{ srgbLin: [0.8, 0.1, 0.1] }, { srgbLin: [0.1, 0.1, 0.8] }]);
+		state.theme.activeList = 1;
+		buildRamp(state, matrices);
+		expect(state.theme.curves.length).toBe(2);
+		expect(state.theme.rows.length).toBe(2);
+		expect(state.theme.rows[0].length).toBe(5);
+		expect(state.theme.rows[1].length).toBe(5);
+		// Aliases mirror the active list (index 1).
+		expect(state.theme.stops).toBe(state.theme.rows[1]);
+		expect(state.theme.rawStops).toBe(state.theme.rawRows[1]);
+		expect(state.theme.splineCurve).toBe(state.theme.curves[1]);
+	});
+
+	it('with more than one list the grid is the lists’ ramps even with Expand off', () => {
+		const state = splineState('oklch', 'free', 4);
+		state.theme.expandOn = false;
+		state.theme.lists.push([{ srgbLin: [0.8, 0.1, 0.1] }, { srgbLin: [0.1, 0.8, 0.1] }, { srgbLin: [0.1, 0.1, 0.8] }]);
+		buildRamp(state, matrices);
+		expect(state.theme.grid.length).toBe(2);
+		expect(state.theme.grid[0]).toBe(state.theme.rows[0]);
+		expect(state.theme.grid[1]).toBe(state.theme.rows[1]);
+		// Empty lists contribute no grid row.
+		state.theme.lists.push([]);
+		buildRamp(state, matrices);
+		expect(state.theme.grid.length).toBe(2);
+	});
+
+	it('the Expand row generator multiplies every list (L·R rows)', () => {
+		const state = splineState('oklch', 'free', 3);
+		state.theme.lists.push([{ srgbLin: [0.8, 0.1, 0.1] }, { srgbLin: [0.1, 0.1, 0.8] }]);
+		state.theme.expandOn = true;
+		state.theme.expandRows = {
+			count: 3,
+			hue: { delta: 240, dir: 'ramp' },
+			chroma: { delta: 0, dir: 'off' },
+			light: { delta: 0, dir: 'off' }
+		};
+		buildRamp(state, matrices);
+		expect(state.theme.grid.length).toBe(2 * 3);
+		expect(state.theme.grid.every((row) => row.length === 3)).toBe(true);
+	});
+
+	it('clamps an out-of-range activeList and guarantees at least one list', () => {
+		const state = splineState('oklch', 'free', 4);
+		state.theme.activeList = 9;
+		buildRamp(state, matrices);
+		expect(state.theme.activeList).toBe(0);
+		expect(state.theme.stops.length).toBe(4);
+		state.theme.lists = [];
+		buildRamp(state, matrices);
+		expect(state.theme.lists.length).toBe(1);
+		expect(state.theme.stops).toEqual([]);
+	});
+
+	it('gamut maps every list’s row, not just the active one', () => {
+		const state = splineState('oklch', 'free', 5, 'clip');
+		state.theme.lists.push([{ srgbLin: [0.9, 0.05, 0.05] }, { srgbLin: [0.05, 0.05, 0.9] }]);
+		buildRamp(state, matrices);
+		for (const row of state.theme.rows) {
+			expect(row.every((s) => s.srgbLin.every((v) => v >= -2e-3 && v <= 1 + 2e-3))).toBe(true);
 		}
 	});
 });

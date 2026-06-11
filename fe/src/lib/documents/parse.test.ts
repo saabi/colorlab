@@ -98,14 +98,14 @@ describe('parseSnapshot', () => {
 	});
 
 	it('gives legacy saves without spline fields the factory defaults', () => {
-		const { points: _cp, splineConstraint: _sc, splineSpace: _ss, ...themeWithoutSpline } =
+		const { lists: _cp, splineConstraint: _sc, splineSpace: _ss, ...themeWithoutSpline } =
 			defaults.explorer.theme;
 		const legacy = {
 			explorer: { ...defaults.explorer, theme: themeWithoutSpline },
 			camera: defaults.camera
 		};
 		const result = parseSnapshot(legacy);
-		expect(result.snapshot?.explorer.theme.points).toEqual([]);
+		expect(result.snapshot?.explorer.theme.lists).toEqual([[]]);
 		expect(result.snapshot?.explorer.theme.splineConstraint).toBe('surface');
 		expect(result.snapshot?.explorer.theme.splineSpace).toBe('world');
 	});
@@ -119,13 +119,13 @@ describe('parseSnapshot', () => {
 			...defaults,
 			explorer: {
 				...defaults.explorer,
-				theme: { ...defaults.explorer.theme, mode: 'spline', splineSpace: 'okhsv', points: cps }
+				theme: { ...defaults.explorer.theme, mode: 'spline', splineSpace: 'okhsv', lists: [cps] }
 			}
 		};
 		const result = parseSnapshot(doc);
 		expect(result.snapshot?.explorer.theme.mode).toBe('spline');
 		expect(result.snapshot?.explorer.theme.splineSpace).toBe('okhsv');
-		expect(result.snapshot?.explorer.theme.points).toEqual(cps);
+		expect(result.snapshot?.explorer.theme.lists).toEqual([cps]);
 	});
 
 	it('migrates a v2 spline-clip constraint to the v3 gamutMap policy', () => {
@@ -156,9 +156,11 @@ describe('parseSnapshot', () => {
 			},
 			camera: defaults.camera
 		} as unknown;
-		expect(parseSnapshot(spline).snapshot?.explorer.theme.points).toEqual([
-			{ srgbLin: [0.2, 0.2, 0.2] },
-			{ srgbLin: [0.8, 0.1, 0.1] }
+		expect(parseSnapshot(spline).snapshot?.explorer.theme.lists).toEqual([
+			[
+				{ srgbLin: [0.2, 0.2, 0.2] },
+				{ srgbLin: [0.8, 0.1, 0.1] }
+			]
 		]);
 
 		const seg = {
@@ -168,9 +170,11 @@ describe('parseSnapshot', () => {
 			},
 			camera: defaults.camera
 		} as unknown;
-		expect(parseSnapshot(seg).snapshot?.explorer.theme.points).toEqual([
-			{ srgbLin: [0.1, 0.1, 0.1] },
-			{ srgbLin: [0.9, 0.9, 0.9] }
+		expect(parseSnapshot(seg).snapshot?.explorer.theme.lists).toEqual([
+			[
+				{ srgbLin: [0.1, 0.1, 0.1] },
+				{ srgbLin: [0.9, 0.9, 0.9] }
+			]
 		]);
 	});
 
@@ -244,13 +248,48 @@ describe('parseSnapshot', () => {
 				theme: {
 					...defaults.explorer.theme,
 					splineSpace: 'not-a-space',
-					points: [{ srgbLin: [0.1, 0.2, 0.3] }, 'garbage', null, { nope: true }]
+					lists: [[{ srgbLin: [0.1, 0.2, 0.3] }, 'garbage', null, { nope: true }], 'not-a-list']
 				}
 			}
 		};
 		const result = parseSnapshot(doc);
 		expect(result.snapshot?.explorer.theme.splineSpace).toBe('world');
-		expect(result.snapshot?.explorer.theme.points).toEqual([{ srgbLin: [0.1, 0.2, 0.3] }]);
+		expect(result.snapshot?.explorer.theme.lists).toEqual([[{ srgbLin: [0.1, 0.2, 0.3] }]]);
+	});
+
+	it('migrates a v7 points list into v8 lists with activeList 0', () => {
+		const v7 = {
+			schemaVersion: 7,
+			explorer: {
+				theme: {
+					mode: 'spline',
+					points: [{ srgbLin: [0.2, 0.3, 0.4] }, { srgbLin: [0.6, 0.5, 0.1] }]
+				}
+			},
+			camera: defaults.camera
+		} as unknown;
+		const result = parseSnapshot(v7);
+		expect(result.migrated).toBe(true);
+		expect(result.snapshot?.explorer.theme.lists).toEqual([
+			[{ srgbLin: [0.2, 0.3, 0.4] }, { srgbLin: [0.6, 0.5, 0.1] }]
+		]);
+		expect(result.snapshot?.explorer.theme.activeList).toBe(0);
+		expect('points' in (result.snapshot?.explorer.theme ?? {})).toBe(false);
+	});
+
+	it('clamps a persisted activeList to the available lists', () => {
+		const doc = {
+			...defaults,
+			explorer: {
+				...defaults.explorer,
+				theme: {
+					...defaults.explorer.theme,
+					lists: [[{ srgbLin: [0.1, 0.2, 0.3] }], [{ srgbLin: [0.5, 0.5, 0.5] }]],
+					activeList: 7
+				}
+			}
+		};
+		expect(parseSnapshot(doc).snapshot?.explorer.theme.activeList).toBe(1);
 	});
 
 	it('persists openSteps, and defaults the set when absent', () => {

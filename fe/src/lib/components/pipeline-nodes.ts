@@ -45,10 +45,9 @@ const spaceLabels: Record<ExplorerState['spaceMode'], string> = {
 	5: 'Luma'
 };
 
-/** True once the ramp has at least one source color (anchor or control point). */
+/** True once any source list has at least one color (anchor or control point). */
 export function hasRampSource(state: ExplorerState): boolean {
-	const t = state.theme;
-	return t.points.length > 0;
+	return state.theme.lists.some((list) => list.length > 0);
 }
 
 /** Whether a node's controls are meaningful given the current state. */
@@ -125,9 +124,14 @@ export const PIPELINE_NODES: PipelineNode[] = [
 		lane: 'Ramp',
 		label: 'Sources',
 		shortLabel: 'Sources',
-		description: 'Pick, list, and edit the ordered source colors the ramp is built from (the unified points list).',
+		description: 'Pick, list, and edit the ordered source colors the ramps are built from (one or more source lists).',
 		affects: 'Ramp',
-		status: (state) => `${state.theme.points.length} pt${state.theme.points.length === 1 ? '' : 's'}`
+		status: (state) => {
+			const lists = state.theme.lists;
+			const n = lists.reduce((sum, list) => sum + list.length, 0);
+			const pts = `${n} pt${n === 1 ? '' : 's'}`;
+			return lists.length > 1 ? `${lists.length} lists · ${pts}` : pts;
+		}
 	},
 	{
 		id: 'interpolate',

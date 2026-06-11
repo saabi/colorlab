@@ -107,10 +107,12 @@ export interface ExplorerState {
 	cvd: CvdMode;
 	cvdSev: number;
 	theme: {
-		/** Unified ordered source colors (persisted). Segment/arc use points[0..1],
-		 *  spread uses points[0], spline uses all. Replaces the old A/B + controlPoints. */
-		points: ThemeAnchor[];
-		/** Selected source-point index (runtime UI selection, not persisted). */
+		/** Ordered source-color lists (persisted). Each list is one ramp's anchors —
+		 *  multiple lists = multiple parallel ramps (e.g. several splines). Always >= 1 list. */
+		lists: ThemeAnchor[][];
+		/** Index of the list that edits/selection/picking target (persisted; clamped on load). */
+		activeList: number;
+		/** Selected source-point index within the active list (runtime UI selection, not persisted). */
 		selectedPoint: number | null;
 		/** Spline curve geometry constraint: free vs radial shell snap (persisted). */
 		splineConstraint: SplineConstraint;
@@ -118,9 +120,15 @@ export interface ExplorerState {
 		splineSpace: InterpSpaceChoice;
 		/** Out-of-gamut mapping policy applied to all ramp stops + spline curve (persisted). */
 		gamutMap: GamutMapMethod;
-		/** Hi-res rendered curve samples (runtime, not persisted). */
+		/** Per-list hi-res curve samples (runtime, not persisted). */
+		curves: SplineSample[][];
+		/** Per-list stops before the terminal gamut-map stage (runtime, not persisted). */
+		rawRows: ThemeStop[][];
+		/** Per-list final stops after gamut mapping (runtime, not persisted). */
+		rows: ThemeStop[][];
+		/** Active list's hi-res curve — alias of curves[activeList] (runtime, not persisted). */
 		splineCurve: SplineSample[];
-		/** Stops before the terminal gamut-map stage, for raw-vs-final preview (runtime, not persisted). */
+		/** Active list's pre-map stops — alias of rawRows[activeList] (runtime, not persisted). */
 		rawStops: ThemeStop[];
 		steps: number;
 		arm: 'A' | 'B' | 'add' | null;
@@ -129,6 +137,7 @@ export interface ExplorerState {
 		/** Place stage enabled (persisted). Off = stops are the exact picked colors. */
 		placeOn: boolean;
 		mode: ThemeMode;
+		/** Active list's final stops — alias of rows[activeList] (runtime, not persisted). */
 		stops: ThemeStop[];
 		arcLong: boolean;
 		/** Place stage: how the N stops are sampled along the interpolated curve (persisted). */
@@ -147,23 +156,22 @@ export interface ExplorerState {
 		showCurve: boolean;
 		showStops: boolean;
 		showPalette: boolean;
-		/** Expanded 2-D palette: one row per base stop (runtime, not persisted). */
+		/** 2-D palette output: Expand result, or all lists' ramps when more than one (runtime, not persisted). */
 		grid: ThemeStop[][];
 		wcagBg: 'white' | 'black';
 	};
 	hover: HoverHit | null;
 }
 import type { Vec3 } from '$lib/color/math';
-import type { InterpSpaceKey } from '$lib/color/interp';
 import type { GamutMapMethod } from '$lib/color/gamut-map';
 import type { Camera } from './camera';
 
-export const CURRENT_STATE_SCHEMA_VERSION = 7 as const;
+export const CURRENT_STATE_SCHEMA_VERSION = 8 as const;
 export type StateSchemaVersion = typeof CURRENT_STATE_SCHEMA_VERSION;
 
 export type PersistedTheme = Omit<
 	ExplorerState['theme'],
-	'arm' | 'stops' | 'selectedPoint' | 'splineCurve' | 'rawStops' | 'grid'
+	'arm' | 'stops' | 'selectedPoint' | 'splineCurve' | 'rawStops' | 'grid' | 'curves' | 'rawRows' | 'rows'
 >;
 // autoPerformance/minAverageFps are runtime-only renderer policy — not part of the saved artifact.
 export type PersistedExplorer = Omit<ExplorerState, 'hover' | 'theme' | 'autoPerformance' | 'minAverageFps'> & {

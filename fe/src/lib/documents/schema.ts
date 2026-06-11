@@ -124,10 +124,33 @@ function coerceSpread(raw: unknown, defaults: AxisSpreadConfig, label: string): 
 	};
 }
 
+function coerceLists(value: unknown, label: string): ThemeAnchor[][] {
+	const lists: ThemeAnchor[][] = [];
+	if (Array.isArray(value)) {
+		value.forEach((entry, i) => {
+			if (!Array.isArray(entry)) {
+				warn(`Dropping invalid source list ${label}[${i}].`);
+				return;
+			}
+			lists.push(coerceAnchorList(entry, `${label}[${i}]`));
+		});
+	} else if (value !== undefined) {
+		warn(`Invalid source lists for ${label}; using one empty list.`);
+	}
+	// Invariant: at least one list always exists (the active edit target).
+	if (!lists.length) lists.push([]);
+	return lists;
+}
+
 function coerceTheme(raw: unknown, defaults: PersistedTheme): PersistedTheme {
 	const theme = isRecord(raw) ? raw : {};
+	const lists = coerceLists(theme.lists, 'theme.lists');
 	return {
-		points: coerceAnchorList(theme.points, 'theme.points'),
+		lists,
+		activeList: Math.min(
+			lists.length - 1,
+			Math.max(0, Math.round(finiteNumber(theme.activeList, 0, 'theme.activeList')))
+		),
 		splineConstraint: enumOf(theme.splineConstraint, SPLINE_CONSTRAINTS, defaults.splineConstraint, 'theme.splineConstraint'),
 		splineSpace: enumOf(theme.splineSpace, INTERP_SPACES, defaults.splineSpace, 'theme.splineSpace'),
 		gamutMap: enumOf(theme.gamutMap, GAMUT_MAPS, defaults.gamutMap, 'theme.gamutMap'),
@@ -233,7 +256,8 @@ export function coerceSnapshot(raw: unknown): ParameterSnapshot | null {
 			cvd: factory.explorer.cvd,
 			cvdSev: factory.explorer.cvdSev,
 			theme: {
-				points: factory.explorer.theme.points,
+				lists: factory.explorer.theme.lists,
+				activeList: factory.explorer.theme.activeList,
 				splineConstraint: factory.explorer.theme.splineConstraint,
 				splineSpace: factory.explorer.theme.splineSpace,
 				gamutMap: factory.explorer.theme.gamutMap,

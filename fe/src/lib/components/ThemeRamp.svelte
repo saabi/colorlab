@@ -25,6 +25,12 @@
 	let pickerOpen = $state(false);
 	let stagedPickerColor = $state<[number, number, number]>([0.5, 0.5, 0.5]);
 
+	// All point edits/selection target the active source list.
+	const points = $derived(explorer.theme.lists[explorer.theme.activeList] ?? []) as ThemeAnchor[];
+	function setPoints(next: ThemeAnchor[]) {
+		explorer.theme.lists[explorer.theme.activeList] = next;
+	}
+
 	const showAll = $derived(panel === 'all');
 	const showSources = $derived(showAll || panel === 'sources');
 	const showInterpolate = $derived(showAll || panel === 'interpolate');
@@ -66,7 +72,8 @@
 	const oogBefore = $derived(explorer.theme.rawStops.reduce((n: number, s: { inG: boolean }) => (s.inG ? n : n + 1), 0));
 	const oogAfter = $derived(explorer.theme.stops.reduce((n: number, s: { inG: boolean }) => (s.inG ? n : n + 1), 0));
 
-	const isPalette = $derived(explorer.theme.expandOn && explorer.theme.grid.length > 0);
+	// 2-D output: Expand produced a grid, or multiple lists each contributed a ramp.
+	const isPalette = $derived(explorer.theme.grid.length > 0);
 
 	function showExportText(kind: 'css' | 'json') {
 		if (isPalette) {
@@ -134,8 +141,8 @@
 	}
 
 	const pickerValue = $derived(
-		explorer.theme.selectedPoint !== null && explorer.theme.points[explorer.theme.selectedPoint]
-			? explorer.theme.points[explorer.theme.selectedPoint].srgbLin
+		explorer.theme.selectedPoint !== null && points[explorer.theme.selectedPoint]
+			? points[explorer.theme.selectedPoint].srgbLin
 			: stagedPickerColor
 	);
 
@@ -161,10 +168,10 @@
 	}
 
 	function removeControlPoint(index: number) {
-		explorer.theme.points = explorer.theme.points.filter((_: ThemeAnchor, i: number) => i !== index);
-		const len = explorer.theme.points.length;
+		const next = points.filter((_: ThemeAnchor, i: number) => i !== index);
+		setPoints(next);
 		if (explorer.theme.selectedPoint !== null) {
-			explorer.theme.selectedPoint = len ? Math.min(explorer.theme.selectedPoint, len - 1) : null;
+			explorer.theme.selectedPoint = next.length ? Math.min(explorer.theme.selectedPoint, next.length - 1) : null;
 		}
 		buildRamp(explorer, matrices);
 		track('theme_spline_point', { action: 'remove_panel' });
@@ -183,10 +190,8 @@
 	function setPickerColor(color: [number, number, number] | number[]) {
 		const srgbLin = clampColor(color);
 		const index = explorer.theme.selectedPoint;
-		if (index !== null && explorer.theme.points[index]) {
-			explorer.theme.points = explorer.theme.points.map((point: ThemeAnchor, i: number) =>
-				i === index ? { srgbLin } : point
-			);
+		if (index !== null && points[index]) {
+			setPoints(points.map((point: ThemeAnchor, i: number) => (i === index ? { srgbLin } : point)));
 			buildRamp(explorer, matrices);
 		} else {
 			stagedPickerColor = srgbLin;
@@ -200,19 +205,20 @@
 	}
 
 	function addStagedPickerPoint() {
-		explorer.theme.points = [...explorer.theme.points, { srgbLin: stagedPickerColor }];
-		explorer.theme.selectedPoint = explorer.theme.points.length - 1;
+		const next = [...points, { srgbLin: stagedPickerColor }];
+		setPoints(next);
+		explorer.theme.selectedPoint = next.length - 1;
 		pickerOpen = true;
 		buildRamp(explorer, matrices);
 		track('theme_spline_point', { action: 'add_picker' });
 	}
 
 	function duplicateControlPoint(index: number) {
-		const cp = explorer.theme.points[index];
+		const cp = points[index];
 		if (!cp) return;
-		const next = [...explorer.theme.points];
+		const next = [...points];
 		next.splice(index + 1, 0, { srgbLin: [...cp.srgbLin] as [number, number, number] });
-		explorer.theme.points = next;
+		setPoints(next);
 		explorer.theme.selectedPoint = index + 1;
 		buildRamp(explorer, matrices);
 		track('theme_spline_point', { action: 'duplicate_panel' });
@@ -220,10 +226,10 @@
 
 	function moveControlPoint(index: number, direction: -1 | 1) {
 		const target = index + direction;
-		if (target < 0 || target >= explorer.theme.points.length) return;
-		const next = [...explorer.theme.points];
+		if (target < 0 || target >= points.length) return;
+		const next = [...points];
 		[next[index], next[target]] = [next[target], next[index]];
-		explorer.theme.points = next;
+		setPoints(next);
 		explorer.theme.selectedPoint = target;
 		buildRamp(explorer, matrices);
 		track('theme_spline_point', { action: 'reorder_panel' });
@@ -286,10 +292,10 @@
 	</p>
 	<ToggleRow label="Show points in 3D" bind:checked={explorer.theme.showPoints} />
 
-	{#if explorer.theme.points.length}
+	{#if points.length}
 		<div class="panel-label" style="margin-top: 8px">Points</div>
 		<div class="cp-list">
-			{#each explorer.theme.points as cp, i}
+			{#each points as cp, i}
 				<div class="cp-row" class:active={explorer.theme.selectedPoint === i}>
 					<button type="button" class="cp-select" onclick={() => selectControlPoint(i)}>
 						<span class="anchor-label">{explorer.theme.mode !== 'spline' && i < 2 ? (i === 0 ? 'A' : 'B') : i + 1}</span>
@@ -303,7 +309,7 @@
 						type="button"
 						class="cp-action"
 						title="Move point later"
-						disabled={i === explorer.theme.points.length - 1}
+						disabled={i === points.length - 1}
 						onclick={() => moveControlPoint(i, 1)}
 					>
 						Down
@@ -333,7 +339,7 @@
 		<div class="source-picker">
 			<div class="picker-heading">
 				<span>
-					{explorer.theme.selectedPoint !== null && explorer.theme.points[explorer.theme.selectedPoint]
+					{explorer.theme.selectedPoint !== null && points[explorer.theme.selectedPoint]
 						? `Editing point ${explorer.theme.selectedPoint + 1}`
 						: 'New source point'}
 				</span>

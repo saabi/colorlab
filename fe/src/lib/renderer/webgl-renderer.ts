@@ -209,8 +209,13 @@ export class WebGlRenderer {
 		// The master "hide viewport aids" toggle suppresses all ramp overlays too;
 		// per-step show* flags give finer control when aids are shown.
 		const aids = !input.state.hideAids;
-		if (aids && t.showStops && t.stops.length) drawSwatches(t.stops, 11);
-		if (aids && t.showPalette && t.grid.length) {
+		// Placed stops draw for every list (each list is its own ramp).
+		if (aids && t.showStops) {
+			for (const row of t.rows) if (row.length) drawSwatches(row, 11);
+		}
+		// Expanded palette cells. Without Expand the grid is just the lists' ramps,
+		// already drawn above as stops + curves — skip to avoid double markers.
+		if (aids && t.showPalette && t.expandOn && t.grid.length) {
 			for (const row of t.grid) drawSwatches(row, 7);
 			// Each grid row is its own ramp: draw a faint polyline through its stops.
 			gl.useProgram(this.splineProgram);
@@ -238,9 +243,9 @@ export class WebGlRenderer {
 			gl.bindVertexArray(null);
 		}
 
-		// Draw source-point markers in every ramp mode; the spline curve itself only
-		// renders when splineCurve is populated (spline mode), handled inside drawSpline.
-		if (aids && (input.state.theme.points.length || input.state.theme.splineCurve.length > 1)) {
+		// Draw source-point markers and interpolated curves for every list; which
+		// layers actually render is gated per-layer inside drawSpline.
+		if (aids && (t.lists.some((l) => l.length) || t.curves.some((c) => c.length > 1))) {
 			this.drawSpline(input, proj, view);
 		}
 
@@ -419,48 +424,53 @@ export class WebGlRenderer {
 
 	private drawSpline(input: DrawInput, proj: Float32Array, view: Float32Array) {
 		const { gl } = this;
-		const curve = input.state.theme.splineCurve;
-		if (input.state.theme.showCurve && curve.length > 1) {
-			const data = new Float32Array(curve.length * 6);
-			for (let i = 0; i < curve.length; i += 1) {
-				const s = curve[i];
-				const sim = simulateCvdSrgb(s.srgbLin, input.state.cvd, input.state.cvdSev);
-				const o = i * 6;
-				data[o] = s.world[0];
-				data[o + 1] = s.world[1];
-				data[o + 2] = s.world[2];
-				data[o + 3] = TRC.srgb.enc(Math.min(Math.max(sim[0], 0), 1));
-				data[o + 4] = TRC.srgb.enc(Math.min(Math.max(sim[1], 0), 1));
-				data[o + 5] = TRC.srgb.enc(Math.min(Math.max(sim[2], 0), 1));
-			}
+		const t = input.state.theme;
+		if (t.showCurve && t.curves.some((c) => c.length > 1)) {
 			gl.useProgram(this.splineProgram);
 			gl.bindVertexArray(this.splineVao);
 			gl.bindBuffer(gl.ARRAY_BUFFER, this.splineBuffer);
-			gl.bufferData(gl.ARRAY_BUFFER, data, gl.DYNAMIC_DRAW);
 			gl.uniformMatrix4fv(this.U(this.splineProgram, 'uProj'), false, proj);
 			gl.uniformMatrix4fv(this.U(this.splineProgram, 'uView'), false, view);
-			gl.drawArrays(gl.LINE_STRIP, 0, curve.length);
+			for (const curve of t.curves) {
+				if (curve.length < 2) continue;
+				const data = new Float32Array(curve.length * 6);
+				for (let i = 0; i < curve.length; i += 1) {
+					const s = curve[i];
+					const sim = simulateCvdSrgb(s.srgbLin, input.state.cvd, input.state.cvdSev);
+					const o = i * 6;
+					data[o] = s.world[0];
+					data[o + 1] = s.world[1];
+					data[o + 2] = s.world[2];
+					data[o + 3] = TRC.srgb.enc(Math.min(Math.max(sim[0], 0), 1));
+					data[o + 4] = TRC.srgb.enc(Math.min(Math.max(sim[1], 0), 1));
+					data[o + 5] = TRC.srgb.enc(Math.min(Math.max(sim[2], 0), 1));
+				}
+				gl.bufferData(gl.ARRAY_BUFFER, data, gl.DYNAMIC_DRAW);
+				gl.drawArrays(gl.LINE_STRIP, 0, curve.length);
+			}
 			gl.bindVertexArray(null);
 		}
 
-		const cps = input.state.theme.showPoints ? input.state.theme.points : [];
-		if (cps.length) {
+		if (t.showPoints && t.lists.some((l) => l.length)) {
 			gl.useProgram(this.markProgram);
 			gl.uniformMatrix4fv(this.U(this.markProgram, 'uProj'), false, proj);
 			gl.uniformMatrix4fv(this.U(this.markProgram, 'uView'), false, view);
 			// Source points read larger than generated stops/cells to signal interactivity.
 			gl.uniform1f(this.U(this.markProgram, 'uSize'), 16);
-			for (let i = 0; i < cps.length; i += 1) {
-				const gamutRgb = m3.mulV(input.matrices.toSrgbLin.fromSrgb, cps[i].srgbLin);
-				const world = this.rgbToWorld(gamutRgb, input.state, input.matrices);
-				const sim = simulateCvdSrgb(cps[i].srgbLin, input.state.cvd, input.state.cvdSev);
-				const c = sim.map((v) => TRC.srgb.enc(Math.min(Math.max(v, 0), 1)));
-				const selected = i === input.state.theme.selectedPoint;
-				gl.uniform3fv(this.U(this.markProgram, 'uPos'), world);
-				gl.uniform3fv(this.U(this.markProgram, 'uCol'), c);
-				gl.uniform3fv(this.U(this.markProgram, 'uBorder'), selected ? [1, 0.85, 0.3] : [1, 1, 1]);
-				gl.drawArrays(gl.POINTS, 0, 1);
-			}
+			t.lists.forEach((cps, li) => {
+				for (let i = 0; i < cps.length; i += 1) {
+					const gamutRgb = m3.mulV(input.matrices.toSrgbLin.fromSrgb, cps[i].srgbLin);
+					const world = this.rgbToWorld(gamutRgb, input.state, input.matrices);
+					const sim = simulateCvdSrgb(cps[i].srgbLin, input.state.cvd, input.state.cvdSev);
+					const c = sim.map((v) => TRC.srgb.enc(Math.min(Math.max(v, 0), 1)));
+					// Selection ring only applies inside the active list.
+					const selected = li === t.activeList && i === t.selectedPoint;
+					gl.uniform3fv(this.U(this.markProgram, 'uPos'), world);
+					gl.uniform3fv(this.U(this.markProgram, 'uCol'), c);
+					gl.uniform3fv(this.U(this.markProgram, 'uBorder'), selected ? [1, 0.85, 0.3] : [1, 1, 1]);
+					gl.drawArrays(gl.POINTS, 0, 1);
+				}
+			});
 		}
 	}
 

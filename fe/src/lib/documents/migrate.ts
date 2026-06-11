@@ -13,13 +13,15 @@
  *   interpolation space. seg -> linear+world; arc -> linear+oklch (cylindrical).
  * v6: spread is no longer a mode but an Expand operator.
  *   mode 'spread' -> mode 'linear' + expand 'spread' (expandSteps from old steps).
- * v7 (CURRENT_SNAPSHOT_VERSION): Expand generalized to one Spread (Oklch axes).
+ * v7: Expand generalized to one Spread (Oklch axes).
  *   expand/harmony/expandSteps/dh/dc/cprof -> expandOn + expandRows + expandCols
  *   ({count, hue|chroma|light: {delta, dir: off|ramp|sym|edges}}). Harmony = row
  *   hue walks; tints = column light sym; spread = column hue sym + chroma
  *   sym/edges (dc scaled /2.2 from the old world-cylindrical frame).
+ * v8 (CURRENT_SNAPSHOT_VERSION): multiple source lists. theme.points ->
+ *   theme.lists = [points] (one ramp per list) + theme.activeList = 0.
  *
- * When adding v7+, append a line here and implement migrateVNToVN+1 below.
+ * When adding v8+, append a line here and implement migrateVNToVN+1 below.
  */
 
 import { CURRENT_SNAPSHOT_VERSION } from './types';
@@ -145,6 +147,19 @@ function migrateV6ToV7(raw: Record<string, unknown>) {
 	return raw;
 }
 
+function migrateV7ToV8(raw: Record<string, unknown>) {
+	raw.schemaVersion = 8;
+	const explorer = raw.explorer as Record<string, unknown> | undefined;
+	const theme = explorer?.theme as Record<string, unknown> | undefined;
+	if (theme && !Array.isArray(theme.lists)) {
+		// One source-points list becomes the first (and active) of many.
+		theme.lists = [Array.isArray(theme.points) ? theme.points : []];
+		theme.activeList = 0;
+		delete theme.points;
+	}
+	return raw;
+}
+
 export function migrateSnapshot(raw: unknown, fromVersion: number): unknown {
 	if (!raw || typeof raw !== 'object') return raw;
 	let current = { ...(raw as Record<string, unknown>) };
@@ -156,6 +171,7 @@ export function migrateSnapshot(raw: unknown, fromVersion: number): unknown {
 		if (version === 4) current = migrateV4ToV5(current);
 		if (version === 5) current = migrateV5ToV6(current);
 		if (version === 6) current = migrateV6ToV7(current);
+		if (version === 7) current = migrateV7ToV8(current);
 	}
 	return current;
 }

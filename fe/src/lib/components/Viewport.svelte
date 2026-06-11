@@ -12,7 +12,7 @@
 	import ViewportToolbar from './ViewportToolbar.svelte';
 	import PaletteStrip from './PaletteStrip.svelte';
 
-	import type { ExplorerState } from '$lib/engine/types';
+	import type { ExplorerState, ThemeAnchor } from '$lib/engine/types';
 	import type { Camera } from '$lib/engine/camera';
 
 	type ThemeArm = 'A' | 'B';
@@ -65,9 +65,15 @@
 
 	const matrices = $derived(rebuildMatrices(explorer.gamut));
 	const shellMatrices = $derived(explorer.hideAids ? null : rebuildShell(explorer.shell));
-	// The exported palette: the 2-D grid when expanded, else the 1-D ramp as one row.
+	// All point edits/selection/picking target the active source list.
+	const themePoints = $derived(explorer.theme.lists[explorer.theme.activeList] ?? []) as ThemeAnchor[];
+	function setThemePoints(next: ThemeAnchor[]) {
+		explorer.theme.lists[explorer.theme.activeList] = next;
+	}
+	// The exported palette: the 2-D grid when present (Expand, or multiple lists),
+	// else the 1-D active ramp as one row.
 	const paletteRows = $derived(
-		explorer.theme.expandOn && explorer.theme.grid.length
+		explorer.theme.grid.length
 			? explorer.theme.grid
 			: explorer.theme.stops.length
 				? [explorer.theme.stops]
@@ -256,10 +262,10 @@
 		if (!hit) return false;
 		const srgbLin = m3.mulV(matrices.toSrgbLin.toSrgb, hit.rgbLin) as [number, number, number];
 		const index = activeArm === 'A' ? 0 : 1;
-		const next = [...explorer.theme.points];
+		const next = [...themePoints];
 		while (next.length <= index) next.push({ srgbLin: [...srgbLin] as [number, number, number] });
 		next[index] = { srgbLin };
-		explorer.theme.points = next;
+		setThemePoints(next);
 		if (!armOverride) explorer.theme.arm = activeArm === 'A' ? 'B' : null;
 		buildRamp(explorer, matrices);
 		gestureStatus = `Theme ${activeArm} set`;
@@ -288,7 +294,7 @@
 		let best: number | null = null;
 		let bestDist = radius;
 		const selected = explorer.theme.selectedPoint;
-		explorer.theme.points.forEach((cp: { srgbLin: [number, number, number] }, i: number) => {
+		themePoints.forEach((cp: { srgbLin: [number, number, number] }, i: number) => {
 			const world = anchorWorld(cp, explorer, matrices);
 			const screen = projectToScreen(world, camera, rect.width, rect.height);
 			if (!screen) return;
@@ -311,19 +317,20 @@
 		const hit = pick(clientX - rect.left, clientY - rect.top, rect.width, rect.height, explorer, matrices, camera);
 		if (!hit) return false;
 		const srgbLin = m3.mulV(matrices.toSrgbLin.toSrgb, hit.rgbLin) as [number, number, number];
-		explorer.theme.points = [...explorer.theme.points, { srgbLin }];
-		explorer.theme.selectedPoint = explorer.theme.points.length - 1;
+		const next = [...themePoints, { srgbLin }];
+		setThemePoints(next);
+		explorer.theme.selectedPoint = next.length - 1;
 		buildRamp(explorer, matrices);
-		gestureStatus = `Control point ${explorer.theme.points.length} added`;
+		gestureStatus = `Control point ${next.length} added`;
 		track('theme_spline_point', { action: 'add' });
 		draw();
 		return true;
 	}
 
 	function removeControlPoint(index: number) {
-		explorer.theme.points = explorer.theme.points.filter((_: unknown, i: number) => i !== index);
-		const len = explorer.theme.points.length;
-		explorer.theme.selectedPoint = len ? Math.min(index, len - 1) : null;
+		const next = themePoints.filter((_: unknown, i: number) => i !== index);
+		setThemePoints(next);
+		explorer.theme.selectedPoint = next.length ? Math.min(index, next.length - 1) : null;
 		buildRamp(explorer, matrices);
 		gestureStatus = 'Control point removed';
 		track('theme_spline_point', { action: 'remove' });
@@ -333,7 +340,7 @@
 	function nudgeSelectedControlPoint(dx: number, dy: number) {
 		const index = explorer.theme.selectedPoint;
 		if (index === null) return false;
-		const cp = explorer.theme.points[index];
+		const cp = themePoints[index];
 		if (!cp) return false;
 
 		const rect = canvas.getBoundingClientRect();
@@ -344,7 +351,7 @@
 		const hit = pick(screen[0] + dx, screen[1] + dy, rect.width, rect.height, explorer, matrices, camera);
 		if (!hit) return false;
 
-		explorer.theme.points[index] = {
+		themePoints[index] = {
 			srgbLin: m3.mulV(matrices.toSrgbLin.toSrgb, hit.rgbLin) as [number, number, number]
 		};
 		buildRamp(explorer, matrices);
@@ -470,7 +477,7 @@
 					const rect = canvas.getBoundingClientRect();
 					const hit = pick(event.clientX - rect.left, event.clientY - rect.top, rect.width, rect.height, explorer, matrices, camera);
 					if (hit) {
-						explorer.theme.points[explorer.theme.selectedPoint] = {
+						themePoints[explorer.theme.selectedPoint] = {
 							srgbLin: m3.mulV(matrices.toSrgbLin.toSrgb, hit.rgbLin) as [number, number, number]
 						};
 						scheduleRampRebuild();
@@ -720,7 +727,9 @@
 	$effect(() => {
 		explorer.theme.splineConstraint;
 		explorer.theme.splineSpace;
-		explorer.theme.points.length;
+		explorer.theme.activeList;
+		// Track list count and every list's length (add/remove in any list rebuilds).
+		JSON.stringify(explorer.theme.lists.map((list: ThemeAnchor[]) => list.length));
 		untrack(() => {
 			buildRamp(explorer, matrices);
 			draw();
