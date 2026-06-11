@@ -3,6 +3,7 @@
 	import SliderRow from './SliderRow.svelte';
 	import ToggleRow from './ToggleRow.svelte';
 	import PaletteStrip from './PaletteStrip.svelte';
+	import ColorPicker from './ColorPicker.svelte';
 	import { track } from '$lib/analytics/umami';
 	import { simulateCvdSrgb } from '$lib/color/cvd';
 	import { INTERP_SPACES, INTERP_SPACE_KEYS } from '$lib/color/interp';
@@ -21,6 +22,8 @@
 		panel = 'all'
 	} = $props<{ state: ExplorerState; matrices: DerivedMatrices; touchTool?: TouchTool; panel?: RampPanel }>();
 	let exportText = $state('');
+	let pickerOpen = $state(false);
+	let stagedPickerColor = $state<[number, number, number]>([0.5, 0.5, 0.5]);
 
 	const showAll = $derived(panel === 'all');
 	const showSources = $derived(showAll || panel === 'sources');
@@ -130,6 +133,12 @@
 		explorer.theme.arm = explorer.theme.arm === 'add' ? null : 'add';
 	}
 
+	const pickerValue = $derived(
+		explorer.theme.selectedPoint !== null && explorer.theme.points[explorer.theme.selectedPoint]
+			? explorer.theme.points[explorer.theme.selectedPoint].srgbLin
+			: stagedPickerColor
+	);
+
 	// Long-hue only matters for cyclic (cylindrical) interpolation spaces.
 	const spaceIsCyclic = $derived(
 		explorer.theme.splineSpace !== 'world' &&
@@ -163,7 +172,39 @@
 
 	function selectControlPoint(index: number) {
 		explorer.theme.selectedPoint = index;
+		pickerOpen = true;
 		track('theme_spline_point', { action: 'select_panel' });
+	}
+
+	function clampColor(color: [number, number, number] | number[]) {
+		return color.map((v) => Math.min(Math.max(v, 0), 1)) as [number, number, number];
+	}
+
+	function setPickerColor(color: [number, number, number] | number[]) {
+		const srgbLin = clampColor(color);
+		const index = explorer.theme.selectedPoint;
+		if (index !== null && explorer.theme.points[index]) {
+			explorer.theme.points = explorer.theme.points.map((point: ThemeAnchor, i: number) =>
+				i === index ? { srgbLin } : point
+			);
+			buildRamp(explorer, matrices);
+		} else {
+			stagedPickerColor = srgbLin;
+		}
+	}
+
+	function openPickerForNewPoint() {
+		explorer.theme.selectedPoint = null;
+		explorer.theme.arm = null;
+		pickerOpen = true;
+	}
+
+	function addStagedPickerPoint() {
+		explorer.theme.points = [...explorer.theme.points, { srgbLin: stagedPickerColor }];
+		explorer.theme.selectedPoint = explorer.theme.points.length - 1;
+		pickerOpen = true;
+		buildRamp(explorer, matrices);
+		track('theme_spline_point', { action: 'add_picker' });
 	}
 
 	function duplicateControlPoint(index: number) {
@@ -278,6 +319,30 @@
 		</div>
 	{:else}
 		<p class="note">No source points yet — pick from the solid to add them.</p>
+	{/if}
+
+	<div class="picker-toggle">
+		<button type="button" onclick={openPickerForNewPoint}>
+			{pickerOpen && explorer.theme.selectedPoint === null ? 'Staging new point' : 'Open color picker'}
+		</button>
+		{#if pickerOpen}
+			<button type="button" class="cp-action" onclick={() => (pickerOpen = false)}>Close</button>
+		{/if}
+	</div>
+	{#if pickerOpen}
+		<div class="source-picker">
+			<div class="picker-heading">
+				<span>
+					{explorer.theme.selectedPoint !== null && explorer.theme.points[explorer.theme.selectedPoint]
+						? `Editing point ${explorer.theme.selectedPoint + 1}`
+						: 'New source point'}
+				</span>
+				{#if explorer.theme.selectedPoint === null}
+					<button type="button" class="cp-action" onclick={addStagedPickerPoint}>Add as new point</button>
+				{/if}
+			</div>
+			<ColorPicker value={pickerValue} onchange={setPickerColor} />
+		</div>
 	{/if}
 {/if}
 
@@ -562,6 +627,25 @@
 		padding: 0;
 		line-height: 1;
 		font-size: 16px;
+	}
+	.picker-toggle {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) auto;
+		gap: 6px;
+		margin-top: 6px;
+	}
+	.source-picker {
+		display: grid;
+		gap: 6px;
+		margin-top: 6px;
+	}
+	.picker-heading {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 8px;
+		color: var(--muted);
+		font-size: 11px;
 	}
 	.raw-final {
 		display: grid;

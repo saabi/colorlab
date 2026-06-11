@@ -132,6 +132,44 @@ export function findGamutIntersection(
 
 const toST = (cusp: { L: number; C: number }) => ({ S: cusp.C / cusp.L, T: cusp.C / (1 - cusp.L) });
 
+function getSTMid(a_: number, b_: number): { S: number; T: number } {
+	const S =
+		0.11516993 +
+		1 /
+			(7.4477897 +
+				4.1590124 * b_ +
+				a_ *
+					(-2.19557347 +
+						1.75198401 * b_ +
+						a_ * (-2.13704948 - 10.02301043 * b_ + a_ * (-4.24894561 + 5.38770819 * b_ + 4.69891013 * a_))));
+	const T =
+		0.11239642 +
+		1 /
+			(1.6132032 -
+				0.68124379 * b_ +
+				a_ *
+					(0.40370612 +
+						0.90148123 * b_ +
+						a_ * (-0.27087943 + 0.6122399 * b_ + a_ * (0.00299215 - 0.45399568 * b_ - 0.14661872 * a_))));
+	return { S, T };
+}
+
+function getCs(L: number, a_: number, b_: number): { C0: number; Cmid: number; Cmax: number } {
+	if (L <= 0 || L >= 1) return { C0: 0, Cmid: 0, Cmax: 0 };
+	const cusp = findCusp(a_, b_);
+	const Cmax = findGamutIntersection(a_, b_, L, 1, L, cusp);
+	const { S: Smax, T: Tmax } = toST(cusp);
+	const { S: Smid, T: Tmid } = getSTMid(a_, b_);
+	const k = Cmax / Math.min(L * Smax, (1 - L) * Tmax);
+	const CaMid = L * Smid;
+	const CbMid = (1 - L) * Tmid;
+	const Cmid = 0.9 * k * Math.pow(1 / (1 / (CaMid ** 4) + 1 / (CbMid ** 4)), 0.25);
+	const Ca0 = L * 0.4;
+	const Cb0 = (1 - L) * 0.8;
+	const C0 = Math.sqrt(1 / (1 / (Ca0 * Ca0) + 1 / (Cb0 * Cb0)));
+	return { C0, Cmid, Cmax };
+}
+
 /** Okhsv (h in turns 0..1, s, v in 0..1) -> linear sRGB. */
 export function okhsvToLsrgb(h: number, s: number, v: number): Vec3 {
 	const a_ = Math.cos(2 * Math.PI * h);
@@ -180,4 +218,55 @@ export function lsrgbToOkhsv(rgb: Vec3): Vec3 {
 	const v = Lv > 0 ? L / Lv : 0;
 	const sOut = (S0 + Tmax) * Cv / (Tmax * S0 + Tmax * k * Cv);
 	return [h, sOut, v];
+}
+
+/** Okhsl (h in turns 0..1, s/l in 0..1) -> linear sRGB. */
+export function okhslToLsrgb(h: number, s: number, l: number): Vec3 {
+	if (l >= 1) return [1, 1, 1];
+	if (l <= 0) return [0, 0, 0];
+	const a_ = Math.cos(2 * Math.PI * h);
+	const b_ = Math.sin(2 * Math.PI * h);
+	const L = toeInv(l);
+	const { C0, Cmid, Cmax } = getCs(L, a_, b_);
+	let C = 0;
+	if (s < 0.8) {
+		const t = 1.25 * s;
+		const k0 = 0;
+		const k1 = 0.8 * C0;
+		const k2 = 1 - k1 / Cmid;
+		C = k0 + (t * k1) / (1 - k2 * t);
+	} else {
+		const t = 5 * (s - 0.8);
+		const k0 = Cmid;
+		const k1 = (0.2 * Cmid * Cmid * 1.25 * 1.25) / C0;
+		const k2 = 1 - k1 / (Cmax - Cmid);
+		C = k0 + (t * k1) / (1 - k2 * t);
+	}
+	return oklab2lsrgb([L, C * a_, C * b_]);
+}
+
+/** linear sRGB -> Okhsl (h in turns 0..1, s/l in 0..1). */
+export function lsrgbToOkhsl(rgb: Vec3): Vec3 {
+	const lab = lsrgb2oklab(rgb);
+	const C = Math.hypot(lab[1], lab[2]);
+	if (C < 1e-9) return [0, 0, toe(lab[0])];
+	const a_ = lab[1] / C;
+	const b_ = lab[2] / C;
+	const h = 0.5 + (0.5 * Math.atan2(-lab[2], -lab[1])) / Math.PI;
+	const { C0, Cmid, Cmax } = getCs(lab[0], a_, b_);
+	let s = 0;
+	if (C < Cmid) {
+		const k0 = 0;
+		const k1 = 0.8 * C0;
+		const k2 = 1 - k1 / Cmid;
+		const t = (C - k0) / (k1 + k2 * (C - k0));
+		s = t * 0.8;
+	} else {
+		const k0 = Cmid;
+		const k1 = (0.2 * Cmid * Cmid * 1.25 * 1.25) / C0;
+		const k2 = 1 - k1 / (Cmax - Cmid);
+		const t = (C - k0) / (k1 + k2 * (C - k0));
+		s = 0.8 + 0.2 * t;
+	}
+	return [h, s, toe(lab[0])];
 }
