@@ -554,6 +554,14 @@ input[type="checkbox"] {
 	text-transform: uppercase;
 }
 
+.pipeline-node-footer {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 4px;
+	min-width: 0;
+}
+
 .pipeline-node-status {
 	overflow: hidden;
 	color: var(--dim);
@@ -561,6 +569,18 @@ input[type="checkbox"] {
 	font-size: 9px;
 	line-height: 1.15;
 	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.pipeline-node-warn {
+	flex: none;
+	border-radius: 999px;
+	background: color-mix(in srgb, var(--warn) 22%, transparent);
+	color: var(--warn);
+	padding: 0 4px;
+	font-size: 8px;
+	font-weight: 600;
+	line-height: 1.4;
 	white-space: nowrap;
 }
 

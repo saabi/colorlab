@@ -90,6 +90,8 @@ export interface ExplorerState {
 		gamutMap: GamutMapMethod;
 		/** Hi-res rendered curve samples (runtime, not persisted). */
 		splineCurve: SplineSample[];
+		/** Stops before the terminal gamut-map stage, for raw-vs-final preview (runtime, not persisted). */
+		rawStops: ThemeStop[];
 		steps: number;
 		arm: 'A' | 'B' | 'spline-add' | null;
 		mode: ThemeMode;
@@ -111,7 +113,7 @@ import type { Camera } from './camera';
 export const CURRENT_STATE_SCHEMA_VERSION = 3 as const;
 export type StateSchemaVersion = typeof CURRENT_STATE_SCHEMA_VERSION;
 
-export type PersistedTheme = Omit<ExplorerState['theme'], 'arm' | 'stops' | 'selectedCp' | 'splineCurve'>;
+export type PersistedTheme = Omit<ExplorerState['theme'], 'arm' | 'stops' | 'selectedCp' | 'splineCurve' | 'rawStops'>;
 export type PersistedExplorer = Omit<ExplorerState, 'hover' | 'theme'> & { theme: PersistedTheme };
 
 export interface AppState {

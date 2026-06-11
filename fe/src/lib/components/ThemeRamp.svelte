@@ -60,6 +60,9 @@
 		track('theme_gamut_map', { method });
 	}
 
+	const oogBefore = $derived(explorer.theme.rawStops.reduce((n: number, s: { inG: boolean }) => (s.inG ? n : n + 1), 0));
+	const oogAfter = $derived(explorer.theme.stops.reduce((n: number, s: { inG: boolean }) => (s.inG ? n : n + 1), 0));
+
 	function showExportText(kind: 'css' | 'json') {
 		exportText = kind === 'css' ? exportTokens(explorer.theme.stops) : exportDTCG(explorer.theme.stops);
 		navigator.clipboard?.writeText(exportText).catch(() => {});
@@ -354,6 +357,27 @@
 	<p class="note">
 		This terminal ramp policy reconciles generated stops with sRGB export. It does not reshape the 3D solid.
 	</p>
+	{#if explorer.theme.stops.length}
+		<p class="note" style="margin-top: 0">
+			{oogBefore} out of gamut{explorer.theme.gamutMap === 'none' ? '' : ` → ${oogAfter} after mapping`}
+		</p>
+		{#if explorer.theme.gamutMap !== 'none'}
+			<div class="raw-final">
+				<span class="rf-label">Raw</span>
+				<div class="ramp">
+					{#each explorer.theme.rawStops as stop}
+						<div class="ramp-chip" title={stop.hex} style={rampChipStyle(stop)}></div>
+					{/each}
+				</div>
+				<span class="rf-label">Final</span>
+				<div class="ramp">
+					{#each explorer.theme.stops as stop}
+						<div class="ramp-chip" title={stop.hex} style={rampChipStyle(stop)}></div>
+					{/each}
+				</div>
+			</div>
+		{/if}
+	{/if}
 {/if}
 
 {#if showExport}
@@ -461,5 +485,16 @@
 		padding: 0;
 		line-height: 1;
 		font-size: 16px;
+	}
+	.raw-final {
+		display: grid;
+		gap: 3px;
+		margin-top: 4px;
+	}
+	.rf-label {
+		color: var(--dim);
+		font-size: 9px;
+		text-transform: uppercase;
+		letter-spacing: 0.06em;
 	}
 </style>

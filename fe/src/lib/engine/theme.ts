@@ -303,6 +303,9 @@ function stopFromSrgbLin(srgbLin: Vec3, state: ExplorerState, matrices: DerivedM
 // so the policy governs all theme modes and the hi-res spline curve uniformly.
 export function finalizeRamp(state: ExplorerState, matrices: DerivedMatrices) {
 	const method = state.theme.gamutMap;
+	// Keep the pre-map stops for the raw-vs-final preview. The mapping below
+	// replaces `stops` with new objects, so the old array is safe to retain.
+	state.theme.rawStops = state.theme.stops;
 	if (method === 'none') return;
 	state.theme.stops = state.theme.stops.map((s) => stopFromSrgbLin(mapToGamut(s.srgbLin, method), state, matrices));
 	if (state.theme.mode === 'spline' && state.theme.splineCurve.length) {

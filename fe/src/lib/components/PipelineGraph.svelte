@@ -26,6 +26,7 @@
 			<div class="pipeline-node-row">
 				{#each PIPELINE_NODES.filter((node) => node.lane === lane) as node}
 					{@const enabled = isNodeEnabled(node, state)}
+					{@const warn = node.warn?.(state) ?? null}
 					<button
 						type="button"
 						class="pipeline-node"
@@ -39,7 +40,10 @@
 							<span class="pipeline-node-label">{node.shortLabel}</span>
 							<span class="pipeline-node-scope">{node.affects}</span>
 						</span>
-						<span class="pipeline-node-status">{node.status(state)}</span>
+						<span class="pipeline-node-footer">
+							<span class="pipeline-node-status">{node.status(state)}</span>
+							{#if warn}<span class="pipeline-node-warn" title="Out of gamut">{warn}</span>{/if}
+						</span>
 					</button>
 				{/each}
 			</div>

@@ -88,6 +88,7 @@ export function applySnapshot(appState: AppState, snapshot: ParameterSnapshot) {
 	appState.explorer.theme.stops = [];
 	appState.explorer.theme.selectedCp = null;
 	appState.explorer.theme.splineCurve = [];
+	appState.explorer.theme.rawStops = [];
 	appState.explorer.hover = null;
 	Object.assign(appState.camera, snapshot.camera);
 }

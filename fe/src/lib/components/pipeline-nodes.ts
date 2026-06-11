@@ -32,7 +32,11 @@ export type PipelineNode = {
 	/** Ramp stages that have no meaning until a source color exists. */
 	requiresSource?: boolean;
 	status: (state: ExplorerState) => string;
+	/** Optional warning chip (e.g. out-of-gamut count); null when nothing to warn. */
+	warn?: (state: ExplorerState) => string | null;
 };
+
+const oogCount = (stops: ExplorerState['theme']['stops']) => stops.reduce((n, s) => (s.inG ? n : n + 1), 0);
 
 const spaceLabels: Record<ExplorerState['spaceMode'], string> = {
 	0: 'RGB',
@@ -135,7 +139,12 @@ export const PIPELINE_NODES: PipelineNode[] = [
 		description: 'Builds raw ramp paths from anchors or spline points.',
 		affects: 'Ramp',
 		requiresSource: true,
-		status: (state) => (state.theme.mode === 'spline' ? `Spline ${state.theme.splineSpace}` : state.theme.mode)
+		status: (state) => (state.theme.mode === 'spline' ? `Spline ${state.theme.splineSpace}` : state.theme.mode),
+		// Interpolation can produce out-of-gamut stops; the count is taken before the gamut-map stage.
+		warn: (state) => {
+			const n = oogCount(state.theme.rawStops);
+			return n ? `${n} OOG` : null;
+		}
 	},
 	{
 		id: 'adjust',
@@ -155,7 +164,12 @@ export const PIPELINE_NODES: PipelineNode[] = [
 		description: 'Terminal ramp-only policy for out-of-gamut generated stops.',
 		affects: 'Export',
 		requiresSource: true,
-		status: (state) => state.theme.gamutMap
+		status: (state) => state.theme.gamutMap,
+		// Stops still outside sRGB after the policy runs (only when policy is 'none').
+		warn: (state) => {
+			const n = oogCount(state.theme.stops);
+			return n ? `${n} OOG` : null;
+		}
 	},
 	{
 		id: 'export',

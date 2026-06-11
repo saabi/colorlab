@@ -46,6 +46,7 @@ function createExplorerDefaults(): ExplorerState {
 			splineSpace: 'oklch',
 			gamutMap: 'none',
 			splineCurve: [],
+			rawStops: [],
 			steps: 5,
 			arm: null,
 			mode: 'seg',
