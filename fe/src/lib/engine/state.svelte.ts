@@ -134,6 +134,9 @@ export const EXAMPLE_STATES = [
 					B: {
 						srgbLin: [0.7610351858718939, 0.9402926643687034, 0.15604940886754892]
 					},
+					controlPoints: [],
+					splineConstraint: 'surface',
+					splineSpace: 'oklch',
 					steps: 11,
 					mode: 'arc',
 					dh: 40,
@@ -149,6 +152,69 @@ export const EXAMPLE_STATES = [
 				pitch: 0.31399999999999906,
 				dist: 1.5765230034944007,
 				target: [0.05967533848186085, 0.09576925068959358, -0.09536971427920843],
+				fov: 0.7853981633974483
+			}
+		})
+	},
+	{
+		id: 'example:spline-color-ramp',
+		name: 'Spline Color Ramp',
+		source: 'example' as const,
+		snapshot: createExampleState({
+			explorer: {
+				spaceMode: 3,
+				gamut: 'srgb',
+				N: 256,
+				slice: false,
+				planeMode: 'L',
+				off: 1,
+				az: 0,
+				el: 90,
+				eps: 0,
+				floor: true,
+				lines: true,
+				cutAbove: true,
+				cutBelow: false,
+				cylSlice: true,
+				cylRad: 0.361,
+				shell: 'none',
+				planeOutline: true,
+				cylinderOutline: true,
+				outlineDepthTest: true,
+				surfaceGridAlpha: 0.25,
+				cvd: 'none',
+				cvdSev: 1,
+				theme: {
+					A: {
+						srgbLin: [0.002353332407759444, 0.0038332058213883316, 0.17366576656361682]
+					},
+					B: {
+						srgbLin: [0.7610351858718939, 0.9402926643687034, 0.15604940886754892]
+					},
+					controlPoints: [
+						{ srgbLin: [0.025770360029766213, 0.32914994958895166, 0.9152343800711982] },
+						{ srgbLin: [0.02059507863140818, 0.015062508237866194, 0.2498329824884332] },
+						{ srgbLin: [0.9629654194841181, 0.41727178096976225, 0.010818333559711568] },
+						{ srgbLin: [0.5994403726087917, 0.8549167946008189, 0.14014346620951346] },
+						{ srgbLin: [0.023709526619192022, 0.22921458197171563, 0.007543934590392238] }
+					],
+					splineConstraint: 'surface',
+					splineSpace: 'oklch',
+					steps: 27,
+					mode: 'spline',
+					dh: 40,
+					dc: 0,
+					cprof: 'linear',
+					arcLong: true,
+					aa: 4.5,
+					wcagBg: 'white'
+				}
+			},
+			camera: {
+				yaw: 0.2759999999999909,
+				pitch: 0.33199999999999863,
+				dist: 2.221116252338258,
+				target: [0.05770219796035286, 0.007643969273462504, -0.0987838640618481],
 				fov: 0.7853981633974483
 			}
 		})
