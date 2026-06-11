@@ -1,10 +1,11 @@
 # Plan: Generalize & Simplify the Ramp Pipeline
 
-Status: **implemented** — Stages 1 (1a/1b/1c), 2, and 3 are shipped. The live
+Status: **implemented** — Stages 1 (1a/1b/1c), 2, and 3 are shipped, and the
+legacy `spread` mode has been folded into the Expand stage (mode is now just
+linear|spline; spread is an Expand operator over a single-seed ramp). The live
 pipeline is Sources → Interpolate → Place → Expand → Gamut-map → Export.
-Follow-ups still open: fully migrating the legacy `spread` mode into the Expand
-stage (it currently coexists as a generator mode), and additional Place/Expand
-operators (fixed contrast targets, hue-harmony source expander).
+Follow-ups still open: additional Place operators (explicit contrast targets)
+and Expand operators (a source-side hue-harmony expander).
 
 ## Summary
 
