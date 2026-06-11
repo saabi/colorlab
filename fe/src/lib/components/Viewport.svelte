@@ -54,8 +54,15 @@
 	const PERF_SAMPLE_COUNT = 12;
 	const PERF_MARGIN = 1.1;
 	const PERF_COOLDOWN_MS = 1200;
+	const PERF_ACTIVE_STREAM_MS = 250;
 
-	let drawSamples: number[] = [];
+	let drawSubmitSamples: number[] = [];
+	let drawCadenceSamples: number[] = [];
+	let frameCadenceSamples: number[] = [];
+	let lastDrawStart = 0;
+	let lastFrameTs = 0;
+	let frameSamplePending = false;
+	let performanceSampleToken = 0;
 	let lastAutoPerformanceStep = 0;
 
 	const matrices = $derived(rebuildMatrices(explorer.gamut));
@@ -63,7 +70,13 @@
 	const cursorMode = $derived(gesture.kind);
 
 	function resetPerformanceSamples() {
-		drawSamples = [];
+		drawSubmitSamples = [];
+		drawCadenceSamples = [];
+		frameCadenceSamples = [];
+		lastDrawStart = 0;
+		lastFrameTs = 0;
+		frameSamplePending = false;
+		performanceSampleToken += 1;
 	}
 
 	function reduceTessellationForPerformance(avgMs: number) {
@@ -78,20 +91,65 @@
 		gestureStatus = `Auto performance: tessellation ${nextN} (${(1000 / avgMs).toFixed(0)} fps avg)`;
 	}
 
-	function recordDrawTime(elapsedMs: number) {
+	function sampleAverage(samples: number[]) {
+		return samples.reduce((sum, value) => sum + value, 0) / samples.length;
+	}
+
+	function appendSample(samples: number[], value: number) {
+		return [...samples.slice(-(PERF_SAMPLE_COUNT - 1)), value];
+	}
+
+	function recordDrawPerformance(startMs: number, elapsedMs: number) {
 		if (!explorer.autoPerformance) return;
-		drawSamples = [...drawSamples.slice(-(PERF_SAMPLE_COUNT - 1)), elapsedMs];
-		if (drawSamples.length < PERF_SAMPLE_COUNT) return;
-		const avgMs = drawSamples.reduce((sum, value) => sum + value, 0) / drawSamples.length;
 		const targetMs = 1000 / explorer.minAverageFps;
-		if (avgMs > targetMs * PERF_MARGIN) reduceTessellationForPerformance(avgMs);
+
+		drawSubmitSamples = appendSample(drawSubmitSamples, elapsedMs);
+		if (drawSubmitSamples.length >= PERF_SAMPLE_COUNT) {
+			const avgSubmitMs = sampleAverage(drawSubmitSamples);
+			if (avgSubmitMs > targetMs * PERF_MARGIN) {
+				reduceTessellationForPerformance(avgSubmitMs);
+				return;
+			}
+		}
+
+		if (dragging || pinching) {
+			const cadenceMs = lastDrawStart > 0 ? startMs - lastDrawStart : 0;
+			if (cadenceMs > 0 && cadenceMs < PERF_ACTIVE_STREAM_MS) {
+				drawCadenceSamples = appendSample(drawCadenceSamples, cadenceMs);
+				if (drawCadenceSamples.length >= PERF_SAMPLE_COUNT) {
+					const avgCadenceMs = sampleAverage(drawCadenceSamples);
+					if (avgCadenceMs > targetMs * PERF_MARGIN) reduceTessellationForPerformance(avgCadenceMs);
+				}
+			}
+		}
+		lastDrawStart = startMs;
+	}
+
+	function scheduleFrameCadenceSample() {
+		if (!explorer.autoPerformance || frameSamplePending || (!dragging && !pinching)) return;
+		frameSamplePending = true;
+		const token = performanceSampleToken;
+		requestAnimationFrame((frameTs) => {
+			if (token !== performanceSampleToken) return;
+			frameSamplePending = false;
+			if (!explorer.autoPerformance) return;
+			const targetMs = 1000 / explorer.minAverageFps;
+			const cadenceMs = lastFrameTs > 0 ? frameTs - lastFrameTs : 0;
+			lastFrameTs = frameTs;
+			if (cadenceMs <= 0 || cadenceMs >= PERF_ACTIVE_STREAM_MS) return;
+			frameCadenceSamples = appendSample(frameCadenceSamples, cadenceMs);
+			if (frameCadenceSamples.length < PERF_SAMPLE_COUNT) return;
+			const avgFrameMs = sampleAverage(frameCadenceSamples);
+			if (avgFrameMs > targetMs * PERF_MARGIN) reduceTessellationForPerformance(avgFrameMs);
+		});
 	}
 
 	function draw() {
 		if (!renderer) return;
 		const t0 = performance.now();
 		renderer.draw({ state: explorer, matrices, shellMatrices, camera });
-		recordDrawTime(performance.now() - t0);
+		recordDrawPerformance(t0, performance.now() - t0);
+		scheduleFrameCadenceSample();
 	}
 
 	function clamp(value: number, min: number, max: number) {
