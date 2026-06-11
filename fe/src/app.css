@@ -551,7 +551,7 @@ input[type="checkbox"] {
 }
 
 .viewport canvas.cursor-point {
-	cursor: pointer;
+	cursor: move;
 }
 
 /* Pinned exported-palette overlay (desktop only; mobile uses the inspector tab) */

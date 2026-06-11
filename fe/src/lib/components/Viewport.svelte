@@ -73,9 +73,12 @@
 				? [explorer.theme.stops]
 				: []
 	);
-	// Idle hover over a draggable source point (mouse only); drives the cursor.
+	// Idle hover state (mouse only); drives the cursor. Hit-test order:
+	// source point (move) -> solid surface (crosshair) -> background (grab/orbit).
 	let hoverPointIndex = $state<number | null>(null);
-	const cursorMode = $derived(hoverPointIndex !== null ? 'point' : gesture.kind);
+	let hoverSolid = $state(false);
+	let hoverPickPending = false;
+	const cursorMode = $derived(hoverPointIndex !== null ? 'point' : hoverSolid ? 'inspect' : gesture.kind);
 
 	function resetPerformanceSamples() {
 		drawSubmitSamples = [];
@@ -379,6 +382,7 @@
 		if (event.pointerType === 'touch') event.preventDefault();
 		referenceOpen = false;
 		hoverPointIndex = null;
+		hoverSolid = false;
 		dragging = true;
 		moved = 0;
 		lastX = event.clientX;
@@ -433,11 +437,25 @@
 	function onPointerMove(event: PointerEvent) {
 		if (pinching) return;
 		if (!dragging) {
-			// Hover hit-test (mouse only): pointer cursor over a draggable source point.
-			hoverPointIndex =
-				event.pointerType !== 'touch' && explorer.theme.showPoints
-					? getControlPointAtScreen(event.clientX, event.clientY, event.pointerType)
-					: null;
+			// Idle hover hit-test (mouse only): point -> solid -> background.
+			if (event.pointerType === 'touch') return;
+			hoverPointIndex = explorer.theme.showPoints
+				? getControlPointAtScreen(event.clientX, event.clientY, event.pointerType)
+				: null;
+			if (hoverPointIndex !== null) {
+				hoverSolid = false;
+			} else if (!hoverPickPending) {
+				// pick() is a full analytic ray test; bound it to one per frame.
+				hoverPickPending = true;
+				const cx = event.clientX;
+				const cy = event.clientY;
+				requestAnimationFrame(() => {
+					hoverPickPending = false;
+					if (dragging || pinching) return;
+					const rect = canvas.getBoundingClientRect();
+					hoverSolid = !!pick(cx - rect.left, cy - rect.top, rect.width, rect.height, explorer, matrices, camera);
+				});
+			}
 			return;
 		}
 		if (dragging) {

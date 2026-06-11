@@ -470,3 +470,18 @@ Automated/unit candidates:
 - `panCamera()` translates target by expected basis vectors.
 - `clamp` behavior for `off` and `cylRad`.
 - Snapshot/session persistence includes camera target and new gesture-independent state only; transient gesture state is not persisted.
+
+## Addendum: idle hover cursors (ramp-pipeline-v2 Phase C)
+
+Idle (no drag, mouse only) hit-test order on pointermove, driving the canvas
+cursor class:
+
+1. **Source point** under the cursor (`getControlPointAtScreen`) → `cursor-point`
+   = `move` (4-way drag affordance; the point is draggable).
+2. **Solid surface** (`pick()` ray test, rAF-throttled to ≤1 per frame) →
+   `cursor-inspect` = `crosshair` (click/touch inspects or picks).
+3. **Background** → `cursor-orbit` = `grab` (`grabbing` while `:active`).
+
+Active gestures override via `gesture.kind` exactly as before (pan/slice/
+cylinder/inspect). Both hover states clear on pointerdown so drag cursors are
+never shadowed; touch pointers never run the idle hit-test.
