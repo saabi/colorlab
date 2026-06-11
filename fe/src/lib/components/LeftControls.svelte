@@ -61,7 +61,12 @@
 	}
 </script>
 
-<aside class="side-panel left-panel">
+<div
+	class="side-panel left-panel"
+	id="pipeline-panel"
+	role="tabpanel"
+	aria-labelledby={`pipeline-tab-${selectedNode}`}
+>
 	<div class="node-panel-heading">
 		<span class="node-panel-kicker">{activeNode.lane} lane · affects {activeNode.affects}</span>
 		<h2>{activeNode.label}</h2>
@@ -330,4 +335,4 @@
 		<p class="note">Auto-adjust only lowers tessellation after sustained redraw misses.</p>
 	</ControlGroup>
 	{/if}
-</aside>
+</div>

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { tick } from 'svelte';
 	import { PIPELINE_NODES, isNodeEnabled, type PipelineLane, type PipelineNodeId } from './pipeline-nodes';
 	import { track } from '$lib/analytics/umami';
 	import type { ExplorerState } from '$lib/engine/types';
@@ -12,41 +13,77 @@
 	}>();
 
 	const lanes: PipelineLane[] = ['Explorer', 'Ramp', 'Support'];
+	let navEl: HTMLElement;
 
 	function selectNode(id: PipelineNodeId, lane: PipelineLane) {
 		selectedNode = id;
 		track('pipeline_node_select', { node: id, lane });
 	}
+
+	async function focusTab(id: PipelineNodeId) {
+		await tick();
+		navEl?.querySelector<HTMLElement>(`#pipeline-tab-${id}`)?.focus();
+	}
+
+	// Roving-tabindex tab navigation with selection following focus (automatic activation).
+	function onKeydown(event: KeyboardEvent) {
+		const handled = ['ArrowRight', 'ArrowDown', 'ArrowLeft', 'ArrowUp', 'Home', 'End'];
+		if (!handled.includes(event.key)) return;
+		event.preventDefault();
+		const last = PIPELINE_NODES.length - 1;
+		const idx = Math.max(0, PIPELINE_NODES.findIndex((node) => node.id === selectedNode));
+		let next = idx;
+		if (event.key === 'ArrowRight' || event.key === 'ArrowDown') next = idx >= last ? 0 : idx + 1;
+		else if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') next = idx <= 0 ? last : idx - 1;
+		else if (event.key === 'Home') next = 0;
+		else if (event.key === 'End') next = last;
+		const node = PIPELINE_NODES[next];
+		selectNode(node.id, node.lane);
+		focusTab(node.id);
+	}
 </script>
 
-<nav class="pipeline-graph" aria-label="Pipeline controls">
+<!-- Roving tabindex lives on the tabs (WAI tabs pattern); the tablist itself is not a tab stop. -->
+<!-- svelte-ignore a11y_interactive_supports_focus -->
+<div
+	class="pipeline-graph"
+	role="tablist"
+	aria-label="Pipeline stages"
+	bind:this={navEl}
+	onkeydown={onKeydown}
+>
 	{#each lanes as lane}
-		<section class="pipeline-lane" aria-label={`${lane} pipeline`}>
-			<div class="pipeline-lane-label">{lane}</div>
-			<div class="pipeline-node-row">
+		<section class="pipeline-lane" role="presentation">
+			<div class="pipeline-lane-label" aria-hidden="true">{lane}</div>
+			<div class="pipeline-node-row" role="presentation">
 				{#each PIPELINE_NODES.filter((node) => node.lane === lane) as node}
 					{@const enabled = isNodeEnabled(node, state)}
 					{@const warn = node.warn?.(state) ?? null}
 					<button
 						type="button"
+						role="tab"
+						id={`pipeline-tab-${node.id}`}
 						class="pipeline-node"
 						class:active={selectedNode === node.id}
 						class:disabled={!enabled}
-						aria-pressed={selectedNode === node.id}
+						aria-selected={selectedNode === node.id}
+						aria-controls="pipeline-panel"
+						tabindex={selectedNode === node.id ? 0 : -1}
 						title={enabled ? node.description : `${node.description} (pick a source color first)`}
+						aria-label={`${node.label}, ${node.lane} lane, affects ${node.affects}${warn ? `, ${warn}` : ''}${enabled ? '' : ', unavailable until a source color is picked'}`}
 						onclick={() => selectNode(node.id, lane)}
 					>
-						<span class="pipeline-node-main">
+						<span class="pipeline-node-main" aria-hidden="true">
 							<span class="pipeline-node-label">{node.shortLabel}</span>
 							<span class="pipeline-node-scope">{node.affects}</span>
 						</span>
-						<span class="pipeline-node-footer">
+						<span class="pipeline-node-footer" aria-hidden="true">
 							<span class="pipeline-node-status">{node.status(state)}</span>
-							{#if warn}<span class="pipeline-node-warn" title="Out of gamut">{warn}</span>{/if}
+							{#if warn}<span class="pipeline-node-warn">{warn}</span>{/if}
 						</span>
 					</button>
 				{/each}
 			</div>
 		</section>
 	{/each}
-</nav>
+</div>
