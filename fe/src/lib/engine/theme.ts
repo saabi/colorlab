@@ -1,7 +1,7 @@
 import { m3, type Vec3 } from '$lib/color/math';
 import { SPACES } from '$lib/color/registry';
 import { CUBE_ROT, REC709_Y, lsrgb2oklab, oklab2lsrgb, xyz2lab } from '$lib/color/pipeline';
-import { INTERP_SPACES } from '$lib/color/interp';
+import { INTERP_SPACES, type InterpSpaceKey } from '$lib/color/interp';
 import { mapToGamut } from '$lib/color/gamut-map';
 import { TRC } from '$lib/color/transfer';
 import { solidField } from './picking';
@@ -75,49 +75,29 @@ export function buildRamp(state: ExplorerState, matrices: DerivedMatrices) {
 function buildRawRamp(state: ExplorerState, matrices: DerivedMatrices) {
 	const T = state.theme;
 	T.stops = [];
-	if (T.mode === 'spline') {
-		buildSplineRamp(state, matrices);
-		return;
-	}
 	T.splineCurve = [];
-	const A = T.points[0] ?? null;
-	const B = T.points[1] ?? null;
-	if (!A || (!B && T.mode !== 'spread')) return;
-	const wA = anchorWorld(A, state, matrices);
-	const cyl = (w: Vec3) => ({ r: Math.hypot(w[0], w[2]), th: Math.atan2(w[2], w[0]), y: w[1] });
 	if (T.mode === 'spread') {
-		const cA = cyl(wA);
-		const dh = (T.dh * Math.PI) / 180;
-		for (let i = 0; i < T.steps; i += 1) {
-			const t = T.steps === 1 ? 0.5 : i / (T.steps - 1);
-			const th = cA.th + dh * (2 * t - 1);
-			const r = Math.max(0, T.cprof === 'linear' ? cA.r + T.dc * (2 * t - 1) : cA.r - T.dc * Math.abs(2 * t - 1));
-			T.stops.push(stopFromWorld([r * Math.cos(th), cA.y, r * Math.sin(th)], state, matrices));
-		}
+		buildSpreadRamp(state, matrices);
 		return;
 	}
-	if (!B) return;
-	const wB = anchorWorld(B, state, matrices);
-	const cA = cyl(wA);
-	const cB = cyl(wB);
-	let dth = cB.th - cA.th;
-	while (dth > Math.PI) dth -= 2 * Math.PI;
-	while (dth < -Math.PI) dth += 2 * Math.PI;
-	if (T.arcLong) {
-		dth = dth > 0 ? dth - 2 * Math.PI : dth + 2 * Math.PI;
-	}
+	// 'linear' and 'spline' share one engine, parameterized by path type + space.
+	interpolateRamp(state, matrices);
+}
+
+// Spread generator: fan a single seed (points[0]) across delta hue / chroma.
+// (Stays a standalone generator; Stage 3 generalizes it to a per-stop expander.)
+function buildSpreadRamp(state: ExplorerState, matrices: DerivedMatrices) {
+	const T = state.theme;
+	const A = T.points[0] ?? null;
+	if (!A) return;
+	const wA = anchorWorld(A, state, matrices);
+	const cA = { r: Math.hypot(wA[0], wA[2]), th: Math.atan2(wA[2], wA[0]), y: wA[1] };
+	const dh = (T.dh * Math.PI) / 180;
 	for (let i = 0; i < T.steps; i += 1) {
-		const t = T.steps === 1 ? 0 : i / (T.steps - 1);
-		let w: Vec3;
-		if (T.mode === 'arc') {
-			const r = cA.r + (cB.r - cA.r) * t;
-			const th = cA.th + dth * t;
-			const y = cA.y + (cB.y - cA.y) * t;
-			w = [r * Math.cos(th), y, r * Math.sin(th)];
-		} else {
-			w = [wA[0] + (wB[0] - wA[0]) * t, wA[1] + (wB[1] - wA[1]) * t, wA[2] + (wB[2] - wA[2]) * t];
-		}
-		T.stops.push(stopFromWorld(w, state, matrices));
+		const t = T.steps === 1 ? 0.5 : i / (T.steps - 1);
+		const th = cA.th + dh * (2 * t - 1);
+		const r = Math.max(0, T.cprof === 'linear' ? cA.r + T.dc * (2 * t - 1) : cA.r - T.dc * Math.abs(2 * t - 1));
+		T.stops.push(stopFromWorld([r * Math.cos(th), cA.y, r * Math.sin(th)], state, matrices));
 	}
 }
 
@@ -125,12 +105,14 @@ const HIRES = 200; // spline sampling resolution for arc length + visualization
 
 // Shift each successive cyclic (hue, degrees) coordinate to within 180deg of the
 // previous one so Catmull-Rom interpolates the shortest continuous hue path.
-function unwrapAngles(coords: Vec3[], idx: 0 | 1 | 2) {
+function unwrapAngles(coords: Vec3[], idx: 0 | 1 | 2, longHue = false) {
 	for (let i = 1; i < coords.length; i += 1) {
 		const prev = coords[i - 1][idx];
 		let cur = coords[i][idx];
 		while (cur - prev > 180) cur -= 360;
 		while (cur - prev < -180) cur += 360;
+		// Long-hue: take the other way around the wheel for each successive step.
+		if (longHue && cur !== prev) cur += cur > prev ? -360 : 360;
 		coords[i][idx] = cur;
 	}
 }
@@ -187,62 +169,68 @@ function snapToSurface(p: Vec3, state: ExplorerState, matrices: DerivedMatrices)
 	return at(tIn);
 }
 
-function buildSplineRamp(state: ExplorerState, matrices: DerivedMatrices) {
+// Unified interpolator for 'linear' and 'spline' path types over any interpolation
+// space (incl. stateful "world"). Builds a hi-res curve, then arc-length resamples.
+function interpolateRamp(state: ExplorerState, matrices: DerivedMatrices) {
 	const T = state.theme;
 	T.splineCurve = [];
-	const space = INTERP_SPACES[T.splineSpace];
 	const cps = T.points;
 	if (cps.length < 2) return;
 
-	// 1. Control points -> interpolation coordinates (hue unwrapped for cyclic spaces).
-	const coords = cps.map((cp) => space.fromSrgbLin(cp.srgbLin));
-	if (space.cyclic !== null) unwrapAngles(coords, space.cyclic);
-
-	// 2. Augment with reflected virtual endpoints for the boundary segments.
-	const n = coords.length;
-	const p0: Vec3 = [2 * coords[0][0] - coords[1][0], 2 * coords[0][1] - coords[1][1], 2 * coords[0][2] - coords[1][2]];
-	const pN: Vec3 = [
-		2 * coords[n - 1][0] - coords[n - 2][0],
-		2 * coords[n - 1][1] - coords[n - 2][1],
-		2 * coords[n - 1][2] - coords[n - 2][2]
-	];
-	const pts = [p0, ...coords, pN];
-
-	// 3. Centripetal knots from cartesian-embedded chord lengths.
-	const emb = pts.map((c) => embed(c, space.cyclic));
-	const knots = [0];
-	for (let i = 1; i < emb.length; i += 1) {
-		knots.push(knots[i - 1] + Math.sqrt(Math.max(dist3(emb[i - 1], emb[i]), 1e-9)));
-	}
-
-	// 4. High-resolution sampling -> world positions. Geometry constraint only;
-	//    out-of-gamut handling is applied later by finalizeRamp.
-	//    'free' -> no constraint; 'surface' -> radial snap to the active solid shell.
+	// Space accessors. "world" interpolates directly in the active 3D geometry;
+	// every other space round-trips through the interp registry.
+	const isWorld = T.splineSpace === 'world';
+	const space = isWorld ? null : INTERP_SPACES[T.splineSpace as InterpSpaceKey];
+	const cyclic = isWorld ? null : space!.cyclic;
+	const toCoord = (srgbLin: Vec3): Vec3 =>
+		isWorld ? jsToWorld(m3.mulV(matrices.toSrgbLin.fromSrgb, srgbLin), state, matrices) : space!.fromSrgbLin(srgbLin);
 	const worldAt = (coord: Vec3): Vec3 => {
-		const srgbLin = space.toSrgbLin(coord);
-		const gamutRgb = m3.mulV(matrices.toSrgbLin.fromSrgb, srgbLin);
-		const world = jsToWorld(gamutRgb, state, matrices);
+		const world = isWorld
+			? coord
+			: jsToWorld(m3.mulV(matrices.toSrgbLin.fromSrgb, space!.toSrgbLin(coord)), state, matrices);
 		return T.splineConstraint === 'surface' ? snapToSurface(world, state, matrices) : world;
 	};
+
+	// 1. Source points -> interpolation coordinates (hue unwrapped for cyclic spaces).
+	const coords = cps.map((cp) => toCoord(cp.srgbLin));
+	if (cyclic !== null) unwrapAngles(coords, cyclic, T.arcLong);
+	const n = coords.length;
+
+	// 2. Hi-res curve in coord space. Linear = piecewise straight through the points;
+	//    spline = centripetal Catmull-Rom with reflected virtual endpoints (a straight
+	//    line at n = 2, so segment/arc are exactly the linear case).
 	const curve: SplineSample[] = [];
-	for (let i = 0; i < HIRES; i += 1) {
-		const progress = i / (HIRES - 1);
-		const seg = Math.min(Math.floor(progress * (n - 1)), n - 2);
-		const localFrac = progress * (n - 1) - seg;
-		const t = knots[seg + 1] + localFrac * (knots[seg + 2] - knots[seg + 1]);
-		const coord = catmullRom(
-			pts[seg],
-			pts[seg + 1],
-			pts[seg + 2],
-			pts[seg + 3],
-			knots[seg],
-			knots[seg + 1],
-			knots[seg + 2],
-			knots[seg + 3],
-			t
-		);
-		const stop = stopFromWorld(worldAt(coord), state, matrices);
-		curve.push({ world: stop.world, srgbLin: stop.srgbLin });
+	if (T.mode === 'spline') {
+		const p0: Vec3 = [2 * coords[0][0] - coords[1][0], 2 * coords[0][1] - coords[1][1], 2 * coords[0][2] - coords[1][2]];
+		const pN: Vec3 = [
+			2 * coords[n - 1][0] - coords[n - 2][0],
+			2 * coords[n - 1][1] - coords[n - 2][1],
+			2 * coords[n - 1][2] - coords[n - 2][2]
+		];
+		const pts = [p0, ...coords, pN];
+		const emb = pts.map((c) => embed(c, cyclic));
+		const knots = [0];
+		for (let i = 1; i < emb.length; i += 1) {
+			knots.push(knots[i - 1] + Math.sqrt(Math.max(dist3(emb[i - 1], emb[i]), 1e-9)));
+		}
+		for (let i = 0; i < HIRES; i += 1) {
+			const progress = i / (HIRES - 1);
+			const seg = Math.min(Math.floor(progress * (n - 1)), n - 2);
+			const localFrac = progress * (n - 1) - seg;
+			const t = knots[seg + 1] + localFrac * (knots[seg + 2] - knots[seg + 1]);
+			const coord = catmullRom(pts[seg], pts[seg + 1], pts[seg + 2], pts[seg + 3], knots[seg], knots[seg + 1], knots[seg + 2], knots[seg + 3], t);
+			const stop = stopFromWorld(worldAt(coord), state, matrices);
+			curve.push({ world: stop.world, srgbLin: stop.srgbLin });
+		}
+	} else {
+		for (let i = 0; i < HIRES; i += 1) {
+			const progress = i / (HIRES - 1);
+			const seg = Math.min(Math.floor(progress * (n - 1)), n - 2);
+			const localFrac = progress * (n - 1) - seg;
+			const coord = mix3(coords[seg], coords[seg + 1], localFrac);
+			const stop = stopFromWorld(worldAt(coord), state, matrices);
+			curve.push({ world: stop.world, srgbLin: stop.srgbLin });
+		}
 	}
 	T.splineCurve = curve;
 

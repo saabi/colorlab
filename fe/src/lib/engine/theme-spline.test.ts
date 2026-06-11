@@ -105,4 +105,26 @@ describe('buildSplineRamp', () => {
 		expect(state.theme.stops.length).toBe(1);
 		expect(state.theme.stops[0].srgbLin.every(finite)).toBe(true);
 	});
+
+	it('linear mode interpolates in any space incl. world, endpoints anchored', () => {
+		for (const space of ['world', 'oklab', 'oklch'] as const) {
+			const state = createAppState().explorer;
+			state.theme.mode = 'linear';
+			state.theme.splineConstraint = 'free';
+			state.theme.splineSpace = space;
+			state.theme.steps = 7;
+			state.theme.points = [
+				{ srgbLin: [0.05, 0.05, 0.4] },
+				{ srgbLin: [0.7, 0.8, 0.1] }
+			];
+			buildRamp(state, matrices);
+			expect(state.theme.stops.length).toBe(7);
+			expect(state.theme.stops.every((s) => s.srgbLin.every(finite))).toBe(true);
+			// A straight line between two points lands its endpoints on those points.
+			const first = state.theme.stops[0].srgbLin;
+			const last = state.theme.stops[6].srgbLin;
+			[0.05, 0.05, 0.4].forEach((v, k) => expect(Math.abs(first[k] - v)).toBeLessThan(1e-3));
+			[0.7, 0.8, 0.1].forEach((v, k) => expect(Math.abs(last[k] - v)).toBeLessThan(1e-3));
+		}
+	});
 });

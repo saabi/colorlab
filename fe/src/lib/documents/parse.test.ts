@@ -107,7 +107,7 @@ describe('parseSnapshot', () => {
 		const result = parseSnapshot(legacy);
 		expect(result.snapshot?.explorer.theme.points).toEqual([]);
 		expect(result.snapshot?.explorer.theme.splineConstraint).toBe('surface');
-		expect(result.snapshot?.explorer.theme.splineSpace).toBe('oklch');
+		expect(result.snapshot?.explorer.theme.splineSpace).toBe('world');
 	});
 
 	it('round-trips a spline document with control points', () => {
@@ -174,6 +174,26 @@ describe('parseSnapshot', () => {
 		]);
 	});
 
+	it('migrates v4 seg/arc modes to linear with an explicit interpolation space', () => {
+		const seg = {
+			schemaVersion: 4,
+			explorer: { theme: { mode: 'seg', points: [{ srgbLin: [0, 0, 0] }, { srgbLin: [1, 1, 1] }] } },
+			camera: defaults.camera
+		} as unknown;
+		const s = parseSnapshot(seg).snapshot?.explorer.theme;
+		expect(s?.mode).toBe('linear');
+		expect(s?.splineSpace).toBe('world');
+
+		const arc = {
+			schemaVersion: 4,
+			explorer: { theme: { mode: 'arc', points: [{ srgbLin: [0, 0, 0] }, { srgbLin: [1, 1, 1] }] } },
+			camera: defaults.camera
+		} as unknown;
+		const a = parseSnapshot(arc).snapshot?.explorer.theme;
+		expect(a?.mode).toBe('linear');
+		expect(a?.splineSpace).toBe('oklch');
+	});
+
 	it('coerces garbage control points and unknown spline space to safe defaults', () => {
 		const doc = {
 			...defaults,
@@ -187,7 +207,7 @@ describe('parseSnapshot', () => {
 			}
 		};
 		const result = parseSnapshot(doc);
-		expect(result.snapshot?.explorer.theme.splineSpace).toBe('oklch');
+		expect(result.snapshot?.explorer.theme.splineSpace).toBe('world');
 		expect(result.snapshot?.explorer.theme.points).toEqual([{ srgbLin: [0.1, 0.2, 0.3] }]);
 	});
 

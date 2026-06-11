@@ -3,7 +3,12 @@ export type PlaneMode = 'L' | 'H' | 'C';
 export type GamutKey = 'srgb' | 'p3' | 'rec2020' | 'ntsc' | 'ebu' | 'smptec' | 'cie';
 export type ShellKey = 'none' | 'p3' | 'rec2020' | 'ntsc' | 'cie';
 export type CvdMode = 'none' | 'protan' | 'deutan' | 'tritan';
-export type ThemeMode = 'seg' | 'arc' | 'spread' | 'spline';
+// Interpolation path type (linear/spline) plus the spread generator. Segment and
+// Hue arc are just `linear` in a cartesian vs cylindrical space.
+export type ThemeMode = 'linear' | 'spline' | 'spread';
+// Interpolation space: any color space in the interp registry, plus "world" — the
+// active 3D world geometry as shown (a straight line in the viewport).
+export type InterpSpaceChoice = import('$lib/color/interp').InterpSpaceKey | 'world';
 export type ChromaProfile = 'linear' | 'mirror';
 // Spline curve geometry constraint (not a gamut map): 'free' interpolates inside
 // the volume; 'surface' radially snaps samples to the active solid shell.
@@ -87,8 +92,8 @@ export interface ExplorerState {
 		selectedPoint: number | null;
 		/** Spline curve geometry constraint: free vs radial shell snap (persisted). */
 		splineConstraint: SplineConstraint;
-		/** Color space the spline is interpolated in (persisted). */
-		splineSpace: InterpSpaceKey;
+		/** Color space the ramp is interpolated in — any interp space or "world" (persisted). */
+		splineSpace: InterpSpaceChoice;
 		/** Out-of-gamut mapping policy applied to all ramp stops + spline curve (persisted). */
 		gamutMap: GamutMapMethod;
 		/** Hi-res rendered curve samples (runtime, not persisted). */
@@ -113,7 +118,7 @@ import type { InterpSpaceKey } from '$lib/color/interp';
 import type { GamutMapMethod } from '$lib/color/gamut-map';
 import type { Camera } from './camera';
 
-export const CURRENT_STATE_SCHEMA_VERSION = 4 as const;
+export const CURRENT_STATE_SCHEMA_VERSION = 5 as const;
 export type StateSchemaVersion = typeof CURRENT_STATE_SCHEMA_VERSION;
 
 export type PersistedTheme = Omit<ExplorerState['theme'], 'arm' | 'stops' | 'selectedPoint' | 'splineCurve' | 'rawStops'>;

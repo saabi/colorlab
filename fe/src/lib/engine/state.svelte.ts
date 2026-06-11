@@ -43,13 +43,13 @@ function createExplorerDefaults(): ExplorerState {
 			points: [],
 			selectedPoint: null,
 			splineConstraint: 'surface',
-			splineSpace: 'oklch',
+			splineSpace: 'world',
 			gamutMap: 'none',
 			splineCurve: [],
 			rawStops: [],
 			steps: 5,
 			arm: null,
-			mode: 'seg',
+			mode: 'linear',
 			stops: [],
 			dh: 40,
 			dc: 0.0,
@@ -78,7 +78,7 @@ export function cloneAppState(state: AppState): AppState {
 
 export function createAppState(options: { mobile?: boolean } = {}): AppState {
 	const state: AppState = {
-		schemaVersion: 4,
+		schemaVersion: 5,
 		explorer: createExplorerDefaults(),
 		camera: createCamera()
 	};
@@ -139,7 +139,7 @@ export const EXAMPLE_STATES = [
 					splineConstraint: 'surface',
 					splineSpace: 'oklch',
 					steps: 11,
-					mode: 'arc',
+					mode: 'linear',
 					dh: 40,
 					dc: 0,
 					cprof: 'linear',

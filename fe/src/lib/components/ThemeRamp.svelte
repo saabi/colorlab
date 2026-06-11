@@ -76,6 +76,27 @@
 		explorer.theme.arm = explorer.theme.arm === 'add' ? null : 'add';
 	}
 
+	// Long-hue only matters for cyclic (cylindrical) interpolation spaces.
+	const spaceIsCyclic = $derived(
+		explorer.theme.splineSpace !== 'world' &&
+			INTERP_SPACES[explorer.theme.splineSpace as keyof typeof INTERP_SPACES]?.cyclic !== null
+	);
+
+	// Presets are just (path type + space) shortcuts over the single interpolator.
+	function applyPreset(kind: 'segment' | 'arc' | 'spline') {
+		if (kind === 'segment') {
+			explorer.theme.mode = 'linear';
+			explorer.theme.splineSpace = 'world';
+		} else if (kind === 'arc') {
+			explorer.theme.mode = 'linear';
+			explorer.theme.splineSpace = 'oklch';
+		} else {
+			explorer.theme.mode = 'spline';
+			if (explorer.theme.splineSpace === 'world') explorer.theme.splineSpace = 'oklch';
+		}
+		track('theme_mode_change', { mode: explorer.theme.mode });
+	}
+
 	function removeControlPoint(index: number) {
 		explorer.theme.points = explorer.theme.points.filter((_: ThemeAnchor, i: number) => i !== index);
 		const len = explorer.theme.points.length;
@@ -209,15 +230,20 @@
 {/if}
 
 {#if showInterpolate}
+	<!-- Presets: quick (path type + space) combinations over the one interpolator. -->
+	<div class="segmented" style="--segments: 3">
+		<button type="button" onclick={() => applyPreset('segment')}>Segment</button>
+		<button type="button" onclick={() => applyPreset('arc')}>Hue arc</button>
+		<button type="button" onclick={() => applyPreset('spline')}>Spline</button>
+	</div>
 	<SegmentedControl
 		bind:value={explorer.theme.mode}
 		onchange={setThemeMode}
-		columns={2}
+		columns={3}
 		options={[
-			{ value: 'seg', label: 'Segment' },
-			{ value: 'arc', label: 'Hue arc' },
-			{ value: 'spread', label: 'Spread A' },
-			{ value: 'spline', label: 'Spline' }
+			{ value: 'linear', label: 'Linear' },
+			{ value: 'spline', label: 'Spline' },
+			{ value: 'spread', label: 'Spread' }
 		]}
 	/>
 
@@ -230,15 +256,19 @@
 		format={(value) => value.toFixed(0)}
 	/>
 
-	{#if explorer.theme.mode === 'spline'}
+	{#if explorer.theme.mode !== 'spread'}
 		<label class="field-row">
 			<span>Interpolate in</span>
 			<select bind:value={explorer.theme.splineSpace}>
+				<option value="world">World (as shown)</option>
 				{#each INTERP_SPACE_KEYS as key}
 					<option value={key}>{INTERP_SPACES[key].label}</option>
 				{/each}
 			</select>
 		</label>
+		{#if spaceIsCyclic}
+			<ToggleRow label="Long hue (other side)" bind:checked={explorer.theme.arcLong} />
+		{/if}
 		<label class="field-row">
 			<span>Curve constraint</span>
 			<select bind:value={explorer.theme.splineConstraint}>
@@ -247,10 +277,6 @@
 				{/each}
 			</select>
 		</label>
-	{/if}
-
-	{#if explorer.theme.mode === 'arc'}
-		<ToggleRow label="Long path (other side)" bind:checked={explorer.theme.arcLong} />
 	{/if}
 
 	{#if explorer.theme.mode === 'spread'}

@@ -12,9 +12,10 @@ import type {
 	SpaceMode,
 	SplineConstraint,
 	ThemeAnchor,
-	ThemeMode
+	ThemeMode,
+	InterpSpaceChoice
 } from '$lib/engine/types';
-import { INTERP_SPACE_KEYS, type InterpSpaceKey } from '$lib/color/interp';
+import { INTERP_SPACE_KEYS } from '$lib/color/interp';
 import { GAMUT_MAP_METHODS, type GamutMapMethod } from '$lib/color/gamut-map';
 import { CURRENT_SNAPSHOT_VERSION, type ParameterSnapshot } from './types';
 
@@ -24,12 +25,12 @@ const TESS: readonly PersistedExplorer['N'][] = [64, 128, 192, 256];
 const PLANE_MODES: readonly PlaneMode[] = ['L', 'H', 'C'];
 const SHELLS: readonly ShellKey[] = ['none', 'p3', 'rec2020', 'ntsc', 'cie'];
 const CVD_MODES: readonly CvdMode[] = ['none', 'protan', 'deutan', 'tritan'];
-const THEME_MODES: readonly ThemeMode[] = ['seg', 'arc', 'spread', 'spline'];
+const THEME_MODES: readonly ThemeMode[] = ['linear', 'spline', 'spread'];
 const CHROMA_PROFILES: readonly ChromaProfile[] = ['linear', 'mirror'];
 const WCAG_BG: readonly PersistedTheme['wcagBg'][] = ['white', 'black'];
 const SPLINE_CONSTRAINTS: readonly SplineConstraint[] = ['free', 'surface'];
 const GAMUT_MAPS: readonly GamutMapMethod[] = GAMUT_MAP_METHODS;
-const INTERP_SPACES: readonly InterpSpaceKey[] = INTERP_SPACE_KEYS;
+const INTERP_SPACES: readonly InterpSpaceChoice[] = [...INTERP_SPACE_KEYS, 'world'];
 
 function warn(message: string) {
 	console.warn(`[documents] ${message}`);
