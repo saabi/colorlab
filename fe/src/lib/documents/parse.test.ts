@@ -159,4 +159,23 @@ describe('parseSnapshot', () => {
 		expect(result.snapshot?.explorer.theme.splineSpace).toBe('oklch');
 		expect(result.snapshot?.explorer.theme.controlPoints).toEqual([{ srgbLin: [0.1, 0.2, 0.3] }]);
 	});
+
+	it('persists openSteps, and defaults the set when absent', () => {
+		const withSteps = { ...defaults, explorer: { ...defaults.explorer, openSteps: ['clip', 'export'] } };
+		expect(parseSnapshot(withSteps).snapshot?.explorer.openSteps).toEqual(['clip', 'export']);
+
+		const { openSteps: _omit, ...explorerNoSteps } = defaults.explorer;
+		const legacy = { explorer: explorerNoSteps, camera: defaults.camera };
+		expect(parseSnapshot(legacy).snapshot?.explorer.openSteps).toEqual(defaults.explorer.openSteps);
+	});
+
+	it('does not persist runtime-only auto-reduce fields', () => {
+		const doc = {
+			...defaults,
+			explorer: { ...defaults.explorer, autoPerformance: false, minAverageFps: 15 }
+		} as unknown;
+		const snap = parseSnapshot(doc).snapshot;
+		expect('autoPerformance' in (snap?.explorer ?? {})).toBe(false);
+		expect('minAverageFps' in (snap?.explorer ?? {})).toBe(false);
+	});
 });

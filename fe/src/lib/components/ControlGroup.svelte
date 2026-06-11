@@ -5,7 +5,8 @@
 	let {
 		title,
 		children,
-		defaultOpen = false,
+		open = false,
+		onToggle,
 		helpId,
 		openHelp = $bindable(null as string | null),
 		index,
@@ -16,7 +17,9 @@
 	} = $props<{
 		title: string;
 		children: import('svelte').Snippet;
-		defaultOpen?: boolean;
+		/** Controlled expanded state (owned by the parent so it can be persisted). */
+		open?: boolean;
+		onToggle?: () => void;
 		helpId?: HelpId;
 		openHelp?: string | null;
 		/** 1-based step number within the lane; renders the connector marker when set. */
@@ -31,16 +34,7 @@
 		disabled?: boolean;
 	}>();
 
-	let open = $state(false);
-	let initialized = $state(false);
 	const contentId = $derived(`group-${title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`);
-
-	$effect(() => {
-		if (!initialized) {
-			open = defaultOpen;
-			initialized = true;
-		}
-	});
 
 	// Pulse the marker when the status value changes ("what changed?" feedback).
 	let pulse = $state(false);
@@ -68,9 +62,7 @@
 				class="group-toggle"
 				aria-expanded={open}
 				aria-controls={contentId}
-				onclick={() => {
-					open = !open;
-				}}
+				onclick={() => onToggle?.()}
 			>
 				<span class="group-name">{title}</span>
 				<span class="group-meta">

@@ -29,8 +29,6 @@ export function toPersistedExplorer(explorer: ExplorerState): PersistedExplorer 
 		spaceMode: explorer.spaceMode,
 		gamut: explorer.gamut,
 		N: explorer.N,
-		autoPerformance: explorer.autoPerformance,
-		minAverageFps: explorer.minAverageFps,
 		slice: explorer.slice,
 		planeMode: explorer.planeMode,
 		off: explorer.off,
@@ -49,6 +47,7 @@ export function toPersistedExplorer(explorer: ExplorerState): PersistedExplorer 
 		outlineDepthTest: explorer.outlineDepthTest,
 		surfaceGridAlpha: explorer.surfaceGridAlpha,
 		hideAids: explorer.hideAids,
+		openSteps: [...explorer.openSteps],
 		cvd: explorer.cvd,
 		cvdSev: explorer.cvdSev,
 		theme: {

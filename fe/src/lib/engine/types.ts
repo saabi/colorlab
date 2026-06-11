@@ -75,6 +75,8 @@ export interface ExplorerState {
 	surfaceGridAlpha: number;
 	/** Master toggle hiding all viewport aids (floor, surface grid, outlines, shell) without losing each setting. */
 	hideAids: boolean;
+	/** Pipeline step ids currently expanded in the left sidebar (persisted UI state). */
+	openSteps: string[];
 	cvd: CvdMode;
 	cvdSev: number;
 	theme: {
@@ -116,7 +118,10 @@ export const CURRENT_STATE_SCHEMA_VERSION = 3 as const;
 export type StateSchemaVersion = typeof CURRENT_STATE_SCHEMA_VERSION;
 
 export type PersistedTheme = Omit<ExplorerState['theme'], 'arm' | 'stops' | 'selectedCp' | 'splineCurve' | 'rawStops'>;
-export type PersistedExplorer = Omit<ExplorerState, 'hover' | 'theme'> & { theme: PersistedTheme };
+// autoPerformance/minAverageFps are runtime-only renderer policy — not part of the saved artifact.
+export type PersistedExplorer = Omit<ExplorerState, 'hover' | 'theme' | 'autoPerformance' | 'minAverageFps'> & {
+	theme: PersistedTheme;
+};
 
 export interface AppState {
 	schemaVersion: StateSchemaVersion;
