@@ -1,8 +1,17 @@
 # Plan: Ramp Display & Interaction on the 3D Viewport
 
-Status: proposal (revised after the `generated-stops-issues.png` capture). Follows
-the completed `ramp-pipeline-plan.md`. Scope is the *presentation and interaction*
-of ramp colors in the 3D viewport + a reusable palette surface.
+Status: **implemented** — all six stages shipped. Reusable `PaletteStrip` with
+export==display parity; full ramp (points/curve/stops/palette grid) rendered in
+3D with per-aid toggles in each producing step; translucent solid (`solidAlpha`)
+for see-through occlusion; size-differentiated markers + hover cursor; pinned
+palette as a desktop viewport overlay and a mobile inspector tab; `theme.aa`
+dropped and `hideAids` now also hides ramp overlays.
+
+Possible follow-ups (not done): instanced marker pass (perf, if large grids jank);
+optional per-row curves for harmony/tint grids; click-a-source-swatch to select.
+
+Follows the completed `ramp-pipeline-plan.md`. Scope is the *presentation and
+interaction* of ramp colors in the 3D viewport + a reusable palette surface.
 
 ## What the capture shows (corrected diagnosis)
 
