@@ -2,6 +2,7 @@
 	import SegmentedControl from './SegmentedControl.svelte';
 	import SliderRow from './SliderRow.svelte';
 	import ToggleRow from './ToggleRow.svelte';
+	import PaletteStrip from './PaletteStrip.svelte';
 	import { track } from '$lib/analytics/umami';
 	import { simulateCvdSrgb } from '$lib/color/cvd';
 	import { INTERP_SPACES, INTERP_SPACE_KEYS } from '$lib/color/interp';
@@ -360,14 +361,8 @@
 				</div>
 			{/if}
 			{#if isPalette}
-				<div class="palette-grid">
-					{#each explorer.theme.grid as row}
-						<div class="ramp">
-							{#each row as cell}
-								<div class="ramp-chip" title={cell.hex} style={rampChipStyle(cell)}></div>
-							{/each}
-						</div>
-					{/each}
+				<div style="margin-top: 6px">
+					<PaletteStrip rows={explorer.theme.grid} cvd={explorer.cvd} cvdSev={explorer.cvdSev} ariaLabel="Expanded palette preview" />
 				</div>
 			{/if}
 		{/if}
@@ -396,38 +391,29 @@
 		{#if explorer.theme.gamutMap !== 'none'}
 			<div class="raw-final">
 				<span class="rf-label">Raw</span>
-				<div class="ramp">
-					{#each explorer.theme.rawStops as stop}
-						<div class="ramp-chip" title={stop.hex} style={rampChipStyle(stop)}></div>
-					{/each}
-				</div>
+				<PaletteStrip rows={[explorer.theme.rawStops]} cvd={explorer.cvd} cvdSev={explorer.cvdSev} ariaLabel="Raw ramp before gamut mapping" />
 				<span class="rf-label">Final</span>
-				<div class="ramp">
-					{#each explorer.theme.stops as stop}
-						<div class="ramp-chip" title={stop.hex} style={rampChipStyle(stop)}></div>
-					{/each}
-				</div>
+				<PaletteStrip rows={[explorer.theme.stops]} cvd={explorer.cvd} cvdSev={explorer.cvdSev} ariaLabel="Final ramp after gamut mapping" />
 			</div>
 		{/if}
 	{/if}
 {/if}
 
 {#if showExport}
-	<div class="ramp" aria-label="Theme ramp preview">
-		{#if explorer.theme.stops.length}
-			{#each explorer.theme.stops as stop}
-				<div
-					class="ramp-chip"
-					title={`${stop.hex}${explorer.cvd === 'none' ? '' : ' source, CVD preview shown'}`}
-					style={rampChipStyle(stop)}
-				></div>
-			{/each}
-		{:else}
+	{#if explorer.theme.stops.length}
+		<PaletteStrip
+			rows={isPalette ? explorer.theme.grid : [explorer.theme.stops]}
+			cvd={explorer.cvd}
+			cvdSev={explorer.cvdSev}
+			ariaLabel="Exported palette preview"
+		/>
+	{:else}
+		<div class="ramp" aria-label="Theme ramp preview">
 			{#each Array.from({ length: explorer.theme.steps }) as _}
 				<div class="ramp-chip"></div>
 			{/each}
-		{/if}
-	</div>
+		</div>
+	{/if}
 
 	<button type="button" onclick={() => showExportText('css')}>Export CSS tokens (oklch)</button>
 	<button type="button" style="margin-top: 4px" onclick={() => showExportText('json')}>Export DTCG JSON</button>
@@ -452,11 +438,6 @@
 		color: var(--muted);
 		font-weight: 600;
 		min-width: 12px;
-	}
-	.palette-grid {
-		display: grid;
-		gap: 2px;
-		margin-top: 6px;
 	}
 	.cp-list {
 		display: flex;
