@@ -78,9 +78,20 @@
 		<div id={popoverId} class="panel-help-popover" class:open role="dialog" style={popoverStyle}>
 			<span class="panel-help-title">{content.title}</span>
 			<p class="panel-help-summary">{content.summary}</p>
-			{#each content.details ?? [] as paragraph}
-				<p class="panel-help-summary">{paragraph}</p>
-			{/each}
+			{#if content.stageRows?.length}
+				<div class="panel-help-stage">
+					{#each content.stageRows as row}
+						<div class="panel-help-stage-row" class:neutral={row.tone === 'neutral'} class:change={row.tone === 'change'} class:output={row.tone === 'output'} class:exclude={row.tone === 'exclude'}>
+							<span class="panel-help-stage-label">{row.label}</span>
+							<span class="panel-help-stage-text">{row.text}</span>
+						</div>
+					{/each}
+				</div>
+			{:else}
+				{#each content.details ?? [] as paragraph}
+					<p class="panel-help-summary">{paragraph}</p>
+				{/each}
+			{/if}
 			<span class="panel-help-sources-label">Sources</span>
 			<ul class="panel-help-sources">
 				{#each content.sources as source}
@@ -160,8 +171,57 @@
 		line-height: 1.4;
 	}
 
+	.panel-help-stage {
+		display: grid;
+		gap: 5px;
+		margin-top: 2px;
+	}
+
+	.panel-help-stage-row {
+		display: grid;
+		grid-template-columns: 82px minmax(0, 1fr);
+		gap: 8px;
+		align-items: start;
+		border-left: 2px solid transparent;
+		padding: 4px 0 4px 7px;
+	}
+
+	.panel-help-stage-row.neutral {
+		border-left-color: color-mix(in srgb, var(--dim), transparent 45%);
+	}
+
+	.panel-help-stage-row.change {
+		border-left-color: color-mix(in srgb, var(--accent), transparent 20%);
+	}
+
+	.panel-help-stage-row.output {
+		border-left-color: #65bfa8;
+	}
+
+	.panel-help-stage-row.exclude {
+		border-left-color: #a06f6f;
+	}
+
+	.panel-help-stage-label {
+		color: var(--dim);
+		font-size: 9px;
+		font-weight: 700;
+		line-height: 1.35;
+		text-transform: uppercase;
+		letter-spacing: 0.08em;
+	}
+
+	.panel-help-stage-text {
+		color: var(--txt);
+		font-size: 11px;
+		line-height: 1.4;
+	}
+
 	.panel-help-sources-label {
+		border-top: 1px solid rgba(255, 255, 255, 0.08);
 		color: var(--faint);
+		margin-top: 2px;
+		padding-top: 7px;
 		font-size: 9px;
 		font-weight: 600;
 		text-transform: uppercase;
@@ -184,5 +244,12 @@
 
 	.panel-help-sources a:hover {
 		color: var(--txt);
+	}
+
+	@media (max-width: 520px) {
+		.panel-help-stage-row {
+			grid-template-columns: 1fr;
+			gap: 1px;
+		}
 	}
 </style>

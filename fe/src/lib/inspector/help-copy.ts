@@ -19,13 +19,28 @@ export interface HelpSource {
 	href?: string;
 }
 
+export interface HelpStageRow {
+	label: 'Input' | 'Changes' | 'Output' | 'Does not affect' | string;
+	text: string;
+	tone?: 'neutral' | 'change' | 'output' | 'exclude';
+}
+
 export interface PanelHelpContent {
 	title: string;
 	summary: string;
 	/** Optional extra paragraphs (e.g. pipeline scope, future work). */
 	details?: string[];
+	/** Optional structured stage rows for scan-friendly pipeline help. */
+	stageRows?: HelpStageRow[];
 	sources: HelpSource[];
 }
+
+const stageRows = (input: string, changes: string, output: string, exclude: string): HelpStageRow[] => [
+	{ label: 'Input', text: input, tone: 'neutral' },
+	{ label: 'Changes', text: changes, tone: 'change' },
+	{ label: 'Output', text: output, tone: 'output' },
+	{ label: 'Does not affect', text: exclude, tone: 'exclude' }
+];
 
 export const INSPECTOR_HELP: Record<InspectorPanelId, PanelHelpContent> = {
 	transfer: {
@@ -95,12 +110,12 @@ export const PIPELINE_HELP: Record<PipelineHelpId, PanelHelpContent> = {
 	pipelineGamut: {
 		title: 'Gamut / encoding',
 		summary: "Selects the RGB primary set and transfer assumptions used to decode the cube's encoded RGB values into linear-light RGB.",
-		details: [
-			'Input: encoded RGB cube coordinates.',
-			'Changes: RGB primaries, RGB-to-XYZ matrices, and the transfer curve summary used by the explorer pipeline.',
-			'Output: linear RGB and XYZ basis for downstream world-space conversion.',
-			'Does not affect: ramp-only gamut mapping, CVD preview severity, camera, or display-aid visibility.'
-		],
+		stageRows: stageRows(
+			'Encoded RGB cube coordinates.',
+			'RGB primaries, RGB-to-XYZ matrices, and the transfer curve summary used by the explorer pipeline.',
+			'Linear RGB and XYZ basis for downstream world-space conversion.',
+			'Ramp-only gamut mapping, CVD preview severity, camera, or display-aid visibility.'
+		),
 		sources: [
 			{ label: 'pipeline.ts gamut registry' },
 			{ label: 'transfer.ts transfer curves' },
@@ -110,12 +125,12 @@ export const PIPELINE_HELP: Record<PipelineHelpId, PanelHelpContent> = {
 	pipelineWorld: {
 		title: 'World space',
 		summary: 'Chooses how colorimetric data is placed in the 3D viewport.',
-		details: [
-			'Input: linear RGB converted through the active gamut matrices.',
-			'Changes: geometric position of colors in RGB, XYZ, CIELAB, Oklab, or luminance layout.',
-			'Output: world coordinates used by the renderer, picking, clipping, and ramp anchor placement.',
-			'Does not affect: source color values, exported ramp tokens, or display simulation.'
-		],
+		stageRows: stageRows(
+			'Linear RGB converted through the active gamut matrices.',
+			'Geometric position of colors in RGB, XYZ, CIELAB, Oklab, or luminance layout.',
+			'World coordinates used by the renderer, picking, clipping, and ramp anchor placement.',
+			'Source color values, exported ramp tokens, or display simulation.'
+		),
 		sources: [
 			{ label: 'registry.ts space registry' },
 			{ label: 'theme.ts jsToWorld' },
@@ -125,12 +140,12 @@ export const PIPELINE_HELP: Record<PipelineHelpId, PanelHelpContent> = {
 	pipelineClip: {
 		title: 'Clip / cut',
 		summary: 'Controls which part of the already-positioned color solid is visible.',
-		details: [
-			'Input: world-space solid geometry.',
-			'Changes: slice plane, cut direction, slab width, cylindrical/chroma radius, and the cut outlines/grid that annotate the result.',
-			'Output: visible subset of the solid plus pickable clipped surfaces.',
-			'Does not affect: stored colors, ramp stops, or export output.'
-		],
+		stageRows: stageRows(
+			'World-space solid geometry.',
+			'Slice plane, cut direction, slab width, cylindrical/chroma radius, and the cut outlines/grid that annotate the result.',
+			'Visible subset of the solid plus pickable clipped surfaces.',
+			'Stored colors, ramp stops, or export output.'
+		),
 		sources: [
 			{ label: 'Slice mathematics (design.md)' },
 			{ label: 'plane.ts' },
@@ -140,12 +155,12 @@ export const PIPELINE_HELP: Record<PipelineHelpId, PanelHelpContent> = {
 	pipelineVision: {
 		title: 'Vision preview',
 		summary: 'Applies LMS-stage color-vision-deficiency simulation to visual previews.',
-		details: [
-			'Input: display-bound linear sRGB colors.',
-			'Changes: preview colors according to protan, deutan, or tritan deficiency severity.',
-			'Output: simulated colors in viewport, inspector panels, and ramp previews.',
-			'Does not affect: source RGB values, saved anchors, generated ramp stops, or exported tokens.'
-		],
+		stageRows: stageRows(
+			'Display-bound linear sRGB colors.',
+			'Preview colors according to protan, deutan, or tritan deficiency severity.',
+			'Simulated colors in viewport, inspector panels, and ramp previews.',
+			'Source RGB values, saved anchors, generated ramp stops, or exported tokens.'
+		),
 		sources: [
 			{ label: 'cvd.ts' },
 			{ label: 'LMS/cone fundamentals implementation' },
@@ -155,12 +170,12 @@ export const PIPELINE_HELP: Record<PipelineHelpId, PanelHelpContent> = {
 	pipelineTessellation: {
 		title: 'Tessellation',
 		summary: 'Mesh resolution of the solid — and the accuracy of the clipped cross-section.',
-		details: [
-			'Input: the world-space solid before clipping.',
-			'Changes: subdivisions per cube face (N), and the surface grid overlay that visualizes them.',
-			'Output: a denser/sparser mesh; higher N sharpens slice/cut edges in the vertex shader.',
-			'Does not affect: color values, ramp generation, or export. Auto-reduce is a separate footer policy.'
-		],
+		stageRows: stageRows(
+			'The world-space solid before clipping.',
+			'Subdivisions per cube face (N), and the surface grid overlay that visualizes them.',
+			'A denser/sparser mesh; higher N sharpens slice/cut edges in the vertex shader.',
+			'Color values, ramp generation, or export. Auto-reduce is a separate footer policy.'
+		),
 		sources: [
 			{ label: 'Instanced rendering (design.md): one quad x 6 N^2' },
 			{ label: 'solid.vert clip/flatten loop' }
@@ -169,12 +184,12 @@ export const PIPELINE_HELP: Record<PipelineHelpId, PanelHelpContent> = {
 	pipelinePick: {
 		title: 'Pick',
 		summary: 'Selects where the next viewport click or tap writes a picked color into the ramp workflow.',
-		details: [
-			'Input: currently visible pick hit on the solid or clipped surface.',
-			'Changes: active target, such as anchor A, anchor B, or adding a spline control point.',
-			'Output: linear-sRGB source colors stored as ramp inputs.',
-			'Does not affect: interpolation mode, adjustment policy, gamut mapping, or export format.'
-		],
+		stageRows: stageRows(
+			'Currently visible pick hit on the solid or clipped surface.',
+			'Active target, such as anchor A, anchor B, or adding a spline control point.',
+			'Linear-sRGB source colors stored as ramp inputs.',
+			'Interpolation mode, adjustment policy, gamut mapping, or export format.'
+		),
 		sources: [
 			{ label: 'Viewport.svelte picking handlers' },
 			{ label: 'theme.ts anchor representation' }
@@ -183,12 +198,12 @@ export const PIPELINE_HELP: Record<PipelineHelpId, PanelHelpContent> = {
 	pipelinePoints: {
 		title: 'Anchors / points',
 		summary: 'Shows and edits the source colors used by ramp generation.',
-		details: [
-			'Input: picked linear-sRGB anchors and spline control points.',
-			'Changes: point selection, ordering, duplication, deletion, and keyboard nudging.',
-			'Output: ordered ramp source points for interpolation.',
-			'Does not affect: interpolation method, WCAG/even adjustments, gamut mapping policy, or final export format.'
-		],
+		stageRows: stageRows(
+			'Picked linear-sRGB anchors and spline control points.',
+			'Point selection, ordering, duplication, deletion, and keyboard nudging.',
+			'Ordered ramp source points for interpolation.',
+			'Interpolation method, WCAG/even adjustments, gamut mapping policy, or final export format.'
+		),
 		sources: [
 			{ label: 'ThemeRamp.svelte control point panel' },
 			{ label: 'Spline gesture plan' }
@@ -197,12 +212,12 @@ export const PIPELINE_HELP: Record<PipelineHelpId, PanelHelpContent> = {
 	pipelineInterpolate: {
 		title: 'Interpolate',
 		summary: 'Builds raw ramp samples from anchors or spline control points.',
-		details: [
-			'Input: anchors A/B or ordered spline control points.',
-			'Changes: ramp mode, step count, hue-arc direction, spread parameters, spline interpolation space, and spline surface constraint.',
-			'Output: raw ramp stops before adjustment and final gamut mapping.',
-			'Does not affect: final export serialization or CVD preview; out-of-gamut colors may still exist at this stage.'
-		],
+		stageRows: stageRows(
+			'Anchors A/B or ordered spline control points.',
+			'Ramp mode, step count, hue-arc direction, spread parameters, spline interpolation space, and spline surface constraint.',
+			'Raw ramp stops before adjustment and final gamut mapping.',
+			'Final export serialization or CVD preview; out-of-gamut colors may still exist at this stage.'
+		),
 		sources: [
 			{ label: 'theme.ts buildRawRamp' },
 			{ label: 'interp.ts interpolation spaces' },
@@ -212,12 +227,12 @@ export const PIPELINE_HELP: Record<PipelineHelpId, PanelHelpContent> = {
 	pipelineAdjust: {
 		title: 'Adjust',
 		summary: 'Post-processes generated ramp stops for contrast or perceptual spacing.',
-		details: [
-			'Input: raw interpolated ramp stops.',
-			'Changes: WCAG AA fitting target and even perceptual spacing.',
-			'Output: adjusted ramp stops that still pass through final gamut mapping afterward.',
-			'Does not affect: source anchors/control points, interpolation mode, or viewport color solid.'
-		],
+		stageRows: stageRows(
+			'Raw interpolated ramp stops.',
+			'WCAG AA fitting target and even perceptual spacing.',
+			'Adjusted ramp stops that still pass through final gamut mapping afterward.',
+			'Source anchors/control points, interpolation mode, or viewport color solid.'
+		),
 		sources: [
 			{ label: 'theme.ts fitWcag and fitEven' },
 			{ label: 'WCAG contrast references' },
@@ -227,12 +242,12 @@ export const PIPELINE_HELP: Record<PipelineHelpId, PanelHelpContent> = {
 	pipelineGamutMap: {
 		title: 'Gamut map',
 		summary: 'Applies the terminal ramp-only policy for out-of-gamut generated stops.',
-		details: [
-			'Input: adjusted ramp stops, possibly outside sRGB.',
-			'Changes: clipping or Oklab projection method used to bring stops into the export gamut.',
-			'Output: final in-gamut ramp colors for preview and export.',
-			'Does not affect: the 3D explorer gamut, hover readouts, CVD simulation, or source anchors.'
-		],
+		stageRows: stageRows(
+			'Adjusted ramp stops, possibly outside sRGB.',
+			'Clipping or Oklab projection method used to bring stops into the export gamut.',
+			'Final in-gamut ramp colors for preview and export.',
+			'The 3D explorer gamut, hover readouts, CVD simulation, or source anchors.'
+		),
 		sources: [
 			{ label: 'gamut-map.ts' },
 			{ label: 'theme.ts finalizeRamp' },
@@ -242,12 +257,12 @@ export const PIPELINE_HELP: Record<PipelineHelpId, PanelHelpContent> = {
 	pipelineExport: {
 		title: 'Export',
 		summary: 'Serializes final ramp colors after interpolation, adjustment, and gamut mapping.',
-		details: [
-			'Input: final ramp stops.',
-			'Changes: export action and output text format.',
-			'Output: CSS OKLCH tokens or DTCG JSON.',
-			'Does not affect: ramp source points, viewport display, or upstream pipeline settings.'
-		],
+		stageRows: stageRows(
+			'Final ramp stops.',
+			'Export action and output text format.',
+			'CSS OKLCH tokens or DTCG JSON.',
+			'Ramp source points, viewport display, or upstream pipeline settings.'
+		),
 		sources: [
 			{ label: 'theme.ts exportTokens' },
 			{ label: 'theme.ts exportDTCG' }
@@ -256,12 +271,12 @@ export const PIPELINE_HELP: Record<PipelineHelpId, PanelHelpContent> = {
 	pipelineView: {
 		title: 'View / camera',
 		summary: 'Camera projection, floor grid, and viewport navigation — the view of the model, not the model.',
-		details: [
-			'Input: current camera and gesture state.',
-			'Changes: camera orientation, distance, field of view, target, and the floor orientation grid.',
-			'Output: a different view of the same color model.',
-			'Does not affect: color values, clipping parameters, ramp generation, or exports.'
-		],
+		stageRows: stageRows(
+			'Current camera and gesture state.',
+			'Camera orientation, distance, field of view, target, and the floor orientation grid.',
+			'A different view of the same color model.',
+			'Color values, clipping parameters, ramp generation, or exports.'
+		),
 		sources: [
 			{ label: 'Viewport.svelte camera and gesture handlers' },
 			{ label: 'camera-and-canvas-gesture-plan.md' }
