@@ -4,6 +4,8 @@ Status: proposal + implementation plan.
 
 ## Problem (from `_docs/pipeline-ui-layout.png`)
 
+Screenshot of the layout **before** Proposal A moved the pipeline into the left sidebar — the horizontal rail in the center column as implemented prior to that change.
+
 The horizontal pipeline rail sits in the center column (`.pipeline-graph-region`: `grid-column: 2; grid-row: 2`), so it is only as wide as the viewport (screen − 280px left − 300px right) yet must fit **13 nodes across three lanes plus per-node status**. The result:
 
 - Node text is unreadable; the rail `overflow-x: auto`s and still barely fits.
