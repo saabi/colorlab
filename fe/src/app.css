@@ -525,6 +525,26 @@ input[type="checkbox"] {
 	opacity: 0.5;
 }
 
+.pipeline-node.pulse {
+	animation: pipeline-pulse 0.65s ease-out;
+}
+
+@keyframes pipeline-pulse {
+	0% {
+		border-color: var(--accent);
+		box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 55%, transparent);
+	}
+	100% {
+		box-shadow: 0 0 0 6px transparent;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.pipeline-node.pulse {
+		animation: none;
+	}
+}
+
 .pipeline-node-main {
 	display: flex;
 	align-items: center;

@@ -5,7 +5,7 @@
 	import type { ExplorerState } from '$lib/engine/types';
 
 	let {
-		state,
+		state: explorer,
 		selectedNode = $bindable('all')
 	} = $props<{
 		state: ExplorerState;
@@ -14,6 +14,30 @@
 
 	const lanes: PipelineLane[] = ['Explorer', 'Ramp', 'Support'];
 	let navEl: HTMLElement;
+
+	// "What changed?" feedback: pulse a node when its status value changes.
+	const statuses = $derived(PIPELINE_NODES.map((node) => node.status(explorer)));
+	let pulsing = $state(new Set<PipelineNodeId>());
+	let prevStatuses: string[] = [];
+
+	function pulseNode(id: PipelineNodeId) {
+		pulsing.add(id);
+		pulsing = new Set(pulsing);
+		setTimeout(() => {
+			pulsing.delete(id);
+			pulsing = new Set(pulsing);
+		}, 650);
+	}
+
+	$effect(() => {
+		const current = statuses;
+		if (prevStatuses.length) {
+			PIPELINE_NODES.forEach((node, i) => {
+				if (current[i] !== prevStatuses[i]) pulseNode(node.id);
+			});
+		}
+		prevStatuses = [...current];
+	});
 
 	function selectNode(id: PipelineNodeId, lane: PipelineLane) {
 		selectedNode = id;
@@ -57,8 +81,8 @@
 			<div class="pipeline-lane-label" aria-hidden="true">{lane}</div>
 			<div class="pipeline-node-row" role="presentation">
 				{#each PIPELINE_NODES.filter((node) => node.lane === lane) as node}
-					{@const enabled = isNodeEnabled(node, state)}
-					{@const warn = node.warn?.(state) ?? null}
+					{@const enabled = isNodeEnabled(node, explorer)}
+					{@const warn = node.warn?.(explorer) ?? null}
 					<button
 						type="button"
 						role="tab"
@@ -66,6 +90,7 @@
 						class="pipeline-node"
 						class:active={selectedNode === node.id}
 						class:disabled={!enabled}
+						class:pulse={pulsing.has(node.id)}
 						aria-selected={selectedNode === node.id}
 						aria-controls="pipeline-panel"
 						tabindex={selectedNode === node.id ? 0 : -1}
@@ -78,7 +103,7 @@
 							<span class="pipeline-node-scope">{node.affects}</span>
 						</span>
 						<span class="pipeline-node-footer" aria-hidden="true">
-							<span class="pipeline-node-status">{node.status(state)}</span>
+							<span class="pipeline-node-status">{node.status(explorer)}</span>
 							{#if warn}<span class="pipeline-node-warn">{warn}</span>{/if}
 						</span>
 					</button>
