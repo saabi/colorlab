@@ -76,7 +76,8 @@
 
 	const EXPAND_OPTIONS: Array<{ value: ExplorerState['theme']['expand']; label: string }> = [
 		{ value: 'none', label: 'None (single ramp)' },
-		{ value: 'tints-shades', label: 'Tints & shades' }
+		{ value: 'tints-shades', label: 'Tints & shades' },
+		{ value: 'spread', label: 'Spread (hue / chroma fan)' }
 	];
 
 	function setThemeMode(mode: typeof explorer.theme.mode) {
@@ -248,11 +249,10 @@
 	<SegmentedControl
 		bind:value={explorer.theme.mode}
 		onchange={setThemeMode}
-		columns={3}
+		columns={2}
 		options={[
 			{ value: 'linear', label: 'Linear' },
-			{ value: 'spline', label: 'Spline' },
-			{ value: 'spread', label: 'Spread' }
+			{ value: 'spline', label: 'Spline' }
 		]}
 	/>
 
@@ -265,70 +265,29 @@
 		format={(value) => value.toFixed(0)}
 	/>
 
-	{#if explorer.theme.mode !== 'spread'}
-		<label class="field-row">
-			<span>Interpolate in</span>
-			<select bind:value={explorer.theme.splineSpace}>
-				<option value="world">World (as shown)</option>
-				{#each INTERP_SPACE_KEYS as key}
-					<option value={key}>{INTERP_SPACES[key].label}</option>
-				{/each}
-			</select>
-		</label>
-		{#if spaceIsCyclic}
-			<ToggleRow label="Long hue (other side)" bind:checked={explorer.theme.arcLong} />
-		{/if}
-		<label class="field-row">
-			<span>Curve constraint</span>
-			<select bind:value={explorer.theme.splineConstraint}>
-				{#each SPLINE_CONSTRAINT_OPTIONS as opt}
-					<option value={opt.value}>{opt.label}</option>
-				{/each}
-			</select>
-		</label>
+	<label class="field-row">
+		<span>Interpolate in</span>
+		<select bind:value={explorer.theme.splineSpace}>
+			<option value="world">World (as shown)</option>
+			{#each INTERP_SPACE_KEYS as key}
+				<option value={key}>{INTERP_SPACES[key].label}</option>
+			{/each}
+		</select>
+	</label>
+	{#if spaceIsCyclic}
+		<ToggleRow label="Long hue (other side)" bind:checked={explorer.theme.arcLong} />
 	{/if}
-
-	{#if explorer.theme.mode === 'spread'}
-		<SliderRow
-			label="Delta hue"
-			bind:value={explorer.theme.dh}
-			min={0}
-			max={180}
-			step={1}
-			format={(value) => `${value.toFixed(0)} deg`}
-		/>
-		<SliderRow
-			label="Delta chroma"
-			bind:value={explorer.theme.dc}
-			min={0}
-			max={0.4}
-			step={0.005}
-			format={(value) => value.toFixed(2)}
-		/>
-		<div class="segmented" style="--segments: 2">
-			<button
-				type="button"
-				class:active={explorer.theme.cprof === 'linear'}
-				onclick={() => {
-					explorer.theme.cprof = 'linear';
-				}}
-			>
-				Linear dc
-			</button>
-			<button
-				type="button"
-				class:active={explorer.theme.cprof === 'mirror'}
-				onclick={() => {
-					explorer.theme.cprof = 'mirror';
-				}}
-			>
-				Mirror dc
-			</button>
-		</div>
-	{/if}
+	<label class="field-row">
+		<span>Curve constraint</span>
+		<select bind:value={explorer.theme.splineConstraint}>
+			{#each SPLINE_CONSTRAINT_OPTIONS as opt}
+				<option value={opt.value}>{opt.label}</option>
+			{/each}
+		</select>
+	</label>
 
 	<p class="note">
-		Interpolation creates raw ramp stops from anchors or spline points. WCAG/even adjustment and gamut mapping run afterward.
+		Builds the ramp path from the source points. A single point yields one seed stop — useful with the spread expander.
 	</p>
 {/if}
 
@@ -371,6 +330,14 @@
 		</label>
 		{#if explorer.theme.expand !== 'none'}
 			<SliderRow label="Columns" bind:value={explorer.theme.expandSteps} min={2} max={12} step={1} format={(value) => value.toFixed(0)} />
+			{#if explorer.theme.expand === 'spread'}
+				<SliderRow label="Delta hue" bind:value={explorer.theme.dh} min={0} max={180} step={1} format={(value) => `${value.toFixed(0)} deg`} />
+				<SliderRow label="Delta chroma" bind:value={explorer.theme.dc} min={0} max={0.4} step={0.005} format={(value) => value.toFixed(2)} />
+				<div class="segmented" style="--segments: 2">
+					<button type="button" class:active={explorer.theme.cprof === 'linear'} onclick={() => (explorer.theme.cprof = 'linear')}>Linear dc</button>
+					<button type="button" class:active={explorer.theme.cprof === 'mirror'} onclick={() => (explorer.theme.cprof = 'mirror')}>Mirror dc</button>
+				</div>
+			{/if}
 			{#if isPalette}
 				<div class="palette-grid">
 					{#each explorer.theme.grid as row}

@@ -9,11 +9,12 @@
  *   move to theme.gamutMap.
  * v4: theme.A/B + theme.controlPoints unified into one ordered theme.points list.
  *   spline docs -> points = controlPoints; others -> [A,B].
- * v5 (CURRENT_SNAPSHOT_VERSION): theme.mode collapsed to 'linear'|'spline'|'spread'
- *   with an explicit interpolation space. seg -> linear+world; arc -> linear+oklch
- *   (cylindrical); spline/spread keep their mode.
+ * v5: theme.mode collapsed to 'linear'|'spline'|'spread' with an explicit
+ *   interpolation space. seg -> linear+world; arc -> linear+oklch (cylindrical).
+ * v6 (CURRENT_SNAPSHOT_VERSION): spread is no longer a mode but an Expand operator.
+ *   mode 'spread' -> mode 'linear' + expand 'spread' (expandSteps from old steps).
  *
- * When adding v5+, append a line here and implement migrateVNToVN+1 below.
+ * When adding v6+, append a line here and implement migrateVNToVN+1 below.
  */
 
 import { CURRENT_SNAPSHOT_VERSION } from './types';
@@ -78,6 +79,19 @@ function migrateV4ToV5(raw: Record<string, unknown>) {
 	return raw;
 }
 
+function migrateV5ToV6(raw: Record<string, unknown>) {
+	raw.schemaVersion = 6;
+	const explorer = raw.explorer as Record<string, unknown> | undefined;
+	const theme = explorer?.theme as Record<string, unknown> | undefined;
+	if (theme && theme.mode === 'spread') {
+		// Spread becomes a per-stop Expand operator over a single-seed ramp.
+		theme.mode = 'linear';
+		theme.expand = 'spread';
+		if (typeof theme.steps === 'number') theme.expandSteps = Math.min(12, Math.max(2, Math.round(theme.steps)));
+	}
+	return raw;
+}
+
 export function migrateSnapshot(raw: unknown, fromVersion: number): unknown {
 	if (!raw || typeof raw !== 'object') return raw;
 	let current = { ...(raw as Record<string, unknown>) };
@@ -87,6 +101,7 @@ export function migrateSnapshot(raw: unknown, fromVersion: number): unknown {
 		if (version === 2) current = migrateV2ToV3(current);
 		if (version === 3) current = migrateV3ToV4(current);
 		if (version === 4) current = migrateV4ToV5(current);
+		if (version === 5) current = migrateV5ToV6(current);
 	}
 	return current;
 }

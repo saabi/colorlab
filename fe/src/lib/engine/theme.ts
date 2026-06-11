@@ -84,6 +84,30 @@ function buildExpand(state: ExplorerState, matrices: DerivedMatrices) {
 		return;
 	}
 	const cols = Math.max(2, T.expandSteps);
+	const mapCell = (lin: Vec3) => (T.gamutMap !== 'none' ? mapToGamut(lin, T.gamutMap) : lin);
+
+	if (T.expand === 'spread') {
+		// Fan each stop across delta hue/chroma in the world's cylindrical frame
+		// (the former standalone spread mode, now applied per stop).
+		const dh = (T.dh * Math.PI) / 180;
+		T.grid = T.stops.map((s) => {
+			const w = s.world;
+			const r0 = Math.hypot(w[0], w[2]);
+			const th0 = Math.atan2(w[2], w[0]);
+			const row: ThemeStop[] = [];
+			for (let j = 0; j < cols; j += 1) {
+				const t = cols === 1 ? 0.5 : j / (cols - 1);
+				const th = th0 + dh * (2 * t - 1);
+				const r = Math.max(0, T.cprof === 'linear' ? r0 + T.dc * (2 * t - 1) : r0 - T.dc * Math.abs(2 * t - 1));
+				const cell = stopFromWorld([r * Math.cos(th), w[1], r * Math.sin(th)], state, matrices);
+				row.push(T.gamutMap !== 'none' ? stopFromSrgbLin(mapCell(cell.srgbLin), state, matrices) : cell);
+			}
+			return row;
+		});
+		return;
+	}
+
+	// 'tints-shades': walk Oklab lightness around each base color (hue/chroma held).
 	T.grid = T.stops.map((s) => {
 		const ok = lsrgb2oklab(s.srgbLin.map(clamp01) as Vec3);
 		const hi = Math.min(1, ok[0] + EXPAND_L_RANGE);
@@ -92,9 +116,7 @@ function buildExpand(state: ExplorerState, matrices: DerivedMatrices) {
 		for (let j = 0; j < cols; j += 1) {
 			const t = cols === 1 ? 0.5 : j / (cols - 1);
 			const L = hi + (lo - hi) * t; // light tint -> dark shade
-			let lin = oklab2lsrgb([L, ok[1], ok[2]]);
-			if (T.gamutMap !== 'none') lin = mapToGamut(lin, T.gamutMap);
-			row.push(stopFromSrgbLin(lin, state, matrices));
+			row.push(stopFromSrgbLin(mapCell(oklab2lsrgb([L, ok[1], ok[2]])), state, matrices));
 		}
 		return row;
 	});
@@ -104,29 +126,8 @@ function buildRawRamp(state: ExplorerState, matrices: DerivedMatrices) {
 	const T = state.theme;
 	T.stops = [];
 	T.splineCurve = [];
-	if (T.mode === 'spread') {
-		buildSpreadRamp(state, matrices);
-		return;
-	}
 	// 'linear' and 'spline' share one engine, parameterized by path type + space.
 	interpolateRamp(state, matrices);
-}
-
-// Spread generator: fan a single seed (points[0]) across delta hue / chroma.
-// (Stays a standalone generator; Stage 3 generalizes it to a per-stop expander.)
-function buildSpreadRamp(state: ExplorerState, matrices: DerivedMatrices) {
-	const T = state.theme;
-	const A = T.points[0] ?? null;
-	if (!A) return;
-	const wA = anchorWorld(A, state, matrices);
-	const cA = { r: Math.hypot(wA[0], wA[2]), th: Math.atan2(wA[2], wA[0]), y: wA[1] };
-	const dh = (T.dh * Math.PI) / 180;
-	for (let i = 0; i < T.steps; i += 1) {
-		const t = T.steps === 1 ? 0.5 : i / (T.steps - 1);
-		const th = cA.th + dh * (2 * t - 1);
-		const r = Math.max(0, T.cprof === 'linear' ? cA.r + T.dc * (2 * t - 1) : cA.r - T.dc * Math.abs(2 * t - 1));
-		T.stops.push(stopFromWorld([r * Math.cos(th), cA.y, r * Math.sin(th)], state, matrices));
-	}
 }
 
 const HIRES = 200; // spline sampling resolution for arc length + visualization
@@ -203,7 +204,7 @@ function interpolateRamp(state: ExplorerState, matrices: DerivedMatrices) {
 	const T = state.theme;
 	T.splineCurve = [];
 	const cps = T.points;
-	if (cps.length < 2) return;
+	if (!cps.length) return;
 
 	// Space accessors. "world" interpolates directly in the active 3D geometry;
 	// every other space round-trips through the interp registry.
@@ -218,6 +219,15 @@ function interpolateRamp(state: ExplorerState, matrices: DerivedMatrices) {
 			: jsToWorld(m3.mulV(matrices.toSrgbLin.fromSrgb, space!.toSrgbLin(coord)), state, matrices);
 		return T.splineConstraint === 'surface' ? snapToSurface(world, state, matrices) : world;
 	};
+
+	// A single source point is a degenerate "ramp" of one stop — useful as the seed
+	// for the spread Expand operator (the former single-seed spread mode).
+	if (cps.length === 1) {
+		const stop = stopFromWorld(worldAt(toCoord(cps[0].srgbLin)), state, matrices);
+		T.splineCurve = [{ world: stop.world, srgbLin: stop.srgbLin }];
+		T.stops = [stop];
+		return;
+	}
 
 	// 1. Source points -> interpolation coordinates (hue unwrapped for cyclic spaces).
 	const coords = cps.map((cp) => toCoord(cp.srgbLin));

@@ -4,8 +4,9 @@ export type GamutKey = 'srgb' | 'p3' | 'rec2020' | 'ntsc' | 'ebu' | 'smptec' | '
 export type ShellKey = 'none' | 'p3' | 'rec2020' | 'ntsc' | 'cie';
 export type CvdMode = 'none' | 'protan' | 'deutan' | 'tritan';
 // Interpolation path type (linear/spline) plus the spread generator. Segment and
-// Hue arc are just `linear` in a cartesian vs cylindrical space.
-export type ThemeMode = 'linear' | 'spline' | 'spread';
+// Hue arc are just `linear` in a cartesian vs cylindrical space. (Spread is no
+// longer a mode — it is an Expand operator; see ExpandPolicy.)
+export type ThemeMode = 'linear' | 'spline';
 // Interpolation space: any color space in the interp registry, plus "world" — the
 // active 3D world geometry as shown (a straight line in the viewport).
 export type InterpSpaceChoice = import('$lib/color/interp').InterpSpaceKey | 'world';
@@ -13,7 +14,8 @@ export type ChromaProfile = 'linear' | 'mirror';
 // Place stage: where the N stops land on the interpolated curve.
 export type PlacePolicy = 'even' | 'uniform' | 'tones' | 'contrast';
 // Expand stage: per-stop generator turning the 1-D ramp into a 2-D palette.
-export type ExpandPolicy = 'none' | 'tints-shades';
+// 'spread' fans each stop across delta hue/chroma (the former standalone mode).
+export type ExpandPolicy = 'none' | 'tints-shades' | 'spread';
 // Spline curve geometry constraint (not a gamut map): 'free' interpolates inside
 // the volume; 'surface' radially snaps samples to the active solid shell.
 // Out-of-gamut handling is a separate, global policy (theme.gamutMap).
@@ -130,7 +132,7 @@ import type { InterpSpaceKey } from '$lib/color/interp';
 import type { GamutMapMethod } from '$lib/color/gamut-map';
 import type { Camera } from './camera';
 
-export const CURRENT_STATE_SCHEMA_VERSION = 5 as const;
+export const CURRENT_STATE_SCHEMA_VERSION = 6 as const;
 export type StateSchemaVersion = typeof CURRENT_STATE_SCHEMA_VERSION;
 
 export type PersistedTheme = Omit<

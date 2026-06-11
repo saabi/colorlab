@@ -137,7 +137,7 @@ export const PIPELINE_NODES: PipelineNode[] = [
 		description: 'Builds raw ramp paths from anchors or spline points.',
 		affects: 'Ramp',
 		requiresSource: true,
-		status: (state) => (state.theme.mode === 'spread' ? 'Spread' : `${state.theme.mode === 'spline' ? 'Spline' : 'Linear'} ${state.theme.splineSpace}`),
+		status: (state) => `${state.theme.mode === 'spline' ? 'Spline' : 'Linear'} ${state.theme.splineSpace}`,
 		// Interpolation can produce out-of-gamut stops; the count is taken before the gamut-map stage.
 		warn: (state) => {
 			const n = oogCount(state.theme.rawStops);

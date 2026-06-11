@@ -91,12 +91,20 @@ describe('buildSplineRamp', () => {
 		state.theme.points[2].srgbLin.forEach((v: number, k: number) => expect(Math.abs(last[k] - v)).toBeLessThan(1e-6));
 	});
 
-	it('clears the curve and stops when fewer than two control points', () => {
+	it('clears the curve and stops when there are no source points', () => {
 		const state = splineState('oklch', 'free');
-		state.theme.points = [{ srgbLin: [0.3, 0.3, 0.3] }];
+		state.theme.points = [];
 		buildRamp(state, matrices);
 		expect(state.theme.stops).toEqual([]);
 		expect(state.theme.splineCurve).toEqual([]);
+	});
+
+	it('emits a single seed stop for exactly one source point', () => {
+		const state = splineState('oklch', 'free');
+		state.theme.points = [{ srgbLin: [0.3, 0.3, 0.3] }];
+		buildRamp(state, matrices);
+		expect(state.theme.stops.length).toBe(1);
+		expect(state.theme.splineCurve.length).toBe(1);
 	});
 
 	it('handles steps === 1 without producing NaN', () => {
@@ -118,6 +126,21 @@ describe('buildSplineRamp', () => {
 		expect(state.theme.grid.length).toBe(4);
 		expect(state.theme.grid.every((row) => row.length === 6)).toBe(true);
 		expect(state.theme.grid.every((row) => row.every((c) => c.srgbLin.every(finite)))).toBe(true);
+	});
+
+	it('a single source point + spread expand fans the seed into a 1-row palette', () => {
+		const state = createAppState().explorer;
+		state.theme.mode = 'linear';
+		state.theme.points = [{ srgbLin: [0.4, 0.2, 0.5] }];
+		state.theme.expand = 'spread';
+		state.theme.expandSteps = 7;
+		state.theme.dh = 40;
+		state.theme.dc = 0.1;
+		buildRamp(state, matrices);
+		expect(state.theme.stops.length).toBe(1); // one seed stop
+		expect(state.theme.grid.length).toBe(1); // one row
+		expect(state.theme.grid[0].length).toBe(7);
+		expect(state.theme.grid[0].every((c) => c.srgbLin.every(finite))).toBe(true);
 	});
 
 	it('every place policy yields the requested number of finite stops', () => {

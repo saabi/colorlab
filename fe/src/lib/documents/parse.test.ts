@@ -194,6 +194,18 @@ describe('parseSnapshot', () => {
 		expect(a?.splineSpace).toBe('oklch');
 	});
 
+	it('migrates v5 spread mode into the spread Expand operator', () => {
+		const doc = {
+			schemaVersion: 5,
+			explorer: { theme: { mode: 'spread', steps: 9, points: [{ srgbLin: [0.3, 0.2, 0.4] }] } },
+			camera: defaults.camera
+		} as unknown;
+		const t = parseSnapshot(doc).snapshot?.explorer.theme;
+		expect(t?.mode).toBe('linear');
+		expect(t?.expand).toBe('spread');
+		expect(t?.expandSteps).toBe(9);
+	});
+
 	it('coerces garbage control points and unknown spline space to safe defaults', () => {
 		const doc = {
 			...defaults,
