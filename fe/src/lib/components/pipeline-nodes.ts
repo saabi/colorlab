@@ -4,19 +4,18 @@ export type PipelineNodeId =
 	| 'all'
 	| 'gamut'
 	| 'world'
+	| 'tessellation'
 	| 'clip'
+	| 'view'
 	| 'cvd'
-	| 'display'
 	| 'pick'
 	| 'points'
 	| 'interpolate'
 	| 'adjust'
 	| 'gamut-map'
-	| 'export'
-	| 'view'
-	| 'performance';
+	| 'export';
 
-export type PipelineLane = 'Explorer' | 'Ramp' | 'Support';
+export type PipelineLane = 'Explorer' | 'Ramp';
 
 // What a stage actually affects — a single fixed vocabulary, distinct from the
 // lane (workflow group). Never combine lane + affects into one badge string.
@@ -60,7 +59,7 @@ export function isNodeEnabled(node: PipelineNode, state: ExplorerState): boolean
 export const PIPELINE_NODES: PipelineNode[] = [
 	{
 		id: 'all',
-		lane: 'Support',
+		lane: 'Explorer',
 		label: 'All controls',
 		shortLabel: 'All',
 		description: 'Full parameter list in pipeline order — the primary surface for multi-step work.',
@@ -72,7 +71,7 @@ export const PIPELINE_NODES: PipelineNode[] = [
 		lane: 'Explorer',
 		label: 'Gamut',
 		shortLabel: 'Gamut',
-		description: 'Input primaries and transfer assumptions for the active color solid.',
+		description: 'Input primaries and transfer assumptions for the active color solid; reference-gamut shell overlay.',
 		affects: 'Viewport',
 		status: (state) => state.gamut.toUpperCase()
 	},
@@ -86,31 +85,40 @@ export const PIPELINE_NODES: PipelineNode[] = [
 		status: (state) => spaceLabels[state.spaceMode]
 	},
 	{
+		id: 'tessellation',
+		lane: 'Explorer',
+		label: 'Tessellation',
+		shortLabel: 'Tess',
+		description: 'Mesh resolution of the solid — also the accuracy of the clipped cross-section. Includes the surface grid.',
+		affects: 'Viewport',
+		status: (state) => `${state.N}`
+	},
+	{
 		id: 'clip',
 		lane: 'Explorer',
 		label: 'Clip / cut',
 		shortLabel: 'Clip',
-		description: 'Controls the visible slice and cylindrical cutaway geometry.',
+		description: 'The visible slice and cylindrical cutaway geometry, plus its outlines.',
 		affects: 'Viewport',
 		status: (state) => [state.slice ? 'Slice' : null, state.cylSlice ? 'Cylinder' : null].filter(Boolean).join(' + ') || 'Off'
+	},
+	{
+		id: 'view',
+		lane: 'Explorer',
+		label: 'View',
+		shortLabel: 'View',
+		description: 'Camera projection, floor grid, and direct-manipulation shortcuts.',
+		affects: 'View only',
+		status: () => 'Camera'
 	},
 	{
 		id: 'cvd',
 		lane: 'Explorer',
 		label: 'Vision',
 		shortLabel: 'Vision',
-		description: 'Applies color-vision-deficiency simulation to displayed colors only.',
+		description: 'Simulates how a color-deficient eye perceives the displayed image — the terminal preview stage.',
 		affects: 'Display only',
 		status: (state) => (state.cvd === 'none' ? 'Normal' : `${state.cvd} ${state.cvdSev.toFixed(2)}`)
-	},
-	{
-		id: 'display',
-		lane: 'Explorer',
-		label: 'Display',
-		shortLabel: 'Display',
-		description: 'Viewport display aids and monitor assumptions.',
-		affects: 'Display only',
-		status: (state) => (state.shell === 'none' ? 'sRGB' : `Shell ${state.shell}`)
 	},
 	{
 		id: 'pick',
@@ -180,24 +188,6 @@ export const PIPELINE_NODES: PipelineNode[] = [
 		affects: 'Export',
 		requiresSource: true,
 		status: (state) => `${state.theme.stops.length} stops`
-	},
-	{
-		id: 'view',
-		lane: 'Support',
-		label: 'View',
-		shortLabel: 'View',
-		description: 'Camera, gestures, and direct manipulation shortcuts.',
-		affects: 'View only',
-		status: () => 'Camera'
-	},
-	{
-		id: 'performance',
-		lane: 'Support',
-		label: 'Performance',
-		shortLabel: 'Perf',
-		description: 'Rendering density and automatic tessellation adjustment.',
-		affects: 'View only',
-		status: (state) => `${state.N}${state.autoPerformance ? ` / ${state.minAverageFps}fps` : ''}`
 	}
 ];
 

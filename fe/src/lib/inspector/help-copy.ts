@@ -2,17 +2,16 @@ export type InspectorPanelId = 'transfer' | 'cones' | 'xy' | 'values';
 export type PipelineHelpId =
 	| 'pipelineGamut'
 	| 'pipelineWorld'
+	| 'pipelineTessellation'
 	| 'pipelineClip'
 	| 'pipelineVision'
-	| 'pipelineDisplay'
 	| 'pipelinePick'
 	| 'pipelinePoints'
 	| 'pipelineInterpolate'
 	| 'pipelineAdjust'
 	| 'pipelineGamutMap'
 	| 'pipelineExport'
-	| 'pipelineView'
-	| 'pipelinePerformance';
+	| 'pipelineView';
 export type HelpId = InspectorPanelId | PipelineHelpId;
 
 export interface HelpSource {
@@ -128,9 +127,9 @@ export const PIPELINE_HELP: Record<PipelineHelpId, PanelHelpContent> = {
 		summary: 'Controls which part of the already-positioned color solid is visible.',
 		details: [
 			'Input: world-space solid geometry.',
-			'Changes: slice plane, cut direction, slab width, and cylindrical/chroma cut radius.',
+			'Changes: slice plane, cut direction, slab width, cylindrical/chroma radius, and the cut outlines/grid that annotate the result.',
 			'Output: visible subset of the solid plus pickable clipped surfaces.',
-			'Does not affect: stored colors, ramp stops, export output, or display overlays such as outline visibility.'
+			'Does not affect: stored colors, ramp stops, or export output.'
 		],
 		sources: [
 			{ label: 'Slice mathematics (design.md)' },
@@ -153,18 +152,18 @@ export const PIPELINE_HELP: Record<PipelineHelpId, PanelHelpContent> = {
 			{ label: 'CVD simulation notes (design.md)' }
 		]
 	},
-	pipelineDisplay: {
-		title: 'Display aids',
-		summary: 'Toggles visual overlays and reference geometry around the viewport.',
+	pipelineTessellation: {
+		title: 'Tessellation',
+		summary: 'Mesh resolution of the solid — and the accuracy of the clipped cross-section.',
 		details: [
-			'Input: rendered color solid and clip result.',
-			'Changes: floor grid, surface grid, clipped surface grid alpha, outlines, outline depth testing, and wide-gamut reference shell.',
-			'Output: viewport aids for orientation and comparison.',
-			'Does not affect: color transforms, ramp generation, export output, or CVD simulation settings.'
+			'Input: the world-space solid before clipping.',
+			'Changes: subdivisions per cube face (N), and the surface grid overlay that visualizes them.',
+			'Output: a denser/sparser mesh; higher N sharpens slice/cut edges in the vertex shader.',
+			'Does not affect: color values, ramp generation, or export. Auto-reduce is a separate footer policy.'
 		],
 		sources: [
-			{ label: 'WebGL renderer draw order' },
-			{ label: 'Outline and shell notes (design.md)' }
+			{ label: 'Instanced rendering (design.md): one quad x 6 N^2' },
+			{ label: 'solid.vert clip/flatten loop' }
 		]
 	},
 	pipelinePick: {
@@ -256,30 +255,16 @@ export const PIPELINE_HELP: Record<PipelineHelpId, PanelHelpContent> = {
 	},
 	pipelineView: {
 		title: 'View / camera',
-		summary: 'Edits camera position and touch interaction mode for the viewport.',
+		summary: 'Camera projection, floor grid, and viewport navigation — the view of the model, not the model.',
 		details: [
 			'Input: current camera and gesture state.',
-			'Changes: camera orientation, distance, field of view, target position, and touch tool.',
-			'Output: a different view or interaction mode for the same color model.',
+			'Changes: camera orientation, distance, field of view, target, and the floor orientation grid.',
+			'Output: a different view of the same color model.',
 			'Does not affect: color values, clipping parameters, ramp generation, or exports.'
 		],
 		sources: [
 			{ label: 'Viewport.svelte camera and gesture handlers' },
 			{ label: 'camera-and-canvas-gesture-plan.md' }
-		]
-	},
-	pipelinePerformance: {
-		title: 'Performance',
-		summary: 'Controls rendering density and automatic tessellation reduction.',
-		details: [
-			'Input: renderer frame timing and selected tessellation.',
-			'Changes: tessellation, auto-adjust enablement, and minimum average FPS target.',
-			'Output: lower or higher rendering density for the same color model.',
-			'Does not affect: color math, ramp stops, clipping parameters, or exported tokens.'
-		],
-		sources: [
-			{ label: 'Viewport.svelte performance sampler' },
-			{ label: 'Instanced rendering design notes' }
 		]
 	}
 };

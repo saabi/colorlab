@@ -35,6 +35,7 @@ function createExplorerDefaults(): ExplorerState {
 		cylinderOutline: true,
 		outlineDepthTest: true,
 		surfaceGridAlpha: 0.25,
+		hideAids: false,
 		cvd: 'none',
 		cvdSev: 1,
 		theme: {

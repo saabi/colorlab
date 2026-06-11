@@ -73,6 +73,8 @@ export interface ExplorerState {
 	cylinderOutline: boolean;
 	outlineDepthTest: boolean;
 	surfaceGridAlpha: number;
+	/** Master toggle hiding all viewport aids (floor, surface grid, outlines, shell) without losing each setting. */
+	hideAids: boolean;
 	cvd: CvdMode;
 	cvdSev: number;
 	theme: {

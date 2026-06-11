@@ -104,7 +104,7 @@ export class WebGlRenderer {
 		this.uploadSolidUniforms(input.state, input.matrices, proj, view, 0, input.state.N, 0, 0, 0, 0, 0);
 		gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, 6 * input.state.N * input.state.N);
 
-		if (input.state.lines) {
+		if (input.state.lines && !input.state.hideAids) {
 			gl.depthMask(false);
 			gl.depthFunc(gl.LEQUAL);
 			gl.enable(gl.BLEND);
@@ -135,7 +135,7 @@ export class WebGlRenderer {
 			gl.depthMask(true);
 		}
 
-		if (input.state.floor) {
+		if (input.state.floor && !input.state.hideAids) {
 			gl.useProgram(this.floorProgram);
 			gl.bindVertexArray(this.floorVao);
 			gl.uniformMatrix4fv(this.U(this.floorProgram, 'uProj'), false, proj);
@@ -179,7 +179,7 @@ export class WebGlRenderer {
 			this.drawSpline(input, proj, view);
 		}
 
-		if (this.lineVertCount > 0 && input.state.slice && (input.state.planeOutline || input.state.cylinderOutline)) {
+		if (this.lineVertCount > 0 && !input.state.hideAids && input.state.slice && (input.state.planeOutline || input.state.cylinderOutline)) {
 			gl.useProgram(this.lineProgram);
 			gl.bindVertexArray(this.lineVao);
 			gl.uniformMatrix4fv(this.U(this.lineProgram, 'uProj'), false, proj);

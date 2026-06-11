@@ -48,6 +48,7 @@ export function toPersistedExplorer(explorer: ExplorerState): PersistedExplorer 
 		cylinderOutline: explorer.cylinderOutline,
 		outlineDepthTest: explorer.outlineDepthTest,
 		surfaceGridAlpha: explorer.surfaceGridAlpha,
+		hideAids: explorer.hideAids,
 		cvd: explorer.cvd,
 		cvdSev: explorer.cvdSev,
 		theme: {

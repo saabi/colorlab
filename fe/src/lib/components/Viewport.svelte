@@ -63,7 +63,7 @@
 	let lastAutoPerformanceStep = 0;
 
 	const matrices = $derived(rebuildMatrices(explorer.gamut));
-	const shellMatrices = $derived(rebuildShell(explorer.shell));
+	const shellMatrices = $derived(explorer.hideAids ? null : rebuildShell(explorer.shell));
 	const cursorMode = $derived(gesture.kind);
 
 	function resetPerformanceSamples() {
@@ -646,6 +646,7 @@
 		explorer.shell;
 		explorer.surfaceGridAlpha;
 		explorer.outlineDepthTest;
+		explorer.hideAids;
 		untrack(() => {
 			resetPerformanceSamples();
 			draw();
