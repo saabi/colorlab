@@ -146,12 +146,12 @@ export const PIPELINE_NODES: PipelineNode[] = [
 	{
 		id: 'adjust',
 		lane: 'Ramp',
-		label: 'Adjust',
-		shortLabel: 'Adjust',
-		description: 'Post-processes ramp stops for contrast or perceptual spacing.',
+		label: 'Place',
+		shortLabel: 'Place',
+		description: 'Declarative sampling: where the N stops land on the curve (even ΔE, uniform, lightness tones, or contrast ladder).',
 		affects: 'Ramp',
 		requiresSource: true,
-		status: (state) => `${state.theme.aa.toFixed(1)}:1`
+		status: (state) => state.theme.place
 	},
 	{
 		id: 'gamut-map',

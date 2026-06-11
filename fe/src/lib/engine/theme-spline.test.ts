@@ -106,6 +106,16 @@ describe('buildSplineRamp', () => {
 		expect(state.theme.stops[0].srgbLin.every(finite)).toBe(true);
 	});
 
+	it('every place policy yields the requested number of finite stops', () => {
+		for (const place of ['even', 'uniform', 'tones', 'contrast'] as const) {
+			const state = splineState('oklch', 'free', 8);
+			state.theme.place = place;
+			buildRamp(state, matrices);
+			expect(state.theme.stops.length).toBe(8);
+			expect(state.theme.stops.every((s) => s.srgbLin.every(finite))).toBe(true);
+		}
+	});
+
 	it('linear mode interpolates in any space incl. world, endpoints anchored', () => {
 		for (const space of ['world', 'oklab', 'oklch'] as const) {
 			const state = createAppState().explorer;

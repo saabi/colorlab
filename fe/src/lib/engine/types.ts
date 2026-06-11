@@ -10,6 +10,8 @@ export type ThemeMode = 'linear' | 'spline' | 'spread';
 // active 3D world geometry as shown (a straight line in the viewport).
 export type InterpSpaceChoice = import('$lib/color/interp').InterpSpaceKey | 'world';
 export type ChromaProfile = 'linear' | 'mirror';
+// Place stage: where the N stops land on the interpolated curve.
+export type PlacePolicy = 'even' | 'uniform' | 'tones' | 'contrast';
 // Spline curve geometry constraint (not a gamut map): 'free' interpolates inside
 // the volume; 'surface' radially snaps samples to the active solid shell.
 // Out-of-gamut handling is a separate, global policy (theme.gamutMap).
@@ -108,6 +110,8 @@ export interface ExplorerState {
 		dc: number;
 		cprof: ChromaProfile;
 		arcLong: boolean;
+		/** Place stage: how the N stops are sampled along the interpolated curve (persisted). */
+		place: PlacePolicy;
 		aa: number;
 		wcagBg: 'white' | 'black';
 	};

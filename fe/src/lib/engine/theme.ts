@@ -234,42 +234,61 @@ function interpolateRamp(state: ExplorerState, matrices: DerivedMatrices) {
 	}
 	T.splineCurve = curve;
 
-	// 5. Cumulative arc length in Oklab (matches fitEven's perceptual metric).
-	const oks = curve.map((s) => lsrgb2oklab(s.srgbLin.map(clamp01) as Vec3));
-	const cum = [0];
-	for (let i = 1; i < curve.length; i += 1) {
-		cum.push(cum[i - 1] + Math.hypot(oks[i][0] - oks[i - 1][0], oks[i][1] - oks[i - 1][1], oks[i][2] - oks[i - 1][2]));
-	}
-	const total = cum[cum.length - 1] || 1e-9;
-
-	// 6. Resample `steps` swatches equidistant along arc length.
-	const steps = T.steps;
-	for (let s = 0; s < steps; s += 1) {
-		const target = (steps === 1 ? 0 : s / (steps - 1)) * total;
-		let i = 0;
-		while (i < curve.length - 1 && cum[i + 1] < target) i += 1;
-		const span = cum[Math.min(i + 1, curve.length - 1)] - cum[i] || 1e-9;
-		const f = Math.min(1, Math.max(0, (target - cum[i]) / span));
-		const a = curve[i].world;
-		const b = curve[Math.min(i + 1, curve.length - 1)].world;
-		T.stops.push(stopFromWorld([a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f, a[2] + (b[2] - a[2]) * f], state, matrices));
-	}
+	// Place stage: sample `steps` swatches along the curve per the chosen policy.
+	placeStops(state, matrices);
 }
 
-function stopFromOklab(ok: Vec3, state: ExplorerState, matrices: DerivedMatrices): ThemeStop {
-	const srgbLin = oklab2lsrgb(ok);
-	const tol = 1e-3;
-	const inG = srgbLin.every((v) => v >= -tol && v <= 1 + tol);
-	const gamutRgb = m3.mulV(matrices.toSrgbLin.fromSrgb, srgbLin);
-	return {
-		srgbLin,
-		hex: srgbHex(srgbLin),
-		inG,
-		cw: wcag(srgbLin, [1, 1, 1]),
-		cb: wcag(srgbLin, [0, 0, 0]),
-		world: jsToWorld(gamutRgb, state, matrices),
-		oklch: [ok[0], Math.hypot(ok[1], ok[2]), ((Math.atan2(ok[2], ok[1]) * 180) / Math.PI + 360) % 360]
+// Place (declarative sampling) — choose where the N stops land on the hi-res curve:
+//   even     -> equidistant in Oklab arc length (perceptually even).
+//   uniform  -> equidistant in curve parameter.
+//   tones    -> equidistant in Oklab lightness L (Material/Tailwind-style tonal ramp).
+//   contrast -> equidistant in WCAG contrast vs the chosen background (Leonardo-style).
+function placeStops(state: ExplorerState, matrices: DerivedMatrices) {
+	const T = state.theme;
+	const curve = T.splineCurve;
+	const steps = T.steps;
+	T.stops = [];
+	if (!curve.length) return;
+
+	const oks = curve.map((s) => lsrgb2oklab(s.srgbLin.map(clamp01) as Vec3));
+
+	// Build a non-decreasing axis to invert. 'even' uses cumulative arc length; the
+	// others use the metric value itself (ascending normalized so inversion works).
+	let axis: number[];
+	if (T.place === 'uniform') {
+		axis = curve.map((_, i) => i);
+	} else if (T.place === 'tones') {
+		axis = oks.map((o) => o[0]);
+	} else if (T.place === 'contrast') {
+		const bg: Vec3 = T.wcagBg === 'black' ? [0, 0, 0] : [1, 1, 1];
+		axis = curve.map((s) => wcag(s.srgbLin, bg));
+	} else {
+		axis = [0];
+		for (let i = 1; i < curve.length; i += 1) {
+			axis.push(axis[i - 1] + Math.hypot(oks[i][0] - oks[i - 1][0], oks[i][1] - oks[i - 1][1], oks[i][2] - oks[i - 1][2]));
+		}
+	}
+	// Normalize to non-decreasing (tonal/contrast ramps may run dark->light or light->dark).
+	const ascending = axis[axis.length - 1] >= axis[0];
+	const ax = ascending ? axis : axis.map((v) => -v);
+	const lo = ax[0];
+	const hi = ax[ax.length - 1];
+
+	const worldAtTarget = (target: number): Vec3 => {
+		let i = 0;
+		while (i < curve.length - 1 && ax[i + 1] < target) i += 1;
+		const j = Math.min(i + 1, curve.length - 1);
+		const span = ax[j] - ax[i] || 1e-9;
+		const f = Math.min(1, Math.max(0, (target - ax[i]) / span));
+		const a = curve[i].world;
+		const b = curve[j].world;
+		return [a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f, a[2] + (b[2] - a[2]) * f];
 	};
+
+	for (let s = 0; s < steps; s += 1) {
+		const t = steps === 1 ? 0 : s / (steps - 1);
+		T.stops.push(stopFromWorld(worldAtTarget(lo + (hi - lo) * t), state, matrices));
+	}
 }
 
 function stopFromSrgbLin(srgbLin: Vec3, state: ExplorerState, matrices: DerivedMatrices): ThemeStop {
@@ -304,53 +323,6 @@ export function finalizeRamp(state: ExplorerState, matrices: DerivedMatrices) {
 			return { world: jsToWorld(m3.mulV(matrices.toSrgbLin.fromSrgb, mapped), state, matrices), srgbLin: mapped };
 		});
 	}
-}
-
-export function fitWcag(state: ExplorerState, matrices: DerivedMatrices) {
-	const target = state.theme.aa;
-	const onWhite = state.theme.wcagBg !== 'black';
-	state.theme.stops = state.theme.stops.map((s) => {
-		const ok = lsrgb2oklab(s.srgbLin.map(clamp01) as Vec3);
-		const C = Math.hypot(ok[1], ok[2]);
-		const h = Math.atan2(ok[2], ok[1]);
-		const ratio = (L: number) => wcag(oklab2lsrgb([L, C * Math.cos(h), C * Math.sin(h)]), onWhite ? [1, 1, 1] : [0, 0, 0]);
-		let L = ok[0];
-		if (ratio(L) >= target) return stopFromOklab([L, ok[1], ok[2]], state, matrices);
-		const dir = onWhite ? -1 : 1;
-		let best = L;
-		for (let i = 0; i < 60 && L >= 0 && L <= 1; i += 1) {
-			L += dir * 0.04;
-			if (ratio(L) >= target) {
-				best = L;
-				break;
-			}
-		}
-		return stopFromOklab([Math.min(Math.max(best, 0), 1), C * Math.cos(h), C * Math.sin(h)], state, matrices);
-	});
-	finalizeRamp(state, matrices);
-}
-
-export function fitEven(state: ExplorerState, matrices: DerivedMatrices) {
-	const st = state.theme.stops;
-	if (st.length < 3) return;
-	const oks = st.map((s) => lsrgb2oklab(s.srgbLin.map(clamp01) as Vec3));
-	const cum = [0];
-	for (let i = 1; i < oks.length; i += 1) cum.push(cum[i - 1] + Math.hypot(oks[i][0] - oks[i - 1][0], oks[i][1] - oks[i - 1][1], oks[i][2] - oks[i - 1][2]));
-	const total = cum[cum.length - 1];
-	if (total < 1e-6) return;
-	const sample = (f: number): Vec3 => {
-		const tgt = f * total;
-		for (let i = 1; i < cum.length; i += 1) {
-			if (cum[i] >= tgt) {
-				const seg = cum[i] - cum[i - 1] || 1e-9;
-				const l = (tgt - cum[i - 1]) / seg;
-				return oks[i - 1].map((v, k) => v + (oks[i][k] - v) * l) as Vec3;
-			}
-		}
-		return oks[oks.length - 1];
-	};
-	state.theme.stops = st.map((_, i) => stopFromOklab(sample(i / (st.length - 1)), state, matrices));
-	finalizeRamp(state, matrices);
 }
 
 export function exportTokens(stops: ThemeStop[]) {

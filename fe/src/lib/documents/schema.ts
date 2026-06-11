@@ -13,7 +13,8 @@ import type {
 	SplineConstraint,
 	ThemeAnchor,
 	ThemeMode,
-	InterpSpaceChoice
+	InterpSpaceChoice,
+	PlacePolicy
 } from '$lib/engine/types';
 import { INTERP_SPACE_KEYS } from '$lib/color/interp';
 import { GAMUT_MAP_METHODS, type GamutMapMethod } from '$lib/color/gamut-map';
@@ -27,6 +28,7 @@ const SHELLS: readonly ShellKey[] = ['none', 'p3', 'rec2020', 'ntsc', 'cie'];
 const CVD_MODES: readonly CvdMode[] = ['none', 'protan', 'deutan', 'tritan'];
 const THEME_MODES: readonly ThemeMode[] = ['linear', 'spline', 'spread'];
 const CHROMA_PROFILES: readonly ChromaProfile[] = ['linear', 'mirror'];
+const PLACE_POLICIES: readonly PlacePolicy[] = ['even', 'uniform', 'tones', 'contrast'];
 const WCAG_BG: readonly PersistedTheme['wcagBg'][] = ['white', 'black'];
 const SPLINE_CONSTRAINTS: readonly SplineConstraint[] = ['free', 'surface'];
 const GAMUT_MAPS: readonly GamutMapMethod[] = GAMUT_MAP_METHODS;
@@ -115,6 +117,7 @@ function coerceTheme(raw: unknown, defaults: PersistedTheme): PersistedTheme {
 		dc: finiteNumber(theme.dc, defaults.dc, 'theme.dc'),
 		cprof: enumOf(theme.cprof, CHROMA_PROFILES, defaults.cprof, 'theme.cprof'),
 		arcLong: typeof theme.arcLong === 'boolean' ? theme.arcLong : defaults.arcLong,
+		place: enumOf(theme.place, PLACE_POLICIES, defaults.place, 'theme.place'),
 		aa: finiteNumber(theme.aa, defaults.aa, 'theme.aa'),
 		wcagBg: enumOf(theme.wcagBg, WCAG_BG, defaults.wcagBg, 'theme.wcagBg')
 	};
@@ -209,6 +212,7 @@ export function coerceSnapshot(raw: unknown): ParameterSnapshot | null {
 				dc: factory.explorer.theme.dc,
 				cprof: factory.explorer.theme.cprof,
 				arcLong: factory.explorer.theme.arcLong,
+				place: factory.explorer.theme.place,
 				aa: factory.explorer.theme.aa,
 				wcagBg: factory.explorer.theme.wcagBg
 			}

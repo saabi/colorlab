@@ -63,6 +63,7 @@ export function toPersistedExplorer(explorer: ExplorerState): PersistedExplorer 
 			dc: theme.dc,
 			cprof: theme.cprof,
 			arcLong: theme.arcLong,
+			place: theme.place,
 			aa: theme.aa,
 			wcagBg: theme.wcagBg
 		}

@@ -5,7 +5,7 @@
 	import { track } from '$lib/analytics/umami';
 	import { simulateCvdSrgb } from '$lib/color/cvd';
 	import { INTERP_SPACES, INTERP_SPACE_KEYS } from '$lib/color/interp';
-	import { buildRamp, exportDTCG, exportTokens, fitEven, fitWcag, srgbHex } from '$lib/engine/theme';
+	import { buildRamp, exportDTCG, exportTokens, srgbHex } from '$lib/engine/theme';
 
 	import type { ExplorerState, ThemeAnchor } from '$lib/engine/types';
 	import type { DerivedMatrices } from '$lib/renderer/uniforms';
@@ -134,15 +134,12 @@
 		track('theme_spline_point', { action: 'reorder_panel' });
 	}
 
-	function fitWcagTracked() {
-		fitWcag(explorer, matrices);
-		track('theme_fit_wcag', { bg: explorer.theme.wcagBg, target: explorer.theme.aa });
-	}
-
-	function fitEvenTracked() {
-		fitEven(explorer, matrices);
-		track('theme_fit_even');
-	}
+	const PLACE_OPTIONS: Array<{ value: ExplorerState['theme']['place']; label: string }> = [
+		{ value: 'even', label: 'Even (perceptual ΔE)' },
+		{ value: 'uniform', label: 'Uniform (curve parameter)' },
+		{ value: 'tones', label: 'Lightness tones' },
+		{ value: 'contrast', label: 'Contrast ladder' }
+	];
 
 	function rampChipStyle(stop: { srgbLin: [number, number, number]; inG: boolean }) {
 		const simulated = simulateCvdSrgb(stop.srgbLin, explorer.cvd, explorer.cvdSev);
@@ -325,19 +322,27 @@
 
 {#if showAdjust}
 	<div class:separator={!showAll}>
-	<div class="panel-label" style="margin-top: 0">Auto-adjust</div>
-	<p class="note" style="margin-top: 0">Adjustments run after interpolation and before gamut mapping.</p>
-	<button type="button" onclick={fitWcagTracked}>Ensure WCAG AA on white</button>
-	<SliderRow
-		label="AA target"
-		bind:value={explorer.theme.aa}
-		min={3}
-		max={7}
-		step={0.5}
-		format={(value) => `${value.toFixed(1)}:1`}
-	/>
-	<button type="button" style="margin-top: 4px" onclick={fitEvenTracked}>Even perceptual spacing</button>
-</div>
+		<div class="panel-label" style="margin-top: 0">Place / sampling</div>
+		<p class="note" style="margin-top: 0">Where the stops land on the interpolated curve. Runs after interpolation, before gamut mapping.</p>
+		<label class="field-row">
+			<span>Sampling</span>
+			<select bind:value={explorer.theme.place}>
+				{#each PLACE_OPTIONS as opt}
+					<option value={opt.value}>{opt.label}</option>
+				{/each}
+			</select>
+		</label>
+		{#if explorer.theme.place === 'contrast'}
+			<div class="segmented" style="--segments: 2">
+				<button type="button" class:active={explorer.theme.wcagBg === 'white'} onclick={() => (explorer.theme.wcagBg = 'white')}>
+					vs White
+				</button>
+				<button type="button" class:active={explorer.theme.wcagBg === 'black'} onclick={() => (explorer.theme.wcagBg = 'black')}>
+					vs Black
+				</button>
+			</div>
+		{/if}
+	</div>
 {/if}
 
 {#if showGamutMap}

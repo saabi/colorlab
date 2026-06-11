@@ -196,30 +196,30 @@ export const PIPELINE_HELP: Record<PipelineHelpId, PanelHelpContent> = {
 	},
 	pipelineInterpolate: {
 		title: 'Interpolate',
-		summary: 'Builds raw ramp samples from anchors or spline control points.',
+		summary: 'Builds the continuous ramp path from the source points (one engine for linear + spline).',
 		stageRows: stageRows(
-			'Anchors A/B or ordered spline control points.',
-			'Ramp mode, step count, hue-arc direction, spread parameters, spline interpolation space, and spline surface constraint.',
-			'Raw ramp stops before adjustment and final gamut mapping.',
+			'The ordered source points.',
+			'Path type (linear/spline), interpolation space (incl. World), long-hue direction, surface constraint, step count, and spread parameters.',
+			'A hi-res curve in the chosen space, before placement and gamut mapping.',
 			'Final export serialization or CVD preview; out-of-gamut colors may still exist at this stage.'
 		),
 		sources: [
-			{ label: 'theme.ts buildRawRamp' },
+			{ label: 'theme.ts interpolateRamp' },
 			{ label: 'interp.ts interpolation spaces' },
-			{ label: 'spline-surface-ramp-plan.md' }
+			{ label: 'ramp-pipeline-plan.md' }
 		]
 	},
 	pipelineAdjust: {
-		title: 'Adjust',
-		summary: 'Post-processes generated ramp stops for contrast or perceptual spacing.',
+		title: 'Place',
+		summary: 'Declarative sampling — where the N stops land on the interpolated curve.',
 		stageRows: stageRows(
-			'Raw interpolated ramp stops.',
-			'WCAG AA fitting target and even perceptual spacing.',
-			'Adjusted ramp stops that still pass through final gamut mapping afterward.',
-			'Source anchors/control points, interpolation mode, or viewport color solid.'
+			'The hi-res interpolated curve.',
+			'Sampling policy: even ΔE, uniform parameter, lightness tones, or contrast ladder (vs white/black).',
+			'The placed ramp stops, before final gamut mapping.',
+			'Source points, interpolation path, or viewport color solid.'
 		),
 		sources: [
-			{ label: 'theme.ts fitWcag and fitEven' },
+			{ label: 'theme.ts placeStops' },
 			{ label: 'WCAG contrast references' },
 			{ label: 'Oklab references' }
 		]
