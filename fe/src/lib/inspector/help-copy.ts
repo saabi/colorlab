@@ -117,13 +117,14 @@ export const SIDEBAR_HELP: Record<SidebarGroupId, PanelHelpContent> = {
 	theme: {
 		title: 'Theme',
 		summary:
-			'Build perceptual color ramps between anchors using straight segments, cylindrical hue arcs, spread mode, or a Catmull-Rom spline through any number of control points. Spline mode interpolates in a selectable color space (Oklab, OKLCH, OKLrCH, OKHSV, CIELAB/CIELCh, CIELUV/CIELCh(uv), linear sRGB) and can surface-lock the curve to the gamut shell. Auto-adjust fits stops inside sRGB, enforces WCAG contrast, and re-samples at equal Oklab arc length.',
+			'Build perceptual color ramps between anchors using straight segments, cylindrical hue arcs, spread mode, or a Catmull-Rom spline through any number of control points. Spline mode interpolates in a selectable color space (Oklab, OKLCH, OKLrCH, OKHSV, CIELAB/CIELCh, CIELUV/CIELCh(uv), linear sRGB). A single Gamut mapping policy reconciles out-of-gamut colors for every mode; WCAG and even-spacing adjustments run before it.',
 		details: [
-			'Spline gamut handling: "Surface (radial shell)" snaps each sample radially to the active solid boundary at constant lightness (pushes chroma to the shell; assumes a star-shaped cross-section about the neutral axis). The "Clip:" options instead apply Ottosson\u2019s sRGB gamut-clipping strategies \u2014 they leave in-gamut samples untouched and project only out-of-gamut samples back to the sRGB boundary in Oklab, differing in the projection focus L0: preserve chroma (constant lightness), project toward L=0.5, project toward the hue cusp, or adaptive blends that trade a little lightness for chroma. Clip targets the sRGB gamut regardless of the displayed gamut.'
+			'Pipeline order: interpolate \u2192 WCAG / even adjust \u2192 gamut-map \u2192 encode. The Gamut mapping policy is the one place out-of-gamut colors are handled, for all modes and export: "None" leaves them (flagged by the dashed outline); "Clip" clamps per channel; the projection options apply Ottosson\u2019s sRGB gamut-clipping in Oklab, differing in the focus L0 \u2014 preserve chroma (constant lightness), project to L=0.5, project to the hue cusp, or adaptive blends that trade a little lightness for chroma. Clip targets sRGB regardless of the displayed gamut.',
+			'Spline curve constraint is separate geometry: "Surface (radial shell)" snaps each sample radially to the active solid boundary at constant lightness (assumes a star-shaped cross-section about the neutral axis); "Free" interpolates inside the volume. It composes with the gamut mapping policy.'
 		],
 		sources: [
 			{ label: 'Theme heuristics (design.md \u00a715)' },
-			{ label: 'theme.ts ramp and gamut-fit logic; color/interp.ts interpolation spaces; color/clip.ts gamut clipping' },
+			{ label: 'theme.ts ramp + finalizeRamp gamut-map; color/interp.ts interpolation spaces; color/gamut-map.ts mapping policies' },
 			{ label: 'Bj\u00f6rn Ottosson, Oklab (2020)' },
 			{
 				label: 'Bj\u00f6rn Ottosson, Okhsv/Okhsl and the Lr lightness (ok_color.h)',

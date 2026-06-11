@@ -5,9 +5,10 @@ export type ShellKey = 'none' | 'p3' | 'rec2020' | 'ntsc' | 'cie';
 export type CvdMode = 'none' | 'protan' | 'deutan' | 'tritan';
 export type ThemeMode = 'seg' | 'arc' | 'spread' | 'spline';
 export type ChromaProfile = 'linear' | 'mirror';
-// 'free' = no clipping; 'surface' = geometric radial snap to the active solid
-// shell; the remaining values are Ottosson gamut-clip strategies (to sRGB).
-export type SplineConstraint = 'free' | 'surface' | GamutClipMethod;
+// Spline curve geometry constraint (not a gamut map): 'free' interpolates inside
+// the volume; 'surface' radially snaps samples to the active solid shell.
+// Out-of-gamut handling is a separate, global policy (theme.gamutMap).
+export type SplineConstraint = 'free' | 'surface';
 export type MinAverageFps = 15 | 30 | 60;
 
 /** One sample of the rendered spline curve: world position + linear-sRGB color. */
@@ -81,10 +82,12 @@ export interface ExplorerState {
 		controlPoints: ThemeAnchor[];
 		/** Selected control point index (runtime UI selection, not persisted). */
 		selectedCp: number | null;
-		/** Whether spline samples are snapped to the gamut boundary (persisted). */
+		/** Spline curve geometry constraint: free vs radial shell snap (persisted). */
 		splineConstraint: SplineConstraint;
 		/** Color space the spline is interpolated in (persisted). */
 		splineSpace: InterpSpaceKey;
+		/** Out-of-gamut mapping policy applied to all ramp stops + spline curve (persisted). */
+		gamutMap: GamutMapMethod;
 		/** Hi-res rendered curve samples (runtime, not persisted). */
 		splineCurve: SplineSample[];
 		steps: number;
@@ -102,10 +105,10 @@ export interface ExplorerState {
 }
 import type { Vec3 } from '$lib/color/math';
 import type { InterpSpaceKey } from '$lib/color/interp';
-import type { GamutClipMethod } from '$lib/color/clip';
+import type { GamutMapMethod } from '$lib/color/gamut-map';
 import type { Camera } from './camera';
 
-export const CURRENT_STATE_SCHEMA_VERSION = 2 as const;
+export const CURRENT_STATE_SCHEMA_VERSION = 3 as const;
 export type StateSchemaVersion = typeof CURRENT_STATE_SCHEMA_VERSION;
 
 export type PersistedTheme = Omit<ExplorerState['theme'], 'arm' | 'stops' | 'selectedCp' | 'splineCurve'>;

@@ -5,7 +5,7 @@
 	import { track } from '$lib/analytics/umami';
 	import { simulateCvdSrgb } from '$lib/color/cvd';
 	import { INTERP_SPACES, INTERP_SPACE_KEYS } from '$lib/color/interp';
-	import { buildRamp, exportDTCG, exportTokens, fitEven, fitGamut, fitWcag, srgbHex } from '$lib/engine/theme';
+	import { buildRamp, exportDTCG, exportTokens, fitEven, fitWcag, srgbHex } from '$lib/engine/theme';
 
 	import type { ExplorerState, ThemeAnchor } from '$lib/engine/types';
 	import type { DerivedMatrices } from '$lib/renderer/uniforms';
@@ -13,16 +13,28 @@
 	let { state: explorer = $bindable(), matrices } = $props<{ state: ExplorerState; matrices: DerivedMatrices }>();
 	let exportText = $state('');
 
-	// 'free'/'surface' are app behaviours; the rest are Ottosson gamut-clip strategies (to sRGB).
+	// Spline curve geometry constraint (separate from gamut handling).
 	const SPLINE_CONSTRAINT_OPTIONS: Array<{ value: ExplorerState['theme']['splineConstraint']; label: string }> = [
-		{ value: 'free', label: 'Free (no clip)' },
-		{ value: 'surface', label: 'Surface (radial shell)' },
-		{ value: 'preserve-chroma', label: 'Clip: preserve chroma' },
-		{ value: 'project-0.5', label: 'Clip: project to L 0.5' },
-		{ value: 'project-cusp', label: 'Clip: project to cusp' },
-		{ value: 'adaptive-0.5', label: 'Clip: adaptive (0.5)' },
-		{ value: 'adaptive-cusp', label: 'Clip: adaptive (cusp)' }
+		{ value: 'free', label: 'Free' },
+		{ value: 'surface', label: 'Surface (radial shell)' }
 	];
+
+	// Global out-of-gamut policy (applies to every theme mode + export).
+	const GAMUT_MAP_OPTIONS: Array<{ value: ExplorerState['theme']['gamutMap']; label: string }> = [
+		{ value: 'none', label: 'None (show OOG)' },
+		{ value: 'clip', label: 'Clip (clamp)' },
+		{ value: 'preserve-chroma', label: 'Preserve chroma' },
+		{ value: 'project-0.5', label: 'Project to L 0.5' },
+		{ value: 'project-cusp', label: 'Project to cusp' },
+		{ value: 'adaptive-0.5', label: 'Adaptive (0.5)' },
+		{ value: 'adaptive-cusp', label: 'Adaptive (cusp)' }
+	];
+
+	function setGamutMap(method: ExplorerState['theme']['gamutMap']) {
+		explorer.theme.gamutMap = method;
+		buildRamp(explorer, matrices);
+		track('theme_gamut_map', { method });
+	}
 
 	function showExport(kind: 'css' | 'json') {
 		exportText = kind === 'css' ? exportTokens(explorer.theme.stops) : exportDTCG(explorer.theme.stops);
@@ -78,11 +90,6 @@
 		explorer.theme.selectedCp = target;
 		buildRamp(explorer, matrices);
 		track('theme_spline_point', { action: 'reorder_panel' });
-	}
-
-	function fitGamutTracked() {
-		fitGamut(explorer, matrices);
-		track('theme_fit_gamut');
 	}
 
 	function fitWcagTracked() {
@@ -142,6 +149,18 @@
 	]}
 />
 
+<label class="field-row">
+	<span>Gamut mapping</span>
+	<select
+		value={explorer.theme.gamutMap}
+		onchange={(e) => setGamutMap((e.currentTarget as HTMLSelectElement).value as ExplorerState['theme']['gamutMap'])}
+	>
+		{#each GAMUT_MAP_OPTIONS as opt}
+			<option value={opt.value}>{opt.label}</option>
+		{/each}
+	</select>
+</label>
+
 {#if explorer.theme.mode === 'spline'}
 	<label class="field-row">
 		<span>Interpolate in</span>
@@ -152,7 +171,7 @@
 		</select>
 	</label>
 	<label class="field-row">
-		<span>Gamut handling</span>
+		<span>Curve constraint</span>
 		<select bind:value={explorer.theme.splineConstraint}>
 			{#each SPLINE_CONSTRAINT_OPTIONS as opt}
 				<option value={opt.value}>{opt.label}</option>
@@ -271,8 +290,8 @@
 
 <div class="separator">
 	<div class="panel-label" style="margin-top: 0">Auto-adjust</div>
-	<button type="button" onclick={fitGamutTracked}>Fit stops inside sRGB</button>
-	<button type="button" style="margin-top: 4px" onclick={fitWcagTracked}>Ensure WCAG AA on white</button>
+	<p class="note" style="margin-top: 0">Out-of-gamut colors are handled by the Gamut mapping policy above.</p>
+	<button type="button" onclick={fitWcagTracked}>Ensure WCAG AA on white</button>
 	<SliderRow
 		label="AA target"
 		bind:value={explorer.theme.aa}

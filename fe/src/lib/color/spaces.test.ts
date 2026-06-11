@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { OK_M1, OK_M2, SRGB2XYZ, lsrgb2oklab, oklab2lsrgb, xyz2lab, xyz2luv } from './pipeline';
 import { INTERP_SPACES, INTERP_SPACE_KEYS } from './interp';
 import { toe, toeInv } from './okhsv';
-import { GAMUT_CLIP, GAMUT_CLIP_METHODS } from './clip';
+import { GAMUT_CLIP, GAMUT_CLIP_METHODS } from './gamut-map';
 import { m3 } from './math';
 import type { Mat3, Vec3 } from './math';
 

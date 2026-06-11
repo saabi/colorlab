@@ -4,17 +4,24 @@ import { createAppState } from './state.svelte';
 import { buildRamp } from './theme';
 import { rebuildMatrices } from '$lib/renderer/uniforms';
 import { INTERP_SPACES, INTERP_SPACE_KEYS } from '$lib/color/interp';
-import { GAMUT_CLIP_METHODS } from '$lib/color/clip';
+import { GAMUT_MAP_METHODS } from '$lib/color/gamut-map';
+import type { GamutMapMethod } from '$lib/color/gamut-map';
 import type { SplineConstraint } from './types';
 
 const matrices = rebuildMatrices('srgb');
-const CONSTRAINTS: readonly SplineConstraint[] = ['free', 'surface', ...GAMUT_CLIP_METHODS];
+const CONSTRAINTS: readonly SplineConstraint[] = ['free', 'surface'];
 
-function splineState(space: (typeof INTERP_SPACE_KEYS)[number], constraint: SplineConstraint, steps = 5) {
+function splineState(
+	space: (typeof INTERP_SPACE_KEYS)[number],
+	constraint: SplineConstraint,
+	steps = 5,
+	gamutMap: GamutMapMethod = 'none'
+) {
 	const state = createAppState().explorer;
 	state.theme.mode = 'spline';
 	state.theme.splineSpace = space;
 	state.theme.splineConstraint = constraint;
+	state.theme.gamutMap = gamutMap;
 	state.theme.steps = steps;
 	state.theme.controlPoints = [
 		{ srgbLin: [0.02, 0.01, 0.2] },
@@ -45,7 +52,7 @@ describe('interpolation-space round trips', () => {
 });
 
 describe('buildSplineRamp', () => {
-	it('produces `steps` finite stops and a hi-res curve for every space', () => {
+	it('produces `steps` finite stops and a hi-res curve for every space and curve constraint', () => {
 		for (const key of INTERP_SPACE_KEYS) {
 			for (const constraint of CONSTRAINTS) {
 				const state = splineState(key, constraint, 7);
@@ -54,6 +61,21 @@ describe('buildSplineRamp', () => {
 				expect(state.theme.splineCurve.length, `${key}/${constraint} curve`).toBe(200);
 				for (const stop of state.theme.stops) {
 					expect(stop.world.every(finite) && stop.srgbLin.every(finite), `${key}/${constraint} finite`).toBe(true);
+				}
+			}
+		}
+	});
+
+	it('applies every gamut-map policy producing finite, in-gamut stops', () => {
+		for (const method of GAMUT_MAP_METHODS) {
+			const state = splineState('okhsv', 'free', 7, method);
+			buildRamp(state, matrices);
+			expect(state.theme.stops.length, `${method} stops`).toBe(7);
+			for (const stop of state.theme.stops) {
+				expect(stop.srgbLin.every(finite), `${method} finite`).toBe(true);
+				if (method !== 'none') {
+					// mapped colors must be within sRGB (small float tolerance)
+					expect(stop.srgbLin.every((v) => v >= -2e-3 && v <= 1 + 2e-3), `${method} in gamut`).toBe(true);
 				}
 			}
 		}

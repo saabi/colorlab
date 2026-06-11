@@ -16,7 +16,7 @@ import type {
 	ThemeMode
 } from '$lib/engine/types';
 import { INTERP_SPACE_KEYS, type InterpSpaceKey } from '$lib/color/interp';
-import { GAMUT_CLIP_METHODS } from '$lib/color/clip';
+import { GAMUT_MAP_METHODS, type GamutMapMethod } from '$lib/color/gamut-map';
 import { CURRENT_SNAPSHOT_VERSION, type ParameterSnapshot } from './types';
 
 const SPACE_MODES: readonly SpaceMode[] = [0, 1, 2, 3, 5];
@@ -29,7 +29,8 @@ const CVD_MODES: readonly CvdMode[] = ['none', 'protan', 'deutan', 'tritan'];
 const THEME_MODES: readonly ThemeMode[] = ['seg', 'arc', 'spread', 'spline'];
 const CHROMA_PROFILES: readonly ChromaProfile[] = ['linear', 'mirror'];
 const WCAG_BG: readonly PersistedTheme['wcagBg'][] = ['white', 'black'];
-const SPLINE_CONSTRAINTS: readonly SplineConstraint[] = ['free', 'surface', ...GAMUT_CLIP_METHODS];
+const SPLINE_CONSTRAINTS: readonly SplineConstraint[] = ['free', 'surface'];
+const GAMUT_MAPS: readonly GamutMapMethod[] = GAMUT_MAP_METHODS;
 const INTERP_SPACES: readonly InterpSpaceKey[] = INTERP_SPACE_KEYS;
 
 function warn(message: string) {
@@ -110,6 +111,7 @@ function coerceTheme(raw: unknown, defaults: PersistedTheme): PersistedTheme {
 		controlPoints: coerceAnchorList(theme.controlPoints, 'theme.controlPoints'),
 		splineConstraint: enumOf(theme.splineConstraint, SPLINE_CONSTRAINTS, defaults.splineConstraint, 'theme.splineConstraint'),
 		splineSpace: enumOf(theme.splineSpace, INTERP_SPACES, defaults.splineSpace, 'theme.splineSpace'),
+		gamutMap: enumOf(theme.gamutMap, GAMUT_MAPS, defaults.gamutMap, 'theme.gamutMap'),
 		steps: Math.min(27, Math.max(1, Math.round(finiteNumber(theme.steps, defaults.steps, 'theme.steps')))),
 		mode: enumOf(theme.mode, THEME_MODES, defaults.mode, 'theme.mode'),
 		dh: finiteNumber(theme.dh, defaults.dh, 'theme.dh'),
@@ -204,6 +206,7 @@ export function coerceSnapshot(raw: unknown): ParameterSnapshot | null {
 				controlPoints: factory.explorer.theme.controlPoints,
 				splineConstraint: factory.explorer.theme.splineConstraint,
 				splineSpace: factory.explorer.theme.splineSpace,
+				gamutMap: factory.explorer.theme.gamutMap,
 				steps: factory.explorer.theme.steps,
 				mode: factory.explorer.theme.mode,
 				dh: factory.explorer.theme.dh,

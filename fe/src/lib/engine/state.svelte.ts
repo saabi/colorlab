@@ -44,6 +44,7 @@ function createExplorerDefaults(): ExplorerState {
 			selectedCp: null,
 			splineConstraint: 'surface',
 			splineSpace: 'oklch',
+			gamutMap: 'none',
 			splineCurve: [],
 			steps: 5,
 			arm: null,
@@ -76,7 +77,7 @@ export function cloneAppState(state: AppState): AppState {
 
 export function createAppState(options: { mobile?: boolean } = {}): AppState {
 	const state: AppState = {
-		schemaVersion: 2,
+		schemaVersion: 3,
 		explorer: createExplorerDefaults(),
 		camera: createCamera()
 	};

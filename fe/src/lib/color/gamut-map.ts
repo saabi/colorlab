@@ -1,23 +1,29 @@
-// Out-of-gamut clipping strategies, ported from Björn Ottosson's
-// "sRGB gamut clipping" post / ok_color.h
-// (https://bottosson.github.io/posts/gamutclipping/).
+// Gamut mapping: bring a (possibly out-of-gamut) LINEAR sRGB color into the
+// sRGB gamut. `mapToGamut` is the single canonical entry point used across the
+// pipeline (theme stops, spline samples, export).
 //
-// Each method maps a (possibly out-of-gamut) LINEAR sRGB color onto the sRGB
-// gamut boundary by projecting in Oklab toward a focus point (L0, 0) on the
-// neutral axis; the choice of L0 is what distinguishes the methods. In-gamut
-// colors are returned unchanged. Operates in linear sRGB to match the rest of
-// the app (the reference applies the sRGB transfer function on top; we don't).
+// The boundary-projection strategies are ported from Björn Ottosson's
+// "sRGB gamut clipping" post / ok_color.h
+// (https://bottosson.github.io/posts/gamutclipping/): each projects in Oklab
+// toward a focus point (L0, 0) on the neutral axis; the choice of L0 is what
+// distinguishes them. In-gamut colors are returned unchanged. Operates in
+// linear sRGB to match the rest of the app (the reference applies the sRGB
+// transfer function on top; we don't).
 
 import { lsrgb2oklab, oklab2lsrgb } from './pipeline';
 import { findCusp, findGamutIntersection } from './okhsv';
 import type { Vec3 } from './math';
 
+/** Boundary-projection strategies (Ottosson). */
 export type GamutClipMethod =
 	| 'preserve-chroma'
 	| 'project-0.5'
 	| 'project-cusp'
 	| 'adaptive-0.5'
 	| 'adaptive-cusp';
+
+/** Full policy set: identity, naive clamp, plus the projection strategies. */
+export type GamutMapMethod = 'none' | 'clip' | GamutClipMethod;
 
 export const GAMUT_CLIP_METHODS: readonly GamutClipMethod[] = [
 	'preserve-chroma',
@@ -27,8 +33,11 @@ export const GAMUT_CLIP_METHODS: readonly GamutClipMethod[] = [
 	'adaptive-cusp'
 ];
 
+export const GAMUT_MAP_METHODS: readonly GamutMapMethod[] = ['none', 'clip', ...GAMUT_CLIP_METHODS];
+
 const ALPHA = 0.05; // adaptive-L0 strength (ok_color.h default)
 const clamp = (x: number, lo: number, hi: number) => (x < lo ? lo : x > hi ? hi : x);
+const clamp01 = (x: number) => clamp(x, 0, 1);
 const sgn = (x: number) => (0 < x ? 1 : 0) - (x < 0 ? 1 : 0);
 
 const inGamut = (rgb: Vec3) =>
@@ -69,3 +78,15 @@ export const GAMUT_CLIP: Record<GamutClipMethod, (rgb: Vec3) => Vec3> = {
 			return cusp.L + 0.5 * (sgn(Ld) * (e1 - Math.sqrt(Math.max(0, e1 * e1 - 2 * k * Math.abs(Ld)))));
 		})
 };
+
+/**
+ * Map a linear-sRGB color into the sRGB gamut according to `method`.
+ *  - 'none'  -> identity (leave out-of-gamut)
+ *  - 'clip'  -> naive per-channel clamp to [0,1]
+ *  - others  -> Ottosson boundary projection (in-gamut colors unchanged)
+ */
+export function mapToGamut(srgbLin: Vec3, method: GamutMapMethod): Vec3 {
+	if (method === 'none') return srgbLin;
+	if (method === 'clip') return [clamp01(srgbLin[0]), clamp01(srgbLin[1]), clamp01(srgbLin[2])];
+	return GAMUT_CLIP[method](srgbLin);
+}

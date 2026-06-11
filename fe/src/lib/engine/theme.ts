@@ -2,7 +2,7 @@ import { m3, type Vec3 } from '$lib/color/math';
 import { SPACES } from '$lib/color/registry';
 import { CUBE_ROT, REC709_Y, lsrgb2oklab, oklab2lsrgb, xyz2lab } from '$lib/color/pipeline';
 import { INTERP_SPACES } from '$lib/color/interp';
-import { GAMUT_CLIP } from '$lib/color/clip';
+import { mapToGamut } from '$lib/color/gamut-map';
 import { TRC } from '$lib/color/transfer';
 import { solidField } from './picking';
 
@@ -66,7 +66,13 @@ function stopFromWorld(world: Vec3, state: ExplorerState, matrices: DerivedMatri
 	};
 }
 
+// Pipeline: interpolate (buildRawRamp) -> WCAG/even (optional, separate) -> gamut-map (finalizeRamp) -> encode.
 export function buildRamp(state: ExplorerState, matrices: DerivedMatrices) {
+	buildRawRamp(state, matrices);
+	finalizeRamp(state, matrices);
+}
+
+function buildRawRamp(state: ExplorerState, matrices: DerivedMatrices) {
 	const T = state.theme;
 	T.stops = [];
 	if (T.mode === 'spline') {
@@ -207,18 +213,14 @@ function buildSplineRamp(state: ExplorerState, matrices: DerivedMatrices) {
 		knots.push(knots[i - 1] + Math.sqrt(Math.max(dist3(emb[i - 1], emb[i]), 1e-9)));
 	}
 
-	// 4. High-resolution sampling -> world positions + colors.
-	//    'free'     -> no constraint
-	//    'surface'  -> geometric radial snap to the active solid shell
-	//    clip method -> Ottosson out-of-gamut clip (to the sRGB boundary)
-	const constraint = T.splineConstraint;
-	const clip = constraint !== 'free' && constraint !== 'surface' ? GAMUT_CLIP[constraint] : null;
+	// 4. High-resolution sampling -> world positions. Geometry constraint only;
+	//    out-of-gamut handling is applied later by finalizeRamp.
+	//    'free' -> no constraint; 'surface' -> radial snap to the active solid shell.
 	const worldAt = (coord: Vec3): Vec3 => {
-		let srgbLin = space.toSrgbLin(coord);
-		if (clip) srgbLin = clip(srgbLin);
+		const srgbLin = space.toSrgbLin(coord);
 		const gamutRgb = m3.mulV(matrices.toSrgbLin.fromSrgb, srgbLin);
 		const world = jsToWorld(gamutRgb, state, matrices);
-		return constraint === 'surface' ? snapToSurface(world, state, matrices) : world;
+		return T.splineConstraint === 'surface' ? snapToSurface(world, state, matrices) : world;
 	};
 	const curve: SplineSample[] = [];
 	for (let i = 0; i < HIRES; i += 1) {
@@ -280,22 +282,35 @@ function stopFromOklab(ok: Vec3, state: ExplorerState, matrices: DerivedMatrices
 	};
 }
 
-export function fitGamut(state: ExplorerState, matrices: DerivedMatrices) {
-	state.theme.stops = state.theme.stops.map((s) => {
-		const ok = lsrgb2oklab(s.srgbLin.map(clamp01) as Vec3);
-		if (s.inG) return s;
-		const L = ok[0];
-		const h = Math.atan2(ok[2], ok[1]);
-		let lo = 0;
-		let hi = Math.hypot(ok[1], ok[2]);
-		for (let i = 0; i < 24; i += 1) {
-			const C = (lo + hi) / 2;
-			const t = oklab2lsrgb([L, C * Math.cos(h), C * Math.sin(h)]);
-			if (t.every((v) => v >= -1e-3 && v <= 1.001)) lo = C;
-			else hi = C;
-		}
-		return stopFromOklab([L, lo * Math.cos(h), lo * Math.sin(h)], state, matrices);
-	});
+function stopFromSrgbLin(srgbLin: Vec3, state: ExplorerState, matrices: DerivedMatrices): ThemeStop {
+	const tol = 1e-3;
+	const inG = srgbLin.every((v) => v >= -tol && v <= 1 + tol);
+	const gamutRgb = m3.mulV(matrices.toSrgbLin.fromSrgb, srgbLin);
+	const ok = lsrgb2oklab(srgbLin.map(clamp01) as Vec3);
+	return {
+		srgbLin,
+		hex: srgbHex(srgbLin),
+		inG,
+		cw: wcag(srgbLin, [1, 1, 1]),
+		cb: wcag(srgbLin, [0, 0, 0]),
+		world: jsToWorld(gamutRgb, state, matrices),
+		oklch: [ok[0], Math.hypot(ok[1], ok[2]), ((Math.atan2(ok[2], ok[1]) * 180) / Math.PI + 360) % 360]
+	};
+}
+
+// Terminal gamut-map stage: the single place out-of-gamut colors are reconciled.
+// Runs last in every recompute (after interpolation and any WCAG/even adjustment),
+// so the policy governs all theme modes and the hi-res spline curve uniformly.
+export function finalizeRamp(state: ExplorerState, matrices: DerivedMatrices) {
+	const method = state.theme.gamutMap;
+	if (method === 'none') return;
+	state.theme.stops = state.theme.stops.map((s) => stopFromSrgbLin(mapToGamut(s.srgbLin, method), state, matrices));
+	if (state.theme.mode === 'spline' && state.theme.splineCurve.length) {
+		state.theme.splineCurve = state.theme.splineCurve.map((s) => {
+			const mapped = mapToGamut(s.srgbLin, method);
+			return { world: jsToWorld(m3.mulV(matrices.toSrgbLin.fromSrgb, mapped), state, matrices), srgbLin: mapped };
+		});
+	}
 }
 
 export function fitWcag(state: ExplorerState, matrices: DerivedMatrices) {
@@ -319,6 +334,7 @@ export function fitWcag(state: ExplorerState, matrices: DerivedMatrices) {
 		}
 		return stopFromOklab([Math.min(Math.max(best, 0), 1), C * Math.cos(h), C * Math.sin(h)], state, matrices);
 	});
+	finalizeRamp(state, matrices);
 }
 
 export function fitEven(state: ExplorerState, matrices: DerivedMatrices) {
@@ -341,6 +357,7 @@ export function fitEven(state: ExplorerState, matrices: DerivedMatrices) {
 		return oks[oks.length - 1];
 	};
 	state.theme.stops = st.map((_, i) => stopFromOklab(sample(i / (st.length - 1)), state, matrices));
+	finalizeRamp(state, matrices);
 }
 
 export function exportTokens(stops: ThemeStop[]) {

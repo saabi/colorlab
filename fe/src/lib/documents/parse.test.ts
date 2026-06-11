@@ -128,6 +128,21 @@ describe('parseSnapshot', () => {
 		expect(result.snapshot?.explorer.theme.controlPoints).toEqual(cps);
 	});
 
+	it('migrates a v2 spline-clip constraint to the v3 gamutMap policy', () => {
+		const v2 = {
+			schemaVersion: 2,
+			explorer: {
+				...defaults.explorer,
+				theme: { ...defaults.explorer.theme, splineConstraint: 'preserve-chroma' }
+			},
+			camera: defaults.camera
+		} as unknown;
+		const result = parseSnapshot(v2);
+		expect(result.migrated).toBe(true);
+		expect(result.snapshot?.explorer.theme.splineConstraint).toBe('surface');
+		expect(result.snapshot?.explorer.theme.gamutMap).toBe('preserve-chroma');
+	});
+
 	it('coerces garbage control points and unknown spline space to safe defaults', () => {
 		const doc = {
 			...defaults,
