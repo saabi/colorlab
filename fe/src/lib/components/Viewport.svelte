@@ -64,7 +64,9 @@
 
 	const matrices = $derived(rebuildMatrices(explorer.gamut));
 	const shellMatrices = $derived(explorer.hideAids ? null : rebuildShell(explorer.shell));
-	const cursorMode = $derived(gesture.kind);
+	// Idle hover over a draggable source point (mouse only); drives the cursor.
+	let hoverPointIndex = $state<number | null>(null);
+	const cursorMode = $derived(hoverPointIndex !== null ? 'point' : gesture.kind);
 
 	function resetPerformanceSamples() {
 		drawSubmitSamples = [];
@@ -367,6 +369,7 @@
 		if (pinching) return;
 		if (event.pointerType === 'touch') event.preventDefault();
 		referenceOpen = false;
+		hoverPointIndex = null;
 		dragging = true;
 		moved = 0;
 		lastX = event.clientX;
@@ -420,6 +423,14 @@
 
 	function onPointerMove(event: PointerEvent) {
 		if (pinching) return;
+		if (!dragging) {
+			// Hover hit-test (mouse only): pointer cursor over a draggable source point.
+			hoverPointIndex =
+				event.pointerType !== 'touch' && explorer.theme.showPoints
+					? getControlPointAtScreen(event.clientX, event.clientY, event.pointerType)
+					: null;
+			return;
+		}
 		if (dragging) {
 			if (event.pointerType === 'touch') event.preventDefault();
 			const dx = event.clientX - lastX;

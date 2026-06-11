@@ -166,6 +166,7 @@ export class WebGlRenderer {
 			gl.useProgram(this.markProgram);
 			gl.uniformMatrix4fv(this.U(this.markProgram, 'uProj'), false, proj);
 			gl.uniformMatrix4fv(this.U(this.markProgram, 'uView'), false, view);
+			gl.uniform1f(this.U(this.markProgram, 'uSize'), 11);
 			gl.uniform3fv(this.U(this.markProgram, 'uPos'), input.state.hover.world);
 			gl.uniform3fv(this.U(this.markProgram, 'uCol'), input.state.hover.inGamut ? [0.37, 0.72, 0.77] : [0.88, 0.33, 0.24]);
 			gl.uniform3fv(this.U(this.markProgram, 'uBorder'), [1, 1, 1]);
@@ -175,10 +176,11 @@ export class WebGlRenderer {
 		// Generated ramp swatches: placed stops, and (when expanded) every palette cell.
 		// Each layer is independently toggleable from its producing pipeline step.
 		const t = input.state.theme;
-		const drawSwatches = (swatches: { world: [number, number, number]; srgbLin: [number, number, number] }[]) => {
+		const drawSwatches = (swatches: { world: [number, number, number]; srgbLin: [number, number, number] }[], size: number) => {
 			gl.useProgram(this.markProgram);
 			gl.uniformMatrix4fv(this.U(this.markProgram, 'uProj'), false, proj);
 			gl.uniformMatrix4fv(this.U(this.markProgram, 'uView'), false, view);
+			gl.uniform1f(this.U(this.markProgram, 'uSize'), size);
 			for (const s of swatches) {
 				const sim = simulateCvdSrgb(s.srgbLin, input.state.cvd, input.state.cvdSev);
 				const c = sim.map((v) => TRC.srgb.enc(Math.min(Math.max(v, 0), 1)));
@@ -190,8 +192,8 @@ export class WebGlRenderer {
 				gl.drawArrays(gl.POINTS, 0, 1);
 			}
 		};
-		if (t.showStops && t.stops.length) drawSwatches(t.stops);
-		if (t.showPalette && t.grid.length) for (const row of t.grid) drawSwatches(row);
+		if (t.showStops && t.stops.length) drawSwatches(t.stops, 11);
+		if (t.showPalette && t.grid.length) for (const row of t.grid) drawSwatches(row, 7);
 
 		// Draw source-point markers in every ramp mode; the spline curve itself only
 		// renders when splineCurve is populated (spline mode), handled inside drawSpline.
@@ -401,6 +403,8 @@ export class WebGlRenderer {
 			gl.useProgram(this.markProgram);
 			gl.uniformMatrix4fv(this.U(this.markProgram, 'uProj'), false, proj);
 			gl.uniformMatrix4fv(this.U(this.markProgram, 'uView'), false, view);
+			// Source points read larger than generated stops/cells to signal interactivity.
+			gl.uniform1f(this.U(this.markProgram, 'uSize'), 16);
 			for (let i = 0; i < cps.length; i += 1) {
 				const gamutRgb = m3.mulV(input.matrices.toSrgbLin.fromSrgb, cps[i].srgbLin);
 				const world = this.rgbToWorld(gamutRgb, input.state, input.matrices);

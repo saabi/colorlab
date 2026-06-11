@@ -550,6 +550,10 @@ input[type="checkbox"] {
 	cursor: grabbing;
 }
 
+.viewport canvas.cursor-point {
+	cursor: pointer;
+}
+
 .viewport canvas.cursor-inspect {
 	cursor: crosshair;
 }
