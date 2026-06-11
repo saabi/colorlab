@@ -366,7 +366,7 @@
 			{/if}
 			{#if isPalette}
 				<div style="margin-top: 6px">
-					<PaletteStrip rows={explorer.theme.grid} cvd={explorer.cvd} cvdSev={explorer.cvdSev} ariaLabel="Expanded palette preview" />
+					<PaletteStrip layout="fluid" rows={explorer.theme.grid} cvd={explorer.cvd} cvdSev={explorer.cvdSev} ariaLabel="Expanded palette preview" />
 				</div>
 			{/if}
 		{/if}
@@ -395,9 +395,9 @@
 		{#if explorer.theme.gamutMap !== 'none'}
 			<div class="raw-final">
 				<span class="rf-label">Raw</span>
-				<PaletteStrip rows={[explorer.theme.rawStops]} cvd={explorer.cvd} cvdSev={explorer.cvdSev} ariaLabel="Raw ramp before gamut mapping" />
+				<PaletteStrip layout="fluid" rows={[explorer.theme.rawStops]} cvd={explorer.cvd} cvdSev={explorer.cvdSev} ariaLabel="Raw ramp before gamut mapping" />
 				<span class="rf-label">Final</span>
-				<PaletteStrip rows={[explorer.theme.stops]} cvd={explorer.cvd} cvdSev={explorer.cvdSev} ariaLabel="Final ramp after gamut mapping" />
+				<PaletteStrip layout="fluid" rows={[explorer.theme.stops]} cvd={explorer.cvd} cvdSev={explorer.cvdSev} ariaLabel="Final ramp after gamut mapping" />
 			</div>
 		{/if}
 	{/if}
@@ -406,6 +406,7 @@
 {#if showExport}
 	{#if explorer.theme.stops.length}
 		<PaletteStrip
+			layout="fluid"
 			rows={isPalette ? explorer.theme.grid : [explorer.theme.stops]}
 			cvd={explorer.cvd}
 			cvdSev={explorer.cvdSev}
