@@ -1,6 +1,7 @@
 # Plan: Multi-space Color Picker + Multiple Source Lists
 
-Status: design + phased implementation. Two features requested by the owner.
+Status: **implemented** (P1 picker + sidebar integration; P2 multi-list engine,
+schema v8, migration, tests; P3 list-chip UI, multi-list 3D rendering).
 
 ## Feature 1 — Multi-space color picker
 
@@ -111,9 +112,9 @@ whenever output is 2-D (expand on, or >1 list) — display == export holds.
 
 | Phase | Content |
 |---|---|
-| P1 | Registry channels + hsv/hsl/okhsl + `ColorPicker.svelte` + **sidebar anchor integration** (click anchor → open picker → live `buildRamp`) |
-| P2 | Multi-list engine + schema v8 + migration + tests |
-| P3 | Multi-list UI (list chips), viewport interaction, renderer rows |
+| P1 ✅ | Registry channels + hsv/hsl/okhsl + `ColorPicker.svelte` + **sidebar anchor integration** (click anchor → open picker → live `buildRamp`) |
+| P2 ✅ | Multi-list engine + schema v8 + migration + tests |
+| P3 ✅ | Multi-list UI (list chips), viewport interaction, renderer rows |
 
 Each phase = verified commit (`check` / `test` / `build`).
 

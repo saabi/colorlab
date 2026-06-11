@@ -167,6 +167,33 @@
 		track('theme_mode_change', { mode: explorer.theme.mode });
 	}
 
+	// Source-list management: each list is one ramp; edits target the active list.
+	function selectList(index: number) {
+		if (index === explorer.theme.activeList) return;
+		explorer.theme.activeList = index;
+		explorer.theme.selectedPoint = null;
+		buildRamp(explorer, matrices);
+		track('theme_source_list', { action: 'select' });
+	}
+
+	function addList() {
+		explorer.theme.lists = [...explorer.theme.lists, []];
+		explorer.theme.activeList = explorer.theme.lists.length - 1;
+		explorer.theme.selectedPoint = null;
+		buildRamp(explorer, matrices);
+		track('theme_source_list', { action: 'add' });
+	}
+
+	function removeActiveList() {
+		if (explorer.theme.lists.length <= 1) return;
+		const index = explorer.theme.activeList;
+		explorer.theme.lists = explorer.theme.lists.filter((_: ThemeAnchor[], i: number) => i !== index);
+		explorer.theme.activeList = Math.min(index, explorer.theme.lists.length - 1);
+		explorer.theme.selectedPoint = null;
+		buildRamp(explorer, matrices);
+		track('theme_source_list', { action: 'remove' });
+	}
+
 	function removeControlPoint(index: number) {
 		const next = points.filter((_: ThemeAnchor, i: number) => i !== index);
 		setPoints(next);
@@ -292,8 +319,34 @@
 	</p>
 	<ToggleRow label="Show points in 3D" bind:checked={explorer.theme.showPoints} />
 
+	<div class="panel-label" style="margin-top: 8px">Source lists</div>
+	<div class="list-chips" role="tablist" aria-label="Source lists">
+		{#each explorer.theme.lists as list, i}
+			<button
+				type="button"
+				class="list-chip"
+				class:active={i === explorer.theme.activeList}
+				role="tab"
+				aria-selected={i === explorer.theme.activeList}
+				title={`List ${i + 1} — ${list.length} pt${list.length === 1 ? '' : 's'}`}
+				onclick={() => selectList(i)}
+			>
+				{i + 1}
+			</button>
+		{/each}
+		<button type="button" class="list-chip list-add" title="Add a new source list" onclick={addList}>+</button>
+		{#if explorer.theme.lists.length > 1}
+			<button type="button" class="list-chip list-del" title="Remove the active list" onclick={removeActiveList}>×</button>
+		{/if}
+	</div>
+	{#if explorer.theme.lists.length > 1}
+		<p class="note">Each list is its own ramp. Picking, dragging, and the rows below edit list {explorer.theme.activeList + 1}.</p>
+	{/if}
+
 	{#if points.length}
-		<div class="panel-label" style="margin-top: 8px">Points</div>
+		<div class="panel-label" style="margin-top: 8px">
+			Points{explorer.theme.lists.length > 1 ? ` — list ${explorer.theme.activeList + 1}` : ''}
+		</div>
 		<div class="cp-list">
 			{#each points as cp, i}
 				<div class="cp-row" class:active={explorer.theme.selectedPoint === i}>
@@ -579,6 +632,28 @@
 		color: var(--muted);
 		font-weight: 600;
 		min-width: 12px;
+	}
+	.list-chips {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 4px;
+		margin-bottom: 6px;
+	}
+	.list-chip {
+		flex: none;
+		width: 28px;
+		padding: 3px 0;
+		font-size: 11px;
+		font-variant-numeric: tabular-nums;
+		border: 1px solid transparent;
+		border-radius: 4px;
+	}
+	.list-chip.active {
+		border-color: var(--accent, #5ab);
+	}
+	.list-del {
+		font-size: 14px;
+		line-height: 1;
 	}
 	.cp-list {
 		display: flex;
