@@ -159,16 +159,15 @@ Ship **Proposal A** first (it is the requested layout and the smallest change: d
 
 ## UI-state & footer-policy persistence (added stage)
 
-Persistence splits into three buckets by whether the value is part of the *shareable artifact* or a *per-device convenience*:
+**Persistence model (verified).** This app has only one place that persists real state: **named documents** (the registry), via `toSnapshot` → `PersistedAppState`. The `colorlab:session:v1` "session" stores only `{ lastDocumentId }` — there is **no autosave of working AppState**. So there are exactly two buckets, both keyed off whether a field is in `PersistedExplorer`:
 
-1. **Document (saved/shared snapshot):** scene state, including **`hideAids`** — it's a presentation choice of the artifact, so it stays document-persisted (already implemented).
-2. **Session UI (localStorage, per-device, NOT in the document):** the **expanded/collapsed step set** — restore on load so working context survives reloads; never written to the saved document. (This is the previously-deferred item.)
-3. **Not in the document:** the **auto-reduce tessellation policy** (`autoPerformance` + `minAverageFps`) — a runtime performance accommodation, irrelevant to a shared palette. Move it **out of the saved snapshot** into session UI state (per-device), so it's remembered locally but not exported.
+- **In `PersistedExplorer`** → saved into named documents, restored on reopen.
+- **Omitted from `PersistedExplorer`** (like `hover`) → never saved; runtime-only, defaults each load.
 
-Implementation notes:
+There is no native "remembered per-device but not in the document" tier, so we use these two buckets directly rather than inventing an ad-hoc localStorage key.
 
-- **Expanded-step persistence requires controlled open-state.** Today each `ControlGroup` owns `open` internally (with `defaultOpen`). To persist the set, lift open-state to the panel (the controlled-`open`/`onToggle` model that is currently in `stash@{0}` from Proposal B) and store the open ids in session localStorage (e.g. `colorlab:ui:open-steps`), restored on mount. Default-open set (Gamut/Pick/Interpolate) applies only when nothing is stored.
-- **Removing auto-reduce from the document = Playbook B** (remove persisted fields): add `autoPerformance` / `minAverageFps` to the `PersistedExplorer` `Omit` (keep them on `ExplorerState` as runtime), drop them from `toPersistedExplorer` / `coerceExplorer` / the `coerceSnapshot` defaults block, and persist them in session UI state instead. Add a `parse.test.ts` fixture asserting a saved doc that contains them ignores them on load (and that omitting them is fine). No schema-version bump needed (removal with a runtime default is non-breaking on load).
-- **`hideAids` is unchanged** — stays document-persisted.
+1. **Expanded/collapsed step set → a normal persisted prop on `ExplorerState`** (e.g. `openSteps: PipelineNodeId[]`), exactly like the display prefs already living there (`floor`, `planeOutline`, `surfaceGridAlpha`, `hideAids`). It rides the existing snapshot pipeline and restores when a document is reopened (not across a blank reload — same as every other prop here). Playbook A (additive field). Requires the **controlled-`open` refactor** (lift open-state out of `ControlGroup`, currently in `stash@{0}`) so state can read/write it; the default-open set (Gamut/Pick/Interpolate) is just the field's factory default.
+2. **`hideAids` → unchanged**, stays in `PersistedExplorer` (a presentation choice of the artifact).
+3. **Auto-reduce policy (`autoPerformance` + `minAverageFps`) → removed from the snapshot.** Playbook B: add both to the `PersistedExplorer` `Omit` (keep them on `ExplorerState` as runtime so the sampler still uses them), drop from `toPersistedExplorer` / `coerceExplorer` / the `coerceSnapshot` defaults block. No schema bump (runtime default on load). **Consequence:** they reset to defaults (auto-reduce on / 30 fps) on every load and document-open, and a saved palette never carries an "auto-reduce off" choice — which is the intent of "shouldn't be saved."
 
-Schedule: bundle with the sidebar work (it's UI-state, independent of the ramp pipeline stages). The expanded-step half pulls in the controlled-`open` refactor, so it pairs naturally with reviving Proposal B if/when that happens; the auto-reduce half can ship on its own.
+Schedule: bundle with the sidebar work (independent of the ramp pipeline stages). The expanded-step half pairs naturally with reviving Proposal B's controlled-`open`; the auto-reduce removal can ship on its own. Add `parse.test.ts` fixtures: `openSteps` round-trips / defaults when absent; a saved doc containing `autoPerformance`/`minAverageFps` ignores them on load.
