@@ -29,6 +29,8 @@ export function toPersistedExplorer(explorer: ExplorerState): PersistedExplorer 
 		spaceMode: explorer.spaceMode,
 		gamut: explorer.gamut,
 		N: explorer.N,
+		autoPerformance: explorer.autoPerformance,
+		minAverageFps: explorer.minAverageFps,
 		slice: explorer.slice,
 		planeMode: explorer.planeMode,
 		off: explorer.off,

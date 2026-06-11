@@ -6,6 +6,7 @@ export type CvdMode = 'none' | 'protan' | 'deutan' | 'tritan';
 export type ThemeMode = 'seg' | 'arc' | 'spread' | 'spline';
 export type ChromaProfile = 'linear' | 'mirror';
 export type SplineConstraint = 'free' | 'surface';
+export type MinAverageFps = 15 | 30 | 60;
 
 /** One sample of the rendered spline curve: world position + linear-sRGB color. */
 export interface SplineSample {
@@ -50,6 +51,8 @@ export interface ExplorerState {
 	spaceMode: SpaceMode;
 	gamut: GamutKey;
 	N: 64 | 128 | 192 | 256;
+	autoPerformance: boolean;
+	minAverageFps: MinAverageFps;
 	slice: boolean;
 	planeMode: PlaneMode;
 	off: number;

@@ -5,7 +5,7 @@
 	import { track } from '$lib/analytics/umami';
 	import { simulateCvdSrgb } from '$lib/color/cvd';
 	import { INTERP_SPACES, INTERP_SPACE_KEYS } from '$lib/color/interp';
-	import { exportDTCG, exportTokens, fitEven, fitGamut, fitWcag, srgbHex } from '$lib/engine/theme';
+	import { buildRamp, exportDTCG, exportTokens, fitEven, fitGamut, fitWcag, srgbHex } from '$lib/engine/theme';
 
 	import type { ExplorerState, ThemeAnchor } from '$lib/engine/types';
 	import type { DerivedMatrices } from '$lib/renderer/uniforms';
@@ -38,6 +38,35 @@
 		if (explorer.theme.selectedCp !== null) {
 			explorer.theme.selectedCp = len ? Math.min(explorer.theme.selectedCp, len - 1) : null;
 		}
+		buildRamp(explorer, matrices);
+		track('theme_spline_point', { action: 'remove_panel' });
+	}
+
+	function selectControlPoint(index: number) {
+		explorer.theme.selectedCp = index;
+		track('theme_spline_point', { action: 'select_panel' });
+	}
+
+	function duplicateControlPoint(index: number) {
+		const cp = explorer.theme.controlPoints[index];
+		if (!cp) return;
+		const next = [...explorer.theme.controlPoints];
+		next.splice(index + 1, 0, { srgbLin: [...cp.srgbLin] as [number, number, number] });
+		explorer.theme.controlPoints = next;
+		explorer.theme.selectedCp = index + 1;
+		buildRamp(explorer, matrices);
+		track('theme_spline_point', { action: 'duplicate_panel' });
+	}
+
+	function moveControlPoint(index: number, direction: -1 | 1) {
+		const target = index + direction;
+		if (target < 0 || target >= explorer.theme.controlPoints.length) return;
+		const next = [...explorer.theme.controlPoints];
+		[next[index], next[target]] = [next[target], next[index]];
+		explorer.theme.controlPoints = next;
+		explorer.theme.selectedCp = target;
+		buildRamp(explorer, matrices);
+		track('theme_spline_point', { action: 'reorder_panel' });
 	}
 
 	function fitGamutTracked() {
@@ -133,9 +162,24 @@
 		<div class="cp-list">
 			{#each explorer.theme.controlPoints as cp, i}
 				<div class="cp-row" class:active={explorer.theme.selectedCp === i}>
-					<button type="button" class="cp-select" onclick={() => (explorer.theme.selectedCp = i)}>
+					<button type="button" class="cp-select" onclick={() => selectControlPoint(i)}>
 						<span class="cp-chip" style={rampChipStyle({ srgbLin: cp.srgbLin, inG: true })}></span>
 						<span class="cp-hex">{srgbHex(cp.srgbLin)}</span>
+					</button>
+					<button type="button" class="cp-action" title="Move control point earlier" disabled={i === 0} onclick={() => moveControlPoint(i, -1)}>
+						Up
+					</button>
+					<button
+						type="button"
+						class="cp-action"
+						title="Move control point later"
+						disabled={i === explorer.theme.controlPoints.length - 1}
+						onclick={() => moveControlPoint(i, 1)}
+					>
+						Down
+					</button>
+					<button type="button" class="cp-action" title="Duplicate control point" onclick={() => duplicateControlPoint(i)}>
+						Copy
 					</button>
 					<button type="button" class="cp-del" title="Remove control point" onclick={() => removeControlPoint(i)}>
 						×
@@ -295,6 +339,16 @@
 		font-variant-numeric: tabular-nums;
 		text-transform: uppercase;
 		font-size: 11px;
+	}
+	.cp-action {
+		flex: none;
+		width: auto;
+		padding: 3px 6px;
+		font-size: 10px;
+	}
+	.cp-action:disabled {
+		cursor: default;
+		opacity: 0.35;
 	}
 	.cp-del {
 		flex: none;

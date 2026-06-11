@@ -12,6 +12,7 @@ import type {
 	SpaceMode,
 	SplineConstraint,
 	ThemeAnchor,
+	MinAverageFps,
 	ThemeMode
 } from '$lib/engine/types';
 import { INTERP_SPACE_KEYS, type InterpSpaceKey } from '$lib/color/interp';
@@ -20,6 +21,7 @@ import { CURRENT_SNAPSHOT_VERSION, type ParameterSnapshot } from './types';
 const SPACE_MODES: readonly SpaceMode[] = [0, 1, 2, 3, 5];
 const GAMUTS: readonly GamutKey[] = ['srgb', 'p3', 'rec2020', 'ntsc', 'ebu', 'smptec', 'cie'];
 const TESS: readonly PersistedExplorer['N'][] = [64, 128, 192, 256];
+const MIN_AVERAGE_FPS: readonly MinAverageFps[] = [15, 30, 60];
 const PLANE_MODES: readonly PlaneMode[] = ['L', 'H', 'C'];
 const SHELLS: readonly ShellKey[] = ['none', 'p3', 'rec2020', 'ntsc', 'cie'];
 const CVD_MODES: readonly CvdMode[] = ['none', 'protan', 'deutan', 'tritan'];
@@ -135,6 +137,9 @@ function coerceExplorer(raw: unknown, defaults: PersistedExplorer): PersistedExp
 		spaceMode: enumOf(explorer.spaceMode, SPACE_MODES, defaults.spaceMode, 'spaceMode'),
 		gamut: enumOf(explorer.gamut, GAMUTS, defaults.gamut, 'gamut'),
 		N: enumOf(explorer.N, TESS, defaults.N, 'N'),
+		autoPerformance:
+			typeof explorer.autoPerformance === 'boolean' ? explorer.autoPerformance : defaults.autoPerformance,
+		minAverageFps: enumOf(explorer.minAverageFps, MIN_AVERAGE_FPS, defaults.minAverageFps, 'minAverageFps'),
 		slice: typeof explorer.slice === 'boolean' ? explorer.slice : defaults.slice,
 		planeMode: enumOf(explorer.planeMode, PLANE_MODES, defaults.planeMode, 'planeMode'),
 		off: finiteNumber(explorer.off, defaults.off, 'off'),
@@ -171,6 +176,8 @@ export function coerceSnapshot(raw: unknown): ParameterSnapshot | null {
 			spaceMode: factory.explorer.spaceMode,
 			gamut: factory.explorer.gamut,
 			N: factory.explorer.N,
+			autoPerformance: factory.explorer.autoPerformance,
+			minAverageFps: factory.explorer.minAverageFps,
 			slice: factory.explorer.slice,
 			planeMode: factory.explorer.planeMode,
 			off: factory.explorer.off,

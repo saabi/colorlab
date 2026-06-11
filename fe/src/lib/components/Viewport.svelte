@@ -50,13 +50,48 @@
 	const MIN_DIST = 1.2;
 	const MAX_DIST = 8;
 	const PITCH_LIMIT = Math.PI / 2 - 0.04;
+	const RESOLUTIONS = [64, 128, 192, 256] as const;
+	const PERF_SAMPLE_COUNT = 12;
+	const PERF_MARGIN = 1.1;
+	const PERF_COOLDOWN_MS = 1200;
+
+	let drawSamples: number[] = [];
+	let lastAutoPerformanceStep = 0;
 
 	const matrices = $derived(rebuildMatrices(explorer.gamut));
 	const shellMatrices = $derived(rebuildShell(explorer.shell));
 	const cursorMode = $derived(gesture.kind);
 
+	function resetPerformanceSamples() {
+		drawSamples = [];
+	}
+
+	function reduceTessellationForPerformance(avgMs: number) {
+		const index = RESOLUTIONS.indexOf(explorer.N);
+		if (index <= 0) return;
+		const now = performance.now();
+		if (now - lastAutoPerformanceStep < PERF_COOLDOWN_MS) return;
+		const nextN = RESOLUTIONS[index - 1];
+		explorer.N = nextN;
+		lastAutoPerformanceStep = now;
+		resetPerformanceSamples();
+		gestureStatus = `Auto performance: tessellation ${nextN} (${(1000 / avgMs).toFixed(0)} fps avg)`;
+	}
+
+	function recordDrawTime(elapsedMs: number) {
+		if (!explorer.autoPerformance) return;
+		drawSamples = [...drawSamples.slice(-(PERF_SAMPLE_COUNT - 1)), elapsedMs];
+		if (drawSamples.length < PERF_SAMPLE_COUNT) return;
+		const avgMs = drawSamples.reduce((sum, value) => sum + value, 0) / drawSamples.length;
+		const targetMs = 1000 / explorer.minAverageFps;
+		if (avgMs > targetMs * PERF_MARGIN) reduceTessellationForPerformance(avgMs);
+	}
+
 	function draw() {
-		renderer?.draw({ state: explorer, matrices, shellMatrices, camera });
+		if (!renderer) return;
+		const t0 = performance.now();
+		renderer.draw({ state: explorer, matrices, shellMatrices, camera });
+		recordDrawTime(performance.now() - t0);
 	}
 
 	function clamp(value: number, min: number, max: number) {
@@ -183,12 +218,18 @@
 		const radius = pointerType === 'touch' ? 24 : 12;
 		let best: number | null = null;
 		let bestDist = radius;
+		const selected = explorer.theme.selectedCp;
 		explorer.theme.controlPoints.forEach((cp: { srgbLin: [number, number, number] }, i: number) => {
 			const world = anchorWorld(cp, explorer, matrices);
 			const screen = projectToScreen(world, camera, rect.width, rect.height);
 			if (!screen) return;
 			const dist = Math.hypot(clientX - rect.left - screen[0], clientY - rect.top - screen[1]);
-			if (dist < bestDist) {
+			if (i === selected && dist <= radius) {
+				bestDist = -1;
+				best = i;
+				return;
+			}
+			if (bestDist >= 0 && dist < bestDist) {
 				bestDist = dist;
 				best = i;
 			}
@@ -218,6 +259,29 @@
 		gestureStatus = 'Control point removed';
 		track('theme_spline_point', { action: 'remove' });
 		draw();
+	}
+
+	function nudgeSelectedControlPoint(dx: number, dy: number) {
+		const index = explorer.theme.selectedCp;
+		if (explorer.theme.mode !== 'spline' || index === null) return false;
+		const cp = explorer.theme.controlPoints[index];
+		if (!cp) return false;
+
+		const rect = canvas.getBoundingClientRect();
+		const world = anchorWorld(cp, explorer, matrices);
+		const screen = projectToScreen(world, camera, rect.width, rect.height);
+		if (!screen) return false;
+
+		const hit = pick(screen[0] + dx, screen[1] + dy, rect.width, rect.height, explorer, matrices, camera);
+		if (!hit) return false;
+
+		explorer.theme.controlPoints[index] = {
+			srgbLin: m3.mulV(matrices.toSrgbLin.toSrgb, hit.rgbLin) as [number, number, number]
+		};
+		buildRamp(explorer, matrices);
+		gestureStatus = `Control point ${index + 1} nudged`;
+		draw();
+		return true;
 	}
 
 	function chooseGesture(event: PointerEvent): CanvasGesture {
@@ -407,6 +471,20 @@
 			removeControlPoint(explorer.theme.selectedCp);
 			return;
 		}
+		if (
+			explorer.theme.mode === 'spline' &&
+			explorer.theme.selectedCp !== null &&
+			['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(event.key)
+		) {
+			const step = event.altKey ? 2 : event.shiftKey ? 16 : 6;
+			const dx = event.key === 'ArrowLeft' ? -step : event.key === 'ArrowRight' ? step : 0;
+			const dy = event.key === 'ArrowUp' ? -step : event.key === 'ArrowDown' ? step : 0;
+			if (nudgeSelectedControlPoint(dx, dy)) {
+				event.preventDefault();
+				if (!event.repeat) track('theme_spline_point', { action: 'nudge' });
+			}
+			return;
+		}
 		if (event.key.toLowerCase() === 'r') resetCamera();
 		if (event.key.toLowerCase() === 'x') explorer.slice = !explorer.slice;
 		if (event.key.toLowerCase() === 'c') explorer.cylSlice = !explorer.cylSlice;
@@ -511,12 +589,17 @@
 
 	$effect(() => {
 		explorer.N;
+		explorer.autoPerformance;
+		explorer.minAverageFps;
 		explorer.lines;
 		explorer.floor;
 		explorer.shell;
 		explorer.surfaceGridAlpha;
 		explorer.outlineDepthTest;
-		draw();
+		untrack(() => {
+			resetPerformanceSamples();
+			draw();
+		});
 	});
 
 	$effect(() => {

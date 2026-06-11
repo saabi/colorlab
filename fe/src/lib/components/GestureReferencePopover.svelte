@@ -35,6 +35,16 @@
 			]
 		},
 		{
+			title: 'Spline Points',
+			items: [
+				['Click / tap point', 'select'],
+				['Drag point', 'move'],
+				['Arrow keys', 'nudge selected'],
+				['Alt / Shift + arrows', 'fine / coarse nudge'],
+				['Delete', 'remove selected']
+			]
+		},
+		{
 			title: 'Toggles',
 			items: [
 				['X', 'slice'],

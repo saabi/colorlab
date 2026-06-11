@@ -32,6 +32,7 @@
 	] as const;
 
 	const resolutions = [64, 128, 192, 256] as const;
+	const minAverageFpsOptions = [15, 30, 60] as const;
 </script>
 
 <aside class="side-panel left-panel">
@@ -159,6 +160,13 @@
 	</ControlGroup>
 
 	<ControlGroup title="Performance" helpId="performance" bind:openHelp collapsible defaultOpen={false}>
+		<ToggleRow label="Auto-adjust tessellation" bind:checked={explorer.autoPerformance} />
+		<label class="row" for="min-average-fps-select"><span>Minimum average FPS</span></label>
+		<select id="min-average-fps-select" bind:value={explorer.minAverageFps} disabled={!explorer.autoPerformance}>
+			{#each minAverageFpsOptions as fps}
+				<option value={fps}>{fps} fps</option>
+			{/each}
+		</select>
 		<label class="row" for="resolution-select"><span>Tessellation</span></label>
 		<select id="resolution-select" bind:value={explorer.N}>
 			{#each resolutions as resolution}
@@ -166,5 +174,6 @@
 			{/each}
 		</select>
 		<p class="note">{(6 * explorer.N * explorer.N).toLocaleString()} instances - 1 quad in memory</p>
+		<p class="note">Auto-adjust only lowers tessellation after sustained redraw misses.</p>
 	</ControlGroup>
 </aside>

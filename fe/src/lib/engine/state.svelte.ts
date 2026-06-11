@@ -16,6 +16,8 @@ function createExplorerDefaults(): ExplorerState {
 		spaceMode: 3,
 		gamut: 'srgb',
 		N: 256,
+		autoPerformance: true,
+		minAverageFps: 30,
 		slice: true,
 		planeMode: 'L',
 		off: 0.5,

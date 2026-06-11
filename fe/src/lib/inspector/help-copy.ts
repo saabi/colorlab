@@ -134,7 +134,7 @@ export const SIDEBAR_HELP: Record<SidebarGroupId, PanelHelpContent> = {
 	performance: {
 		title: 'Performance',
 		summary:
-			'Tessellation density N per cube face (64\u2013256). The solid is one unit quad instanced 6\u00b7N\u00b2 times \u2014 no per-cell vertex buffers, keeping memory use flat as resolution increases.',
+			'Tessellation density N per cube face (64\u2013256). The solid is one unit quad instanced 6\u00b7N\u00b2 times \u2014 no per-cell vertex buffers, keeping memory use flat as resolution increases. Auto-adjust samples recent redraw times and only steps N downward after a sustained miss against the selected average FPS target.',
 		sources: [{ label: 'Instanced rendering (design.md \u00a78)' }]
 	}
 };
