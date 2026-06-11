@@ -20,7 +20,7 @@
 
 	// The exported palette (2-D grid when expanded, else the 1-D ramp as one row).
 	const paletteRows = $derived(
-		explorer.theme.expand !== 'none' && explorer.theme.grid.length
+		explorer.theme.expandOn && explorer.theme.grid.length
 			? explorer.theme.grid
 			: explorer.theme.stops.length
 				? [explorer.theme.stops]

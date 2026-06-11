@@ -194,16 +194,46 @@ describe('parseSnapshot', () => {
 		expect(a?.splineSpace).toBe('oklch');
 	});
 
-	it('migrates v5 spread mode into the spread Expand operator', () => {
+	it('migrates v5 spread mode through to the v7 generalized Spread', () => {
 		const doc = {
 			schemaVersion: 5,
-			explorer: { theme: { mode: 'spread', steps: 9, points: [{ srgbLin: [0.3, 0.2, 0.4] }] } },
+			explorer: { theme: { mode: 'spread', steps: 9, dh: 40, dc: 0.22, cprof: 'linear', points: [{ srgbLin: [0.3, 0.2, 0.4] }] } },
 			camera: defaults.camera
 		} as unknown;
 		const t = parseSnapshot(doc).snapshot?.explorer.theme;
 		expect(t?.mode).toBe('linear');
-		expect(t?.expand).toBe('spread');
-		expect(t?.expandSteps).toBe(9);
+		expect(t?.expandOn).toBe(true);
+		expect(t?.expandCols.count).toBe(9);
+		expect(t?.expandCols.hue).toEqual({ delta: 40, dir: 'sym' });
+		expect(t?.expandCols.chroma.dir).toBe('sym');
+		expect(t?.expandCols.chroma.delta).toBeCloseTo(0.22 / 2.2, 6);
+	});
+
+	it('migrates v6 expand operators to v7 Spread generators', () => {
+		const mk = (theme: Record<string, unknown>) =>
+			parseSnapshot({ schemaVersion: 6, explorer: { theme }, camera: defaults.camera } as unknown).snapshot
+				?.explorer.theme;
+
+		const none = mk({ expand: 'none' });
+		expect(none?.expandOn).toBe(false);
+
+		const harmony = mk({ expand: 'harmony', harmony: 'triadic' });
+		expect(harmony?.expandOn).toBe(true);
+		expect(harmony?.expandRows).toEqual({
+			count: 3,
+			hue: { delta: 240, dir: 'ramp' },
+			chroma: { delta: 0, dir: 'off' },
+			light: { delta: 0, dir: 'off' }
+		});
+
+		const tints = mk({ expand: 'tints-shades', expandSteps: 7 });
+		expect(tints?.expandOn).toBe(true);
+		expect(tints?.expandCols.count).toBe(7);
+		expect(tints?.expandCols.light).toEqual({ delta: -0.32, dir: 'sym' });
+
+		const mirror = mk({ expand: 'spread', expandSteps: 4, dh: 60, dc: 0.11, cprof: 'mirror' });
+		expect(mirror?.expandCols.chroma.dir).toBe('edges');
+		expect(mirror?.expandCols.chroma.delta).toBeCloseTo(-0.11 / 2.2, 6);
 	});
 
 	it('coerces garbage control points and unknown spline space to safe defaults', () => {

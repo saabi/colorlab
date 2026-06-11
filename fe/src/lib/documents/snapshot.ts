@@ -1,8 +1,17 @@
 import { createAppState } from '$lib/engine/state.svelte';
 
-import type { AppState, ExplorerState, PersistedExplorer } from '$lib/engine/types';
+import type { AppState, AxisSpreadConfig, ExplorerState, PersistedExplorer } from '$lib/engine/types';
 import type { Camera } from '$lib/engine/camera';
 import { CURRENT_SNAPSHOT_VERSION, type ParameterSnapshot } from './types';
+
+function cloneSpread(g: AxisSpreadConfig): AxisSpreadConfig {
+	return {
+		count: g.count,
+		hue: { delta: g.hue.delta, dir: g.hue.dir },
+		chroma: { delta: g.chroma.delta, dir: g.chroma.dir },
+		light: { delta: g.light.delta, dir: g.light.dir }
+	};
+}
 
 function cloneCamera(camera: Camera): Camera {
 	return {
@@ -56,16 +65,13 @@ export function toPersistedExplorer(explorer: ExplorerState): PersistedExplorer 
 			gamutMap: theme.gamutMap,
 			steps: theme.steps,
 			mode: theme.mode,
-			dh: theme.dh,
-			dc: theme.dc,
-			cprof: theme.cprof,
 			arcLong: theme.arcLong,
 			place: theme.place,
 			contrastMin: theme.contrastMin,
 			contrastMax: theme.contrastMax,
-			expand: theme.expand,
-			expandSteps: theme.expandSteps,
-			harmony: theme.harmony,
+			expandOn: theme.expandOn,
+			expandRows: cloneSpread(theme.expandRows),
+			expandCols: cloneSpread(theme.expandCols),
 			showPoints: theme.showPoints,
 			showCurve: theme.showCurve,
 			showStops: theme.showStops,

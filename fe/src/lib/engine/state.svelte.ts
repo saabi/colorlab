@@ -53,16 +53,24 @@ function createExplorerDefaults(): ExplorerState {
 			arm: null,
 			mode: 'linear',
 			stops: [],
-			dh: 40,
-			dc: 0.0,
-			cprof: 'linear',
 			arcLong: false,
 			place: 'even',
 			contrastMin: 1.5,
 			contrastMax: 12,
-			expand: 'none',
-			expandSteps: 5,
-			harmony: 'complementary',
+			expandOn: false,
+			// Prefilled but inert (all axes 'off'); presets and the Expand panel set dirs.
+			expandRows: {
+				count: 2,
+				hue: { delta: 180, dir: 'off' },
+				chroma: { delta: 0, dir: 'off' },
+				light: { delta: 0, dir: 'off' }
+			},
+			expandCols: {
+				count: 5,
+				hue: { delta: 40, dir: 'off' },
+				chroma: { delta: 0.1, dir: 'off' },
+				light: { delta: -0.32, dir: 'off' }
+			},
 			showPoints: true,
 			showCurve: true,
 			showStops: true,
@@ -90,7 +98,7 @@ export function cloneAppState(state: AppState): AppState {
 
 export function createAppState(options: { mobile?: boolean } = {}): AppState {
 	const state: AppState = {
-		schemaVersion: 6,
+		schemaVersion: 7,
 		explorer: createExplorerDefaults(),
 		camera: createCamera()
 	};
@@ -152,9 +160,6 @@ export const EXAMPLE_STATES = [
 					splineSpace: 'oklch',
 					steps: 11,
 					mode: 'linear',
-					dh: 40,
-					dc: 0,
-					cprof: 'linear',
 					arcLong: true,
 					wcagBg: 'white'
 				}
@@ -210,9 +215,6 @@ export const EXAMPLE_STATES = [
 					splineSpace: 'oklch',
 					steps: 27,
 					mode: 'spline',
-					dh: 40,
-					dc: 0,
-					cprof: 'linear',
 					arcLong: true,
 					wcagBg: 'white'
 				}

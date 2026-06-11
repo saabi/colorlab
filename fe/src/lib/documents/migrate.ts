@@ -11,10 +11,15 @@
  *   spline docs -> points = controlPoints; others -> [A,B].
  * v5: theme.mode collapsed to 'linear'|'spline'|'spread' with an explicit
  *   interpolation space. seg -> linear+world; arc -> linear+oklch (cylindrical).
- * v6 (CURRENT_SNAPSHOT_VERSION): spread is no longer a mode but an Expand operator.
+ * v6: spread is no longer a mode but an Expand operator.
  *   mode 'spread' -> mode 'linear' + expand 'spread' (expandSteps from old steps).
+ * v7 (CURRENT_SNAPSHOT_VERSION): Expand generalized to one Spread (Oklch axes).
+ *   expand/harmony/expandSteps/dh/dc/cprof -> expandOn + expandRows + expandCols
+ *   ({count, hue|chroma|light: {delta, dir: off|ramp|sym|edges}}). Harmony = row
+ *   hue walks; tints = column light sym; spread = column hue sym + chroma
+ *   sym/edges (dc scaled /2.2 from the old world-cylindrical frame).
  *
- * When adding v6+, append a line here and implement migrateVNToVN+1 below.
+ * When adding v7+, append a line here and implement migrateVNToVN+1 below.
  */
 
 import { CURRENT_SNAPSHOT_VERSION } from './types';
@@ -92,6 +97,54 @@ function migrateV5ToV6(raw: Record<string, unknown>) {
 	return raw;
 }
 
+const SPREAD_OFF = { delta: 0, dir: 'off' };
+
+function migrateV6ToV7(raw: Record<string, unknown>) {
+	raw.schemaVersion = 7;
+	const explorer = raw.explorer as Record<string, unknown> | undefined;
+	const theme = explorer?.theme as Record<string, unknown> | undefined;
+	if (theme && !theme.expandRows) {
+		const count = typeof theme.expandSteps === 'number' ? theme.expandSteps : 5;
+		const dh = typeof theme.dh === 'number' ? theme.dh : 40;
+		const dc = typeof theme.dc === 'number' ? theme.dc : 0;
+		let rows: unknown = { count: 2, hue: { delta: 180, dir: 'off' }, chroma: SPREAD_OFF, light: SPREAD_OFF };
+		let cols: unknown = { count, hue: SPREAD_OFF, chroma: SPREAD_OFF, light: { delta: -0.32, dir: 'off' } };
+		if (theme.expand === 'harmony') {
+			// Harmony = row hue walks: complementary [0,180], triadic [0,120,240],
+			// analogous [-30,0,30], tetradic [0,90,180,270].
+			const h = theme.harmony;
+			const cfg =
+				h === 'triadic'
+					? { count: 3, delta: 240, dir: 'ramp' }
+					: h === 'analogous'
+						? { count: 3, delta: 30, dir: 'sym' }
+						: h === 'tetradic'
+							? { count: 4, delta: 270, dir: 'ramp' }
+							: { count: 2, delta: 180, dir: 'ramp' };
+			rows = { count: cfg.count, hue: { delta: cfg.delta, dir: cfg.dir }, chroma: SPREAD_OFF, light: SPREAD_OFF };
+		} else if (theme.expand === 'tints-shades') {
+			// Old order walked light tint -> dark shade; negative delta preserves it.
+			cols = { count, hue: SPREAD_OFF, chroma: SPREAD_OFF, light: { delta: -0.32, dir: 'sym' } };
+		} else if (theme.expand === 'spread') {
+			// Old spread fanned in the world cylindrical frame; in the Oklab world the
+			// chroma radius carried a 2.2 scale, hence dc / 2.2 in Oklch.
+			const chroma =
+				theme.cprof === 'mirror' ? { delta: -dc / 2.2, dir: 'edges' } : { delta: dc / 2.2, dir: 'sym' };
+			cols = { count, hue: { delta: dh, dir: 'sym' }, chroma, light: SPREAD_OFF };
+		}
+		theme.expandOn = theme.expand !== 'none' && theme.expand !== undefined;
+		theme.expandRows = rows;
+		theme.expandCols = cols;
+		delete theme.expand;
+		delete theme.harmony;
+		delete theme.expandSteps;
+		delete theme.dh;
+		delete theme.dc;
+		delete theme.cprof;
+	}
+	return raw;
+}
+
 export function migrateSnapshot(raw: unknown, fromVersion: number): unknown {
 	if (!raw || typeof raw !== 'object') return raw;
 	let current = { ...(raw as Record<string, unknown>) };
@@ -102,6 +155,7 @@ export function migrateSnapshot(raw: unknown, fromVersion: number): unknown {
 		if (version === 3) current = migrateV3ToV4(current);
 		if (version === 4) current = migrateV4ToV5(current);
 		if (version === 5) current = migrateV5ToV6(current);
+		if (version === 6) current = migrateV6ToV7(current);
 	}
 	return current;
 }

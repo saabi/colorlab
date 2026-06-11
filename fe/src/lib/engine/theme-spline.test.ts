@@ -4,6 +4,7 @@ import { createAppState } from './state.svelte';
 import { buildRamp } from './theme';
 import { rebuildMatrices } from '$lib/renderer/uniforms';
 import { INTERP_SPACES, INTERP_SPACE_KEYS } from '$lib/color/interp';
+import { lsrgb2oklab, oklab2lsrgb } from '$lib/color/pipeline';
 import { GAMUT_MAP_METHODS } from '$lib/color/gamut-map';
 import type { GamutMapMethod } from '$lib/color/gamut-map';
 import type { SplineConstraint } from './types';
@@ -114,28 +115,34 @@ describe('buildSplineRamp', () => {
 		expect(state.theme.stops[0].srgbLin.every(finite)).toBe(true);
 	});
 
-	it('expand builds a 2-D palette (rows x columns); none keeps it 1-D', () => {
+	const offAxis = () => ({ delta: 0, dir: 'off' as const });
+
+	it('expand builds a 2-D palette (rows x columns); off keeps it 1-D', () => {
 		const state = splineState('oklch', 'free', 4);
-		state.theme.expand = 'none';
+		state.theme.expandOn = false;
 		buildRamp(state, matrices);
 		expect(state.theme.grid).toEqual([]);
 
-		state.theme.expand = 'tints-shades';
-		state.theme.expandSteps = 6;
+		// Tints & shades preset = column light sym walk.
+		state.theme.expandOn = true;
+		state.theme.expandCols = { count: 6, hue: offAxis(), chroma: offAxis(), light: { delta: -0.32, dir: 'sym' } };
 		buildRamp(state, matrices);
 		expect(state.theme.grid.length).toBe(4);
 		expect(state.theme.grid.every((row) => row.length === 6)).toBe(true);
 		expect(state.theme.grid.every((row) => row.every((c) => c.srgbLin.every(finite)))).toBe(true);
 	});
 
-	it('a single source point + spread expand fans the seed into a 1-row palette', () => {
+	it('a single source point + spread columns fans the seed into a 1-row palette', () => {
 		const state = createAppState().explorer;
 		state.theme.mode = 'linear';
 		state.theme.points = [{ srgbLin: [0.4, 0.2, 0.5] }];
-		state.theme.expand = 'spread';
-		state.theme.expandSteps = 7;
-		state.theme.dh = 40;
-		state.theme.dc = 0.1;
+		state.theme.expandOn = true;
+		state.theme.expandCols = {
+			count: 7,
+			hue: { delta: 40, dir: 'sym' },
+			chroma: { delta: 0.05, dir: 'sym' },
+			light: offAxis()
+		};
 		buildRamp(state, matrices);
 		expect(state.theme.stops.length).toBe(1); // one seed stop
 		expect(state.theme.grid.length).toBe(1); // one row
@@ -143,22 +150,64 @@ describe('buildSplineRamp', () => {
 		expect(state.theme.grid[0].every((c) => c.srgbLin.every(finite))).toBe(true);
 	});
 
-	it('harmony expand produces one rotated ramp per scheme angle', () => {
+	it('row hue walks produce one related ramp per harmony angle', () => {
 		const cases = [
-			['complementary', 2],
-			['triadic', 3],
-			['analogous', 3],
-			['tetradic', 4]
+			[{ count: 2, delta: 180, dir: 'ramp' }, 2], // complementary
+			[{ count: 3, delta: 240, dir: 'ramp' }, 3], // triadic
+			[{ count: 3, delta: 30, dir: 'sym' }, 3], // analogous
+			[{ count: 4, delta: 270, dir: 'ramp' }, 4] // tetradic
 		] as const;
-		for (const [harmony, rows] of cases) {
+		for (const [cfg, rows] of cases) {
 			const state = splineState('oklch', 'free', 5);
-			state.theme.expand = 'harmony';
-			state.theme.harmony = harmony;
+			state.theme.expandOn = true;
+			state.theme.expandRows = {
+				count: cfg.count,
+				hue: { delta: cfg.delta, dir: cfg.dir },
+				chroma: offAxis(),
+				light: offAxis()
+			};
 			buildRamp(state, matrices);
 			expect(state.theme.grid.length).toBe(rows);
 			expect(state.theme.grid.every((row) => row.length === 5)).toBe(true);
 			expect(state.theme.grid.every((row) => row.every((c) => c.srgbLin.every(finite)))).toBe(true);
 		}
+	});
+
+	it('v2 spread matches the legacy operators (equivalence oracles)', () => {
+		// Harmony oracle: rotate each stop's hue in Oklab by the scheme angles.
+		const state = splineState('oklab', 'free', 5);
+		state.theme.gamutMap = 'none';
+		buildRamp(state, matrices);
+		const base = state.theme.stops.map((s) => [...s.srgbLin] as [number, number, number]);
+		state.theme.expandOn = true;
+		state.theme.expandRows = { count: 3, hue: { delta: 240, dir: 'ramp' }, chroma: offAxis(), light: offAxis() };
+		buildRamp(state, matrices);
+		const angles = [0, 120, 240];
+		state.theme.grid.forEach((row, r) => {
+			const rad = (angles[r] * Math.PI) / 180;
+			row.forEach((cell, i) => {
+				const ok = lsrgb2oklab(base[i].map((v) => Math.min(Math.max(v, 0), 1)) as [number, number, number]);
+				const a = ok[1] * Math.cos(rad) - ok[2] * Math.sin(rad);
+				const b = ok[1] * Math.sin(rad) + ok[2] * Math.cos(rad);
+				const expected = oklab2lsrgb([ok[0], a, b]);
+				expected.forEach((v, k) => expect(Math.abs(cell.srgbLin[k] - v)).toBeLessThan(1e-6));
+			});
+		});
+
+		// Tints oracle (mid-L colors, no clamping): old walked L from L+0.32 down to L-0.32.
+		state.theme.expandRows = { count: 1, hue: offAxis(), chroma: offAxis(), light: offAxis() };
+		state.theme.expandCols = { count: 5, hue: offAxis(), chroma: offAxis(), light: { delta: -0.32, dir: 'sym' } };
+		state.theme.points = [{ srgbLin: [0.2, 0.18, 0.22] }, { srgbLin: [0.25, 0.22, 0.2] }];
+		buildRamp(state, matrices);
+		state.theme.grid.forEach((row, si) => {
+			const ok = lsrgb2oklab(state.theme.stops[si].srgbLin.map((v) => Math.min(Math.max(v, 0), 1)) as [number, number, number]);
+			row.forEach((cell, j) => {
+				const t = j / 4;
+				const L = ok[0] + 0.32 - 0.64 * t; // hi -> lo, matching old order
+				const expected = oklab2lsrgb([L, ok[1], ok[2]]);
+				expected.forEach((v, k) => expect(Math.abs(cell.srgbLin[k] - v)).toBeLessThan(1e-6));
+			});
+		});
 	});
 
 	it('every place policy yields the requested number of finite stops', () => {

@@ -63,7 +63,7 @@
 	const oogBefore = $derived(explorer.theme.rawStops.reduce((n: number, s: { inG: boolean }) => (s.inG ? n : n + 1), 0));
 	const oogAfter = $derived(explorer.theme.stops.reduce((n: number, s: { inG: boolean }) => (s.inG ? n : n + 1), 0));
 
-	const isPalette = $derived(explorer.theme.expand !== 'none' && explorer.theme.grid.length > 0);
+	const isPalette = $derived(explorer.theme.expandOn && explorer.theme.grid.length > 0);
 
 	function showExportText(kind: 'css' | 'json') {
 		if (isPalette) {
@@ -75,19 +75,51 @@
 		track('theme_export', { format: kind === 'css' ? 'css' : 'dtcg' });
 	}
 
-	const EXPAND_OPTIONS: Array<{ value: ExplorerState['theme']['expand']; label: string }> = [
-		{ value: 'none', label: 'None (single ramp)' },
-		{ value: 'tints-shades', label: 'Tints & shades' },
-		{ value: 'spread', label: 'Spread (hue / chroma fan)' },
-		{ value: 'harmony', label: 'Hue harmony (related ramps)' }
+	// Generalized Spread: presets only set the row/column generator parameters.
+	const SPREAD_DIR_OPTIONS: Array<{ value: ExplorerState['theme']['expandRows']['hue']['dir']; label: string }> = [
+		{ value: 'off', label: 'Off' },
+		{ value: 'ramp', label: 'Ramp (0 → δ)' },
+		{ value: 'sym', label: 'Symmetric (−δ → +δ)' },
+		{ value: 'edges', label: 'Edges (0 → δ at ends)' }
 	];
 
-	const HARMONY_OPTIONS: Array<{ value: ExplorerState['theme']['harmony']; label: string }> = [
-		{ value: 'complementary', label: 'Complementary (×2)' },
-		{ value: 'triadic', label: 'Triadic (×3)' },
-		{ value: 'analogous', label: 'Analogous (×3)' },
-		{ value: 'tetradic', label: 'Tetradic (×4)' }
+	const off = () => ({ delta: 0, dir: 'off' as const });
+	const EXPAND_PRESETS: Array<{ label: string; apply: () => void }> = [
+		{
+			label: 'Complementary',
+			apply: () => setSpread({ count: 2, hue: { delta: 180, dir: 'ramp' }, chroma: off(), light: off() }, null)
+		},
+		{
+			label: 'Triadic',
+			apply: () => setSpread({ count: 3, hue: { delta: 240, dir: 'ramp' }, chroma: off(), light: off() }, null)
+		},
+		{
+			label: 'Analogous',
+			apply: () => setSpread({ count: 3, hue: { delta: 30, dir: 'sym' }, chroma: off(), light: off() }, null)
+		},
+		{
+			label: 'Tetradic',
+			apply: () => setSpread({ count: 4, hue: { delta: 270, dir: 'ramp' }, chroma: off(), light: off() }, null)
+		},
+		{
+			label: 'Tints & shades',
+			apply: () => setSpread(null, { count: 5, hue: off(), chroma: off(), light: { delta: -0.32, dir: 'sym' } })
+		},
+		{
+			label: 'Hue fan',
+			apply: () => setSpread(null, { count: 5, hue: { delta: 40, dir: 'sym' }, chroma: off(), light: off() })
+		}
 	];
+
+	function setSpread(
+		rows: ExplorerState['theme']['expandRows'] | null,
+		cols: ExplorerState['theme']['expandCols'] | null
+	) {
+		explorer.theme.expandOn = true;
+		explorer.theme.expandRows = rows ?? { count: 1, hue: off(), chroma: off(), light: off() };
+		explorer.theme.expandCols = cols ?? { count: 1, hue: off(), chroma: off(), light: off() };
+		track('theme_expand_preset');
+	}
 
 	function setThemeMode(mode: typeof explorer.theme.mode) {
 		explorer.theme.mode = mode;
@@ -332,38 +364,59 @@
 
 {#if showExpand}
 	<div class:separator={!showAll}>
-		<div class="panel-label" style="margin-top: 0">Expand to palette</div>
-		<p class="note" style="margin-top: 0">Generate a 2-D palette by expanding each stop into a row of variants.</p>
-		<label class="field-row">
-			<span>Generator</span>
-			<select bind:value={explorer.theme.expand}>
-				{#each EXPAND_OPTIONS as opt}
-					<option value={opt.value}>{opt.label}</option>
-				{/each}
-			</select>
-		</label>
-		{#if explorer.theme.expand !== 'none'}
+		<div class="panel-label" style="margin-top: 0">Expand to palette (Spread)</div>
+		<p class="note" style="margin-top: 0">
+			One generalized Spread: rows make related ramps; columns expand each stop into variants. Presets just set the parameters.
+		</p>
+		<ToggleRow label="Enable expand" bind:checked={explorer.theme.expandOn} />
+		{#if explorer.theme.expandOn}
 			<ToggleRow label="Show palette in 3D" bind:checked={explorer.theme.showPalette} />
-			{#if explorer.theme.expand === 'harmony'}
+			<div class="segmented" style="--segments: 3">
+				{#each EXPAND_PRESETS.slice(0, 3) as preset}
+					<button type="button" onclick={preset.apply}>{preset.label}</button>
+				{/each}
+			</div>
+			<div class="segmented" style="--segments: 3">
+				{#each EXPAND_PRESETS.slice(3) as preset}
+					<button type="button" onclick={preset.apply}>{preset.label}</button>
+				{/each}
+			</div>
+
+			{#each [
+				{ label: 'Related ramps (rows)', g: explorer.theme.expandRows },
+				{ label: 'Per-stop variants (columns)', g: explorer.theme.expandCols }
+			] as section}
+				<div class="panel-label" style="margin-top: 8px">{section.label}</div>
+				<SliderRow label="Count" bind:value={section.g.count} min={1} max={12} step={1} format={(value) => value.toFixed(0)} />
 				<label class="field-row">
-					<span>Scheme</span>
-					<select bind:value={explorer.theme.harmony}>
-						{#each HARMONY_OPTIONS as opt}
-							<option value={opt.value}>{opt.label}</option>
-						{/each}
+					<span>Hue</span>
+					<select bind:value={section.g.hue.dir}>
+						{#each SPREAD_DIR_OPTIONS as opt}<option value={opt.value}>{opt.label}</option>{/each}
 					</select>
 				</label>
-			{:else}
-				<SliderRow label="Columns" bind:value={explorer.theme.expandSteps} min={2} max={12} step={1} format={(value) => value.toFixed(0)} />
-			{/if}
-			{#if explorer.theme.expand === 'spread'}
-				<SliderRow label="Delta hue" bind:value={explorer.theme.dh} min={0} max={180} step={1} format={(value) => `${value.toFixed(0)} deg`} />
-				<SliderRow label="Delta chroma" bind:value={explorer.theme.dc} min={0} max={0.4} step={0.005} format={(value) => value.toFixed(2)} />
-				<div class="segmented" style="--segments: 2">
-					<button type="button" class:active={explorer.theme.cprof === 'linear'} onclick={() => (explorer.theme.cprof = 'linear')}>Linear dc</button>
-					<button type="button" class:active={explorer.theme.cprof === 'mirror'} onclick={() => (explorer.theme.cprof = 'mirror')}>Mirror dc</button>
-				</div>
-			{/if}
+				{#if section.g.hue.dir !== 'off'}
+					<SliderRow label="Δ hue" bind:value={section.g.hue.delta} min={-360} max={360} step={5} format={(value) => `${value.toFixed(0)} deg`} />
+				{/if}
+				<label class="field-row">
+					<span>Chroma</span>
+					<select bind:value={section.g.chroma.dir}>
+						{#each SPREAD_DIR_OPTIONS as opt}<option value={opt.value}>{opt.label}</option>{/each}
+					</select>
+				</label>
+				{#if section.g.chroma.dir !== 'off'}
+					<SliderRow label="Δ chroma" bind:value={section.g.chroma.delta} min={-0.4} max={0.4} step={0.005} format={(value) => value.toFixed(3)} />
+				{/if}
+				<label class="field-row">
+					<span>Lightness</span>
+					<select bind:value={section.g.light.dir}>
+						{#each SPREAD_DIR_OPTIONS as opt}<option value={opt.value}>{opt.label}</option>{/each}
+					</select>
+				</label>
+				{#if section.g.light.dir !== 'off'}
+					<SliderRow label="Δ lightness" bind:value={section.g.light.delta} min={-1} max={1} step={0.01} format={(value) => value.toFixed(2)} />
+				{/if}
+			{/each}
+
 			{#if isPalette}
 				<div style="margin-top: 6px">
 					<PaletteStrip layout="fluid" rows={explorer.theme.grid} cvd={explorer.cvd} cvdSev={explorer.cvdSev} ariaLabel="Expanded palette preview" />

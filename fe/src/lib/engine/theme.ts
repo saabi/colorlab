@@ -6,7 +6,7 @@ import { mapToGamut } from '$lib/color/gamut-map';
 import { TRC } from '$lib/color/transfer';
 import { solidField } from './picking';
 
-import type { ExplorerState, SplineSample, ThemeAnchor, ThemeStop } from './types';
+import type { AxisSpreadConfig, ExplorerState, SplineSample, SpreadAxis, ThemeAnchor, ThemeStop } from './types';
 import type { DerivedMatrices } from '$lib/renderer/uniforms';
 
 const clamp01 = (v: number) => Math.min(Math.max(v, 0), 1);
@@ -76,77 +76,77 @@ export function buildRamp(state: ExplorerState, matrices: DerivedMatrices) {
 	buildExpand(state, matrices); // stops -> theme.grid
 }
 
-// Expand stage: turn each final 1-D stop into a row of variants -> a 2-D palette.
-// 'tints-shades' walks Oklab lightness around each base color (hue/chroma held),
-// gamut-mapped per cell by the same policy. 'none' leaves the ramp 1-D (grid = []).
-const EXPAND_L_RANGE = 0.32;
-const HARMONY_OFFSETS: Record<ExplorerState['theme']['harmony'], number[]> = {
-	complementary: [0, 180],
-	triadic: [0, 120, 240],
-	analogous: [-30, 0, 30],
-	tetradic: [0, 90, 180, 270]
-};
+// Expand stage (generalized Spread): one mechanism in Oklch. The row generator
+// makes related ramps (offsets applied to every stop of a ramp copy — harmony);
+// the column generator expands each stop into a ladder of variants (tints,
+// hue/chroma fans). Presets in the UI only set these parameters.
+function spreadOffset(axis: SpreadAxis, t: number): number {
+	if (axis.dir === 'ramp') return axis.delta * t;
+	if (axis.dir === 'sym') return axis.delta * (2 * t - 1);
+	if (axis.dir === 'edges') return axis.delta * Math.abs(2 * t - 1);
+	return 0;
+}
+
+function spreadIdentity(g: AxisSpreadConfig): boolean {
+	return g.count <= 1 || (g.hue.dir === 'off' && g.chroma.dir === 'off' && g.light.dir === 'off');
+}
+
+// Apply Oklch offsets to a linear-sRGB color: h += dh (deg), C = max(0, C+dC), L = clamp01(L+dL).
+function spreadColor(srgbLin: Vec3, dh: number, dC: number, dL: number): Vec3 {
+	const ok = lsrgb2oklab(srgbLin.map(clamp01) as Vec3);
+	const C = Math.hypot(ok[1], ok[2]);
+	const h = Math.atan2(ok[2], ok[1]) + (dh * Math.PI) / 180;
+	const C2 = Math.max(0, C + dC);
+	const L2 = clamp01(ok[0] + dL);
+	return oklab2lsrgb([L2, C2 * Math.cos(h), C2 * Math.sin(h)]);
+}
+
 function buildExpand(state: ExplorerState, matrices: DerivedMatrices) {
 	const T = state.theme;
-	if (T.expand === 'none' || !T.stops.length) {
+	const rowsId = spreadIdentity(T.expandRows);
+	const colsId = spreadIdentity(T.expandCols);
+	if (!T.expandOn || !T.stops.length || (rowsId && colsId)) {
 		T.grid = [];
 		return;
 	}
-	const cols = Math.max(2, T.expandSteps);
 	const mapCell = (lin: Vec3) => (T.gamutMap !== 'none' ? mapToGamut(lin, T.gamutMap) : lin);
+	const cell = (srgbLin: Vec3, dh: number, dC: number, dL: number) =>
+		stopFromSrgbLin(mapCell(spreadColor(srgbLin, dh, dC, dL)), state, matrices);
 
-	if (T.expand === 'harmony') {
-		// Rotate the whole ramp's hue into related ramps; rows = harmony angles,
-		// columns = the ramp's stops. Hue is rotated in Oklab (a,b held in length).
-		const offsets = HARMONY_OFFSETS[T.harmony];
-		T.grid = offsets.map((deg) => {
-			const rad = (deg * Math.PI) / 180;
-			const cos = Math.cos(rad);
-			const sin = Math.sin(rad);
-			return T.stops.map((s) => {
-				const ok = lsrgb2oklab(s.srgbLin.map(clamp01) as Vec3);
-				const a = ok[1] * cos - ok[2] * sin;
-				const b = ok[1] * sin + ok[2] * cos;
-				return stopFromSrgbLin(mapCell(oklab2lsrgb([ok[0], a, b])), state, matrices);
+	// 1. Row generator: R related ramps (R x S).
+	const ramps: ThemeStop[][] = rowsId
+		? [T.stops]
+		: Array.from({ length: T.expandRows.count }, (_, r) => {
+				const t = T.expandRows.count === 1 ? 0 : r / (T.expandRows.count - 1);
+				const dh = spreadOffset(T.expandRows.hue, t);
+				const dC = spreadOffset(T.expandRows.chroma, t);
+				const dL = spreadOffset(T.expandRows.light, t);
+				return T.stops.map((s) => cell(s.srgbLin, dh, dC, dL));
 			});
-		});
+
+	// 2. Column generator: each stop -> K variants; grid flattens to (R*S) x K.
+	if (colsId) {
+		T.grid = ramps;
 		return;
 	}
-
-	if (T.expand === 'spread') {
-		// Fan each stop across delta hue/chroma in the world's cylindrical frame
-		// (the former standalone spread mode, now applied per stop).
-		const dh = (T.dh * Math.PI) / 180;
-		T.grid = T.stops.map((s) => {
-			const w = s.world;
-			const r0 = Math.hypot(w[0], w[2]);
-			const th0 = Math.atan2(w[2], w[0]);
+	const K = T.expandCols.count;
+	T.grid = ramps.flatMap((ramp) =>
+		ramp.map((s) => {
 			const row: ThemeStop[] = [];
-			for (let j = 0; j < cols; j += 1) {
-				const t = cols === 1 ? 0.5 : j / (cols - 1);
-				const th = th0 + dh * (2 * t - 1);
-				const r = Math.max(0, T.cprof === 'linear' ? r0 + T.dc * (2 * t - 1) : r0 - T.dc * Math.abs(2 * t - 1));
-				const cell = stopFromWorld([r * Math.cos(th), w[1], r * Math.sin(th)], state, matrices);
-				row.push(T.gamutMap !== 'none' ? stopFromSrgbLin(mapCell(cell.srgbLin), state, matrices) : cell);
+			for (let j = 0; j < K; j += 1) {
+				const t = K === 1 ? 0.5 : j / (K - 1);
+				row.push(
+					cell(
+						s.srgbLin,
+						spreadOffset(T.expandCols.hue, t),
+						spreadOffset(T.expandCols.chroma, t),
+						spreadOffset(T.expandCols.light, t)
+					)
+				);
 			}
 			return row;
-		});
-		return;
-	}
-
-	// 'tints-shades': walk Oklab lightness around each base color (hue/chroma held).
-	T.grid = T.stops.map((s) => {
-		const ok = lsrgb2oklab(s.srgbLin.map(clamp01) as Vec3);
-		const hi = Math.min(1, ok[0] + EXPAND_L_RANGE);
-		const lo = Math.max(0, ok[0] - EXPAND_L_RANGE);
-		const row: ThemeStop[] = [];
-		for (let j = 0; j < cols; j += 1) {
-			const t = cols === 1 ? 0.5 : j / (cols - 1);
-			const L = hi + (lo - hi) * t; // light tint -> dark shade
-			row.push(stopFromSrgbLin(mapCell(oklab2lsrgb([L, ok[1], ok[2]])), state, matrices));
-		}
-		return row;
-	});
+		})
+	);
 }
 
 const HIRES = 200; // spline sampling resolution for arc length + visualization

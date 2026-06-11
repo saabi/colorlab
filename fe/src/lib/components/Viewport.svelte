@@ -67,7 +67,7 @@
 	const shellMatrices = $derived(explorer.hideAids ? null : rebuildShell(explorer.shell));
 	// The exported palette: the 2-D grid when expanded, else the 1-D ramp as one row.
 	const paletteRows = $derived(
-		explorer.theme.expand !== 'none' && explorer.theme.grid.length
+		explorer.theme.expandOn && explorer.theme.grid.length
 			? explorer.theme.grid
 			: explorer.theme.stops.length
 				? [explorer.theme.stops]
@@ -670,17 +670,15 @@
 	$effect(() => {
 		explorer.theme.steps;
 		explorer.theme.mode;
-		explorer.theme.dh;
-		explorer.theme.dc;
-		explorer.theme.cprof;
 		explorer.theme.arcLong;
 		explorer.theme.place;
 		explorer.theme.wcagBg;
 		explorer.theme.contrastMin;
 		explorer.theme.contrastMax;
-		explorer.theme.expand;
-		explorer.theme.expandSteps;
-		explorer.theme.harmony;
+		explorer.theme.expandOn;
+		// Track every nested Spread field (count + per-axis delta/dir).
+		JSON.stringify(explorer.theme.expandRows);
+		JSON.stringify(explorer.theme.expandCols);
 		untrack(() => {
 			buildRamp(explorer, matrices);
 			draw();

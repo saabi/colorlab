@@ -2,7 +2,7 @@ import { type Camera } from '$lib/engine/camera';
 import { createAppState } from '$lib/engine/state.svelte';
 
 import type {
-	ChromaProfile,
+	AxisSpreadConfig,
 	CvdMode,
 	GamutKey,
 	PersistedExplorer,
@@ -11,12 +11,12 @@ import type {
 	ShellKey,
 	SpaceMode,
 	SplineConstraint,
+	SpreadAxis,
+	SpreadDir,
 	ThemeAnchor,
 	ThemeMode,
 	InterpSpaceChoice,
-	PlacePolicy,
-	ExpandPolicy,
-	HarmonyKind
+	PlacePolicy
 } from '$lib/engine/types';
 import { INTERP_SPACE_KEYS } from '$lib/color/interp';
 import { GAMUT_MAP_METHODS, type GamutMapMethod } from '$lib/color/gamut-map';
@@ -29,10 +29,8 @@ const PLANE_MODES: readonly PlaneMode[] = ['L', 'H', 'C'];
 const SHELLS: readonly ShellKey[] = ['none', 'p3', 'rec2020', 'ntsc', 'cie'];
 const CVD_MODES: readonly CvdMode[] = ['none', 'protan', 'deutan', 'tritan'];
 const THEME_MODES: readonly ThemeMode[] = ['linear', 'spline'];
-const CHROMA_PROFILES: readonly ChromaProfile[] = ['linear', 'mirror'];
 const PLACE_POLICIES: readonly PlacePolicy[] = ['even', 'uniform', 'tones', 'contrast'];
-const EXPAND_POLICIES: readonly ExpandPolicy[] = ['none', 'tints-shades', 'spread', 'harmony'];
-const HARMONY_KINDS: readonly HarmonyKind[] = ['complementary', 'triadic', 'analogous', 'tetradic'];
+const SPREAD_DIRS: readonly SpreadDir[] = ['off', 'ramp', 'sym', 'edges'];
 const WCAG_BG: readonly PersistedTheme['wcagBg'][] = ['white', 'black'];
 const SPLINE_CONSTRAINTS: readonly SplineConstraint[] = ['free', 'surface'];
 const GAMUT_MAPS: readonly GamutMapMethod[] = GAMUT_MAP_METHODS;
@@ -108,6 +106,24 @@ function coerceAnchorList(value: unknown, label: string): ThemeAnchor[] {
 	return out;
 }
 
+function coerceSpreadAxis(raw: unknown, defaults: SpreadAxis, label: string): SpreadAxis {
+	const axis = isRecord(raw) ? raw : {};
+	return {
+		delta: finiteNumber(axis.delta, defaults.delta, `${label}.delta`),
+		dir: enumOf(axis.dir, SPREAD_DIRS, defaults.dir, `${label}.dir`)
+	};
+}
+
+function coerceSpread(raw: unknown, defaults: AxisSpreadConfig, label: string): AxisSpreadConfig {
+	const g = isRecord(raw) ? raw : {};
+	return {
+		count: Math.min(12, Math.max(1, Math.round(finiteNumber(g.count, defaults.count, `${label}.count`)))),
+		hue: coerceSpreadAxis(g.hue, defaults.hue, `${label}.hue`),
+		chroma: coerceSpreadAxis(g.chroma, defaults.chroma, `${label}.chroma`),
+		light: coerceSpreadAxis(g.light, defaults.light, `${label}.light`)
+	};
+}
+
 function coerceTheme(raw: unknown, defaults: PersistedTheme): PersistedTheme {
 	const theme = isRecord(raw) ? raw : {};
 	return {
@@ -117,16 +133,13 @@ function coerceTheme(raw: unknown, defaults: PersistedTheme): PersistedTheme {
 		gamutMap: enumOf(theme.gamutMap, GAMUT_MAPS, defaults.gamutMap, 'theme.gamutMap'),
 		steps: Math.min(27, Math.max(1, Math.round(finiteNumber(theme.steps, defaults.steps, 'theme.steps')))),
 		mode: enumOf(theme.mode, THEME_MODES, defaults.mode, 'theme.mode'),
-		dh: finiteNumber(theme.dh, defaults.dh, 'theme.dh'),
-		dc: finiteNumber(theme.dc, defaults.dc, 'theme.dc'),
-		cprof: enumOf(theme.cprof, CHROMA_PROFILES, defaults.cprof, 'theme.cprof'),
 		arcLong: typeof theme.arcLong === 'boolean' ? theme.arcLong : defaults.arcLong,
 		place: enumOf(theme.place, PLACE_POLICIES, defaults.place, 'theme.place'),
 		contrastMin: Math.min(21, Math.max(1, finiteNumber(theme.contrastMin, defaults.contrastMin, 'theme.contrastMin'))),
 		contrastMax: Math.min(21, Math.max(1, finiteNumber(theme.contrastMax, defaults.contrastMax, 'theme.contrastMax'))),
-		expand: enumOf(theme.expand, EXPAND_POLICIES, defaults.expand, 'theme.expand'),
-		expandSteps: Math.min(12, Math.max(2, Math.round(finiteNumber(theme.expandSteps, defaults.expandSteps, 'theme.expandSteps')))),
-		harmony: enumOf(theme.harmony, HARMONY_KINDS, defaults.harmony, 'theme.harmony'),
+		expandOn: typeof theme.expandOn === 'boolean' ? theme.expandOn : defaults.expandOn,
+		expandRows: coerceSpread(theme.expandRows, defaults.expandRows, 'theme.expandRows'),
+		expandCols: coerceSpread(theme.expandCols, defaults.expandCols, 'theme.expandCols'),
 		showPoints: typeof theme.showPoints === 'boolean' ? theme.showPoints : defaults.showPoints,
 		showCurve: typeof theme.showCurve === 'boolean' ? theme.showCurve : defaults.showCurve,
 		showStops: typeof theme.showStops === 'boolean' ? theme.showStops : defaults.showStops,
@@ -224,16 +237,13 @@ export function coerceSnapshot(raw: unknown): ParameterSnapshot | null {
 				gamutMap: factory.explorer.theme.gamutMap,
 				steps: factory.explorer.theme.steps,
 				mode: factory.explorer.theme.mode,
-				dh: factory.explorer.theme.dh,
-				dc: factory.explorer.theme.dc,
-				cprof: factory.explorer.theme.cprof,
 				arcLong: factory.explorer.theme.arcLong,
 				place: factory.explorer.theme.place,
 				contrastMin: factory.explorer.theme.contrastMin,
 				contrastMax: factory.explorer.theme.contrastMax,
-				expand: factory.explorer.theme.expand,
-				expandSteps: factory.explorer.theme.expandSteps,
-				harmony: factory.explorer.theme.harmony,
+				expandOn: factory.explorer.theme.expandOn,
+				expandRows: factory.explorer.theme.expandRows,
+				expandCols: factory.explorer.theme.expandCols,
 				showPoints: factory.explorer.theme.showPoints,
 				showCurve: factory.explorer.theme.showCurve,
 				showStops: factory.explorer.theme.showStops,

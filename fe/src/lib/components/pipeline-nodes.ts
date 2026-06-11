@@ -162,7 +162,7 @@ export const PIPELINE_NODES: PipelineNode[] = [
 		description: 'Per-stop generator that turns the 1-D ramp into a 2-D palette (e.g. tints & shades).',
 		affects: 'Export',
 		requiresSource: true,
-		status: (state) => (state.theme.expand === 'none' ? 'Off' : `${state.theme.grid.length}×${state.theme.grid[0]?.length ?? 0}`)
+		status: (state) => (!state.theme.expandOn ? 'Off' : `${state.theme.grid.length}×${state.theme.grid[0]?.length ?? 0}`)
 	},
 	{
 		id: 'gamut-map',
