@@ -127,6 +127,10 @@ function coerceTheme(raw: unknown, defaults: PersistedTheme): PersistedTheme {
 		expand: enumOf(theme.expand, EXPAND_POLICIES, defaults.expand, 'theme.expand'),
 		expandSteps: Math.min(12, Math.max(2, Math.round(finiteNumber(theme.expandSteps, defaults.expandSteps, 'theme.expandSteps')))),
 		harmony: enumOf(theme.harmony, HARMONY_KINDS, defaults.harmony, 'theme.harmony'),
+		showPoints: typeof theme.showPoints === 'boolean' ? theme.showPoints : defaults.showPoints,
+		showCurve: typeof theme.showCurve === 'boolean' ? theme.showCurve : defaults.showCurve,
+		showStops: typeof theme.showStops === 'boolean' ? theme.showStops : defaults.showStops,
+		showPalette: typeof theme.showPalette === 'boolean' ? theme.showPalette : defaults.showPalette,
 		aa: finiteNumber(theme.aa, defaults.aa, 'theme.aa'),
 		wcagBg: enumOf(theme.wcagBg, WCAG_BG, defaults.wcagBg, 'theme.wcagBg')
 	};
@@ -227,6 +231,10 @@ export function coerceSnapshot(raw: unknown): ParameterSnapshot | null {
 				expand: factory.explorer.theme.expand,
 				expandSteps: factory.explorer.theme.expandSteps,
 				harmony: factory.explorer.theme.harmony,
+				showPoints: factory.explorer.theme.showPoints,
+				showCurve: factory.explorer.theme.showCurve,
+				showStops: factory.explorer.theme.showStops,
+				showPalette: factory.explorer.theme.showPalette,
 				aa: factory.explorer.theme.aa,
 				wcagBg: factory.explorer.theme.wcagBg
 			}

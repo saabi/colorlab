@@ -211,6 +211,7 @@
 	<p class="note">
 		Arm a target, then click the solid or slice cap. Drag a point to move it; click it to select, Delete to remove. Segment/arc use the first two (A, B); spline uses all.
 	</p>
+	<ToggleRow label="Show points in 3D" bind:checked={explorer.theme.showPoints} />
 
 	{#if explorer.theme.points.length}
 		<div class="panel-label" style="margin-top: 8px">Points</div>
@@ -298,6 +299,7 @@
 	<p class="note">
 		Builds the ramp path from the source points. A single point yields one seed stop — useful with the spread expander.
 	</p>
+	<ToggleRow label="Show curve in 3D" bind:checked={explorer.theme.showCurve} />
 {/if}
 
 {#if showAdjust}
@@ -324,6 +326,7 @@
 			<SliderRow label="Min contrast" bind:value={explorer.theme.contrastMin} min={1} max={21} step={0.5} format={(value) => `${value.toFixed(1)}:1`} />
 			<SliderRow label="Max contrast" bind:value={explorer.theme.contrastMax} min={1} max={21} step={0.5} format={(value) => `${value.toFixed(1)}:1`} />
 		{/if}
+		<ToggleRow label="Show stops in 3D" bind:checked={explorer.theme.showStops} />
 	</div>
 {/if}
 
@@ -340,6 +343,7 @@
 			</select>
 		</label>
 		{#if explorer.theme.expand !== 'none'}
+			<ToggleRow label="Show palette in 3D" bind:checked={explorer.theme.showPalette} />
 			{#if explorer.theme.expand === 'harmony'}
 				<label class="field-row">
 					<span>Scheme</span>

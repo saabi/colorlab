@@ -159,11 +159,14 @@ export class WebGlRenderer {
 			gl.drawArrays(gl.POINTS, 0, 1);
 		}
 
-		if (input.state.theme.stops.length) {
+		// Generated ramp swatches: placed stops, and (when expanded) every palette cell.
+		// Each layer is independently toggleable from its producing pipeline step.
+		const t = input.state.theme;
+		const drawSwatches = (swatches: { world: [number, number, number]; srgbLin: [number, number, number] }[]) => {
 			gl.useProgram(this.markProgram);
 			gl.uniformMatrix4fv(this.U(this.markProgram, 'uProj'), false, proj);
 			gl.uniformMatrix4fv(this.U(this.markProgram, 'uView'), false, view);
-			for (const s of input.state.theme.stops) {
+			for (const s of swatches) {
 				const sim = simulateCvdSrgb(s.srgbLin, input.state.cvd, input.state.cvdSev);
 				const c = sim.map((v) => TRC.srgb.enc(Math.min(Math.max(v, 0), 1)));
 				const y = 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
@@ -173,7 +176,9 @@ export class WebGlRenderer {
 				gl.uniform3fv(this.U(this.markProgram, 'uBorder'), [border, border, border]);
 				gl.drawArrays(gl.POINTS, 0, 1);
 			}
-		}
+		};
+		if (t.showStops && t.stops.length) drawSwatches(t.stops);
+		if (t.showPalette && t.grid.length) for (const row of t.grid) drawSwatches(row);
 
 		// Draw source-point markers in every ramp mode; the spline curve itself only
 		// renders when splineCurve is populated (spline mode), handled inside drawSpline.
@@ -355,7 +360,7 @@ export class WebGlRenderer {
 	private drawSpline(input: DrawInput, proj: Float32Array, view: Float32Array) {
 		const { gl } = this;
 		const curve = input.state.theme.splineCurve;
-		if (curve.length > 1) {
+		if (input.state.theme.showCurve && curve.length > 1) {
 			const data = new Float32Array(curve.length * 6);
 			for (let i = 0; i < curve.length; i += 1) {
 				const s = curve[i];
@@ -378,7 +383,7 @@ export class WebGlRenderer {
 			gl.bindVertexArray(null);
 		}
 
-		const cps = input.state.theme.points;
+		const cps = input.state.theme.showPoints ? input.state.theme.points : [];
 		if (cps.length) {
 			gl.useProgram(this.markProgram);
 			gl.uniformMatrix4fv(this.U(this.markProgram, 'uProj'), false, proj);

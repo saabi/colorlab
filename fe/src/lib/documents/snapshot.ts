@@ -69,6 +69,10 @@ export function toPersistedExplorer(explorer: ExplorerState): PersistedExplorer 
 			expand: theme.expand,
 			expandSteps: theme.expandSteps,
 			harmony: theme.harmony,
+			showPoints: theme.showPoints,
+			showCurve: theme.showCurve,
+			showStops: theme.showStops,
+			showPalette: theme.showPalette,
 			aa: theme.aa,
 			wcagBg: theme.wcagBg
 		}

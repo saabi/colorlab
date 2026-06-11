@@ -61,6 +61,10 @@ function createExplorerDefaults(): ExplorerState {
 			expand: 'none',
 			expandSteps: 5,
 			harmony: 'complementary',
+			showPoints: true,
+			showCurve: true,
+			showStops: true,
+			showPalette: true,
 			grid: [],
 			aa: 4.5,
 			wcagBg: 'white'

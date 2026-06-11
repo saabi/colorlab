@@ -659,6 +659,10 @@
 		explorer.surfaceGridAlpha;
 		explorer.outlineDepthTest;
 		explorer.hideAids;
+		explorer.theme.showPoints;
+		explorer.theme.showCurve;
+		explorer.theme.showStops;
+		explorer.theme.showPalette;
 		untrack(() => {
 			resetPerformanceSamples();
 			draw();

@@ -127,6 +127,11 @@ export interface ExplorerState {
 		expandSteps: number;
 		/** Hue-harmony scheme used when expand === 'harmony' (persisted). */
 		harmony: HarmonyKind;
+		/** 3D viewport aid visibility, each toggled from its producing step (persisted). */
+		showPoints: boolean;
+		showCurve: boolean;
+		showStops: boolean;
+		showPalette: boolean;
 		/** Expanded 2-D palette: one row per base stop (runtime, not persisted). */
 		grid: ThemeStop[][];
 		aa: number;
