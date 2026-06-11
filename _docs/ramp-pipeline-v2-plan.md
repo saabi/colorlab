@@ -1,9 +1,12 @@
 # Plan: Ramp Pipeline v2 + Display Fixes
 
-Status: design + phased implementation plan. Written in response to
+Status: **implemented** — all phases shipped (A: depth pre-pass translucency;
+B: PaletteStrip fluid/fixed layouts; C: cursor polish; D1: stage refactor;
+D2: generalized Spread + v7 migration + equivalence oracles; D3: per-step enable
+flags; D4: per-row grid curves in 3D). Written in response to
 [claude-ramp-display-review-handoff.md](./claude-ramp-display-review-handoff.md).
-Each phase ends in a verified commit and a "resume here" marker so any follow-on
-agent can continue mid-stream.
+Owner verification still wanted on a real GPU: the Issue-A capture scenario
+(opacity 0.3–0.7 ± slice/cylinder) and the per-row curve dimming.
 
 ## 1. Executive summary
 

@@ -210,7 +210,33 @@ export class WebGlRenderer {
 		// per-step show* flags give finer control when aids are shown.
 		const aids = !input.state.hideAids;
 		if (aids && t.showStops && t.stops.length) drawSwatches(t.stops, 11);
-		if (aids && t.showPalette && t.grid.length) for (const row of t.grid) drawSwatches(row, 7);
+		if (aids && t.showPalette && t.grid.length) {
+			for (const row of t.grid) drawSwatches(row, 7);
+			// Each grid row is its own ramp: draw a faint polyline through its stops.
+			gl.useProgram(this.splineProgram);
+			gl.bindVertexArray(this.splineVao);
+			gl.bindBuffer(gl.ARRAY_BUFFER, this.splineBuffer);
+			gl.uniformMatrix4fv(this.U(this.splineProgram, 'uProj'), false, proj);
+			gl.uniformMatrix4fv(this.U(this.splineProgram, 'uView'), false, view);
+			const DIM = 0.45;
+			for (const row of t.grid) {
+				if (row.length < 2) continue;
+				const data = new Float32Array(row.length * 6);
+				for (let i = 0; i < row.length; i += 1) {
+					const sim = simulateCvdSrgb(row[i].srgbLin, input.state.cvd, input.state.cvdSev);
+					const o = i * 6;
+					data[o] = row[i].world[0];
+					data[o + 1] = row[i].world[1];
+					data[o + 2] = row[i].world[2];
+					data[o + 3] = TRC.srgb.enc(Math.min(Math.max(sim[0], 0), 1)) * DIM;
+					data[o + 4] = TRC.srgb.enc(Math.min(Math.max(sim[1], 0), 1)) * DIM;
+					data[o + 5] = TRC.srgb.enc(Math.min(Math.max(sim[2], 0), 1)) * DIM;
+				}
+				gl.bufferData(gl.ARRAY_BUFFER, data, gl.DYNAMIC_DRAW);
+				gl.drawArrays(gl.LINE_STRIP, 0, row.length);
+			}
+			gl.bindVertexArray(null);
+		}
 
 		// Draw source-point markers in every ramp mode; the spline curve itself only
 		// renders when splineCurve is populated (spline mode), handled inside drawSpline.
