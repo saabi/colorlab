@@ -1,11 +1,16 @@
 # Plan: Generalize & Simplify the Ramp Pipeline
 
-Status: **implemented** — Stages 1 (1a/1b/1c), 2, and 3 are shipped, and the
-legacy `spread` mode has been folded into the Expand stage (mode is now just
-linear|spline; spread is an Expand operator over a single-seed ramp). The live
-pipeline is Sources → Interpolate → Place → Expand → Gamut-map → Export.
-Follow-ups still open: additional Place operators (explicit contrast targets)
-and Expand operators (a source-side hue-harmony expander).
+Status: **implemented** — Stages 1 (1a/1b/1c), 2, and 3 are shipped; the legacy
+`spread` mode has been folded into the Expand stage (mode is now just
+linear|spline; spread is an Expand operator over a single-seed ramp); and both
+follow-ups — explicit contrast-ladder targets (Place) and the hue-harmony
+expander (Expand: complementary/triadic/analogous/tetradic) — are shipped. The
+live pipeline is Sources → Interpolate → Place → Expand → Gamut-map → Export.
+No ramp-pipeline follow-ups outstanding. (Minor tidy: `theme.aa` is now dead
+state and could be dropped from the persisted theme.)
+
+Subsequent display/interaction work is tracked separately in
+[ramp-display-plan.md](./ramp-display-plan.md).
 
 ## Summary
 
