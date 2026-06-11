@@ -12,6 +12,12 @@ Curated reading that informs COLOR LAB's color math, gamut handling, and theme w
 | **ISO/CIE 11664-4:2019 — CIE 1976 L\*a\*b\* (CIELAB)** | [cie.co.at/publications/colorimetry-part-4-cie-1976-lab-colour-space-1](https://www.cie.co.at/publications/colorimetry-part-4-cie-1976-lab-colour-space-1) | Official definition of CIELAB and Euclidean ΔE in Lab. Used in `pipeline.ts`, world-space mode 2, spline interpolation (`interp.ts`), and the values panel. |
 | **ISO/CIE 11664-5:2024 — CIE 1976 L\*u\*v\* (CIELUV)** | [cie.co.at/publications/colorimetry-part-5-cie-1976-luv-colour-space-and-u-v-uniform-chromaticity-scale-1](https://www.cie.co.at/publications/colorimetry-part-5-cie-1976-luv-colour-space-and-u-v-uniform-chromaticity-scale-1) | Official definition of CIELUV and u′v′ chromaticity. Used for CIELUV / CIELCh(uv) spline interpolation. |
 
+## Alternative to CIELAB
+
+| Resource | URL | Relevance |
+|----------|-----|-----------|
+| **SRLAB2** (Magnetkern) | [magnetkern.de/srlab2.html](https://www.magnetkern.de/srlab2.html) | A CIELAB-like rectangular space (L\*, a\*, b\*) derived from CIECAM02 transformations to improve lightness/chroma/hue uniformity while staying nearly as simple as CIELAB. Reference C code for sRGB ↔ SRLAB2; useful context when comparing the app's CIELAB spline interpolation against perceptually motivated Lab alternatives. |
+
 ## RGB color spaces, primaries, and transfer functions
 
 | Standard | URL | Relevance |
