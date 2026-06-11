@@ -5,13 +5,13 @@
 	import { track } from '$lib/analytics/umami';
 	import { simulateCvdSrgb } from '$lib/color/cvd';
 	import { INTERP_SPACES, INTERP_SPACE_KEYS } from '$lib/color/interp';
-	import { buildRamp, exportDTCG, exportTokens, srgbHex } from '$lib/engine/theme';
+	import { buildRamp, exportDTCG, exportDTCGGrid, exportTokens, exportTokensGrid, srgbHex } from '$lib/engine/theme';
 
 	import type { ExplorerState, ThemeAnchor } from '$lib/engine/types';
 	import type { DerivedMatrices } from '$lib/renderer/uniforms';
 	import type { TouchTool } from './Viewport.svelte';
 
-	type RampPanel = 'all' | 'sources' | 'interpolate' | 'adjust' | 'gamut-map' | 'export';
+	type RampPanel = 'all' | 'sources' | 'interpolate' | 'adjust' | 'expand' | 'gamut-map' | 'export';
 
 	let {
 		state: explorer = $bindable(),
@@ -25,6 +25,7 @@
 	const showSources = $derived(showAll || panel === 'sources');
 	const showInterpolate = $derived(showAll || panel === 'interpolate');
 	const showAdjust = $derived(showAll || panel === 'adjust');
+	const showExpand = $derived(showAll || panel === 'expand');
 	const showGamutMap = $derived(showAll || panel === 'gamut-map');
 	const showExport = $derived(showAll || panel === 'export');
 	const touchToolOptions: Array<{ value: TouchTool; label: string }> = [
@@ -61,11 +62,22 @@
 	const oogBefore = $derived(explorer.theme.rawStops.reduce((n: number, s: { inG: boolean }) => (s.inG ? n : n + 1), 0));
 	const oogAfter = $derived(explorer.theme.stops.reduce((n: number, s: { inG: boolean }) => (s.inG ? n : n + 1), 0));
 
+	const isPalette = $derived(explorer.theme.expand !== 'none' && explorer.theme.grid.length > 0);
+
 	function showExportText(kind: 'css' | 'json') {
-		exportText = kind === 'css' ? exportTokens(explorer.theme.stops) : exportDTCG(explorer.theme.stops);
+		if (isPalette) {
+			exportText = kind === 'css' ? exportTokensGrid(explorer.theme.grid) : exportDTCGGrid(explorer.theme.grid);
+		} else {
+			exportText = kind === 'css' ? exportTokens(explorer.theme.stops) : exportDTCG(explorer.theme.stops);
+		}
 		navigator.clipboard?.writeText(exportText).catch(() => {});
 		track('theme_export', { format: kind === 'css' ? 'css' : 'dtcg' });
 	}
+
+	const EXPAND_OPTIONS: Array<{ value: ExplorerState['theme']['expand']; label: string }> = [
+		{ value: 'none', label: 'None (single ramp)' },
+		{ value: 'tints-shades', label: 'Tints & shades' }
+	];
 
 	function setThemeMode(mode: typeof explorer.theme.mode) {
 		explorer.theme.mode = mode;
@@ -345,6 +357,35 @@
 	</div>
 {/if}
 
+{#if showExpand}
+	<div class:separator={!showAll}>
+		<div class="panel-label" style="margin-top: 0">Expand to palette</div>
+		<p class="note" style="margin-top: 0">Generate a 2-D palette by expanding each stop into a row of variants.</p>
+		<label class="field-row">
+			<span>Generator</span>
+			<select bind:value={explorer.theme.expand}>
+				{#each EXPAND_OPTIONS as opt}
+					<option value={opt.value}>{opt.label}</option>
+				{/each}
+			</select>
+		</label>
+		{#if explorer.theme.expand !== 'none'}
+			<SliderRow label="Columns" bind:value={explorer.theme.expandSteps} min={2} max={12} step={1} format={(value) => value.toFixed(0)} />
+			{#if isPalette}
+				<div class="palette-grid">
+					{#each explorer.theme.grid as row}
+						<div class="ramp">
+							{#each row as cell}
+								<div class="ramp-chip" title={cell.hex} style={rampChipStyle(cell)}></div>
+							{/each}
+						</div>
+					{/each}
+				</div>
+			{/if}
+		{/if}
+	</div>
+{/if}
+
 {#if showGamutMap}
 	<label class="field-row">
 		<span>Gamut mapping</span>
@@ -423,6 +464,11 @@
 		color: var(--muted);
 		font-weight: 600;
 		min-width: 12px;
+	}
+	.palette-grid {
+		display: grid;
+		gap: 2px;
+		margin-top: 6px;
 	}
 	.cp-list {
 		display: flex;

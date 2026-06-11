@@ -70,6 +70,34 @@ function stopFromWorld(world: Vec3, state: ExplorerState, matrices: DerivedMatri
 export function buildRamp(state: ExplorerState, matrices: DerivedMatrices) {
 	buildRawRamp(state, matrices);
 	finalizeRamp(state, matrices);
+	buildExpand(state, matrices);
+}
+
+// Expand stage: turn each final 1-D stop into a row of variants -> a 2-D palette.
+// 'tints-shades' walks Oklab lightness around each base color (hue/chroma held),
+// gamut-mapped per cell by the same policy. 'none' leaves the ramp 1-D (grid = []).
+const EXPAND_L_RANGE = 0.32;
+function buildExpand(state: ExplorerState, matrices: DerivedMatrices) {
+	const T = state.theme;
+	if (T.expand === 'none' || !T.stops.length) {
+		T.grid = [];
+		return;
+	}
+	const cols = Math.max(2, T.expandSteps);
+	T.grid = T.stops.map((s) => {
+		const ok = lsrgb2oklab(s.srgbLin.map(clamp01) as Vec3);
+		const hi = Math.min(1, ok[0] + EXPAND_L_RANGE);
+		const lo = Math.max(0, ok[0] - EXPAND_L_RANGE);
+		const row: ThemeStop[] = [];
+		for (let j = 0; j < cols; j += 1) {
+			const t = cols === 1 ? 0.5 : j / (cols - 1);
+			const L = hi + (lo - hi) * t; // light tint -> dark shade
+			let lin = oklab2lsrgb([L, ok[1], ok[2]]);
+			if (T.gamutMap !== 'none') lin = mapToGamut(lin, T.gamutMap);
+			row.push(stopFromSrgbLin(lin, state, matrices));
+		}
+		return row;
+	});
 }
 
 function buildRawRamp(state: ExplorerState, matrices: DerivedMatrices) {
@@ -328,6 +356,41 @@ export function finalizeRamp(state: ExplorerState, matrices: DerivedMatrices) {
 export function exportTokens(stops: ThemeStop[]) {
 	if (!stops.length) return '/* place anchors A and B (or two spline control points) on the slice first */';
 	return [':root {', ...stops.map((s, i) => `  --ramp-${i + 1}: oklch(${(s.oklch[0] * 100).toFixed(2)}% ${s.oklch[1].toFixed(4)} ${s.oklch[2].toFixed(2)}); /* ${s.hex}${s.inG ? '' : ' OOG'} */`), '}'].join('\n');
+}
+
+export function exportTokensGrid(grid: ThemeStop[][]) {
+	if (!grid.length) return '/* expand the ramp into a palette first */';
+	const lines = [':root {'];
+	grid.forEach((row, r) => {
+		row.forEach((s, c) => {
+			lines.push(
+				`  --ramp-${r + 1}-${(c + 1) * 100}: oklch(${(s.oklch[0] * 100).toFixed(2)}% ${s.oklch[1].toFixed(4)} ${s.oklch[2].toFixed(2)}); /* ${s.hex}${s.inG ? '' : ' OOG'} */`
+			);
+		});
+	});
+	lines.push('}');
+	return lines.join('\n');
+}
+
+export function exportDTCGGrid(grid: ThemeStop[][]) {
+	if (!grid.length) return '/* expand the ramp into a palette first */';
+	const palette: Record<string, unknown> = {};
+	grid.forEach((row, r) => {
+		const ramp: Record<string, unknown> = {};
+		row.forEach((s, c) => {
+			ramp[String((c + 1) * 100)] = {
+				$value: s.hex,
+				$extensions: {
+					'gamut.explorer': {
+						oklch: { l: +s.oklch[0].toFixed(4), c: +s.oklch[1].toFixed(4), h: +s.oklch[2].toFixed(2) },
+						inGamut: s.inG
+					}
+				}
+			};
+		});
+		palette[`ramp-${r + 1}`] = { $type: 'color', ...ramp };
+	});
+	return JSON.stringify({ palette }, null, 2);
 }
 
 export function exportDTCG(stops: ThemeStop[]) {

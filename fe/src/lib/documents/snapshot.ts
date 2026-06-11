@@ -64,6 +64,8 @@ export function toPersistedExplorer(explorer: ExplorerState): PersistedExplorer 
 			cprof: theme.cprof,
 			arcLong: theme.arcLong,
 			place: theme.place,
+			expand: theme.expand,
+			expandSteps: theme.expandSteps,
 			aa: theme.aa,
 			wcagBg: theme.wcagBg
 		}
@@ -85,6 +87,7 @@ export function applySnapshot(appState: AppState, snapshot: ParameterSnapshot) {
 	Object.assign(appState.explorer.theme, themeSnap);
 	appState.explorer.theme.arm = null;
 	appState.explorer.theme.stops = [];
+	appState.explorer.theme.grid = [];
 	appState.explorer.theme.selectedPoint = null;
 	appState.explorer.theme.splineCurve = [];
 	appState.explorer.theme.rawStops = [];

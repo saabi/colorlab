@@ -638,6 +638,8 @@
 		explorer.theme.arcLong;
 		explorer.theme.place;
 		explorer.theme.wcagBg;
+		explorer.theme.expand;
+		explorer.theme.expandSteps;
 		untrack(() => {
 			buildRamp(explorer, matrices);
 			draw();

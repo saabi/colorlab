@@ -48,6 +48,7 @@
 		sources: meta('sources'),
 		interpolate: meta('interpolate'),
 		adjust: meta('adjust'),
+		expand: meta('expand'),
 		gamutMap: meta('gamut-map'),
 		exportStep: meta('export')
 	});
@@ -230,11 +231,15 @@
 				<ThemeRamp state={explorer} {matrices} panel="adjust" />
 			</ControlGroup>
 
-			<ControlGroup index={4} title={m.gamutMap.label} helpId="pipelineGamutMap" status={m.gamutMap.status} affects={m.gamutMap.affects} warn={m.gamutMap.warn} disabled={m.gamutMap.disabled} open={isOpen('gamut-map')} onToggle={() => toggleStep('gamut-map')} bind:openHelp>
+			<ControlGroup index={4} title={m.expand.label} helpId="pipelineExpand" status={m.expand.status} affects={m.expand.affects} disabled={m.expand.disabled} open={isOpen('expand')} onToggle={() => toggleStep('expand')} bind:openHelp>
+				<ThemeRamp state={explorer} {matrices} panel="expand" />
+			</ControlGroup>
+
+			<ControlGroup index={5} title={m.gamutMap.label} helpId="pipelineGamutMap" status={m.gamutMap.status} affects={m.gamutMap.affects} warn={m.gamutMap.warn} disabled={m.gamutMap.disabled} open={isOpen('gamut-map')} onToggle={() => toggleStep('gamut-map')} bind:openHelp>
 				<ThemeRamp state={explorer} {matrices} panel="gamut-map" />
 			</ControlGroup>
 
-			<ControlGroup index={5} title={m.exportStep.label} helpId="pipelineExport" status={m.exportStep.status} affects={m.exportStep.affects} disabled={m.exportStep.disabled} open={isOpen('export')} onToggle={() => toggleStep('export')} bind:openHelp>
+			<ControlGroup index={6} title={m.exportStep.label} helpId="pipelineExport" status={m.exportStep.status} affects={m.exportStep.affects} disabled={m.exportStep.disabled} open={isOpen('export')} onToggle={() => toggleStep('export')} bind:openHelp>
 				<ThemeRamp state={explorer} {matrices} panel="export" />
 			</ControlGroup>
 		</div>

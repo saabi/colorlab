@@ -12,6 +12,8 @@ export type InterpSpaceChoice = import('$lib/color/interp').InterpSpaceKey | 'wo
 export type ChromaProfile = 'linear' | 'mirror';
 // Place stage: where the N stops land on the interpolated curve.
 export type PlacePolicy = 'even' | 'uniform' | 'tones' | 'contrast';
+// Expand stage: per-stop generator turning the 1-D ramp into a 2-D palette.
+export type ExpandPolicy = 'none' | 'tints-shades';
 // Spline curve geometry constraint (not a gamut map): 'free' interpolates inside
 // the volume; 'surface' radially snaps samples to the active solid shell.
 // Out-of-gamut handling is a separate, global policy (theme.gamutMap).
@@ -112,6 +114,12 @@ export interface ExplorerState {
 		arcLong: boolean;
 		/** Place stage: how the N stops are sampled along the interpolated curve (persisted). */
 		place: PlacePolicy;
+		/** Expand stage: per-stop generator producing a 2-D palette (persisted). */
+		expand: ExpandPolicy;
+		/** Columns generated per base stop when expanding (persisted). */
+		expandSteps: number;
+		/** Expanded 2-D palette: one row per base stop (runtime, not persisted). */
+		grid: ThemeStop[][];
 		aa: number;
 		wcagBg: 'white' | 'black';
 	};
@@ -125,7 +133,10 @@ import type { Camera } from './camera';
 export const CURRENT_STATE_SCHEMA_VERSION = 5 as const;
 export type StateSchemaVersion = typeof CURRENT_STATE_SCHEMA_VERSION;
 
-export type PersistedTheme = Omit<ExplorerState['theme'], 'arm' | 'stops' | 'selectedPoint' | 'splineCurve' | 'rawStops'>;
+export type PersistedTheme = Omit<
+	ExplorerState['theme'],
+	'arm' | 'stops' | 'selectedPoint' | 'splineCurve' | 'rawStops' | 'grid'
+>;
 // autoPerformance/minAverageFps are runtime-only renderer policy — not part of the saved artifact.
 export type PersistedExplorer = Omit<ExplorerState, 'hover' | 'theme' | 'autoPerformance' | 'minAverageFps'> & {
 	theme: PersistedTheme;

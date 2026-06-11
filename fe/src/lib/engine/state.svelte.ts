@@ -56,6 +56,9 @@ function createExplorerDefaults(): ExplorerState {
 			cprof: 'linear',
 			arcLong: false,
 			place: 'even',
+			expand: 'none',
+			expandSteps: 5,
+			grid: [],
 			aa: 4.5,
 			wcagBg: 'white'
 		},

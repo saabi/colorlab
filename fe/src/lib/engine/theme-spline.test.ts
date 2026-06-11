@@ -106,6 +106,20 @@ describe('buildSplineRamp', () => {
 		expect(state.theme.stops[0].srgbLin.every(finite)).toBe(true);
 	});
 
+	it('expand builds a 2-D palette (rows x columns); none keeps it 1-D', () => {
+		const state = splineState('oklch', 'free', 4);
+		state.theme.expand = 'none';
+		buildRamp(state, matrices);
+		expect(state.theme.grid).toEqual([]);
+
+		state.theme.expand = 'tints-shades';
+		state.theme.expandSteps = 6;
+		buildRamp(state, matrices);
+		expect(state.theme.grid.length).toBe(4);
+		expect(state.theme.grid.every((row) => row.length === 6)).toBe(true);
+		expect(state.theme.grid.every((row) => row.every((c) => c.srgbLin.every(finite)))).toBe(true);
+	});
+
 	it('every place policy yields the requested number of finite stops', () => {
 		for (const place of ['even', 'uniform', 'tones', 'contrast'] as const) {
 			const state = splineState('oklch', 'free', 8);

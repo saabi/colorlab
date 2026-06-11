@@ -8,6 +8,7 @@ export type PipelineHelpId =
 	| 'pipelineSources'
 	| 'pipelineInterpolate'
 	| 'pipelineAdjust'
+	| 'pipelineExpand'
 	| 'pipelineGamutMap'
 	| 'pipelineExport'
 	| 'pipelineView';
@@ -223,6 +224,17 @@ export const PIPELINE_HELP: Record<PipelineHelpId, PanelHelpContent> = {
 			{ label: 'WCAG contrast references' },
 			{ label: 'Oklab references' }
 		]
+	},
+	pipelineExpand: {
+		title: 'Expand',
+		summary: 'Per-stop generator that turns the 1-D ramp into a 2-D palette.',
+		stageRows: stageRows(
+			'The placed 1-D ramp stops.',
+			'Generator (e.g. tints & shades, walking Oklab lightness around each stop) and column count.',
+			'A 2-D palette: one row per base stop, exported as a CSS grid or nested DTCG groups.',
+			'Interpolation path, placement policy, or the viewport color solid.'
+		),
+		sources: [{ label: 'theme.ts buildExpand' }, { label: 'ramp-pipeline-plan.md (Stage 3)' }]
 	},
 	pipelineGamutMap: {
 		title: 'Gamut map',

@@ -11,6 +11,7 @@ export type PipelineNodeId =
 	| 'sources'
 	| 'interpolate'
 	| 'adjust'
+	| 'expand'
 	| 'gamut-map'
 	| 'export';
 
@@ -152,6 +153,16 @@ export const PIPELINE_NODES: PipelineNode[] = [
 		affects: 'Ramp',
 		requiresSource: true,
 		status: (state) => state.theme.place
+	},
+	{
+		id: 'expand',
+		lane: 'Ramp',
+		label: 'Expand',
+		shortLabel: 'Expand',
+		description: 'Per-stop generator that turns the 1-D ramp into a 2-D palette (e.g. tints & shades).',
+		affects: 'Export',
+		requiresSource: true,
+		status: (state) => (state.theme.expand === 'none' ? 'Off' : `${state.theme.grid.length}×${state.theme.expandSteps}`)
 	},
 	{
 		id: 'gamut-map',
