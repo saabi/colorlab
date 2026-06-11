@@ -1,6 +1,5 @@
 <script lang="ts">
 	import SegmentedControl from './SegmentedControl.svelte';
-	import RampPipelinePopover from './RampPipelinePopover.svelte';
 	import SliderRow from './SliderRow.svelte';
 	import ToggleRow from './ToggleRow.svelte';
 	import { track } from '$lib/analytics/umami';
@@ -344,7 +343,7 @@
 
 {#if showGamutMap}
 	<label class="field-row">
-		<span>Gamut mapping <RampPipelinePopover /></span>
+		<span>Gamut mapping</span>
 		<select
 			value={explorer.theme.gamutMap}
 			onchange={(e) => setGamutMap((e.currentTarget as HTMLSelectElement).value as ExplorerState['theme']['gamutMap'])}
