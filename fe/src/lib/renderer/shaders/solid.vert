@@ -2,6 +2,7 @@
 precision highp float; precision highp int;
 layout(location=0) in vec2 aCorner;
 uniform int uN, uSpaceMode;
+uniform float uMeshWarp;
 uniform mat3 uRgbToXyz, uXyzToRgb;
 uniform mat3 uOkM1, uOkM2;
 uniform mat3 uOkM1i, uOkM2i;
@@ -19,6 +20,10 @@ vec3 faceToRgb(int f, vec2 uv){
   if(f==3) return vec3(uv.x,1.0,uv.y);
   if(f==4) return vec3(uv.x,uv.y,0.0);
   return vec3(uv.x,uv.y,1.0);
+}
+vec3 warpRgbForMesh(vec3 rgb){
+  if(abs(uMeshWarp - 1.0) < 0.001) return rgb;
+  return pow(clamp(rgb, 0.0, 1.0), vec3(uMeshWarp));
 }
 float labF(float t){ return t>0.008856 ? pow(t,1.0/3.0) : 7.787*t+16.0/116.0; }
 float labFi(float t){ float t3=t*t*t; return t3>0.008856 ? t3 : (t-16.0/116.0)/7.787; }
@@ -55,7 +60,7 @@ vec3 fromWorld(vec3 p){
 void main(){
   int cells=uN*uN; int face=gl_InstanceID/cells; int cell=gl_InstanceID-face*cells;
   vec2 uv=(vec2(float(cell%uN),float(cell/uN))+aCorner)/float(uN);
-  vec3 rgb=faceToRgb(face,uv);
+  vec3 rgb=warpRgbForMesh(faceToRgb(face,uv));
   vec3 p=toWorld(rgb);
   vec3 p0=p;
   if ((uSliceOn > 0.5 && (uCutAbove > 0.5 || uCutBelow > 0.5)) || uCylSlice > 0.5) {

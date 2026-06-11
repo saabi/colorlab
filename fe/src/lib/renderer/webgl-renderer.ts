@@ -535,6 +535,12 @@ export class WebGlRenderer {
 		this.gl.uniformMatrix3fv(this.U(program, name), false, m3gl(value));
 	}
 
+	private meshWarpForSpace(spaceMode: ExplorerState['spaceMode']) {
+		if (spaceMode === 3) return 2.0;
+		if (spaceMode === 2) return 1.7;
+		return 1.0;
+	}
+
 	private uploadSolidUniforms(
 		state: ExplorerState,
 		M: DerivedMatrices,
@@ -555,6 +561,7 @@ export class WebGlRenderer {
 		gl.uniformMatrix4fv(this.U(p, 'uView'), false, view);
 		gl.uniform1i(this.U(p, 'uN'), N);
 		gl.uniform1i(this.U(p, 'uSpaceMode'), state.spaceMode);
+		gl.uniform1f(this.U(p, 'uMeshWarp'), this.meshWarpForSpace(state.spaceMode));
 		this.uploadMat3(p, 'uRgbToXyz', M.rgb2xyz);
 		this.uploadMat3(p, 'uXyzToRgb', M.xyz2rgb);
 		this.uploadMat3(p, 'uOkM1', M.okM1);
