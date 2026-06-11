@@ -117,11 +117,18 @@ export const SIDEBAR_HELP: Record<SidebarGroupId, PanelHelpContent> = {
 	theme: {
 		title: 'Theme',
 		summary:
-			'Build perceptual color ramps between anchors using straight segments, cylindrical hue arcs, or spread mode. Auto-adjust fits stops inside sRGB, enforces WCAG contrast, and re-samples at equal Oklab arc length.',
+			'Build perceptual color ramps between anchors using straight segments, cylindrical hue arcs, spread mode, or a Catmull-Rom spline through any number of control points. Spline mode interpolates in a selectable color space (Oklab, OKLCH, OKLrCH, OKHSV, CIELAB/CIELCh, CIELUV/CIELCh(uv), linear sRGB) and can surface-lock the curve to the gamut shell. Auto-adjust fits stops inside sRGB, enforces WCAG contrast, and re-samples at equal Oklab arc length.',
+		details: [
+			'Surface-lock snaps each spline sample radially to the gamut boundary at constant lightness, so it pushes chroma to the shell. It assumes a star-shaped cross-section about the neutral axis; with tilted slice planes, the cylinder mask, or non-convex sections it falls back gracefully and never changes lightness.'
+		],
 		sources: [
 			{ label: 'Theme heuristics (design.md \u00a715)' },
-			{ label: 'theme.ts ramp and gamut-fit logic' },
-			{ label: 'Bj\u00f6rn Ottosson, Oklab (2020)' }
+			{ label: 'theme.ts ramp and gamut-fit logic; color/interp.ts interpolation spaces' },
+			{ label: 'Bj\u00f6rn Ottosson, Oklab (2020)' },
+			{
+				label: 'Bj\u00f6rn Ottosson, Okhsv/Okhsl and the Lr lightness (ok_color.h)',
+				href: 'https://bottosson.github.io/posts/colorpicker/'
+			}
 		]
 	},
 	performance: {

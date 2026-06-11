@@ -98,6 +98,32 @@ export function lab2xyz(lab: Vec3, w: Vec3 = D65): Vec3 {
 	return [w[0] * labFi(fx), w[1] * labFi(fy), w[2] * labFi(fz)];
 }
 
+export function xyz2luv(xyz: Vec3, w: Vec3 = D65): Vec3 {
+	const denom = xyz[0] + 15 * xyz[1] + 3 * xyz[2];
+	const up = denom === 0 ? 0 : (4 * xyz[0]) / denom;
+	const vp = denom === 0 ? 0 : (9 * xyz[1]) / denom;
+	const wd = w[0] + 15 * w[1] + 3 * w[2];
+	const un = (4 * w[0]) / wd;
+	const vn = (9 * w[1]) / wd;
+	const L = 116 * labF(xyz[1] / w[1]) - 16;
+	return [L, 13 * L * (up - un), 13 * L * (vp - vn)];
+}
+
+export function luv2xyz(luv: Vec3, w: Vec3 = D65): Vec3 {
+	const L = luv[0];
+	if (L <= 1e-8) return [0, 0, 0];
+	const wd = w[0] + 15 * w[1] + 3 * w[2];
+	const un = (4 * w[0]) / wd;
+	const vn = (9 * w[1]) / wd;
+	const up = luv[1] / (13 * L) + un;
+	const vp = luv[2] / (13 * L) + vn;
+	const Y = w[1] * labFi((L + 16) / 116);
+	if (vp === 0) return [0, Y, 0];
+	const X = (Y * 9 * up) / (4 * vp);
+	const Z = (Y * (12 - 3 * up - 20 * vp)) / (4 * vp);
+	return [X, Y, Z];
+}
+
 export const OK_M1: Mat3 = [
 	0.4122214708, 0.5363325363, 0.0514459929, 0.2119034982, 0.6806995451, 0.1073969566,
 	0.0883024619, 0.2817188376, 0.6299787005

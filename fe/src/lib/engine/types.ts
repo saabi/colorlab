@@ -3,8 +3,15 @@ export type PlaneMode = 'L' | 'H' | 'C';
 export type GamutKey = 'srgb' | 'p3' | 'rec2020' | 'ntsc' | 'ebu' | 'smptec' | 'cie';
 export type ShellKey = 'none' | 'p3' | 'rec2020' | 'ntsc' | 'cie';
 export type CvdMode = 'none' | 'protan' | 'deutan' | 'tritan';
-export type ThemeMode = 'seg' | 'arc' | 'spread';
+export type ThemeMode = 'seg' | 'arc' | 'spread' | 'spline';
 export type ChromaProfile = 'linear' | 'mirror';
+export type SplineConstraint = 'free' | 'surface';
+
+/** One sample of the rendered spline curve: world position + linear-sRGB color. */
+export interface SplineSample {
+	world: Vec3;
+	srgbLin: Vec3;
+}
 
 export interface ThemeAnchor {
 	srgbLin: [number, number, number];
@@ -65,8 +72,18 @@ export interface ExplorerState {
 	theme: {
 		A: ThemeAnchor | null;
 		B: ThemeAnchor | null;
+		/** Spline control points (persisted). */
+		controlPoints: ThemeAnchor[];
+		/** Selected control point index (runtime UI selection, not persisted). */
+		selectedCp: number | null;
+		/** Whether spline samples are snapped to the gamut boundary (persisted). */
+		splineConstraint: SplineConstraint;
+		/** Color space the spline is interpolated in (persisted). */
+		splineSpace: InterpSpaceKey;
+		/** Hi-res rendered curve samples (runtime, not persisted). */
+		splineCurve: SplineSample[];
 		steps: number;
-		arm: 'A' | 'B' | null;
+		arm: 'A' | 'B' | 'spline-add' | null;
 		mode: ThemeMode;
 		stops: ThemeStop[];
 		dh: number;
@@ -79,12 +96,13 @@ export interface ExplorerState {
 	hover: HoverHit | null;
 }
 import type { Vec3 } from '$lib/color/math';
+import type { InterpSpaceKey } from '$lib/color/interp';
 import type { Camera } from './camera';
 
 export const CURRENT_STATE_SCHEMA_VERSION = 2 as const;
 export type StateSchemaVersion = typeof CURRENT_STATE_SCHEMA_VERSION;
 
-export type PersistedTheme = Omit<ExplorerState['theme'], 'arm' | 'stops'>;
+export type PersistedTheme = Omit<ExplorerState['theme'], 'arm' | 'stops' | 'selectedCp' | 'splineCurve'>;
 export type PersistedExplorer = Omit<ExplorerState, 'hover' | 'theme'> & { theme: PersistedTheme };
 
 export interface AppState {

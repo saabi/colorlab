@@ -228,11 +228,6 @@ shell/solid z-fighting.
 
 ## 17. References
 
-Oklab math, gamut clipping, perceptual picker background, and non-Riemannian
-color-metric theory are documented in [`references.md`](references.md), including
-Björn Ottosson's posts on
-[Oklab](https://bottosson.github.io/posts/oklab/),
-[sRGB gamut clipping](https://bottosson.github.io/posts/gamutclipping/), and
-[Okhsv / Okhsl](https://bottosson.github.io/posts/colorpicker/), plus Bujack et
-al. on [non-Riemannian perceptual color space](https://doi.org/10.1073/pnas.2119753119)
-and [color geometry in a non-Riemannian setting](https://doi.org/10.1111/cgf.70136).
+Oklab math, CIE/ISO colorimetry, RGB standards, web token export, gamut
+clipping, perceptual picker background, and non-Riemannian color-metric theory are
+documented in [`references.md`](references.md).

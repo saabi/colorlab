@@ -33,7 +33,7 @@ For build, deploy, environment variables, and project structure, see [`fe/README
 ## Documentation
 
 - [`_docs/design.md`](_docs/design.md) — architecture and color-pipeline design
-- [`_docs/references.md`](_docs/references.md) — external color-science references (Oklab, gamut clipping, pickers)
+- [`_docs/references.md`](_docs/references.md) — external references (CIE/ISO, IEC/ITU/SMPTE, CSS/DTCG, Oklab, CVD, non-Riemannian geometry)
 - [`_docs/svelte-migration.md`](_docs/svelte-migration.md) — SvelteKit migration plan
 - [`fe/src/lib/documents/README.md`](fe/src/lib/documents/README.md) — parameter-set persistence
 

@@ -51,6 +51,11 @@ export function toPersistedExplorer(explorer: ExplorerState): PersistedExplorer 
 		theme: {
 			A: cloneAnchor(theme.A),
 			B: cloneAnchor(theme.B),
+			controlPoints: theme.controlPoints.map((cp) => ({
+				srgbLin: [cp.srgbLin[0], cp.srgbLin[1], cp.srgbLin[2]] as [number, number, number]
+			})),
+			splineConstraint: theme.splineConstraint,
+			splineSpace: theme.splineSpace,
 			steps: theme.steps,
 			mode: theme.mode,
 			dh: theme.dh,
@@ -78,6 +83,8 @@ export function applySnapshot(appState: AppState, snapshot: ParameterSnapshot) {
 	Object.assign(appState.explorer.theme, themeSnap);
 	appState.explorer.theme.arm = null;
 	appState.explorer.theme.stops = [];
+	appState.explorer.theme.selectedCp = null;
+	appState.explorer.theme.splineCurve = [];
 	appState.explorer.hover = null;
 	Object.assign(appState.camera, snapshot.camera);
 }

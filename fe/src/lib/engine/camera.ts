@@ -62,6 +62,35 @@ export function panCamera(cam: Camera, dx: number, dy: number, viewportHeight: n
 	cam.target = add3(cam.target, move);
 }
 
+// Column-major 4x4 * 4x4 (matching persp/lookAt storage).
+function mulMat4(a: Float32Array, b: Float32Array): Float32Array {
+	const o = new Float32Array(16);
+	for (let c = 0; c < 4; c += 1) {
+		for (let r = 0; r < 4; r += 1) {
+			let s = 0;
+			for (let k = 0; k < 4; k += 1) s += a[k * 4 + r] * b[c * 4 + k];
+			o[c * 4 + r] = s;
+		}
+	}
+	return o;
+}
+
+// Project a world point to canvas pixels, or null if behind the camera.
+export function projectToScreen(world: Vec3, cam: Camera, w: number, h: number): [number, number] | null {
+	const proj = persp(cam.fov, w / h, 0.05, 40);
+	const view = lookAt(camEye(cam), cam.target, [0, 1, 0]);
+	const m = mulMat4(proj, view);
+	const v = [world[0], world[1], world[2], 1];
+	const clip = [0, 0, 0, 0];
+	for (let r = 0; r < 4; r += 1) {
+		let s = 0;
+		for (let k = 0; k < 4; k += 1) s += m[k * 4 + r] * v[k];
+		clip[r] = s;
+	}
+	if (clip[3] <= 0) return null;
+	return [((clip[0] / clip[3] + 1) / 2) * w, ((1 - clip[1] / clip[3]) / 2) * h];
+}
+
 export function camRay(px: number, py: number, w: number, h: number, cam: Camera) {
 	const { eye, forward, right, up } = cameraBasis(cam);
 	const t = Math.tan(cam.fov / 2);

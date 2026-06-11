@@ -38,6 +38,11 @@ function createExplorerDefaults(): ExplorerState {
 		theme: {
 			A: null,
 			B: null,
+			controlPoints: [],
+			selectedCp: null,
+			splineConstraint: 'surface',
+			splineSpace: 'oklch',
+			splineCurve: [],
 			steps: 5,
 			arm: null,
 			mode: 'seg',

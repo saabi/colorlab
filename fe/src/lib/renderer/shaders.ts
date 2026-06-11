@@ -7,6 +7,8 @@ import VS_FLOOR from './shaders/floor.vert';
 import FS_FLOOR from './shaders/floor.frag';
 import VS_MARK from './shaders/mark.vert';
 import FS_MARK from './shaders/mark.frag';
+import VS_SPLINE from './shaders/spline.vert';
+import FS_SPLINE from './shaders/spline.frag';
 
 export {
 	VS_SOLID,
@@ -16,6 +18,8 @@ export {
 	VS_FLOOR,
 	FS_FLOOR,
 	VS_MARK,
-	FS_MARK
+	FS_MARK,
+	VS_SPLINE,
+	FS_SPLINE
 };
 

@@ -4,9 +4,10 @@
 	import ToggleRow from './ToggleRow.svelte';
 	import { track } from '$lib/analytics/umami';
 	import { simulateCvdSrgb } from '$lib/color/cvd';
-	import { exportDTCG, exportTokens, fitEven, fitGamut, fitWcag } from '$lib/engine/theme';
+	import { INTERP_SPACES, INTERP_SPACE_KEYS } from '$lib/color/interp';
+	import { exportDTCG, exportTokens, fitEven, fitGamut, fitWcag, srgbHex } from '$lib/engine/theme';
 
-	import type { ExplorerState } from '$lib/engine/types';
+	import type { ExplorerState, ThemeAnchor } from '$lib/engine/types';
 	import type { DerivedMatrices } from '$lib/renderer/uniforms';
 
 	let { state: explorer = $bindable(), matrices } = $props<{ state: ExplorerState; matrices: DerivedMatrices }>();
@@ -20,7 +21,23 @@
 
 	function setThemeMode(mode: typeof explorer.theme.mode) {
 		explorer.theme.mode = mode;
+		if (mode !== 'spline') {
+			explorer.theme.selectedCp = null;
+			if (explorer.theme.arm === 'spline-add') explorer.theme.arm = null;
+		}
 		track('theme_mode_change', { mode });
+	}
+
+	function toggleSplineAdd() {
+		explorer.theme.arm = explorer.theme.arm === 'spline-add' ? null : 'spline-add';
+	}
+
+	function removeControlPoint(index: number) {
+		explorer.theme.controlPoints = explorer.theme.controlPoints.filter((_: ThemeAnchor, i: number) => i !== index);
+		const len = explorer.theme.controlPoints.length;
+		if (explorer.theme.selectedCp !== null) {
+			explorer.theme.selectedCp = len ? Math.min(explorer.theme.selectedCp, len - 1) : null;
+		}
 	}
 
 	function fitGamutTracked() {
@@ -50,37 +67,89 @@
 
 </script>
 
-<div class="segmented" style="--segments: 2">
-	<button
-		type="button"
-		class:active={explorer.theme.arm === 'A'}
-		onclick={() => {
-			explorer.theme.arm = explorer.theme.arm === 'A' ? null : 'A';
-		}}
-	>
-		Set A
-	</button>
-	<button
-		type="button"
-		class:active={explorer.theme.arm === 'B'}
-		onclick={() => {
-			explorer.theme.arm = explorer.theme.arm === 'B' ? null : 'B';
-		}}
-	>
-		Set B
-	</button>
-</div>
-
-<div style="height: 4px"></div>
+{#if explorer.theme.mode !== 'spline'}
+	<div class="segmented" style="--segments: 2">
+		<button
+			type="button"
+			class:active={explorer.theme.arm === 'A'}
+			onclick={() => {
+				explorer.theme.arm = explorer.theme.arm === 'A' ? null : 'A';
+			}}
+		>
+			Set A
+		</button>
+		<button
+			type="button"
+			class:active={explorer.theme.arm === 'B'}
+			onclick={() => {
+				explorer.theme.arm = explorer.theme.arm === 'B' ? null : 'B';
+			}}
+		>
+			Set B
+		</button>
+	</div>
+	<div style="height: 4px"></div>
+{/if}
 <SegmentedControl
 	bind:value={explorer.theme.mode}
 	onchange={setThemeMode}
+	columns={2}
 	options={[
 		{ value: 'seg', label: 'Segment' },
 		{ value: 'arc', label: 'Hue arc' },
-		{ value: 'spread', label: 'Spread A' }
+		{ value: 'spread', label: 'Spread A' },
+		{ value: 'spline', label: 'Spline' }
 	]}
 />
+
+{#if explorer.theme.mode === 'spline'}
+	<label class="field-row">
+		<span>Interpolate in</span>
+		<select bind:value={explorer.theme.splineSpace}>
+			{#each INTERP_SPACE_KEYS as key}
+				<option value={key}>{INTERP_SPACES[key].label}</option>
+			{/each}
+		</select>
+	</label>
+	<div class="segmented" style="--segments: 2">
+		<button
+			type="button"
+			class:active={explorer.theme.splineConstraint === 'free'}
+			onclick={() => (explorer.theme.splineConstraint = 'free')}
+		>
+			Free
+		</button>
+		<button
+			type="button"
+			class:active={explorer.theme.splineConstraint === 'surface'}
+			onclick={() => (explorer.theme.splineConstraint = 'surface')}
+		>
+			Surface-locked
+		</button>
+	</div>
+
+	<div class="panel-label" style="margin-top: 8px">Control points</div>
+	{#if explorer.theme.controlPoints.length}
+		<div class="cp-list">
+			{#each explorer.theme.controlPoints as cp, i}
+				<div class="cp-row" class:active={explorer.theme.selectedCp === i}>
+					<button type="button" class="cp-select" onclick={() => (explorer.theme.selectedCp = i)}>
+						<span class="cp-chip" style={rampChipStyle({ srgbLin: cp.srgbLin, inG: true })}></span>
+						<span class="cp-hex">{srgbHex(cp.srgbLin)}</span>
+					</button>
+					<button type="button" class="cp-del" title="Remove control point" onclick={() => removeControlPoint(i)}>
+						×
+					</button>
+				</div>
+			{/each}
+		</div>
+	{:else}
+		<p class="note">Toggle “Add control point”, then click the solid surface to drop at least two points.</p>
+	{/if}
+	<button type="button" class:active={explorer.theme.arm === 'spline-add'} onclick={toggleSplineAdd}>
+		{explorer.theme.arm === 'spline-add' ? 'Adding… click the solid' : '+ Add control point'}
+	</button>
+{/if}
 
 {#if explorer.theme.mode === 'arc'}
 	<ToggleRow label="Long path (other side)" bind:checked={explorer.theme.arcLong} />
@@ -129,7 +198,7 @@
 	label="Steps"
 	bind:value={explorer.theme.steps}
 	min={2}
-	max={12}
+	max={27}
 	step={1}
 	format={(value) => value.toFixed(0)}
 />
@@ -171,5 +240,67 @@
 <textarea class="export-box" class:visible={!!exportText} readonly spellcheck="false" bind:value={exportText}></textarea>
 <p class="note">
 	Arm an anchor, then click the solid or slice cap to drop it. Segment interpolates directly;
-	hue arc sweeps around the neutral axis; spread builds from anchor A.
+	hue arc sweeps around the neutral axis; spread builds from anchor A. Spline traces a smooth
+	Catmull-Rom curve through any number of control points in the chosen color space — drag points on
+	the surface to reshape it, select one and press Delete to remove it. Surface-lock pushes the curve
+	onto the gamut shell (max chroma at each lightness).
 </p>
+
+<style>
+	.field-row {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 8px;
+		margin: 6px 0;
+		font-size: 12px;
+	}
+	.field-row select {
+		flex: 1;
+		max-width: 60%;
+	}
+	.cp-list {
+		display: flex;
+		flex-direction: column;
+		gap: 3px;
+		margin-bottom: 6px;
+	}
+	.cp-row {
+		display: flex;
+		align-items: center;
+		gap: 4px;
+		border: 1px solid transparent;
+		border-radius: 4px;
+		padding: 1px;
+	}
+	.cp-row.active {
+		border-color: var(--accent, #5ab);
+	}
+	.cp-select {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		flex: 1;
+		text-align: left;
+		margin: 0;
+	}
+	.cp-chip {
+		width: 16px;
+		height: 16px;
+		border-radius: 3px;
+		flex: none;
+		box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.2);
+	}
+	.cp-hex {
+		font-variant-numeric: tabular-nums;
+		text-transform: uppercase;
+		font-size: 11px;
+	}
+	.cp-del {
+		flex: none;
+		width: 24px;
+		padding: 0;
+		line-height: 1;
+		font-size: 16px;
+	}
+</style>

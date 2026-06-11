@@ -96,4 +96,52 @@ describe('parseSnapshot', () => {
 		expect(result.fromVersion).toBe(1);
 		expect(result.snapshot?.schemaVersion).toBe(CURRENT_SNAPSHOT_VERSION);
 	});
+
+	it('gives legacy saves without spline fields the factory defaults', () => {
+		const { controlPoints: _cp, splineConstraint: _sc, splineSpace: _ss, ...themeWithoutSpline } =
+			defaults.explorer.theme;
+		const legacy = {
+			explorer: { ...defaults.explorer, theme: themeWithoutSpline },
+			camera: defaults.camera
+		};
+		const result = parseSnapshot(legacy);
+		expect(result.snapshot?.explorer.theme.controlPoints).toEqual([]);
+		expect(result.snapshot?.explorer.theme.splineConstraint).toBe('surface');
+		expect(result.snapshot?.explorer.theme.splineSpace).toBe('oklch');
+	});
+
+	it('round-trips a spline document with control points', () => {
+		const cps = [
+			{ srgbLin: [0.1, 0.2, 0.3] as [number, number, number] },
+			{ srgbLin: [0.4, 0.5, 0.6] as [number, number, number] }
+		];
+		const doc = {
+			...defaults,
+			explorer: {
+				...defaults.explorer,
+				theme: { ...defaults.explorer.theme, mode: 'spline', splineSpace: 'okhsv', controlPoints: cps }
+			}
+		};
+		const result = parseSnapshot(doc);
+		expect(result.snapshot?.explorer.theme.mode).toBe('spline');
+		expect(result.snapshot?.explorer.theme.splineSpace).toBe('okhsv');
+		expect(result.snapshot?.explorer.theme.controlPoints).toEqual(cps);
+	});
+
+	it('coerces garbage control points and unknown spline space to safe defaults', () => {
+		const doc = {
+			...defaults,
+			explorer: {
+				...defaults.explorer,
+				theme: {
+					...defaults.explorer.theme,
+					splineSpace: 'not-a-space',
+					controlPoints: [{ srgbLin: [0.1, 0.2, 0.3] }, 'garbage', null, { nope: true }]
+				}
+			}
+		};
+		const result = parseSnapshot(doc);
+		expect(result.snapshot?.explorer.theme.splineSpace).toBe('oklch');
+		expect(result.snapshot?.explorer.theme.controlPoints).toEqual([{ srgbLin: [0.1, 0.2, 0.3] }]);
+	});
 });

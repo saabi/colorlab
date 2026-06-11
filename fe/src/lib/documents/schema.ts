@@ -10,9 +10,11 @@ import type {
 	PlaneMode,
 	ShellKey,
 	SpaceMode,
+	SplineConstraint,
 	ThemeAnchor,
 	ThemeMode
 } from '$lib/engine/types';
+import { INTERP_SPACE_KEYS, type InterpSpaceKey } from '$lib/color/interp';
 import { CURRENT_SNAPSHOT_VERSION, type ParameterSnapshot } from './types';
 
 const SPACE_MODES: readonly SpaceMode[] = [0, 1, 2, 3, 5];
@@ -21,9 +23,11 @@ const TESS: readonly PersistedExplorer['N'][] = [64, 128, 192, 256];
 const PLANE_MODES: readonly PlaneMode[] = ['L', 'H', 'C'];
 const SHELLS: readonly ShellKey[] = ['none', 'p3', 'rec2020', 'ntsc', 'cie'];
 const CVD_MODES: readonly CvdMode[] = ['none', 'protan', 'deutan', 'tritan'];
-const THEME_MODES: readonly ThemeMode[] = ['seg', 'arc', 'spread'];
+const THEME_MODES: readonly ThemeMode[] = ['seg', 'arc', 'spread', 'spline'];
 const CHROMA_PROFILES: readonly ChromaProfile[] = ['linear', 'mirror'];
 const WCAG_BG: readonly PersistedTheme['wcagBg'][] = ['white', 'black'];
+const SPLINE_CONSTRAINTS: readonly SplineConstraint[] = ['free', 'surface'];
+const INTERP_SPACES: readonly InterpSpaceKey[] = INTERP_SPACE_KEYS;
 
 function warn(message: string) {
 	console.warn(`[documents] ${message}`);
@@ -76,12 +80,34 @@ function coerceAnchor(value: unknown, fallback: ThemeAnchor | null, label: strin
 	return { srgbLin: tuple3(value.srgbLin, fallback?.srgbLin ?? [0, 0, 0], `${label}.srgbLin`) };
 }
 
+function coerceAnchorList(value: unknown, label: string): ThemeAnchor[] {
+	if (!Array.isArray(value)) {
+		if (value !== undefined) warn(`Invalid control point list for ${label}; using empty.`);
+		return [];
+	}
+	const out: ThemeAnchor[] = [];
+	value.forEach((entry, i) => {
+		// Drop entries that are not a record carrying an srgbLin array, rather than
+		// silently coercing them to black.
+		if (!isRecord(entry) || !Array.isArray(entry.srgbLin)) {
+			warn(`Dropping invalid control point ${label}[${i}].`);
+			return;
+		}
+		const anchor = coerceAnchor(entry, null, `${label}[${i}]`);
+		if (anchor) out.push(anchor);
+	});
+	return out;
+}
+
 function coerceTheme(raw: unknown, defaults: PersistedTheme): PersistedTheme {
 	const theme = isRecord(raw) ? raw : {};
 	return {
 		A: coerceAnchor(theme.A, defaults.A, 'theme.A'),
 		B: coerceAnchor(theme.B, defaults.B, 'theme.B'),
-		steps: Math.max(1, Math.round(finiteNumber(theme.steps, defaults.steps, 'theme.steps'))),
+		controlPoints: coerceAnchorList(theme.controlPoints, 'theme.controlPoints'),
+		splineConstraint: enumOf(theme.splineConstraint, SPLINE_CONSTRAINTS, defaults.splineConstraint, 'theme.splineConstraint'),
+		splineSpace: enumOf(theme.splineSpace, INTERP_SPACES, defaults.splineSpace, 'theme.splineSpace'),
+		steps: Math.min(27, Math.max(1, Math.round(finiteNumber(theme.steps, defaults.steps, 'theme.steps')))),
 		mode: enumOf(theme.mode, THEME_MODES, defaults.mode, 'theme.mode'),
 		dh: finiteNumber(theme.dh, defaults.dh, 'theme.dh'),
 		dc: finiteNumber(theme.dc, defaults.dc, 'theme.dc'),
@@ -167,6 +193,9 @@ export function coerceSnapshot(raw: unknown): ParameterSnapshot | null {
 			theme: {
 				A: factory.explorer.theme.A,
 				B: factory.explorer.theme.B,
+				controlPoints: factory.explorer.theme.controlPoints,
+				splineConstraint: factory.explorer.theme.splineConstraint,
+				splineSpace: factory.explorer.theme.splineSpace,
 				steps: factory.explorer.theme.steps,
 				mode: factory.explorer.theme.mode,
 				dh: factory.explorer.theme.dh,

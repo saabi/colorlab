@@ -4,7 +4,7 @@ import { CUBE_ROT, CUBE_ROTi, LMS2RGB, RGB2LMS, REC709_Y, lsrgb2oklab, xyz2lab }
 import { TRC } from '$lib/color/transfer';
 import { planeND } from '$lib/engine/plane';
 import { camEye, lookAt, persp, type Camera } from '$lib/engine/camera';
-import { FS_FLOOR, FS_LINE, FS_MARK, FS_SOLID, VS_FLOOR, VS_LINE, VS_MARK, VS_SOLID } from './shaders';
+import { FS_FLOOR, FS_LINE, FS_MARK, FS_SOLID, FS_SPLINE, VS_FLOOR, VS_LINE, VS_MARK, VS_SOLID, VS_SPLINE } from './shaders';
 
 import type { ExplorerState } from '$lib/engine/types';
 import type { DerivedMatrices } from './uniforms';
@@ -34,6 +34,9 @@ export class WebGlRenderer {
 	private lineVao: WebGLVertexArrayObject;
 	private lineBuffer: WebGLBuffer;
 	private lineVertCount = 0;
+	private splineProgram: WebGLProgram;
+	private splineVao: WebGLVertexArrayObject;
+	private splineBuffer: WebGLBuffer;
 	private dpr = 1;
 
 	constructor(private canvas: HTMLCanvasElement) {
@@ -44,6 +47,10 @@ export class WebGlRenderer {
 		this.floorProgram = this.compile(VS_FLOOR, FS_FLOOR);
 		this.lineProgram = this.compile(VS_LINE, FS_LINE);
 		this.markProgram = this.compile(VS_MARK, FS_MARK);
+		this.splineProgram = this.compile(VS_SPLINE, FS_SPLINE);
+		const spline = this.createSplineVao();
+		this.splineVao = spline.vao;
+		this.splineBuffer = spline.buffer;
 		const solid = this.createSolidVao();
 		this.solidVao = solid.vao;
 		this.solidBuffer = solid.buffer;
@@ -166,6 +173,10 @@ export class WebGlRenderer {
 				gl.uniform3fv(this.U(this.markProgram, 'uBorder'), [border, border, border]);
 				gl.drawArrays(gl.POINTS, 0, 1);
 			}
+		}
+
+		if (input.state.theme.mode === 'spline') {
+			this.drawSpline(input, proj, view);
 		}
 
 		if (this.lineVertCount > 0 && input.state.slice && (input.state.planeOutline || input.state.cylinderOutline)) {
@@ -339,6 +350,51 @@ export class WebGlRenderer {
 		}
 	}
 
+	private drawSpline(input: DrawInput, proj: Float32Array, view: Float32Array) {
+		const { gl } = this;
+		const curve = input.state.theme.splineCurve;
+		if (curve.length > 1) {
+			const data = new Float32Array(curve.length * 6);
+			for (let i = 0; i < curve.length; i += 1) {
+				const s = curve[i];
+				const sim = simulateCvdSrgb(s.srgbLin, input.state.cvd, input.state.cvdSev);
+				const o = i * 6;
+				data[o] = s.world[0];
+				data[o + 1] = s.world[1];
+				data[o + 2] = s.world[2];
+				data[o + 3] = TRC.srgb.enc(Math.min(Math.max(sim[0], 0), 1));
+				data[o + 4] = TRC.srgb.enc(Math.min(Math.max(sim[1], 0), 1));
+				data[o + 5] = TRC.srgb.enc(Math.min(Math.max(sim[2], 0), 1));
+			}
+			gl.useProgram(this.splineProgram);
+			gl.bindVertexArray(this.splineVao);
+			gl.bindBuffer(gl.ARRAY_BUFFER, this.splineBuffer);
+			gl.bufferData(gl.ARRAY_BUFFER, data, gl.DYNAMIC_DRAW);
+			gl.uniformMatrix4fv(this.U(this.splineProgram, 'uProj'), false, proj);
+			gl.uniformMatrix4fv(this.U(this.splineProgram, 'uView'), false, view);
+			gl.drawArrays(gl.LINE_STRIP, 0, curve.length);
+			gl.bindVertexArray(null);
+		}
+
+		const cps = input.state.theme.controlPoints;
+		if (cps.length) {
+			gl.useProgram(this.markProgram);
+			gl.uniformMatrix4fv(this.U(this.markProgram, 'uProj'), false, proj);
+			gl.uniformMatrix4fv(this.U(this.markProgram, 'uView'), false, view);
+			for (let i = 0; i < cps.length; i += 1) {
+				const gamutRgb = m3.mulV(input.matrices.toSrgbLin.fromSrgb, cps[i].srgbLin);
+				const world = this.rgbToWorld(gamutRgb, input.state, input.matrices);
+				const sim = simulateCvdSrgb(cps[i].srgbLin, input.state.cvd, input.state.cvdSev);
+				const c = sim.map((v) => TRC.srgb.enc(Math.min(Math.max(v, 0), 1)));
+				const selected = i === input.state.theme.selectedCp;
+				gl.uniform3fv(this.U(this.markProgram, 'uPos'), world);
+				gl.uniform3fv(this.U(this.markProgram, 'uCol'), c);
+				gl.uniform3fv(this.U(this.markProgram, 'uBorder'), selected ? [1, 0.85, 0.3] : [1, 1, 1]);
+				gl.drawArrays(gl.POINTS, 0, 1);
+			}
+		}
+	}
+
 	private faceRgb(face: number, u: number, v: number): Vec3 {
 		if (face === 0) return [0, u, v];
 		if (face === 1) return [1, u, v];
@@ -370,12 +426,15 @@ export class WebGlRenderer {
 		gl.deleteProgram(this.floorProgram);
 		gl.deleteProgram(this.lineProgram);
 		gl.deleteProgram(this.markProgram);
+		gl.deleteProgram(this.splineProgram);
 		gl.deleteVertexArray(this.solidVao);
 		gl.deleteVertexArray(this.floorVao);
 		gl.deleteVertexArray(this.lineVao);
+		gl.deleteVertexArray(this.splineVao);
 		gl.deleteBuffer(this.solidBuffer);
 		gl.deleteBuffer(this.floorBuffer);
 		gl.deleteBuffer(this.lineBuffer);
+		gl.deleteBuffer(this.splineBuffer);
 	}
 
 	private createSolidVao() {
@@ -419,6 +478,22 @@ export class WebGlRenderer {
 		gl.bufferData(gl.ARRAY_BUFFER, 4, gl.DYNAMIC_DRAW);
 		gl.enableVertexAttribArray(0);
 		gl.vertexAttribPointer(0, 3, gl.FLOAT, false, 0, 0);
+		gl.bindVertexArray(null);
+		return { vao, buffer };
+	}
+
+	private createSplineVao() {
+		const { gl } = this;
+		const vao = gl.createVertexArray();
+		const buffer = gl.createBuffer();
+		if (!vao || !buffer) throw new Error('Unable to create WebGL spline buffers');
+		gl.bindVertexArray(vao);
+		gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+		gl.bufferData(gl.ARRAY_BUFFER, 4, gl.DYNAMIC_DRAW);
+		gl.enableVertexAttribArray(0);
+		gl.vertexAttribPointer(0, 3, gl.FLOAT, false, 24, 0);
+		gl.enableVertexAttribArray(1);
+		gl.vertexAttribPointer(1, 3, gl.FLOAT, false, 24, 12);
 		gl.bindVertexArray(null);
 		return { vao, buffer };
 	}

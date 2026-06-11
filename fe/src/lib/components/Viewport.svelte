@@ -6,8 +6,8 @@
 	import { WebGlRenderer } from '$lib/renderer/webgl-renderer';
 	import { rebuildMatrices, rebuildShell } from '$lib/renderer/uniforms';
 	import { chain, pick } from '$lib/engine/picking';
-	import { buildRamp } from '$lib/engine/theme';
-	import { createCamera, panCamera } from '$lib/engine/camera';
+	import { anchorWorld, buildRamp } from '$lib/engine/theme';
+	import { createCamera, panCamera, projectToScreen } from '$lib/engine/camera';
 	import GestureReferencePopover from './GestureReferencePopover.svelte';
 	import ViewportToolbar from './ViewportToolbar.svelte';
 
@@ -21,7 +21,8 @@
 		| { kind: 'inspect' }
 		| { kind: 'pan' }
 		| { kind: 'slice-offset'; startY: number; startOff: number }
-		| { kind: 'cylinder-radius'; startX: number; startRadius: number };
+		| { kind: 'cylinder-radius'; startX: number; startRadius: number }
+		| { kind: 'drag-control-point'; index: number };
 
 	let {
 		state: explorer = $bindable(),
@@ -166,7 +167,64 @@
 		return true;
 	}
 
+	let rampRebuildQueued = false;
+	function scheduleRampRebuild() {
+		if (rampRebuildQueued) return;
+		rampRebuildQueued = true;
+		requestAnimationFrame(() => {
+			rampRebuildQueued = false;
+			buildRamp(explorer, matrices);
+			draw();
+		});
+	}
+
+	function getControlPointAtScreen(clientX: number, clientY: number, pointerType: string): number | null {
+		const rect = canvas.getBoundingClientRect();
+		const radius = pointerType === 'touch' ? 24 : 12;
+		let best: number | null = null;
+		let bestDist = radius;
+		explorer.theme.controlPoints.forEach((cp: { srgbLin: [number, number, number] }, i: number) => {
+			const world = anchorWorld(cp, explorer, matrices);
+			const screen = projectToScreen(world, camera, rect.width, rect.height);
+			if (!screen) return;
+			const dist = Math.hypot(clientX - rect.left - screen[0], clientY - rect.top - screen[1]);
+			if (dist < bestDist) {
+				bestDist = dist;
+				best = i;
+			}
+		});
+		return best;
+	}
+
+	function addControlPointAt(clientX: number, clientY: number) {
+		const rect = canvas.getBoundingClientRect();
+		const hit = pick(clientX - rect.left, clientY - rect.top, rect.width, rect.height, explorer, matrices, camera);
+		if (!hit) return false;
+		const srgbLin = m3.mulV(matrices.toSrgbLin.toSrgb, hit.rgbLin) as [number, number, number];
+		explorer.theme.controlPoints = [...explorer.theme.controlPoints, { srgbLin }];
+		explorer.theme.selectedCp = explorer.theme.controlPoints.length - 1;
+		buildRamp(explorer, matrices);
+		gestureStatus = `Control point ${explorer.theme.controlPoints.length} added`;
+		track('theme_spline_point', { action: 'add' });
+		draw();
+		return true;
+	}
+
+	function removeControlPoint(index: number) {
+		explorer.theme.controlPoints = explorer.theme.controlPoints.filter((_: unknown, i: number) => i !== index);
+		const len = explorer.theme.controlPoints.length;
+		explorer.theme.selectedCp = len ? Math.min(index, len - 1) : null;
+		buildRamp(explorer, matrices);
+		gestureStatus = 'Control point removed';
+		track('theme_spline_point', { action: 'remove' });
+		draw();
+	}
+
 	function chooseGesture(event: PointerEvent): CanvasGesture {
+		if (explorer.theme.mode === 'spline' && explorer.theme.arm !== 'spline-add') {
+			const idx = getControlPointAtScreen(event.clientX, event.clientY, event.pointerType);
+			if (idx !== null) return { kind: 'drag-control-point', index: idx };
+		}
 		if (event.pointerType === 'touch') {
 			if (touchTool === 'slice' && explorer.slice) return { kind: 'slice-offset', startY: event.clientY, startOff: explorer.off };
 			if (touchTool === 'cylinder' && explorer.cylSlice) return { kind: 'cylinder-radius', startX: event.clientX, startRadius: explorer.cylRad };
@@ -196,6 +254,10 @@
 		capturedPointerId = event.pointerId;
 		canvas.setPointerCapture(event.pointerId);
 		gesture = chooseGesture(event);
+		if (gesture.kind === 'drag-control-point') {
+			explorer.theme.selectedCp = gesture.index;
+			draw();
+		}
 	}
 
 	function onPointerUp(event: PointerEvent) {
@@ -203,7 +265,15 @@
 		if (event.pointerType === 'touch') event.preventDefault();
 		const completedGesture = gesture.kind;
 		dragging = false;
-		if (moved < 5) {
+		if (moved < 5 && explorer.theme.mode === 'spline') {
+			if (explorer.theme.arm === 'spline-add') {
+				addControlPointAt(event.clientX, event.clientY);
+			} else if (completedGesture !== 'drag-control-point') {
+				// click on empty space (or another point): update selection
+				explorer.theme.selectedCp = getControlPointAtScreen(event.clientX, event.clientY, event.pointerType);
+				draw();
+			}
+		} else if (moved < 5) {
 			let themed = false;
 			if (keys.pickA) themed = setThemeStopAt(event.clientX, event.clientY, 'A');
 			else if (keys.pickB) themed = setThemeStopAt(event.clientX, event.clientY, 'B');
@@ -211,6 +281,8 @@
 			else if (event.pointerType === 'touch' && touchTool === 'pickB') themed = setThemeStopAt(event.clientX, event.clientY, 'B');
 			else themed = setThemeStopAt(event.clientX, event.clientY);
 			if (!themed && event.pointerType === 'touch') inspectAt(event.clientX, event.clientY);
+		} else if (completedGesture === 'drag-control-point') {
+			track('theme_spline_point', { action: 'drag' });
 		} else if (completedGesture === 'pan') {
 			track('canvas_pan', { input: event.pointerType || 'mouse' });
 		} else if (completedGesture === 'slice-offset') {
@@ -234,6 +306,19 @@
 			lastX = event.clientX;
 			lastY = event.clientY;
 			moved += Math.abs(dx) + Math.abs(dy);
+			if (gesture.kind === 'drag-control-point') {
+				if (explorer.theme.selectedCp !== null) {
+					const rect = canvas.getBoundingClientRect();
+					const hit = pick(event.clientX - rect.left, event.clientY - rect.top, rect.width, rect.height, explorer, matrices, camera);
+					if (hit) {
+						explorer.theme.controlPoints[explorer.theme.selectedCp] = {
+							srgbLin: m3.mulV(matrices.toSrgbLin.toSrgb, hit.rgbLin) as [number, number, number]
+						};
+						scheduleRampRebuild();
+					}
+				}
+				return;
+			}
 			if (gesture.kind === 'inspect') {
 				inspectAt(event.clientX, event.clientY);
 				return;
@@ -312,6 +397,15 @@
 			referenceOpen = false;
 			explorer.theme.arm = null;
 			gestureStatus = null;
+		}
+		if (
+			(event.key === 'Delete' || event.key === 'Backspace') &&
+			explorer.theme.mode === 'spline' &&
+			explorer.theme.selectedCp !== null
+		) {
+			event.preventDefault();
+			removeControlPoint(explorer.theme.selectedCp);
+			return;
 		}
 		if (event.key.toLowerCase() === 'r') resetCamera();
 		if (event.key.toLowerCase() === 'x') explorer.slice = !explorer.slice;
@@ -435,7 +529,18 @@
 	});
 
 	$effect(() => {
+		explorer.theme.splineConstraint;
+		explorer.theme.splineSpace;
+		explorer.theme.controlPoints.length;
+		untrack(() => {
+			buildRamp(explorer, matrices);
+			draw();
+		});
+	});
+
+	$effect(() => {
 		explorer.theme.stops;
+		explorer.theme.selectedCp;
 		draw();
 	});
 
