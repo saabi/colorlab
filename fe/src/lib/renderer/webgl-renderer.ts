@@ -102,19 +102,28 @@ export class WebGlRenderer {
 		gl.useProgram(this.solidProgram);
 		gl.bindVertexArray(this.solidVao);
 		this.uploadSolidUniforms(input.state, input.matrices, proj, view, 0, input.state.N, 0, 0, 0, 0, 0);
-		// Translucent solid: blend and stop writing depth so ramp markers/curves behind
-		// the surface stay visible (see-through occlusion).
 		const solidAlpha = input.state.solidAlpha;
+		const solidInstances = 6 * input.state.N * input.state.N;
 		if (solidAlpha < 1) {
+			// Translucent solid: a depth pre-pass records the nearest surface, then the
+			// color pass (LEQUAL, no depth write) blends exactly one front layer — back
+			// faces and stacked layers are depth-rejected, so no out-of-order blending
+			// artifacts regardless of mesh winding or concave cuts. Ramp aids are drawn
+			// later with depth testing off (see below) so they stay visible through it.
+			gl.colorMask(false, false, false, false);
+			gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, solidInstances);
+			gl.colorMask(true, true, true, true);
 			gl.uniform1f(this.U(this.solidProgram, 'uAlpha'), solidAlpha);
+			gl.depthFunc(gl.LEQUAL);
+			gl.depthMask(false);
 			gl.enable(gl.BLEND);
 			gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
-			gl.depthMask(false);
-		}
-		gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, 6 * input.state.N * input.state.N);
-		if (solidAlpha < 1) {
-			gl.depthMask(true);
+			gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, solidInstances);
 			gl.disable(gl.BLEND);
+			gl.depthMask(true);
+			gl.depthFunc(gl.LESS);
+		} else {
+			gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, solidInstances);
 		}
 
 		if (input.state.lines && !input.state.hideAids) {
@@ -162,6 +171,11 @@ export class WebGlRenderer {
 			gl.depthMask(true);
 		}
 
+		// With a translucent solid its pre-pass depth would occlude markers/curves
+		// inside it; draw all ramp aids depth-test-off so they show through the glass.
+		const aidsThroughGlass = solidAlpha < 1;
+		if (aidsThroughGlass) gl.disable(gl.DEPTH_TEST);
+
 		if (input.state.hover) {
 			gl.useProgram(this.markProgram);
 			gl.uniformMatrix4fv(this.U(this.markProgram, 'uProj'), false, proj);
@@ -203,6 +217,8 @@ export class WebGlRenderer {
 		if (aids && (input.state.theme.points.length || input.state.theme.splineCurve.length > 1)) {
 			this.drawSpline(input, proj, view);
 		}
+
+		if (aidsThroughGlass) gl.enable(gl.DEPTH_TEST);
 
 		if (this.lineVertCount > 0 && !input.state.hideAids && input.state.slice && (input.state.planeOutline || input.state.cylinderOutline)) {
 			gl.useProgram(this.lineProgram);
