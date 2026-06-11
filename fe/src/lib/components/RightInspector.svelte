@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import ControlGroup from './ControlGroup.svelte';
 	import PanelHeader from './PanelHeader.svelte';
 	import { track } from '$lib/analytics/umami';
 	import { drawConesPanel } from '$lib/panels/cones-panel';
@@ -145,18 +144,16 @@
 
 	<section class:active={activeTab === 'values'} class="inspector-tab-panel values-panel">
 		<PanelHeader label="Hovered stimulus" panelId="values" bind:openHelp />
-		<ControlGroup title="Hovered stimulus">
-			<div class:oog={!!explorer.hover && !explorer.hover.inGamut} class="swatch" style={swatchStyle}>
-				<span>{explorer.hover ? (explorer.hover.inGamut ? '' : 'OUT OF GAMUT') : ''}</span>
-			</div>
-			<div class="chain">
-				{#each rows as row}
-					<div class="stage">
-						<b>{row[0]}</b>
-						<span>{row[1]}</span>
-					</div>
-				{/each}
-			</div>
-		</ControlGroup>
+		<div class:oog={!!explorer.hover && !explorer.hover.inGamut} class="swatch" style={swatchStyle}>
+			<span>{explorer.hover ? (explorer.hover.inGamut ? '' : 'OUT OF GAMUT') : ''}</span>
+		</div>
+		<div class="chain">
+			{#each rows as row}
+				<div class="stage">
+					<b>{row[0]}</b>
+					<span>{row[1]}</span>
+				</div>
+			{/each}
+		</div>
 	</section>
 </aside>

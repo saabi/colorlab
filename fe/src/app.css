@@ -1045,14 +1045,6 @@ input[type="checkbox"] {
 	text-shadow: none;
 }
 
-.values-panel .group > h2 {
-	display: none;
-}
-
-.values-panel .group {
-	margin-top: 0;
-}
-
 .chain {
 	display: flex;
 	flex-direction: column;
@@ -1356,13 +1348,5 @@ input[type="checkbox"] {
 		overflow-y: auto;
 		max-height: calc(50dvh - 70px);
 		padding-right: 2px;
-	}
-
-	.values-panel .group {
-		margin-bottom: 0;
-	}
-
-	.values-panel .group > h2 {
-		display: none;
 	}
 }
