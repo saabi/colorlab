@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import PanelHeader from './PanelHeader.svelte';
+	import PaletteStrip from './PaletteStrip.svelte';
 	import { track } from '$lib/analytics/umami';
 	import { drawConesPanel } from '$lib/panels/cones-panel';
 	import { drawTransferPanel } from '$lib/panels/transfer-panel';
@@ -14,8 +15,17 @@
 	let conesCanvas: HTMLCanvasElement;
 	let xyCanvas: HTMLCanvasElement;
 	let spectrumLabel = $state('');
-	let activeTab = $state<'transfer' | 'cones' | 'xy' | 'values'>('transfer');
+	let activeTab = $state<'transfer' | 'cones' | 'xy' | 'values' | 'palette'>('transfer');
 	let openHelp = $state<string | null>(null);
+
+	// The exported palette (2-D grid when expanded, else the 1-D ramp as one row).
+	const paletteRows = $derived(
+		explorer.theme.expand !== 'none' && explorer.theme.grid.length
+			? explorer.theme.grid
+			: explorer.theme.stops.length
+				? [explorer.theme.stops]
+				: []
+	);
 
 	const fmt = (value: number, places = 3) => (Math.abs(value) < 1e-4 ? 0 : value).toFixed(places);
 	const fmtVec = (vec: Vec3, places = 3) => vec.map((v: number) => fmt(v, places)).join(' ');
@@ -112,6 +122,14 @@
 				setActiveTab('values');
 			}}>Values</button
 		>
+		<button
+			type="button"
+			class="palette-tab"
+			class:active={activeTab === 'palette'}
+			onclick={() => {
+				setActiveTab('palette');
+			}}>Palette</button
+		>
 	</div>
 
 	<section class:active={activeTab === 'transfer'} class="inspector-tab-panel">
@@ -155,5 +173,14 @@
 				</div>
 			{/each}
 		</div>
+	</section>
+
+	<section class:active={activeTab === 'palette'} class="inspector-tab-panel palette-panel">
+		<PanelHeader label="Exported palette" panelId="palette" bind:openHelp />
+		{#if paletteRows.length}
+			<PaletteStrip rows={paletteRows} swatch={22} cvd={explorer.cvd} cvdSev={explorer.cvdSev} ariaLabel="Exported palette" />
+		{:else}
+			<p class="note">Pick source colors to generate a ramp; the exported palette appears here.</p>
+		{/if}
 	</section>
 </aside>

@@ -10,6 +10,7 @@
 	import { MAX_CAMERA_DIST, MAX_CAMERA_PITCH, MIN_CAMERA_DIST, panCamera, projectToScreen, resetCamera as resetCameraState } from '$lib/engine/camera';
 	import GestureReferencePopover from './GestureReferencePopover.svelte';
 	import ViewportToolbar from './ViewportToolbar.svelte';
+	import PaletteStrip from './PaletteStrip.svelte';
 
 	import type { ExplorerState } from '$lib/engine/types';
 	import type { Camera } from '$lib/engine/camera';
@@ -64,6 +65,14 @@
 
 	const matrices = $derived(rebuildMatrices(explorer.gamut));
 	const shellMatrices = $derived(explorer.hideAids ? null : rebuildShell(explorer.shell));
+	// The exported palette: the 2-D grid when expanded, else the 1-D ramp as one row.
+	const paletteRows = $derived(
+		explorer.theme.expand !== 'none' && explorer.theme.grid.length
+			? explorer.theme.grid
+			: explorer.theme.stops.length
+				? [explorer.theme.stops]
+				: []
+	);
 	// Idle hover over a draggable source point (mouse only); drives the cursor.
 	let hoverPointIndex = $state<number | null>(null);
 	const cursorMode = $derived(hoverPointIndex !== null ? 'point' : gesture.kind);
@@ -729,6 +738,11 @@
 		ondblclick={onDoubleClick}
 		onwheel={onWheel}
 	></canvas>
+	{#if explorer.pinPalette && paletteRows.length}
+		<div class="pin-overlay">
+			<PaletteStrip rows={paletteRows} swatch={16} cvd={explorer.cvd} cvdSev={explorer.cvdSev} ariaLabel="Pinned exported palette" />
+		</div>
+	{/if}
 	{#if error}
 		<div class="viewport-placeholder">{error}</div>
 	{/if}

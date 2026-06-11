@@ -48,6 +48,7 @@ export function toPersistedExplorer(explorer: ExplorerState): PersistedExplorer 
 		surfaceGridAlpha: explorer.surfaceGridAlpha,
 		solidAlpha: explorer.solidAlpha,
 		hideAids: explorer.hideAids,
+		pinPalette: explorer.pinPalette,
 		openSteps: [...explorer.openSteps],
 		cvd: explorer.cvd,
 		cvdSev: explorer.cvdSev,

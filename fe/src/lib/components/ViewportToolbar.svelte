@@ -63,6 +63,11 @@
 		<span>Cylinder</span>
 	</label>
 
+	<label class="toolbar-toggle toolbar-pin">
+		<input type="checkbox" bind:checked={state.pinPalette} />
+		<span>Pin palette</span>
+	</label>
+
 	<label class="toolbar-vision">
 		<span>Vision</span>
 		<select bind:value={state.cvd}>

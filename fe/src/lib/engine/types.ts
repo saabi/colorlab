@@ -90,6 +90,8 @@ export interface ExplorerState {
 	solidAlpha: number;
 	/** Master toggle hiding all viewport aids (floor, surface grid, outlines, shell) without losing each setting. */
 	hideAids: boolean;
+	/** Pin the exported palette as an overlay on the 3D viewport (desktop). */
+	pinPalette: boolean;
 	/** Pipeline step ids currently expanded in the left sidebar (persisted UI state). */
 	openSteps: string[];
 	cvd: CvdMode;

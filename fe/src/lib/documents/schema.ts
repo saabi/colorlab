@@ -174,6 +174,7 @@ function coerceExplorer(raw: unknown, defaults: PersistedExplorer): PersistedExp
 		surfaceGridAlpha: finiteNumber(explorer.surfaceGridAlpha, defaults.surfaceGridAlpha, 'surfaceGridAlpha'),
 		solidAlpha: Math.min(1, Math.max(0.05, finiteNumber(explorer.solidAlpha, defaults.solidAlpha, 'solidAlpha'))),
 		hideAids: typeof explorer.hideAids === 'boolean' ? explorer.hideAids : defaults.hideAids,
+		pinPalette: typeof explorer.pinPalette === 'boolean' ? explorer.pinPalette : defaults.pinPalette,
 		openSteps: Array.isArray(explorer.openSteps)
 			? explorer.openSteps.filter((s): s is string => typeof s === 'string')
 			: defaults.openSteps,
@@ -213,6 +214,7 @@ export function coerceSnapshot(raw: unknown): ParameterSnapshot | null {
 			surfaceGridAlpha: factory.explorer.surfaceGridAlpha,
 			solidAlpha: factory.explorer.solidAlpha,
 			hideAids: factory.explorer.hideAids,
+			pinPalette: factory.explorer.pinPalette,
 			openSteps: factory.explorer.openSteps,
 			cvd: factory.explorer.cvd,
 			cvdSev: factory.explorer.cvdSev,

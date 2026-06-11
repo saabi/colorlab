@@ -1,4 +1,4 @@
-export type InspectorPanelId = 'transfer' | 'cones' | 'xy' | 'values';
+export type InspectorPanelId = 'transfer' | 'cones' | 'xy' | 'values' | 'palette';
 export type PipelineHelpId =
 	| 'pipelineGamut'
 	| 'pipelineWorld'
@@ -102,6 +102,15 @@ export const INSPECTOR_HELP: Record<InspectorPanelId, PanelHelpContent> = {
 			{ label: 'Single-source pipeline design (design.md \u00a74, \u00a76)' },
 			{ label: 'Bj\u00f6rn Ottosson, Oklab (2020)' },
 			{ label: 'CIE 15 CIELAB; project-corrected a* = 500(fx\u2212fy) (design \u00a77)' }
+		]
+	},
+	palette: {
+		title: 'Exported palette',
+		summary:
+			'The final generated colors exactly as exported (post gamut-map) \u2014 the 1-D ramp, or the 2-D grid when the Expand stage is active. CVD preview and out-of-gamut affordance match the viewport.',
+		sources: [
+			{ label: 'theme.ts buildRamp / buildExpand' },
+			{ label: 'Export tokens (CSS / DTCG)' }
 		]
 	}
 };

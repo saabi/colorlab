@@ -554,6 +554,21 @@ input[type="checkbox"] {
 	cursor: pointer;
 }
 
+/* Pinned exported-palette overlay (desktop only; mobile uses the inspector tab) */
+.pin-overlay {
+	position: absolute;
+	left: 50%;
+	bottom: 44px;
+	transform: translateX(-50%);
+	max-width: calc(100% - 24px);
+	padding: 6px;
+	border-radius: 6px;
+	background: rgba(10, 10, 11, 0.72);
+	box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
+	overflow: auto;
+	z-index: 4;
+}
+
 .viewport canvas.cursor-inspect {
 	cursor: crosshair;
 }
@@ -764,6 +779,12 @@ input[type="checkbox"] {
 
 .inspector-tab-panel {
 	display: block;
+}
+
+/* Desktop stacks all instruments; the palette lives in the viewport pin overlay
+   instead, so its inspector panel is mobile-only. */
+.inspector-tab-panel.palette-panel {
+	display: none;
 }
 
 .group {
@@ -1314,9 +1335,15 @@ input[type="checkbox"] {
 
 	.inspector-tabs {
 		display: grid;
-		grid-template-columns: repeat(4, minmax(0, 1fr));
+		grid-template-columns: repeat(5, minmax(0, 1fr));
 		gap: 4px;
 		margin-bottom: 8px;
+	}
+
+	/* Desktop-only palette overlay + its pin toggle give way to the inspector tab. */
+	.pin-overlay,
+	.viewport-toolbar .toolbar-pin {
+		display: none;
 	}
 
 	.inspector-tabs button {

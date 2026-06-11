@@ -37,6 +37,7 @@ function createExplorerDefaults(): ExplorerState {
 		surfaceGridAlpha: 0.25,
 		solidAlpha: 1,
 		hideAids: false,
+		pinPalette: false,
 		openSteps: ['gamut', 'sources', 'interpolate'],
 		cvd: 'none',
 		cvdSev: 1,
