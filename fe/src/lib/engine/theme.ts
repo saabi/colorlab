@@ -288,6 +288,30 @@ function placeStops(state: ExplorerState, matrices: DerivedMatrices) {
 	T.stops = [];
 	if (!curve.length) return;
 
+	// Contrast ladder: place stops at explicit WCAG target ratios spanning
+	// [contrastMin, contrastMax] vs the chosen background (Leonardo-style). Each
+	// target snaps to the nearest curve sample (HIRES = fine granularity).
+	if (T.place === 'contrast') {
+		const bg: Vec3 = T.wcagBg === 'black' ? [0, 0, 0] : [1, 1, 1];
+		const cs = curve.map((s) => wcag(s.srgbLin, bg));
+		const lo = Math.min(T.contrastMin, T.contrastMax);
+		const hi = Math.max(T.contrastMin, T.contrastMax);
+		for (let s = 0; s < steps; s += 1) {
+			const target = steps === 1 ? lo : lo + (hi - lo) * (s / (steps - 1));
+			let best = 0;
+			let bestD = Infinity;
+			for (let i = 0; i < cs.length; i += 1) {
+				const d = Math.abs(cs[i] - target);
+				if (d < bestD) {
+					bestD = d;
+					best = i;
+				}
+			}
+			T.stops.push(stopFromWorld(curve[best].world, state, matrices));
+		}
+		return;
+	}
+
 	const oks = curve.map((s) => lsrgb2oklab(s.srgbLin.map(clamp01) as Vec3));
 
 	// Build a non-decreasing axis to invert. 'even' uses cumulative arc length; the
@@ -297,9 +321,6 @@ function placeStops(state: ExplorerState, matrices: DerivedMatrices) {
 		axis = curve.map((_, i) => i);
 	} else if (T.place === 'tones') {
 		axis = oks.map((o) => o[0]);
-	} else if (T.place === 'contrast') {
-		const bg: Vec3 = T.wcagBg === 'black' ? [0, 0, 0] : [1, 1, 1];
-		axis = curve.map((s) => wcag(s.srgbLin, bg));
 	} else {
 		axis = [0];
 		for (let i = 1; i < curve.length; i += 1) {

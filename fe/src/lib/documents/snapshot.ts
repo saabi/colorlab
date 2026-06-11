@@ -64,6 +64,8 @@ export function toPersistedExplorer(explorer: ExplorerState): PersistedExplorer 
 			cprof: theme.cprof,
 			arcLong: theme.arcLong,
 			place: theme.place,
+			contrastMin: theme.contrastMin,
+			contrastMax: theme.contrastMax,
 			expand: theme.expand,
 			expandSteps: theme.expandSteps,
 			aa: theme.aa,

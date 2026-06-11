@@ -116,6 +116,9 @@ export interface ExplorerState {
 		arcLong: boolean;
 		/** Place stage: how the N stops are sampled along the interpolated curve (persisted). */
 		place: PlacePolicy;
+		/** Contrast-ladder target range (WCAG ratios vs the chosen background; persisted). */
+		contrastMin: number;
+		contrastMax: number;
 		/** Expand stage: per-stop generator producing a 2-D palette (persisted). */
 		expand: ExpandPolicy;
 		/** Columns generated per base stop when expanding (persisted). */

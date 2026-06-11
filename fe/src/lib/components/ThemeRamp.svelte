@@ -312,6 +312,8 @@
 					vs Black
 				</button>
 			</div>
+			<SliderRow label="Min contrast" bind:value={explorer.theme.contrastMin} min={1} max={21} step={0.5} format={(value) => `${value.toFixed(1)}:1`} />
+			<SliderRow label="Max contrast" bind:value={explorer.theme.contrastMax} min={1} max={21} step={0.5} format={(value) => `${value.toFixed(1)}:1`} />
 		{/if}
 	</div>
 {/if}
