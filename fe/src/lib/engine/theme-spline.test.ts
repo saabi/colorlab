@@ -20,6 +20,8 @@ function splineState(
 ) {
 	const state = createAppState().explorer;
 	state.theme.mode = 'spline';
+	state.theme.interpolateOn = true;
+	state.theme.placeOn = true;
 	state.theme.splineSpace = space;
 	state.theme.splineConstraint = constraint;
 	state.theme.gamutMap = gamutMap;
@@ -245,6 +247,8 @@ describe('buildSplineRamp', () => {
 		for (const space of ['world', 'oklab', 'oklch'] as const) {
 			const state = createAppState().explorer;
 			state.theme.mode = 'linear';
+			state.theme.interpolateOn = true;
+			state.theme.placeOn = true;
 			state.theme.splineConstraint = 'free';
 			state.theme.splineSpace = space;
 			state.theme.steps = 7;

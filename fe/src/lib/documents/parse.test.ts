@@ -106,8 +106,8 @@ describe('parseSnapshot', () => {
 		};
 		const result = parseSnapshot(legacy);
 		expect(result.snapshot?.explorer.theme.lists).toEqual([[]]);
-		expect(result.snapshot?.explorer.theme.splineConstraint).toBe('surface');
-		expect(result.snapshot?.explorer.theme.splineSpace).toBe('world');
+		expect(result.snapshot?.explorer.theme.splineConstraint).toBe('free');
+		expect(result.snapshot?.explorer.theme.splineSpace).toBe('oklab');
 	});
 
 	it('round-trips a spline document with control points', () => {
@@ -253,7 +253,7 @@ describe('parseSnapshot', () => {
 			}
 		};
 		const result = parseSnapshot(doc);
-		expect(result.snapshot?.explorer.theme.splineSpace).toBe('world');
+		expect(result.snapshot?.explorer.theme.splineSpace).toBe('oklab');
 		expect(result.snapshot?.explorer.theme.lists).toEqual([[{ srgbLin: [0.1, 0.2, 0.3] }]]);
 	});
 
