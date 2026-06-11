@@ -2,6 +2,20 @@
 
 Status: design proposal, ready for implementation planning.
 
+## Design Review Revisions (authoritative — supersede conflicting text below)
+
+A post-draft review resolved several contradictions and under-specified decisions. Where the prose below disagrees, these decisions win.
+
+1. **Two node kinds, not one.** Distinguish **control nodes** (own real parameters) from **informational/teaching nodes** (a transform stage with no controls yet). Informational nodes are first-class: they show status + help + an optional shortcut and are styled read-only/dimmed. Do **not** invent controls or relocate unrelated controls just to fill a node panel.
+2. **Canonical node set.** The implemented, clickable set is: `All`, `Gamut`, `World`, `Clip`, `Vision`, `Display`, `Pick`, `Anchors/Points`, `Interpolate`, `Adjust`, `Gamut Map`, `Export`, `View`, `Performance`. `Encoded RGB`, `Linear RGB`, `XYZ`, and `Raw Stops` are **informational sub-stages** surfaced in help/status text and the pipeline trace, not separate clickable nodes for now; promote them to nodes only when they gain controls (calibration, raw-vs-final preview). This reconciles the 16-vs-12 mismatch between §Node Types and §First Implementation Target.
+3. **Drop "scope" as a reused lane word; use an "affects" badge.** Lanes (`Explorer`/`Ramp`/`Support`) describe the workflow group. Effect is a separate **`affects`** badge from a small fixed set: `Viewport`, `Ramp`, `Export`, `Display only`, `View only`. Never render `lane / scope` combos like "Explorer / Display". `pipeline-nodes.ts` is the single source of truth for each node's `lane`, `affects`, controls, and help id; these docs reference it and must not re-list control maps that drift.
+4. **Positioning: navigation + teaching first; `All` is a fully-supported primary surface.** The rail is the map and the teacher; `All` (the default) remains the unthrottled workhorse for multi-step workflows. Do not degrade `All` into a legacy afterthought. Per-node focus is for learning and single-stage tweaks.
+5. **Node enablement.** Ramp nodes (`Anchors/Points`, `Interpolate`, `Adjust`, `Gamut Map`, `Export`) are dimmed/disabled until at least one source exists (anchor A/B set, or ≥1 spline control point). Informational nodes are always visible but read-only. This teaches dataflow and removes dead clicks.
+6. **`selectedNode` persistence.** Persist the last-selected node in **session** (last-open UI) state only — never in the document snapshot — so reload keeps working context instead of dumping the user back to `All`.
+7. **Destination-gamut is a first-class warning, not a footnote.** `Gamut Map` and `Export` must show the destination gamut (currently sRGB) and warn when it differs from the explorer gamut (e.g., solid = P3, export = sRGB). A `gamut explorer` silently flattening wide-gamut ramps to sRGB is a trap.
+8. **Promote "Raw vs Final" preview and OOG badges to near-term.** A before/after stop preview on `Gamut Map`/`Export` (OOG count + swatch diff) is the payoff that makes the pipeline framing tangible, especially now that gamut mapping exists. Add OOG warning badges to `Interpolate` and `Gamut Map`. (Was buried under §Additional Suggestions.)
+9. **Wording.** User-facing copy says "pipeline steps/stages"; "node"/"graph" stays internal to avoid implying a rewireable editor.
+
 ## Goal
 
 Rework the app controls around the color pipelines rather than around broad sidebar groups. The user should see a compact, static pseudo-node graph where each node represents a pipeline step. Clicking a node opens the parameters for that step. The graph is non-rewirable: it explains the dataflow and acts as navigation, not a general visual programming surface.

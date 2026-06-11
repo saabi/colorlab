@@ -2,6 +2,13 @@
 
 Status: implementation plan.
 
+## Design Review Revisions (authoritative)
+
+- **Don't restate "affects/does-not-affect" as free prose in every entry — it rots.** Derive a single `affects` badge per node from `pipeline-nodes.ts` metadata, and keep only a short, stage-specific "does not affect" caveat where it genuinely prevents a misconception (e.g., gamut map vs the 3D solid). When a feature later changes stages (e.g., gamut map targeting the active gamut), the badge updates in one place instead of across many popups.
+- **Make removal of legacy help a definite step, grep-gated.** `SidebarGroupId` / `SIDEBAR_HELP` (`colorModel`, `clipping`, `theme`, `display`, `performance`) are now unreferenced by node-scoped panels; delete them once `grep -r` confirms no consumer, rather than keeping them "temporarily."
+- **`pipelineWorld` copy fix (below):** world space changes where colors are *displayed*, not stored anchor values — do not say it affects "ramp anchor placement."
+- **Destination-gamut note:** `pipelineGamutMap` and `pipelineExport` should state the destination gamut and that it may differ from the explorer gamut.
+
 ## Problem
 
 The pipeline-node UI now separates parameters by process step, but the help popup content still mostly uses the old broad sidebar IDs:
@@ -109,8 +116,8 @@ Details:
 
 - Input: linear RGB converted through the active gamut matrices.
 - Changes: geometric position of colors in RGB, XYZ, CIELAB, Oklab, or luminance layout.
-- Output: world coordinates used by the renderer, picking, clipping, and ramp anchor placement.
-- Does not affect: source color values, exported ramp tokens, or display simulation.
+- Output: world coordinates used by the renderer, picking, and clipping.
+- Does not affect: source color values, stored anchor colors (only where they are shown, not their values), exported ramp tokens, or display simulation.
 
 Sources:
 

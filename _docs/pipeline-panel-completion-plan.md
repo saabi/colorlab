@@ -2,6 +2,16 @@
 
 Status: implementation plan.
 
+## Design Review Revisions (authoritative)
+
+These override the original Completion Rule below where they conflict (see `pipeline-node-ui-proposal.md` → Design Review Revisions for the full rationale).
+
+- **Soften the Completion Rule.** A node panel is *not* required to expose a mutating control. Informational/teaching stages may be **status + help + a shortcut** only, styled read-only. Do not invent controls, and do not move unrelated controls into a panel just to avoid emptiness.
+- **Touch tool belongs to `Pick` (and the quick bar), not `View`.** The original proposal explicitly excludes touch tool from `View`. The current implementation wrongly places it in the `View` panel — remove it there; the canonical home is `Pick`.
+- **`View` is allowed to be light.** Reset + gesture-reference + a status line is sufficient. Exact camera form controls (yaw/pitch/dist/fov/target) are a *nice-to-have*, not a requirement to satisfy completeness — keep them only if they don't crowd the panel.
+- **Node enablement.** Ramp nodes are dimmed/disabled until a source exists (anchor or control point). Reflect this in the panels, not just the rail.
+- **Single source of truth.** `pipeline-nodes.ts` owns each node's id/lane/affects/controls/help id; the per-node control lists in this doc are a reference, not a second authority.
+
 ## Problem
 
 The pipeline-node UI should not leave any selected node with an empty or explanatory-only panel. If a node exists in the pipeline graph, selecting it must expose the controls that belong to that stage, even when the same action also remains available in the viewport quick bar or gesture layer.
