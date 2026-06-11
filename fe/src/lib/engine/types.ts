@@ -14,8 +14,10 @@ export type ChromaProfile = 'linear' | 'mirror';
 // Place stage: where the N stops land on the interpolated curve.
 export type PlacePolicy = 'even' | 'uniform' | 'tones' | 'contrast';
 // Expand stage: per-stop generator turning the 1-D ramp into a 2-D palette.
-// 'spread' fans each stop across delta hue/chroma (the former standalone mode).
-export type ExpandPolicy = 'none' | 'tints-shades' | 'spread';
+// 'spread' fans each stop across delta hue/chroma (the former standalone mode);
+// 'harmony' rotates the whole ramp's hue into related ramps (complementary, …).
+export type ExpandPolicy = 'none' | 'tints-shades' | 'spread' | 'harmony';
+export type HarmonyKind = 'complementary' | 'triadic' | 'analogous' | 'tetradic';
 // Spline curve geometry constraint (not a gamut map): 'free' interpolates inside
 // the volume; 'surface' radially snaps samples to the active solid shell.
 // Out-of-gamut handling is a separate, global policy (theme.gamutMap).
@@ -123,6 +125,8 @@ export interface ExplorerState {
 		expand: ExpandPolicy;
 		/** Columns generated per base stop when expanding (persisted). */
 		expandSteps: number;
+		/** Hue-harmony scheme used when expand === 'harmony' (persisted). */
+		harmony: HarmonyKind;
 		/** Expanded 2-D palette: one row per base stop (runtime, not persisted). */
 		grid: ThemeStop[][];
 		aa: number;

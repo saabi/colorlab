@@ -77,6 +77,12 @@ export function buildRamp(state: ExplorerState, matrices: DerivedMatrices) {
 // 'tints-shades' walks Oklab lightness around each base color (hue/chroma held),
 // gamut-mapped per cell by the same policy. 'none' leaves the ramp 1-D (grid = []).
 const EXPAND_L_RANGE = 0.32;
+const HARMONY_OFFSETS: Record<ExplorerState['theme']['harmony'], number[]> = {
+	complementary: [0, 180],
+	triadic: [0, 120, 240],
+	analogous: [-30, 0, 30],
+	tetradic: [0, 90, 180, 270]
+};
 function buildExpand(state: ExplorerState, matrices: DerivedMatrices) {
 	const T = state.theme;
 	if (T.expand === 'none' || !T.stops.length) {
@@ -85,6 +91,24 @@ function buildExpand(state: ExplorerState, matrices: DerivedMatrices) {
 	}
 	const cols = Math.max(2, T.expandSteps);
 	const mapCell = (lin: Vec3) => (T.gamutMap !== 'none' ? mapToGamut(lin, T.gamutMap) : lin);
+
+	if (T.expand === 'harmony') {
+		// Rotate the whole ramp's hue into related ramps; rows = harmony angles,
+		// columns = the ramp's stops. Hue is rotated in Oklab (a,b held in length).
+		const offsets = HARMONY_OFFSETS[T.harmony];
+		T.grid = offsets.map((deg) => {
+			const rad = (deg * Math.PI) / 180;
+			const cos = Math.cos(rad);
+			const sin = Math.sin(rad);
+			return T.stops.map((s) => {
+				const ok = lsrgb2oklab(s.srgbLin.map(clamp01) as Vec3);
+				const a = ok[1] * cos - ok[2] * sin;
+				const b = ok[1] * sin + ok[2] * cos;
+				return stopFromSrgbLin(mapCell(oklab2lsrgb([ok[0], a, b])), state, matrices);
+			});
+		});
+		return;
+	}
 
 	if (T.expand === 'spread') {
 		// Fan each stop across delta hue/chroma in the world's cylindrical frame

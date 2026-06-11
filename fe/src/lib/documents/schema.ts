@@ -15,7 +15,8 @@ import type {
 	ThemeMode,
 	InterpSpaceChoice,
 	PlacePolicy,
-	ExpandPolicy
+	ExpandPolicy,
+	HarmonyKind
 } from '$lib/engine/types';
 import { INTERP_SPACE_KEYS } from '$lib/color/interp';
 import { GAMUT_MAP_METHODS, type GamutMapMethod } from '$lib/color/gamut-map';
@@ -30,7 +31,8 @@ const CVD_MODES: readonly CvdMode[] = ['none', 'protan', 'deutan', 'tritan'];
 const THEME_MODES: readonly ThemeMode[] = ['linear', 'spline'];
 const CHROMA_PROFILES: readonly ChromaProfile[] = ['linear', 'mirror'];
 const PLACE_POLICIES: readonly PlacePolicy[] = ['even', 'uniform', 'tones', 'contrast'];
-const EXPAND_POLICIES: readonly ExpandPolicy[] = ['none', 'tints-shades', 'spread'];
+const EXPAND_POLICIES: readonly ExpandPolicy[] = ['none', 'tints-shades', 'spread', 'harmony'];
+const HARMONY_KINDS: readonly HarmonyKind[] = ['complementary', 'triadic', 'analogous', 'tetradic'];
 const WCAG_BG: readonly PersistedTheme['wcagBg'][] = ['white', 'black'];
 const SPLINE_CONSTRAINTS: readonly SplineConstraint[] = ['free', 'surface'];
 const GAMUT_MAPS: readonly GamutMapMethod[] = GAMUT_MAP_METHODS;
@@ -124,6 +126,7 @@ function coerceTheme(raw: unknown, defaults: PersistedTheme): PersistedTheme {
 		contrastMax: Math.min(21, Math.max(1, finiteNumber(theme.contrastMax, defaults.contrastMax, 'theme.contrastMax'))),
 		expand: enumOf(theme.expand, EXPAND_POLICIES, defaults.expand, 'theme.expand'),
 		expandSteps: Math.min(12, Math.max(2, Math.round(finiteNumber(theme.expandSteps, defaults.expandSteps, 'theme.expandSteps')))),
+		harmony: enumOf(theme.harmony, HARMONY_KINDS, defaults.harmony, 'theme.harmony'),
 		aa: finiteNumber(theme.aa, defaults.aa, 'theme.aa'),
 		wcagBg: enumOf(theme.wcagBg, WCAG_BG, defaults.wcagBg, 'theme.wcagBg')
 	};
@@ -223,6 +226,7 @@ export function coerceSnapshot(raw: unknown): ParameterSnapshot | null {
 				contrastMax: factory.explorer.theme.contrastMax,
 				expand: factory.explorer.theme.expand,
 				expandSteps: factory.explorer.theme.expandSteps,
+				harmony: factory.explorer.theme.harmony,
 				aa: factory.explorer.theme.aa,
 				wcagBg: factory.explorer.theme.wcagBg
 			}

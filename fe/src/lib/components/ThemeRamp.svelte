@@ -77,7 +77,15 @@
 	const EXPAND_OPTIONS: Array<{ value: ExplorerState['theme']['expand']; label: string }> = [
 		{ value: 'none', label: 'None (single ramp)' },
 		{ value: 'tints-shades', label: 'Tints & shades' },
-		{ value: 'spread', label: 'Spread (hue / chroma fan)' }
+		{ value: 'spread', label: 'Spread (hue / chroma fan)' },
+		{ value: 'harmony', label: 'Hue harmony (related ramps)' }
+	];
+
+	const HARMONY_OPTIONS: Array<{ value: ExplorerState['theme']['harmony']; label: string }> = [
+		{ value: 'complementary', label: 'Complementary (×2)' },
+		{ value: 'triadic', label: 'Triadic (×3)' },
+		{ value: 'analogous', label: 'Analogous (×3)' },
+		{ value: 'tetradic', label: 'Tetradic (×4)' }
 	];
 
 	function setThemeMode(mode: typeof explorer.theme.mode) {
@@ -331,7 +339,18 @@
 			</select>
 		</label>
 		{#if explorer.theme.expand !== 'none'}
-			<SliderRow label="Columns" bind:value={explorer.theme.expandSteps} min={2} max={12} step={1} format={(value) => value.toFixed(0)} />
+			{#if explorer.theme.expand === 'harmony'}
+				<label class="field-row">
+					<span>Scheme</span>
+					<select bind:value={explorer.theme.harmony}>
+						{#each HARMONY_OPTIONS as opt}
+							<option value={opt.value}>{opt.label}</option>
+						{/each}
+					</select>
+				</label>
+			{:else}
+				<SliderRow label="Columns" bind:value={explorer.theme.expandSteps} min={2} max={12} step={1} format={(value) => value.toFixed(0)} />
+			{/if}
 			{#if explorer.theme.expand === 'spread'}
 				<SliderRow label="Delta hue" bind:value={explorer.theme.dh} min={0} max={180} step={1} format={(value) => `${value.toFixed(0)} deg`} />
 				<SliderRow label="Delta chroma" bind:value={explorer.theme.dc} min={0} max={0.4} step={0.005} format={(value) => value.toFixed(2)} />

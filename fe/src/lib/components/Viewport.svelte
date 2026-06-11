@@ -642,6 +642,7 @@
 		explorer.theme.contrastMax;
 		explorer.theme.expand;
 		explorer.theme.expandSteps;
+		explorer.theme.harmony;
 		untrack(() => {
 			buildRamp(explorer, matrices);
 			draw();

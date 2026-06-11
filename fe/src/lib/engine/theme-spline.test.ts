@@ -143,6 +143,24 @@ describe('buildSplineRamp', () => {
 		expect(state.theme.grid[0].every((c) => c.srgbLin.every(finite))).toBe(true);
 	});
 
+	it('harmony expand produces one rotated ramp per scheme angle', () => {
+		const cases = [
+			['complementary', 2],
+			['triadic', 3],
+			['analogous', 3],
+			['tetradic', 4]
+		] as const;
+		for (const [harmony, rows] of cases) {
+			const state = splineState('oklch', 'free', 5);
+			state.theme.expand = 'harmony';
+			state.theme.harmony = harmony;
+			buildRamp(state, matrices);
+			expect(state.theme.grid.length).toBe(rows);
+			expect(state.theme.grid.every((row) => row.length === 5)).toBe(true);
+			expect(state.theme.grid.every((row) => row.every((c) => c.srgbLin.every(finite)))).toBe(true);
+		}
+	});
+
 	it('every place policy yields the requested number of finite stops', () => {
 		for (const place of ['even', 'uniform', 'tones', 'contrast'] as const) {
 			const state = splineState('oklch', 'free', 8);

@@ -60,6 +60,7 @@ function createExplorerDefaults(): ExplorerState {
 			contrastMax: 12,
 			expand: 'none',
 			expandSteps: 5,
+			harmony: 'complementary',
 			grid: [],
 			aa: 4.5,
 			wcagBg: 'white'
