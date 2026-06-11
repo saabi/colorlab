@@ -110,6 +110,10 @@
 					</select>
 					<p class="note">Overlays another gamut as a ghost shell for comparison.</p>
 				</div>
+				<div class="separator">
+					<SliderRow label="Solid opacity" bind:value={explorer.solidAlpha} min={0.05} max={1} step={0.05} format={(value) => value.toFixed(2)} />
+					<p class="note">Lower it to see ramp points, curves, and stops through the solid.</p>
+				</div>
 			</ControlGroup>
 
 			<ControlGroup index={2} title={m.world.label} helpId="pipelineWorld" status={m.world.status} affects={m.world.affects} open={isOpen('world')} onToggle={() => toggleStep('world')} bind:openHelp>

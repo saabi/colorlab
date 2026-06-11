@@ -35,6 +35,7 @@ function createExplorerDefaults(): ExplorerState {
 		cylinderOutline: true,
 		outlineDepthTest: true,
 		surfaceGridAlpha: 0.25,
+		solidAlpha: 1,
 		hideAids: false,
 		openSteps: ['gamut', 'sources', 'interpolate'],
 		cvd: 'none',

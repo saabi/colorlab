@@ -86,6 +86,8 @@ export interface ExplorerState {
 	cylinderOutline: boolean;
 	outlineDepthTest: boolean;
 	surfaceGridAlpha: number;
+	/** Opacity of the color solid (1 = opaque); < 1 reveals ramp markers/curves behind it. */
+	solidAlpha: number;
 	/** Master toggle hiding all viewport aids (floor, surface grid, outlines, shell) without losing each setting. */
 	hideAids: boolean;
 	/** Pipeline step ids currently expanded in the left sidebar (persisted UI state). */

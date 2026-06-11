@@ -172,6 +172,7 @@ function coerceExplorer(raw: unknown, defaults: PersistedExplorer): PersistedExp
 		outlineDepthTest:
 			typeof explorer.outlineDepthTest === 'boolean' ? explorer.outlineDepthTest : defaults.outlineDepthTest,
 		surfaceGridAlpha: finiteNumber(explorer.surfaceGridAlpha, defaults.surfaceGridAlpha, 'surfaceGridAlpha'),
+		solidAlpha: Math.min(1, Math.max(0.05, finiteNumber(explorer.solidAlpha, defaults.solidAlpha, 'solidAlpha'))),
 		hideAids: typeof explorer.hideAids === 'boolean' ? explorer.hideAids : defaults.hideAids,
 		openSteps: Array.isArray(explorer.openSteps)
 			? explorer.openSteps.filter((s): s is string => typeof s === 'string')
@@ -210,6 +211,7 @@ export function coerceSnapshot(raw: unknown): ParameterSnapshot | null {
 			cylinderOutline: factory.explorer.cylinderOutline,
 			outlineDepthTest: factory.explorer.outlineDepthTest,
 			surfaceGridAlpha: factory.explorer.surfaceGridAlpha,
+			solidAlpha: factory.explorer.solidAlpha,
 			hideAids: factory.explorer.hideAids,
 			openSteps: factory.explorer.openSteps,
 			cvd: factory.explorer.cvd,

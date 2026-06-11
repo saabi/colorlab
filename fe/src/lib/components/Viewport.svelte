@@ -657,6 +657,7 @@
 		explorer.floor;
 		explorer.shell;
 		explorer.surfaceGridAlpha;
+		explorer.solidAlpha;
 		explorer.outlineDepthTest;
 		explorer.hideAids;
 		explorer.theme.showPoints;

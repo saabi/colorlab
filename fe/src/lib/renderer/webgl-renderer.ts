@@ -102,7 +102,20 @@ export class WebGlRenderer {
 		gl.useProgram(this.solidProgram);
 		gl.bindVertexArray(this.solidVao);
 		this.uploadSolidUniforms(input.state, input.matrices, proj, view, 0, input.state.N, 0, 0, 0, 0, 0);
+		// Translucent solid: blend and stop writing depth so ramp markers/curves behind
+		// the surface stay visible (see-through occlusion).
+		const solidAlpha = input.state.solidAlpha;
+		if (solidAlpha < 1) {
+			gl.uniform1f(this.U(this.solidProgram, 'uAlpha'), solidAlpha);
+			gl.enable(gl.BLEND);
+			gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+			gl.depthMask(false);
+		}
 		gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, 6 * input.state.N * input.state.N);
+		if (solidAlpha < 1) {
+			gl.depthMask(true);
+			gl.disable(gl.BLEND);
+		}
 
 		if (input.state.lines && !input.state.hideAids) {
 			gl.depthMask(false);
@@ -598,6 +611,7 @@ export class WebGlRenderer {
 		gl.uniform1f(this.U(p, 'uGridOnly'), gridOnly);
 		gl.uniform1f(this.U(p, 'uCapGridOnly'), capGridOnly);
 		gl.uniform1f(this.U(p, 'uClippedGridAlpha'), clippedGridAlpha);
+		gl.uniform1f(this.U(p, 'uAlpha'), 1);
 		gl.uniform1f(this.U(p, 'uCvdSev'), CVD[state.cvd] ? state.cvdSev : 0);
 		this.uploadMat3(p, 'uCvd', CVD[state.cvd] || [1, 0, 0, 0, 1, 0, 0, 0, 1]);
 		this.uploadMat3(p, 'uRgb2Lms', RGB2LMS);

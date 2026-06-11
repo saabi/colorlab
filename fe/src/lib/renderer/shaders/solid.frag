@@ -1,7 +1,7 @@
 #version 300 es
 precision highp float;
 in vec3 vRgb; in vec3 vWorld; in float vCutDist; out vec4 frag;
-uniform float uLines, uGhost, uGridOnly, uCapGridOnly, uClippedGridAlpha, uCvdSev;
+uniform float uLines, uGhost, uGridOnly, uCapGridOnly, uClippedGridAlpha, uCvdSev, uAlpha;
 uniform vec3 uMaskPlaneN;
 uniform float uMaskPlaneD, uMaskSliceEps, uMaskSliceOn, uMaskCutAbove, uMaskCutBelow;
 uniform float uMaskCylSlice, uMaskCylRad;
@@ -58,5 +58,5 @@ void main(){
     frag=vec4(gridColor,alpha);
     return;
   }
-  frag=vec4(c*(1.0-v*0.2),1.0);
+  frag=vec4(c*(1.0-v*0.2),uAlpha);
 }
