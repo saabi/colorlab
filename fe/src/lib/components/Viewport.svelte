@@ -16,13 +16,15 @@
 	import type { Camera } from '$lib/engine/camera';
 
 	export type TouchTool = 'auto' | 'slice' | 'cylinder' | 'add';
+	/** A source point under the cursor: which list it belongs to and its index there. */
+	type PointHit = { list: number; index: number };
 	type CanvasGesture =
 		| { kind: 'orbit' }
 		| { kind: 'inspect' }
 		| { kind: 'pan' }
 		| { kind: 'slice-offset'; startY: number; startOff: number }
 		| { kind: 'cylinder-radius'; startX: number; startRadius: number }
-		| { kind: 'drag-control-point'; index: number };
+		| { kind: 'drag-control-point'; point: PointHit };
 
 	let {
 		state: explorer = $bindable(),
@@ -80,10 +82,10 @@
 	);
 	// Idle hover state (mouse only); drives the cursor. Hit-test order:
 	// source point (move) -> solid surface (crosshair) -> background (grab/orbit).
-	let hoverPointIndex = $state<number | null>(null);
+	let hoverPoint = $state<PointHit | null>(null);
 	let hoverSolid = $state(false);
 	let hoverPickPending = false;
-	const cursorMode = $derived(hoverPointIndex !== null ? 'point' : hoverSolid ? 'inspect' : gesture.kind);
+	const cursorMode = $derived(hoverPoint !== null ? 'point' : hoverSolid ? 'inspect' : gesture.kind);
 
 	function resetPerformanceSamples() {
 		drawSubmitSamples = [];
@@ -264,28 +266,39 @@
 		});
 	}
 
-	function getControlPointAtScreen(clientX: number, clientY: number, pointerType: string): number | null {
+	// Hit-test every list's points so any anchor in the explorer can be grabbed;
+	// the selected point of the active list wins ties within the radius.
+	function getControlPointAtScreen(clientX: number, clientY: number, pointerType: string): PointHit | null {
 		const rect = canvas.getBoundingClientRect();
 		const radius = pointerType === 'touch' ? 24 : 12;
-		let best: number | null = null;
+		let best: PointHit | null = null;
 		let bestDist = radius;
+		const activeList = explorer.theme.activeList;
 		const selected = explorer.theme.selectedPoint;
-		themePoints.forEach((cp: { srgbLin: [number, number, number] }, i: number) => {
-			const world = anchorWorld(cp, explorer, matrices);
-			const screen = projectToScreen(world, camera, rect.width, rect.height);
-			if (!screen) return;
-			const dist = Math.hypot(clientX - rect.left - screen[0], clientY - rect.top - screen[1]);
-			if (i === selected && dist <= radius) {
-				bestDist = -1;
-				best = i;
-				return;
-			}
-			if (bestDist >= 0 && dist < bestDist) {
-				bestDist = dist;
-				best = i;
-			}
+		explorer.theme.lists.forEach((list: ThemeAnchor[], li: number) => {
+			list.forEach((cp: ThemeAnchor, pi: number) => {
+				const world = anchorWorld(cp, explorer, matrices);
+				const screen = projectToScreen(world, camera, rect.width, rect.height);
+				if (!screen) return;
+				const dist = Math.hypot(clientX - rect.left - screen[0], clientY - rect.top - screen[1]);
+				if (li === activeList && pi === selected && dist <= radius) {
+					bestDist = -1;
+					best = { list: li, index: pi };
+					return;
+				}
+				if (bestDist >= 0 && dist < bestDist) {
+					bestDist = dist;
+					best = { list: li, index: pi };
+				}
+			});
 		});
 		return best;
+	}
+
+	/** Grabbing a point from another list makes that list active and selects the point. */
+	function focusPoint(point: PointHit) {
+		explorer.theme.activeList = point.list;
+		explorer.theme.selectedPoint = point.index;
 	}
 
 	function addControlPointAt(clientX: number, clientY: number) {
@@ -337,10 +350,10 @@
 	}
 
 	function chooseGesture(event: PointerEvent): CanvasGesture {
-		// Any existing source point can be grabbed and dragged, in any ramp mode.
+		// Any existing source point — from any list — can be grabbed and dragged.
 		if (explorer.theme.arm !== 'add') {
-			const idx = getControlPointAtScreen(event.clientX, event.clientY, event.pointerType);
-			if (idx !== null) return { kind: 'drag-control-point', index: idx };
+			const point = getControlPointAtScreen(event.clientX, event.clientY, event.pointerType);
+			if (point !== null) return { kind: 'drag-control-point', point };
 		}
 		if (event.pointerType === 'touch') {
 			if (touchTool === 'slice' && explorer.slice) return { kind: 'slice-offset', startY: event.clientY, startOff: explorer.off };
@@ -364,7 +377,7 @@
 		if (pinching) return;
 		if (event.pointerType === 'touch') event.preventDefault();
 		referenceOpen = false;
-		hoverPointIndex = null;
+		hoverPoint = null;
 		hoverSolid = false;
 		dragging = true;
 		moved = 0;
@@ -374,7 +387,7 @@
 		canvas.setPointerCapture(event.pointerId);
 		gesture = chooseGesture(event);
 		if (gesture.kind === 'drag-control-point') {
-			explorer.theme.selectedPoint = gesture.index;
+			focusPoint(gesture.point);
 			draw();
 		}
 	}
@@ -390,10 +403,14 @@
 			if (explorer.theme.arm === 'add' || keys.addPoint || (event.pointerType === 'touch' && touchTool === 'add')) {
 				addControlPointAt(event.clientX, event.clientY);
 			} else if (completedGesture !== 'drag-control-point') {
-				// Click selects an existing source point; empty space clears selection (and inspects on touch).
-				const idx = getControlPointAtScreen(event.clientX, event.clientY, event.pointerType);
-				explorer.theme.selectedPoint = idx;
-				if (idx === null && event.pointerType === 'touch') inspectAt(event.clientX, event.clientY);
+				// Click selects an existing source point (switching lists if needed);
+				// empty space clears selection (and inspects on touch).
+				const point = getControlPointAtScreen(event.clientX, event.clientY, event.pointerType);
+				if (point !== null) focusPoint(point);
+				else {
+					explorer.theme.selectedPoint = null;
+					if (event.pointerType === 'touch') inspectAt(event.clientX, event.clientY);
+				}
 				draw();
 			}
 		} else if (completedGesture === 'drag-control-point') {
@@ -415,14 +432,13 @@
 	function onPointerMove(event: PointerEvent) {
 		if (pinching) return;
 		if (!dragging) {
-			// Idle hover hit-test (mouse only): point -> solid -> background.
+			// Idle hover hit-test (mouse only): point -> solid -> background. The
+			// solid pick doubles as the live inspect feeding the right sidebar.
 			if (event.pointerType === 'touch') return;
-			hoverPointIndex = explorer.theme.showPoints
+			hoverPoint = explorer.theme.showPoints
 				? getControlPointAtScreen(event.clientX, event.clientY, event.pointerType)
 				: null;
-			if (hoverPointIndex !== null) {
-				hoverSolid = false;
-			} else if (!hoverPickPending) {
+			if (!hoverPickPending) {
 				// pick() is a full analytic ray test; bound it to one per frame.
 				hoverPickPending = true;
 				const cx = event.clientX;
@@ -431,7 +447,10 @@
 					hoverPickPending = false;
 					if (dragging || pinching) return;
 					const rect = canvas.getBoundingClientRect();
-					hoverSolid = !!pick(cx - rect.left, cy - rect.top, rect.width, rect.height, explorer, matrices, camera);
+					const hit = pick(cx - rect.left, cy - rect.top, rect.width, rect.height, explorer, matrices, camera);
+					hoverSolid = !!hit && hoverPoint === null;
+					explorer.hover = hit ? { ...hit, chain: chain(hit.rgbLin, explorer, matrices) } : null;
+					draw();
 				});
 			}
 			return;
@@ -483,10 +502,6 @@
 			draw();
 			return;
 		}
-		const rect = canvas.getBoundingClientRect();
-		const hit = pick(event.clientX - rect.left, event.clientY - rect.top, rect.width, rect.height, explorer, matrices, camera);
-		explorer.hover = hit ? { ...hit, chain: chain(hit.rgbLin, explorer, matrices) } : null;
-		draw();
 	}
 
 	function onPointerCancel(event: PointerEvent) {
