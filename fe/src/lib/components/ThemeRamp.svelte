@@ -71,49 +71,49 @@
 	function setThemeMode(mode: typeof explorer.theme.mode) {
 		explorer.theme.mode = mode;
 		if (mode !== 'spline') {
-			explorer.theme.selectedCp = null;
-			if (explorer.theme.arm === 'spline-add') explorer.theme.arm = null;
+			explorer.theme.selectedPoint = null;
+			if (explorer.theme.arm === 'add') explorer.theme.arm = null;
 		}
 		track('theme_mode_change', { mode });
 	}
 
 	function toggleSplineAdd() {
-		explorer.theme.arm = explorer.theme.arm === 'spline-add' ? null : 'spline-add';
+		explorer.theme.arm = explorer.theme.arm === 'add' ? null : 'add';
 	}
 
 	function removeControlPoint(index: number) {
-		explorer.theme.controlPoints = explorer.theme.controlPoints.filter((_: ThemeAnchor, i: number) => i !== index);
-		const len = explorer.theme.controlPoints.length;
-		if (explorer.theme.selectedCp !== null) {
-			explorer.theme.selectedCp = len ? Math.min(explorer.theme.selectedCp, len - 1) : null;
+		explorer.theme.points = explorer.theme.points.filter((_: ThemeAnchor, i: number) => i !== index);
+		const len = explorer.theme.points.length;
+		if (explorer.theme.selectedPoint !== null) {
+			explorer.theme.selectedPoint = len ? Math.min(explorer.theme.selectedPoint, len - 1) : null;
 		}
 		buildRamp(explorer, matrices);
 		track('theme_spline_point', { action: 'remove_panel' });
 	}
 
 	function selectControlPoint(index: number) {
-		explorer.theme.selectedCp = index;
+		explorer.theme.selectedPoint = index;
 		track('theme_spline_point', { action: 'select_panel' });
 	}
 
 	function duplicateControlPoint(index: number) {
-		const cp = explorer.theme.controlPoints[index];
+		const cp = explorer.theme.points[index];
 		if (!cp) return;
-		const next = [...explorer.theme.controlPoints];
+		const next = [...explorer.theme.points];
 		next.splice(index + 1, 0, { srgbLin: [...cp.srgbLin] as [number, number, number] });
-		explorer.theme.controlPoints = next;
-		explorer.theme.selectedCp = index + 1;
+		explorer.theme.points = next;
+		explorer.theme.selectedPoint = index + 1;
 		buildRamp(explorer, matrices);
 		track('theme_spline_point', { action: 'duplicate_panel' });
 	}
 
 	function moveControlPoint(index: number, direction: -1 | 1) {
 		const target = index + direction;
-		if (target < 0 || target >= explorer.theme.controlPoints.length) return;
-		const next = [...explorer.theme.controlPoints];
+		if (target < 0 || target >= explorer.theme.points.length) return;
+		const next = [...explorer.theme.points];
 		[next[index], next[target]] = [next[target], next[index]];
-		explorer.theme.controlPoints = next;
-		explorer.theme.selectedCp = target;
+		explorer.theme.points = next;
+		explorer.theme.selectedPoint = target;
 		buildRamp(explorer, matrices);
 		track('theme_spline_point', { action: 'reorder_panel' });
 	}
@@ -168,8 +168,8 @@
 		</button>
 	</div>
 	{#if explorer.theme.mode === 'spline'}
-		<button type="button" class:active={explorer.theme.arm === 'spline-add'} onclick={toggleSplineAdd}>
-			{explorer.theme.arm === 'spline-add' ? 'Adding… click the solid' : '+ Add control point'}
+		<button type="button" class:active={explorer.theme.arm === 'add'} onclick={toggleSplineAdd}>
+			{explorer.theme.arm === 'add' ? 'Adding… click the solid' : '+ Add control point'}
 		</button>
 	{/if}
 	<label class="field-row">
@@ -186,25 +186,25 @@
 {/if}
 
 {#if showPoints}
-	<div class="panel-label" class:separator={!showPick}>Anchors</div>
-	<div class="anchor-list">
-		<div class="anchor-row">
-			<span class="anchor-label">A</span>
-			<span class="cp-chip" style={anchorStyle(explorer.theme.A)}></span>
-			<span class="cp-hex">{explorer.theme.A ? srgbHex(explorer.theme.A.srgbLin) : 'Not set'}</span>
+	{#if explorer.theme.mode !== 'spline'}
+		<div class="panel-label" class:separator={!showPick}>Anchors</div>
+		<div class="anchor-list">
+			<div class="anchor-row">
+				<span class="anchor-label">A</span>
+				<span class="cp-chip" style={anchorStyle(explorer.theme.points[0] ?? null)}></span>
+				<span class="cp-hex">{explorer.theme.points[0] ? srgbHex(explorer.theme.points[0].srgbLin) : 'Not set'}</span>
+			</div>
+			<div class="anchor-row">
+				<span class="anchor-label">B</span>
+				<span class="cp-chip" style={anchorStyle(explorer.theme.points[1] ?? null)}></span>
+				<span class="cp-hex">{explorer.theme.points[1] ? srgbHex(explorer.theme.points[1].srgbLin) : 'Not set'}</span>
+			</div>
 		</div>
-		<div class="anchor-row">
-			<span class="anchor-label">B</span>
-			<span class="cp-chip" style={anchorStyle(explorer.theme.B)}></span>
-			<span class="cp-hex">{explorer.theme.B ? srgbHex(explorer.theme.B.srgbLin) : 'Not set'}</span>
-		</div>
-	</div>
-
-	{#if explorer.theme.controlPoints.length}
-		<div class="panel-label" style="margin-top: 8px">Spline points</div>
+	{:else if explorer.theme.points.length}
+		<div class="panel-label" class:separator={!showPick}>Spline points</div>
 		<div class="cp-list">
-			{#each explorer.theme.controlPoints as cp, i}
-				<div class="cp-row" class:active={explorer.theme.selectedCp === i}>
+			{#each explorer.theme.points as cp, i}
+				<div class="cp-row" class:active={explorer.theme.selectedPoint === i}>
 					<button type="button" class="cp-select" onclick={() => selectControlPoint(i)}>
 						<span class="cp-chip" style={rampChipStyle({ srgbLin: cp.srgbLin, inG: true })}></span>
 						<span class="cp-hex">{srgbHex(cp.srgbLin)}</span>
@@ -216,7 +216,7 @@
 						type="button"
 						class="cp-action"
 						title="Move control point later"
-						disabled={i === explorer.theme.controlPoints.length - 1}
+						disabled={i === explorer.theme.points.length - 1}
 						onclick={() => moveControlPoint(i, 1)}
 					>
 						Down

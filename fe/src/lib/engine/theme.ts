@@ -80,8 +80,10 @@ function buildRawRamp(state: ExplorerState, matrices: DerivedMatrices) {
 		return;
 	}
 	T.splineCurve = [];
-	if (!T.A || (!T.B && T.mode !== 'spread')) return;
-	const wA = anchorWorld(T.A, state, matrices);
+	const A = T.points[0] ?? null;
+	const B = T.points[1] ?? null;
+	if (!A || (!B && T.mode !== 'spread')) return;
+	const wA = anchorWorld(A, state, matrices);
 	const cyl = (w: Vec3) => ({ r: Math.hypot(w[0], w[2]), th: Math.atan2(w[2], w[0]), y: w[1] });
 	if (T.mode === 'spread') {
 		const cA = cyl(wA);
@@ -94,8 +96,8 @@ function buildRawRamp(state: ExplorerState, matrices: DerivedMatrices) {
 		}
 		return;
 	}
-	if (!T.B) return;
-	const wB = anchorWorld(T.B, state, matrices);
+	if (!B) return;
+	const wB = anchorWorld(B, state, matrices);
 	const cA = cyl(wA);
 	const cB = cyl(wB);
 	let dth = cB.th - cA.th;
@@ -189,7 +191,7 @@ function buildSplineRamp(state: ExplorerState, matrices: DerivedMatrices) {
 	const T = state.theme;
 	T.splineCurve = [];
 	const space = INTERP_SPACES[T.splineSpace];
-	const cps = T.controlPoints;
+	const cps = T.points;
 	if (cps.length < 2) return;
 
 	// 1. Control points -> interpolation coordinates (hue unwrapped for cyclic spaces).

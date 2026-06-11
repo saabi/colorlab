@@ -80,12 +80,11 @@ export interface ExplorerState {
 	cvd: CvdMode;
 	cvdSev: number;
 	theme: {
-		A: ThemeAnchor | null;
-		B: ThemeAnchor | null;
-		/** Spline control points (persisted). */
-		controlPoints: ThemeAnchor[];
-		/** Selected control point index (runtime UI selection, not persisted). */
-		selectedCp: number | null;
+		/** Unified ordered source colors (persisted). Segment/arc use points[0..1],
+		 *  spread uses points[0], spline uses all. Replaces the old A/B + controlPoints. */
+		points: ThemeAnchor[];
+		/** Selected source-point index (runtime UI selection, not persisted). */
+		selectedPoint: number | null;
 		/** Spline curve geometry constraint: free vs radial shell snap (persisted). */
 		splineConstraint: SplineConstraint;
 		/** Color space the spline is interpolated in (persisted). */
@@ -97,7 +96,7 @@ export interface ExplorerState {
 		/** Stops before the terminal gamut-map stage, for raw-vs-final preview (runtime, not persisted). */
 		rawStops: ThemeStop[];
 		steps: number;
-		arm: 'A' | 'B' | 'spline-add' | null;
+		arm: 'A' | 'B' | 'add' | null;
 		mode: ThemeMode;
 		stops: ThemeStop[];
 		dh: number;
@@ -114,10 +113,10 @@ import type { InterpSpaceKey } from '$lib/color/interp';
 import type { GamutMapMethod } from '$lib/color/gamut-map';
 import type { Camera } from './camera';
 
-export const CURRENT_STATE_SCHEMA_VERSION = 3 as const;
+export const CURRENT_STATE_SCHEMA_VERSION = 4 as const;
 export type StateSchemaVersion = typeof CURRENT_STATE_SCHEMA_VERSION;
 
-export type PersistedTheme = Omit<ExplorerState['theme'], 'arm' | 'stops' | 'selectedCp' | 'splineCurve' | 'rawStops'>;
+export type PersistedTheme = Omit<ExplorerState['theme'], 'arm' | 'stops' | 'selectedPoint' | 'splineCurve' | 'rawStops'>;
 // autoPerformance/minAverageFps are runtime-only renderer policy — not part of the saved artifact.
 export type PersistedExplorer = Omit<ExplorerState, 'hover' | 'theme' | 'autoPerformance' | 'minAverageFps'> & {
 	theme: PersistedTheme;

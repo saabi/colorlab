@@ -4,11 +4,13 @@
  * v1: First explicit schemaVersion on ParameterSnapshot.
  *   Legacy v0 saves (explorer + camera, no schemaVersion) are upgraded on load.
  * v2: Snapshot schema is the durable AppState shape owned by engine state.
- * v3 (CURRENT_SNAPSHOT_VERSION): Gamut handling unified into a global theme.gamutMap
- *   policy. The spline-only theme.splineConstraint was narrowed to 'free'|'surface';
- *   its former clip values move to theme.gamutMap.
+ * v3: Gamut handling unified into a global theme.gamutMap policy. The spline-only
+ *   theme.splineConstraint was narrowed to 'free'|'surface'; its former clip values
+ *   move to theme.gamutMap.
+ * v4 (CURRENT_SNAPSHOT_VERSION): theme.A/B + theme.controlPoints unified into one
+ *   ordered theme.points list. spline docs -> points = controlPoints; others -> [A,B].
  *
- * When adding v3+, append a line here and implement migrateVNToVN+1 below.
+ * When adding v4+, append a line here and implement migrateVNToVN+1 below.
  */
 
 import { CURRENT_SNAPSHOT_VERSION } from './types';
@@ -39,6 +41,22 @@ function migrateV2ToV3(raw: Record<string, unknown>) {
 	return raw;
 }
 
+function migrateV3ToV4(raw: Record<string, unknown>) {
+	raw.schemaVersion = 4;
+	const explorer = raw.explorer as Record<string, unknown> | undefined;
+	const theme = explorer?.theme as Record<string, unknown> | undefined;
+	if (theme && !Array.isArray(theme.points)) {
+		// Unify A/B + controlPoints into one ordered points list.
+		const cps = Array.isArray(theme.controlPoints) ? theme.controlPoints : [];
+		theme.points =
+			theme.mode === 'spline' ? cps : [theme.A, theme.B].filter((p) => p && typeof p === 'object');
+		delete theme.A;
+		delete theme.B;
+		delete theme.controlPoints;
+	}
+	return raw;
+}
+
 export function migrateSnapshot(raw: unknown, fromVersion: number): unknown {
 	if (!raw || typeof raw !== 'object') return raw;
 	let current = { ...(raw as Record<string, unknown>) };
@@ -46,6 +64,7 @@ export function migrateSnapshot(raw: unknown, fromVersion: number): unknown {
 		if (version === 0) current = migrateV0ToV1(current);
 		if (version === 1) current = migrateV1ToV2(current);
 		if (version === 2) current = migrateV2ToV3(current);
+		if (version === 3) current = migrateV3ToV4(current);
 	}
 	return current;
 }

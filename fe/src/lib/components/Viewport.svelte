@@ -240,7 +240,12 @@
 		const rect = canvas.getBoundingClientRect();
 		const hit = pick(clientX - rect.left, clientY - rect.top, rect.width, rect.height, explorer, matrices, camera);
 		if (!hit) return false;
-		explorer.theme[activeArm] = { srgbLin: m3.mulV(matrices.toSrgbLin.toSrgb, hit.rgbLin) };
+		const srgbLin = m3.mulV(matrices.toSrgbLin.toSrgb, hit.rgbLin) as [number, number, number];
+		const index = activeArm === 'A' ? 0 : 1;
+		const next = [...explorer.theme.points];
+		while (next.length <= index) next.push({ srgbLin: [...srgbLin] as [number, number, number] });
+		next[index] = { srgbLin };
+		explorer.theme.points = next;
 		if (!armOverride) explorer.theme.arm = activeArm === 'A' ? 'B' : null;
 		buildRamp(explorer, matrices);
 		gestureStatus = `Theme ${activeArm} set`;
@@ -268,8 +273,8 @@
 		const radius = pointerType === 'touch' ? 24 : 12;
 		let best: number | null = null;
 		let bestDist = radius;
-		const selected = explorer.theme.selectedCp;
-		explorer.theme.controlPoints.forEach((cp: { srgbLin: [number, number, number] }, i: number) => {
+		const selected = explorer.theme.selectedPoint;
+		explorer.theme.points.forEach((cp: { srgbLin: [number, number, number] }, i: number) => {
 			const world = anchorWorld(cp, explorer, matrices);
 			const screen = projectToScreen(world, camera, rect.width, rect.height);
 			if (!screen) return;
@@ -292,19 +297,19 @@
 		const hit = pick(clientX - rect.left, clientY - rect.top, rect.width, rect.height, explorer, matrices, camera);
 		if (!hit) return false;
 		const srgbLin = m3.mulV(matrices.toSrgbLin.toSrgb, hit.rgbLin) as [number, number, number];
-		explorer.theme.controlPoints = [...explorer.theme.controlPoints, { srgbLin }];
-		explorer.theme.selectedCp = explorer.theme.controlPoints.length - 1;
+		explorer.theme.points = [...explorer.theme.points, { srgbLin }];
+		explorer.theme.selectedPoint = explorer.theme.points.length - 1;
 		buildRamp(explorer, matrices);
-		gestureStatus = `Control point ${explorer.theme.controlPoints.length} added`;
+		gestureStatus = `Control point ${explorer.theme.points.length} added`;
 		track('theme_spline_point', { action: 'add' });
 		draw();
 		return true;
 	}
 
 	function removeControlPoint(index: number) {
-		explorer.theme.controlPoints = explorer.theme.controlPoints.filter((_: unknown, i: number) => i !== index);
-		const len = explorer.theme.controlPoints.length;
-		explorer.theme.selectedCp = len ? Math.min(index, len - 1) : null;
+		explorer.theme.points = explorer.theme.points.filter((_: unknown, i: number) => i !== index);
+		const len = explorer.theme.points.length;
+		explorer.theme.selectedPoint = len ? Math.min(index, len - 1) : null;
 		buildRamp(explorer, matrices);
 		gestureStatus = 'Control point removed';
 		track('theme_spline_point', { action: 'remove' });
@@ -312,9 +317,9 @@
 	}
 
 	function nudgeSelectedControlPoint(dx: number, dy: number) {
-		const index = explorer.theme.selectedCp;
+		const index = explorer.theme.selectedPoint;
 		if (explorer.theme.mode !== 'spline' || index === null) return false;
-		const cp = explorer.theme.controlPoints[index];
+		const cp = explorer.theme.points[index];
 		if (!cp) return false;
 
 		const rect = canvas.getBoundingClientRect();
@@ -325,7 +330,7 @@
 		const hit = pick(screen[0] + dx, screen[1] + dy, rect.width, rect.height, explorer, matrices, camera);
 		if (!hit) return false;
 
-		explorer.theme.controlPoints[index] = {
+		explorer.theme.points[index] = {
 			srgbLin: m3.mulV(matrices.toSrgbLin.toSrgb, hit.rgbLin) as [number, number, number]
 		};
 		buildRamp(explorer, matrices);
@@ -335,7 +340,7 @@
 	}
 
 	function chooseGesture(event: PointerEvent): CanvasGesture {
-		if (explorer.theme.mode === 'spline' && explorer.theme.arm !== 'spline-add') {
+		if (explorer.theme.mode === 'spline' && explorer.theme.arm !== 'add') {
 			const idx = getControlPointAtScreen(event.clientX, event.clientY, event.pointerType);
 			if (idx !== null) return { kind: 'drag-control-point', index: idx };
 		}
@@ -369,7 +374,7 @@
 		canvas.setPointerCapture(event.pointerId);
 		gesture = chooseGesture(event);
 		if (gesture.kind === 'drag-control-point') {
-			explorer.theme.selectedCp = gesture.index;
+			explorer.theme.selectedPoint = gesture.index;
 			draw();
 		}
 	}
@@ -380,11 +385,11 @@
 		const completedGesture = gesture.kind;
 		dragging = false;
 		if (moved < 5 && explorer.theme.mode === 'spline') {
-			if (explorer.theme.arm === 'spline-add') {
+			if (explorer.theme.arm === 'add') {
 				addControlPointAt(event.clientX, event.clientY);
 			} else if (completedGesture !== 'drag-control-point') {
 				// click on empty space (or another point): update selection
-				explorer.theme.selectedCp = getControlPointAtScreen(event.clientX, event.clientY, event.pointerType);
+				explorer.theme.selectedPoint = getControlPointAtScreen(event.clientX, event.clientY, event.pointerType);
 				draw();
 			}
 		} else if (moved < 5) {
@@ -421,11 +426,11 @@
 			lastY = event.clientY;
 			moved += Math.abs(dx) + Math.abs(dy);
 			if (gesture.kind === 'drag-control-point') {
-				if (explorer.theme.selectedCp !== null) {
+				if (explorer.theme.selectedPoint !== null) {
 					const rect = canvas.getBoundingClientRect();
 					const hit = pick(event.clientX - rect.left, event.clientY - rect.top, rect.width, rect.height, explorer, matrices, camera);
 					if (hit) {
-						explorer.theme.controlPoints[explorer.theme.selectedCp] = {
+						explorer.theme.points[explorer.theme.selectedPoint] = {
 							srgbLin: m3.mulV(matrices.toSrgbLin.toSrgb, hit.rgbLin) as [number, number, number]
 						};
 						scheduleRampRebuild();
@@ -515,15 +520,15 @@
 		if (
 			(event.key === 'Delete' || event.key === 'Backspace') &&
 			explorer.theme.mode === 'spline' &&
-			explorer.theme.selectedCp !== null
+			explorer.theme.selectedPoint !== null
 		) {
 			event.preventDefault();
-			removeControlPoint(explorer.theme.selectedCp);
+			removeControlPoint(explorer.theme.selectedPoint);
 			return;
 		}
 		if (
 			explorer.theme.mode === 'spline' &&
-			explorer.theme.selectedCp !== null &&
+			explorer.theme.selectedPoint !== null &&
 			['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(event.key)
 		) {
 			const step = event.altKey ? 2 : event.shiftKey ? 16 : 6;
@@ -665,7 +670,7 @@
 	$effect(() => {
 		explorer.theme.splineConstraint;
 		explorer.theme.splineSpace;
-		explorer.theme.controlPoints.length;
+		explorer.theme.points.length;
 		untrack(() => {
 			buildRamp(explorer, matrices);
 			draw();
@@ -674,7 +679,7 @@
 
 	$effect(() => {
 		explorer.theme.stops;
-		explorer.theme.selectedCp;
+		explorer.theme.selectedPoint;
 		draw();
 	});
 

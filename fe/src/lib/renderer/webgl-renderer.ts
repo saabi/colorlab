@@ -376,7 +376,7 @@ export class WebGlRenderer {
 			gl.bindVertexArray(null);
 		}
 
-		const cps = input.state.theme.controlPoints;
+		const cps = input.state.theme.points;
 		if (cps.length) {
 			gl.useProgram(this.markProgram);
 			gl.uniformMatrix4fv(this.U(this.markProgram, 'uProj'), false, proj);
@@ -386,7 +386,7 @@ export class WebGlRenderer {
 				const world = this.rgbToWorld(gamutRgb, input.state, input.matrices);
 				const sim = simulateCvdSrgb(cps[i].srgbLin, input.state.cvd, input.state.cvdSev);
 				const c = sim.map((v) => TRC.srgb.enc(Math.min(Math.max(v, 0), 1)));
-				const selected = i === input.state.theme.selectedCp;
+				const selected = i === input.state.theme.selectedPoint;
 				gl.uniform3fv(this.U(this.markProgram, 'uPos'), world);
 				gl.uniform3fv(this.U(this.markProgram, 'uCol'), c);
 				gl.uniform3fv(this.U(this.markProgram, 'uBorder'), selected ? [1, 0.85, 0.3] : [1, 1, 1]);

@@ -23,7 +23,7 @@ function splineState(
 	state.theme.splineConstraint = constraint;
 	state.theme.gamutMap = gamutMap;
 	state.theme.steps = steps;
-	state.theme.controlPoints = [
+	state.theme.points = [
 		{ srgbLin: [0.02, 0.01, 0.2] },
 		{ srgbLin: [0.6, 0.05, 0.05] },
 		{ srgbLin: [0.7, 0.85, 0.1] }
@@ -87,13 +87,13 @@ describe('buildSplineRamp', () => {
 		// The endpoints of the free curve must equal the first/last control points.
 		const first = state.theme.splineCurve[0].srgbLin;
 		const last = state.theme.splineCurve[state.theme.splineCurve.length - 1].srgbLin;
-		state.theme.controlPoints[0].srgbLin.forEach((v, k) => expect(Math.abs(first[k] - v)).toBeLessThan(1e-6));
-		state.theme.controlPoints[2].srgbLin.forEach((v, k) => expect(Math.abs(last[k] - v)).toBeLessThan(1e-6));
+		state.theme.points[0].srgbLin.forEach((v: number, k: number) => expect(Math.abs(first[k] - v)).toBeLessThan(1e-6));
+		state.theme.points[2].srgbLin.forEach((v: number, k: number) => expect(Math.abs(last[k] - v)).toBeLessThan(1e-6));
 	});
 
 	it('clears the curve and stops when fewer than two control points', () => {
 		const state = splineState('oklch', 'free');
-		state.theme.controlPoints = [{ srgbLin: [0.3, 0.3, 0.3] }];
+		state.theme.points = [{ srgbLin: [0.3, 0.3, 0.3] }];
 		buildRamp(state, matrices);
 		expect(state.theme.stops).toEqual([]);
 		expect(state.theme.splineCurve).toEqual([]);

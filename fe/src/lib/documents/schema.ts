@@ -104,9 +104,7 @@ function coerceAnchorList(value: unknown, label: string): ThemeAnchor[] {
 function coerceTheme(raw: unknown, defaults: PersistedTheme): PersistedTheme {
 	const theme = isRecord(raw) ? raw : {};
 	return {
-		A: coerceAnchor(theme.A, defaults.A, 'theme.A'),
-		B: coerceAnchor(theme.B, defaults.B, 'theme.B'),
-		controlPoints: coerceAnchorList(theme.controlPoints, 'theme.controlPoints'),
+		points: coerceAnchorList(theme.points, 'theme.points'),
 		splineConstraint: enumOf(theme.splineConstraint, SPLINE_CONSTRAINTS, defaults.splineConstraint, 'theme.splineConstraint'),
 		splineSpace: enumOf(theme.splineSpace, INTERP_SPACES, defaults.splineSpace, 'theme.splineSpace'),
 		gamutMap: enumOf(theme.gamutMap, GAMUT_MAPS, defaults.gamutMap, 'theme.gamutMap'),
@@ -200,9 +198,7 @@ export function coerceSnapshot(raw: unknown): ParameterSnapshot | null {
 			cvd: factory.explorer.cvd,
 			cvdSev: factory.explorer.cvdSev,
 			theme: {
-				A: factory.explorer.theme.A,
-				B: factory.explorer.theme.B,
-				controlPoints: factory.explorer.theme.controlPoints,
+				points: factory.explorer.theme.points,
 				splineConstraint: factory.explorer.theme.splineConstraint,
 				splineSpace: factory.explorer.theme.splineSpace,
 				gamutMap: factory.explorer.theme.gamutMap,

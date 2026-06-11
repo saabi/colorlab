@@ -98,14 +98,14 @@ describe('parseSnapshot', () => {
 	});
 
 	it('gives legacy saves without spline fields the factory defaults', () => {
-		const { controlPoints: _cp, splineConstraint: _sc, splineSpace: _ss, ...themeWithoutSpline } =
+		const { points: _cp, splineConstraint: _sc, splineSpace: _ss, ...themeWithoutSpline } =
 			defaults.explorer.theme;
 		const legacy = {
 			explorer: { ...defaults.explorer, theme: themeWithoutSpline },
 			camera: defaults.camera
 		};
 		const result = parseSnapshot(legacy);
-		expect(result.snapshot?.explorer.theme.controlPoints).toEqual([]);
+		expect(result.snapshot?.explorer.theme.points).toEqual([]);
 		expect(result.snapshot?.explorer.theme.splineConstraint).toBe('surface');
 		expect(result.snapshot?.explorer.theme.splineSpace).toBe('oklch');
 	});
@@ -119,13 +119,13 @@ describe('parseSnapshot', () => {
 			...defaults,
 			explorer: {
 				...defaults.explorer,
-				theme: { ...defaults.explorer.theme, mode: 'spline', splineSpace: 'okhsv', controlPoints: cps }
+				theme: { ...defaults.explorer.theme, mode: 'spline', splineSpace: 'okhsv', points: cps }
 			}
 		};
 		const result = parseSnapshot(doc);
 		expect(result.snapshot?.explorer.theme.mode).toBe('spline');
 		expect(result.snapshot?.explorer.theme.splineSpace).toBe('okhsv');
-		expect(result.snapshot?.explorer.theme.controlPoints).toEqual(cps);
+		expect(result.snapshot?.explorer.theme.points).toEqual(cps);
 	});
 
 	it('migrates a v2 spline-clip constraint to the v3 gamutMap policy', () => {
@@ -143,6 +143,37 @@ describe('parseSnapshot', () => {
 		expect(result.snapshot?.explorer.theme.gamutMap).toBe('preserve-chroma');
 	});
 
+	it('migrates v3 A/B + controlPoints into the unified points list', () => {
+		const spline = {
+			schemaVersion: 3,
+			explorer: {
+				theme: {
+					mode: 'spline',
+					A: { srgbLin: [0, 0, 0] },
+					B: { srgbLin: [1, 1, 1] },
+					controlPoints: [{ srgbLin: [0.2, 0.2, 0.2] }, { srgbLin: [0.8, 0.1, 0.1] }]
+				}
+			},
+			camera: defaults.camera
+		} as unknown;
+		expect(parseSnapshot(spline).snapshot?.explorer.theme.points).toEqual([
+			{ srgbLin: [0.2, 0.2, 0.2] },
+			{ srgbLin: [0.8, 0.1, 0.1] }
+		]);
+
+		const seg = {
+			schemaVersion: 3,
+			explorer: {
+				theme: { mode: 'seg', A: { srgbLin: [0.1, 0.1, 0.1] }, B: { srgbLin: [0.9, 0.9, 0.9] }, controlPoints: [] }
+			},
+			camera: defaults.camera
+		} as unknown;
+		expect(parseSnapshot(seg).snapshot?.explorer.theme.points).toEqual([
+			{ srgbLin: [0.1, 0.1, 0.1] },
+			{ srgbLin: [0.9, 0.9, 0.9] }
+		]);
+	});
+
 	it('coerces garbage control points and unknown spline space to safe defaults', () => {
 		const doc = {
 			...defaults,
@@ -151,13 +182,13 @@ describe('parseSnapshot', () => {
 				theme: {
 					...defaults.explorer.theme,
 					splineSpace: 'not-a-space',
-					controlPoints: [{ srgbLin: [0.1, 0.2, 0.3] }, 'garbage', null, { nope: true }]
+					points: [{ srgbLin: [0.1, 0.2, 0.3] }, 'garbage', null, { nope: true }]
 				}
 			}
 		};
 		const result = parseSnapshot(doc);
 		expect(result.snapshot?.explorer.theme.splineSpace).toBe('oklch');
-		expect(result.snapshot?.explorer.theme.controlPoints).toEqual([{ srgbLin: [0.1, 0.2, 0.3] }]);
+		expect(result.snapshot?.explorer.theme.points).toEqual([{ srgbLin: [0.1, 0.2, 0.3] }]);
 	});
 
 	it('persists openSteps, and defaults the set when absent', () => {

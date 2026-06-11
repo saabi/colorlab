@@ -48,7 +48,7 @@ const spaceLabels: Record<ExplorerState['spaceMode'], string> = {
 /** True once the ramp has at least one source color (anchor or control point). */
 export function hasRampSource(state: ExplorerState): boolean {
 	const t = state.theme;
-	return t.A !== null || t.B !== null || t.controlPoints.length > 0;
+	return t.points.length > 0;
 }
 
 /** Whether a node's controls are meaningful given the current state. */
@@ -137,7 +137,7 @@ export const PIPELINE_NODES: PipelineNode[] = [
 		description: 'Editable source anchors and spline control points for ramp generation.',
 		affects: 'Ramp',
 		requiresSource: true,
-		status: (state) => (state.theme.mode === 'spline' ? `${state.theme.controlPoints.length} pts` : `${state.theme.A ? 'A' : '-'}${state.theme.B ? 'B' : '-'}`)
+		status: (state) => `${state.theme.points.length} pt${state.theme.points.length === 1 ? '' : 's'}`
 	},
 	{
 		id: 'interpolate',

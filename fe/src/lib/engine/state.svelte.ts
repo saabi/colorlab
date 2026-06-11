@@ -40,10 +40,8 @@ function createExplorerDefaults(): ExplorerState {
 		cvd: 'none',
 		cvdSev: 1,
 		theme: {
-			A: null,
-			B: null,
-			controlPoints: [],
-			selectedCp: null,
+			points: [],
+			selectedPoint: null,
 			splineConstraint: 'surface',
 			splineSpace: 'oklch',
 			gamutMap: 'none',
@@ -80,7 +78,7 @@ export function cloneAppState(state: AppState): AppState {
 
 export function createAppState(options: { mobile?: boolean } = {}): AppState {
 	const state: AppState = {
-		schemaVersion: 3,
+		schemaVersion: 4,
 		explorer: createExplorerDefaults(),
 		camera: createCamera()
 	};
@@ -134,13 +132,10 @@ export const EXAMPLE_STATES = [
 				cvd: 'none',
 				cvdSev: 1,
 				theme: {
-					A: {
-						srgbLin: [0.002353332407759444, 0.0038332058213883316, 0.17366576656361682]
-					},
-					B: {
-						srgbLin: [0.7610351858718939, 0.9402926643687034, 0.15604940886754892]
-					},
-					controlPoints: [],
+					points: [
+						{ srgbLin: [0.002353332407759444, 0.0038332058213883316, 0.17366576656361682] },
+						{ srgbLin: [0.7610351858718939, 0.9402926643687034, 0.15604940886754892] }
+					],
 					splineConstraint: 'surface',
 					splineSpace: 'oklch',
 					steps: 11,
@@ -191,13 +186,7 @@ export const EXAMPLE_STATES = [
 				cvd: 'none',
 				cvdSev: 1,
 				theme: {
-					A: {
-						srgbLin: [0.002353332407759444, 0.0038332058213883316, 0.17366576656361682]
-					},
-					B: {
-						srgbLin: [0.7610351858718939, 0.9402926643687034, 0.15604940886754892]
-					},
-					controlPoints: [
+					points: [
 						{ srgbLin: [0.15179282277131012, 0.9422662580510375, 0.9999999850358002] },
 						{ srgbLin: [0.03671407394983858, 0.3714108130672565, 0.9929783888548199] },
 						{ srgbLin: [0.028253499683098458, 0.012408419728036454, 0.24351054921984353] },
