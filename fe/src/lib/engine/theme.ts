@@ -66,11 +66,14 @@ function stopFromWorld(world: Vec3, state: ExplorerState, matrices: DerivedMatri
 	};
 }
 
-// Pipeline: interpolate (buildRawRamp) -> WCAG/even (optional, separate) -> gamut-map (finalizeRamp) -> encode.
+// Pipeline v2: explicit stage chain over one grid of ramps (rows) x stops (cols).
+// Sources (theme.points) -> Interpolate (hi-res curve) -> Place (stops) ->
+// Gamut-map (terminal per-cell policy) -> Expand (2-D grid) -> Export reads the result.
 export function buildRamp(state: ExplorerState, matrices: DerivedMatrices) {
-	buildRawRamp(state, matrices);
-	finalizeRamp(state, matrices);
-	buildExpand(state, matrices);
+	interpolateRamp(state, matrices); // anchors -> theme.splineCurve
+	placeStops(state, matrices); // curve -> theme.stops
+	finalizeRamp(state, matrices); // gamut-map stops + curve (theme.rawStops kept)
+	buildExpand(state, matrices); // stops -> theme.grid
 }
 
 // Expand stage: turn each final 1-D stop into a row of variants -> a 2-D palette.
@@ -144,14 +147,6 @@ function buildExpand(state: ExplorerState, matrices: DerivedMatrices) {
 		}
 		return row;
 	});
-}
-
-function buildRawRamp(state: ExplorerState, matrices: DerivedMatrices) {
-	const T = state.theme;
-	T.stops = [];
-	T.splineCurve = [];
-	// 'linear' and 'spline' share one engine, parameterized by path type + space.
-	interpolateRamp(state, matrices);
 }
 
 const HIRES = 200; // spline sampling resolution for arc length + visualization
@@ -244,12 +239,11 @@ function interpolateRamp(state: ExplorerState, matrices: DerivedMatrices) {
 		return T.splineConstraint === 'surface' ? snapToSurface(world, state, matrices) : world;
 	};
 
-	// A single source point is a degenerate "ramp" of one stop — useful as the seed
-	// for the spread Expand operator (the former single-seed spread mode).
+	// A single source point is a degenerate "curve" of one sample — Place reduces
+	// it to one seed stop (useful with the spread Expand operator).
 	if (cps.length === 1) {
 		const stop = stopFromWorld(worldAt(toCoord(cps[0].srgbLin)), state, matrices);
 		T.splineCurve = [{ world: stop.world, srgbLin: stop.srgbLin }];
-		T.stops = [stop];
 		return;
 	}
 
@@ -295,9 +289,6 @@ function interpolateRamp(state: ExplorerState, matrices: DerivedMatrices) {
 		}
 	}
 	T.splineCurve = curve;
-
-	// Place stage: sample `steps` swatches along the curve per the chosen policy.
-	placeStops(state, matrices);
 }
 
 // Place (declarative sampling) — choose where the N stops land on the hi-res curve:
@@ -310,6 +301,11 @@ function placeStops(state: ExplorerState, matrices: DerivedMatrices) {
 	const curve = T.splineCurve;
 	const steps = T.steps;
 	T.stops = [];
+	// Degenerate single-sample curve (one source point): one seed stop.
+	if (curve.length === 1) {
+		T.stops = [stopFromWorld(curve[0].world, state, matrices)];
+		return;
+	}
 	if (!curve.length) return;
 
 	// Contrast ladder: place stops at explicit WCAG target ratios spanning
