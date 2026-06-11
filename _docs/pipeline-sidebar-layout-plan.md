@@ -156,3 +156,19 @@ Ship **Proposal A** first (it is the requested layout and the smallest change: d
 - **Losing the rail's at-a-glance overview** — status chips on headers + (B) the gutter preserve it.
 - **Mobile drawer length** — same lane bands stack vertically; the gutter (B) can pin to the drawer's top as a horizontal scroll-spy row only if needed, otherwise rely on accordion.
 - **Accessibility regression** — the tablist/tabpanel model goes away; replace with standard disclosure groups (`aria-expanded` on each step header, already in `ControlGroup`) and, for B, an in-page nav with `aria-current`. Net simpler and more robust than the cramped tablist.
+
+## UI-state & footer-policy persistence (added stage)
+
+Persistence splits into three buckets by whether the value is part of the *shareable artifact* or a *per-device convenience*:
+
+1. **Document (saved/shared snapshot):** scene state, including **`hideAids`** — it's a presentation choice of the artifact, so it stays document-persisted (already implemented).
+2. **Session UI (localStorage, per-device, NOT in the document):** the **expanded/collapsed step set** — restore on load so working context survives reloads; never written to the saved document. (This is the previously-deferred item.)
+3. **Not in the document:** the **auto-reduce tessellation policy** (`autoPerformance` + `minAverageFps`) — a runtime performance accommodation, irrelevant to a shared palette. Move it **out of the saved snapshot** into session UI state (per-device), so it's remembered locally but not exported.
+
+Implementation notes:
+
+- **Expanded-step persistence requires controlled open-state.** Today each `ControlGroup` owns `open` internally (with `defaultOpen`). To persist the set, lift open-state to the panel (the controlled-`open`/`onToggle` model that is currently in `stash@{0}` from Proposal B) and store the open ids in session localStorage (e.g. `colorlab:ui:open-steps`), restored on mount. Default-open set (Gamut/Pick/Interpolate) applies only when nothing is stored.
+- **Removing auto-reduce from the document = Playbook B** (remove persisted fields): add `autoPerformance` / `minAverageFps` to the `PersistedExplorer` `Omit` (keep them on `ExplorerState` as runtime), drop them from `toPersistedExplorer` / `coerceExplorer` / the `coerceSnapshot` defaults block, and persist them in session UI state instead. Add a `parse.test.ts` fixture asserting a saved doc that contains them ignores them on load (and that omitting them is fine). No schema-version bump needed (removal with a runtime default is non-breaking on load).
+- **`hideAids` is unchanged** — stays document-persisted.
+
+Schedule: bundle with the sidebar work (it's UI-state, independent of the ramp pipeline stages). The expanded-step half pulls in the controlled-`open` refactor, so it pairs naturally with reviving Proposal B if/when that happens; the auto-reduce half can ship on its own.
