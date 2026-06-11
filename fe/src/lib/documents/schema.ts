@@ -16,6 +16,7 @@ import type {
 	ThemeMode
 } from '$lib/engine/types';
 import { INTERP_SPACE_KEYS, type InterpSpaceKey } from '$lib/color/interp';
+import { GAMUT_CLIP_METHODS } from '$lib/color/clip';
 import { CURRENT_SNAPSHOT_VERSION, type ParameterSnapshot } from './types';
 
 const SPACE_MODES: readonly SpaceMode[] = [0, 1, 2, 3, 5];
@@ -28,7 +29,7 @@ const CVD_MODES: readonly CvdMode[] = ['none', 'protan', 'deutan', 'tritan'];
 const THEME_MODES: readonly ThemeMode[] = ['seg', 'arc', 'spread', 'spline'];
 const CHROMA_PROFILES: readonly ChromaProfile[] = ['linear', 'mirror'];
 const WCAG_BG: readonly PersistedTheme['wcagBg'][] = ['white', 'black'];
-const SPLINE_CONSTRAINTS: readonly SplineConstraint[] = ['free', 'surface'];
+const SPLINE_CONSTRAINTS: readonly SplineConstraint[] = ['free', 'surface', ...GAMUT_CLIP_METHODS];
 const INTERP_SPACES: readonly InterpSpaceKey[] = INTERP_SPACE_KEYS;
 
 function warn(message: string) {

@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { OK_M1, OK_M2, SRGB2XYZ, lsrgb2oklab, oklab2lsrgb, xyz2lab, xyz2luv } from './pipeline';
 import { INTERP_SPACES, INTERP_SPACE_KEYS } from './interp';
 import { toe, toeInv } from './okhsv';
+import { GAMUT_CLIP, GAMUT_CLIP_METHODS } from './clip';
 import { m3 } from './math';
 import type { Mat3, Vec3 } from './math';
 
@@ -125,6 +126,44 @@ describe('Lr toe function (Ottosson colorpicker / ok_color.h)', () => {
 		// Near-exact at the L*=50 gray (g = (66/116)^3 = 0.18426).
 		const midGray: Vec3 = [0.18426, 0.18426, 0.18426];
 		expect(Math.abs(toe(lsrgb2oklab(midGray)[0]) - 0.5)).toBeLessThan(2e-3);
+	});
+});
+
+describe('Gamut clipping (Ottosson sRGB gamut clipping / ok_color.h)', () => {
+	const oog: Vec3[] = [
+		oklab2lsrgb(INTERP_SPACES.oklch.toSrgbLin([0.7, 0.4, 29])), // very high chroma red-ish
+		oklab2lsrgb([0.5, 0.3, -0.2]),
+		oklab2lsrgb([0.9, -0.25, 0.2])
+	];
+	const isOOG = (rgb: Vec3) => rgb.some((v) => v < -1e-6 || v > 1 + 1e-6);
+
+	it('every method maps out-of-gamut colors onto the sRGB boundary', () => {
+		for (const method of GAMUT_CLIP_METHODS) {
+			for (const c of oog) {
+				if (!isOOG(c)) continue;
+				const clipped = GAMUT_CLIP[method](c);
+				// in [0,1] (within float tolerance)...
+				for (let k = 0; k < 3; k += 1) {
+					expect(clipped[k], `${method} ch${k} >= 0`).toBeGreaterThan(-1e-3);
+					expect(clipped[k], `${method} ch${k} <= 1`).toBeLessThan(1 + 1e-3);
+				}
+				// ...and actually ON the boundary (some channel near 0 or 1), not pulled to the interior.
+				const maxCh = Math.max(...clipped);
+				const minCh = Math.min(...clipped);
+				expect(Math.abs(maxCh - 1) < 5e-3 || Math.abs(minCh) < 5e-3, `${method} on boundary`).toBe(true);
+			}
+		}
+	});
+
+	it('leaves in-gamut colors unchanged', () => {
+		const inside: Vec3[] = [
+			[0.2, 0.5, 0.7],
+			[0.05, 0.05, 0.05],
+			[0.9, 0.8, 0.1]
+		];
+		for (const method of GAMUT_CLIP_METHODS) {
+			for (const c of inside) close(GAMUT_CLIP[method](c), c, 1e-9, `${method} passthrough`);
+		}
 	});
 });
 

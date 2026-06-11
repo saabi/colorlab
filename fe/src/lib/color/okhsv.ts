@@ -58,11 +58,76 @@ function computeMaxSaturation(a: number, b: number): number {
 	return S - (f * f1) / (f1 * f1 - 0.5 * f * f2);
 }
 
-function findCusp(a: number, b: number): { L: number; C: number } {
+export function findCusp(a: number, b: number): { L: number; C: number } {
 	const sCusp = computeMaxSaturation(a, b);
 	const rgb = oklab2lsrgb([1, sCusp * a, sCusp * b]);
 	const lCusp = Math.cbrt(1 / Math.max(rgb[0], rgb[1], rgb[2]));
 	return { L: lCusp, C: lCusp * sCusp };
+}
+
+// Finds intersection of the line defined by, in (L, C):
+//   L = L0 * (1 - t) + t * L1
+//   C = t * C1
+// with the sRGB gamut boundary, for a normalized hue direction (a, b).
+// Ported verbatim from ok_color.h (Newton-step refinement of the analytic
+// triangle approximation). Returns the parameter t along that line.
+export function findGamutIntersection(
+	a: number,
+	b: number,
+	L1: number,
+	C1: number,
+	L0: number,
+	cuspLC?: { L: number; C: number }
+): number {
+	const cusp = cuspLC ?? findCusp(a, b);
+	let t: number;
+	if ((L1 - L0) * cusp.C - (cusp.L - L0) * C1 <= 0) {
+		t = (cusp.C * L0) / (C1 * cusp.L + cusp.C * (L0 - L1));
+	} else {
+		t = (cusp.C * (L0 - 1)) / (C1 * (cusp.L - 1) + cusp.C * (L0 - L1));
+		const dL = L1 - L0;
+		const dC = C1;
+		const kl = 0.3963377774 * a + 0.2158037573 * b;
+		const km = -0.1055613458 * a - 0.0638541728 * b;
+		const ks = -0.0894841775 * a - 1.291485548 * b;
+		const lDt = dL + dC * kl;
+		const mDt = dL + dC * km;
+		const sDt = dL + dC * ks;
+		const L = L0 * (1 - t) + t * L1;
+		const C = t * C1;
+		const l_ = L + C * kl;
+		const m_ = L + C * km;
+		const s_ = L + C * ks;
+		const l = l_ * l_ * l_;
+		const m = m_ * m_ * m_;
+		const s = s_ * s_ * s_;
+		const ldt = 3 * lDt * l_ * l_;
+		const mdt = 3 * mDt * m_ * m_;
+		const sdt = 3 * sDt * s_ * s_;
+		const ldt2 = 6 * lDt * lDt * l_;
+		const mdt2 = 6 * mDt * mDt * m_;
+		const sdt2 = 6 * sDt * sDt * s_;
+		const r = 4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s - 1;
+		const r1 = 4.0767416621 * ldt - 3.3077115913 * mdt + 0.2309699292 * sdt;
+		const r2 = 4.0767416621 * ldt2 - 3.3077115913 * mdt2 + 0.2309699292 * sdt2;
+		const uR = r1 / (r1 * r1 - 0.5 * r * r2);
+		let tR = -r * uR;
+		const g = -1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s - 1;
+		const g1 = -1.2684380046 * ldt + 2.6097574011 * mdt - 0.3413193965 * sdt;
+		const g2 = -1.2684380046 * ldt2 + 2.6097574011 * mdt2 - 0.3413193965 * sdt2;
+		const uG = g1 / (g1 * g1 - 0.5 * g * g2);
+		let tG = -g * uG;
+		const bv = -0.0041960863 * l - 0.7034186147 * m + 1.707614701 * s - 1;
+		const b1 = -0.0041960863 * ldt - 0.7034186147 * mdt + 1.707614701 * sdt;
+		const b2 = -0.0041960863 * ldt2 - 0.7034186147 * mdt2 + 1.707614701 * sdt2;
+		const uB = b1 / (b1 * b1 - 0.5 * bv * b2);
+		let tB = -bv * uB;
+		tR = uR >= 0 ? tR : Number.MAX_VALUE;
+		tG = uG >= 0 ? tG : Number.MAX_VALUE;
+		tB = uB >= 0 ? tB : Number.MAX_VALUE;
+		t += Math.min(tR, Math.min(tG, tB));
+	}
+	return t;
 }
 
 const toST = (cusp: { L: number; C: number }) => ({ S: cusp.C / cusp.L, T: cusp.C / (1 - cusp.L) });

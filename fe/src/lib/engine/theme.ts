@@ -2,6 +2,7 @@ import { m3, type Vec3 } from '$lib/color/math';
 import { SPACES } from '$lib/color/registry';
 import { CUBE_ROT, REC709_Y, lsrgb2oklab, oklab2lsrgb, xyz2lab } from '$lib/color/pipeline';
 import { INTERP_SPACES } from '$lib/color/interp';
+import { GAMUT_CLIP } from '$lib/color/clip';
 import { TRC } from '$lib/color/transfer';
 import { solidField } from './picking';
 
@@ -207,11 +208,17 @@ function buildSplineRamp(state: ExplorerState, matrices: DerivedMatrices) {
 	}
 
 	// 4. High-resolution sampling -> world positions + colors.
+	//    'free'     -> no constraint
+	//    'surface'  -> geometric radial snap to the active solid shell
+	//    clip method -> Ottosson out-of-gamut clip (to the sRGB boundary)
+	const constraint = T.splineConstraint;
+	const clip = constraint !== 'free' && constraint !== 'surface' ? GAMUT_CLIP[constraint] : null;
 	const worldAt = (coord: Vec3): Vec3 => {
-		const srgbLin = space.toSrgbLin(coord);
+		let srgbLin = space.toSrgbLin(coord);
+		if (clip) srgbLin = clip(srgbLin);
 		const gamutRgb = m3.mulV(matrices.toSrgbLin.fromSrgb, srgbLin);
 		const world = jsToWorld(gamutRgb, state, matrices);
-		return T.splineConstraint === 'surface' ? snapToSurface(world, state, matrices) : world;
+		return constraint === 'surface' ? snapToSurface(world, state, matrices) : world;
 	};
 	const curve: SplineSample[] = [];
 	for (let i = 0; i < HIRES; i += 1) {

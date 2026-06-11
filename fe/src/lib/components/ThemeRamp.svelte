@@ -13,6 +13,17 @@
 	let { state: explorer = $bindable(), matrices } = $props<{ state: ExplorerState; matrices: DerivedMatrices }>();
 	let exportText = $state('');
 
+	// 'free'/'surface' are app behaviours; the rest are Ottosson gamut-clip strategies (to sRGB).
+	const SPLINE_CONSTRAINT_OPTIONS: Array<{ value: ExplorerState['theme']['splineConstraint']; label: string }> = [
+		{ value: 'free', label: 'Free (no clip)' },
+		{ value: 'surface', label: 'Surface (radial shell)' },
+		{ value: 'preserve-chroma', label: 'Clip: preserve chroma' },
+		{ value: 'project-0.5', label: 'Clip: project to L 0.5' },
+		{ value: 'project-cusp', label: 'Clip: project to cusp' },
+		{ value: 'adaptive-0.5', label: 'Clip: adaptive (0.5)' },
+		{ value: 'adaptive-cusp', label: 'Clip: adaptive (cusp)' }
+	];
+
 	function showExport(kind: 'css' | 'json') {
 		exportText = kind === 'css' ? exportTokens(explorer.theme.stops) : exportDTCG(explorer.theme.stops);
 		navigator.clipboard?.writeText(exportText).catch(() => {});
@@ -140,22 +151,14 @@
 			{/each}
 		</select>
 	</label>
-	<div class="segmented" style="--segments: 2">
-		<button
-			type="button"
-			class:active={explorer.theme.splineConstraint === 'free'}
-			onclick={() => (explorer.theme.splineConstraint = 'free')}
-		>
-			Free
-		</button>
-		<button
-			type="button"
-			class:active={explorer.theme.splineConstraint === 'surface'}
-			onclick={() => (explorer.theme.splineConstraint = 'surface')}
-		>
-			Surface-locked
-		</button>
-	</div>
+	<label class="field-row">
+		<span>Gamut handling</span>
+		<select bind:value={explorer.theme.splineConstraint}>
+			{#each SPLINE_CONSTRAINT_OPTIONS as opt}
+				<option value={opt.value}>{opt.label}</option>
+			{/each}
+		</select>
+	</label>
 
 	<div class="panel-label" style="margin-top: 8px">Control points</div>
 	{#if explorer.theme.controlPoints.length}

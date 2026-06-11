@@ -4,10 +4,13 @@ import { createAppState } from './state.svelte';
 import { buildRamp } from './theme';
 import { rebuildMatrices } from '$lib/renderer/uniforms';
 import { INTERP_SPACES, INTERP_SPACE_KEYS } from '$lib/color/interp';
+import { GAMUT_CLIP_METHODS } from '$lib/color/clip';
+import type { SplineConstraint } from './types';
 
 const matrices = rebuildMatrices('srgb');
+const CONSTRAINTS: readonly SplineConstraint[] = ['free', 'surface', ...GAMUT_CLIP_METHODS];
 
-function splineState(space: (typeof INTERP_SPACE_KEYS)[number], constraint: 'free' | 'surface', steps = 5) {
+function splineState(space: (typeof INTERP_SPACE_KEYS)[number], constraint: SplineConstraint, steps = 5) {
 	const state = createAppState().explorer;
 	state.theme.mode = 'spline';
 	state.theme.splineSpace = space;
@@ -44,7 +47,7 @@ describe('interpolation-space round trips', () => {
 describe('buildSplineRamp', () => {
 	it('produces `steps` finite stops and a hi-res curve for every space', () => {
 		for (const key of INTERP_SPACE_KEYS) {
-			for (const constraint of ['free', 'surface'] as const) {
+			for (const constraint of CONSTRAINTS) {
 				const state = splineState(key, constraint, 7);
 				buildRamp(state, matrices);
 				expect(state.theme.stops.length, `${key}/${constraint} stops`).toBe(7);

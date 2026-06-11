@@ -5,7 +5,9 @@ export type ShellKey = 'none' | 'p3' | 'rec2020' | 'ntsc' | 'cie';
 export type CvdMode = 'none' | 'protan' | 'deutan' | 'tritan';
 export type ThemeMode = 'seg' | 'arc' | 'spread' | 'spline';
 export type ChromaProfile = 'linear' | 'mirror';
-export type SplineConstraint = 'free' | 'surface';
+// 'free' = no clipping; 'surface' = geometric radial snap to the active solid
+// shell; the remaining values are Ottosson gamut-clip strategies (to sRGB).
+export type SplineConstraint = 'free' | 'surface' | GamutClipMethod;
 export type MinAverageFps = 15 | 30 | 60;
 
 /** One sample of the rendered spline curve: world position + linear-sRGB color. */
@@ -100,6 +102,7 @@ export interface ExplorerState {
 }
 import type { Vec3 } from '$lib/color/math';
 import type { InterpSpaceKey } from '$lib/color/interp';
+import type { GamutClipMethod } from '$lib/color/clip';
 import type { Camera } from './camera';
 
 export const CURRENT_STATE_SCHEMA_VERSION = 2 as const;

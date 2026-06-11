@@ -119,15 +119,19 @@ export const SIDEBAR_HELP: Record<SidebarGroupId, PanelHelpContent> = {
 		summary:
 			'Build perceptual color ramps between anchors using straight segments, cylindrical hue arcs, spread mode, or a Catmull-Rom spline through any number of control points. Spline mode interpolates in a selectable color space (Oklab, OKLCH, OKLrCH, OKHSV, CIELAB/CIELCh, CIELUV/CIELCh(uv), linear sRGB) and can surface-lock the curve to the gamut shell. Auto-adjust fits stops inside sRGB, enforces WCAG contrast, and re-samples at equal Oklab arc length.',
 		details: [
-			'Surface-lock snaps each spline sample radially to the gamut boundary at constant lightness, so it pushes chroma to the shell. It assumes a star-shaped cross-section about the neutral axis; with tilted slice planes, the cylinder mask, or non-convex sections it falls back gracefully and never changes lightness.'
+			'Spline gamut handling: "Surface (radial shell)" snaps each sample radially to the active solid boundary at constant lightness (pushes chroma to the shell; assumes a star-shaped cross-section about the neutral axis). The "Clip:" options instead apply Ottosson\u2019s sRGB gamut-clipping strategies \u2014 they leave in-gamut samples untouched and project only out-of-gamut samples back to the sRGB boundary in Oklab, differing in the projection focus L0: preserve chroma (constant lightness), project toward L=0.5, project toward the hue cusp, or adaptive blends that trade a little lightness for chroma. Clip targets the sRGB gamut regardless of the displayed gamut.'
 		],
 		sources: [
 			{ label: 'Theme heuristics (design.md \u00a715)' },
-			{ label: 'theme.ts ramp and gamut-fit logic; color/interp.ts interpolation spaces' },
+			{ label: 'theme.ts ramp and gamut-fit logic; color/interp.ts interpolation spaces; color/clip.ts gamut clipping' },
 			{ label: 'Bj\u00f6rn Ottosson, Oklab (2020)' },
 			{
 				label: 'Bj\u00f6rn Ottosson, Okhsv/Okhsl and the Lr lightness (ok_color.h)',
 				href: 'https://bottosson.github.io/posts/colorpicker/'
+			},
+			{
+				label: 'Bj\u00f6rn Ottosson, sRGB gamut clipping (ok_color.h)',
+				href: 'https://bottosson.github.io/posts/gamutclipping/'
 			}
 		]
 	},
