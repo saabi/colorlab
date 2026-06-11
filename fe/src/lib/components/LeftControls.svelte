@@ -45,8 +45,7 @@
 		clip: meta('clip'),
 		view: meta('view'),
 		cvd: meta('cvd'),
-		pick: meta('pick'),
-		points: meta('points'),
+		sources: meta('sources'),
 		interpolate: meta('interpolate'),
 		adjust: meta('adjust'),
 		gamutMap: meta('gamut-map'),
@@ -219,27 +218,23 @@
 			<span class="lane-band-sub">how export tokens are generated</span>
 		</div>
 		<div class="lane-steps">
-			<ControlGroup index={1} title={m.pick.label} helpId="pipelinePick" status={m.pick.status} affects={m.pick.affects} open={isOpen('pick')} onToggle={() => toggleStep('pick')} bind:openHelp>
-				<ThemeRamp state={explorer} {matrices} panel="pick" bind:touchTool />
+			<ControlGroup index={1} title={m.sources.label} helpId="pipelineSources" status={m.sources.status} affects={m.sources.affects} open={isOpen('sources')} onToggle={() => toggleStep('sources')} bind:openHelp>
+				<ThemeRamp state={explorer} {matrices} panel="sources" bind:touchTool />
 			</ControlGroup>
 
-			<ControlGroup index={2} title={m.points.label} helpId="pipelinePoints" status={m.points.status} affects={m.points.affects} disabled={m.points.disabled} open={isOpen('points')} onToggle={() => toggleStep('points')} bind:openHelp>
-				<ThemeRamp state={explorer} {matrices} panel="points" />
-			</ControlGroup>
-
-			<ControlGroup index={3} title={m.interpolate.label} helpId="pipelineInterpolate" status={m.interpolate.status} affects={m.interpolate.affects} warn={m.interpolate.warn} disabled={m.interpolate.disabled} open={isOpen('interpolate')} onToggle={() => toggleStep('interpolate')} bind:openHelp>
+			<ControlGroup index={2} title={m.interpolate.label} helpId="pipelineInterpolate" status={m.interpolate.status} affects={m.interpolate.affects} warn={m.interpolate.warn} disabled={m.interpolate.disabled} open={isOpen('interpolate')} onToggle={() => toggleStep('interpolate')} bind:openHelp>
 				<ThemeRamp state={explorer} {matrices} panel="interpolate" />
 			</ControlGroup>
 
-			<ControlGroup index={4} title={m.adjust.label} helpId="pipelineAdjust" status={m.adjust.status} affects={m.adjust.affects} disabled={m.adjust.disabled} open={isOpen('adjust')} onToggle={() => toggleStep('adjust')} bind:openHelp>
+			<ControlGroup index={3} title={m.adjust.label} helpId="pipelineAdjust" status={m.adjust.status} affects={m.adjust.affects} disabled={m.adjust.disabled} open={isOpen('adjust')} onToggle={() => toggleStep('adjust')} bind:openHelp>
 				<ThemeRamp state={explorer} {matrices} panel="adjust" />
 			</ControlGroup>
 
-			<ControlGroup index={5} title={m.gamutMap.label} helpId="pipelineGamutMap" status={m.gamutMap.status} affects={m.gamutMap.affects} warn={m.gamutMap.warn} disabled={m.gamutMap.disabled} open={isOpen('gamut-map')} onToggle={() => toggleStep('gamut-map')} bind:openHelp>
+			<ControlGroup index={4} title={m.gamutMap.label} helpId="pipelineGamutMap" status={m.gamutMap.status} affects={m.gamutMap.affects} warn={m.gamutMap.warn} disabled={m.gamutMap.disabled} open={isOpen('gamut-map')} onToggle={() => toggleStep('gamut-map')} bind:openHelp>
 				<ThemeRamp state={explorer} {matrices} panel="gamut-map" />
 			</ControlGroup>
 
-			<ControlGroup index={6} title={m.exportStep.label} helpId="pipelineExport" status={m.exportStep.status} affects={m.exportStep.affects} disabled={m.exportStep.disabled} open={isOpen('export')} onToggle={() => toggleStep('export')} bind:openHelp>
+			<ControlGroup index={5} title={m.exportStep.label} helpId="pipelineExport" status={m.exportStep.status} affects={m.exportStep.affects} disabled={m.exportStep.disabled} open={isOpen('export')} onToggle={() => toggleStep('export')} bind:openHelp>
 				<ThemeRamp state={explorer} {matrices} panel="export" />
 			</ControlGroup>
 		</div>

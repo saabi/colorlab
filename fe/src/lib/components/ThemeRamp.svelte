@@ -11,7 +11,7 @@
 	import type { DerivedMatrices } from '$lib/renderer/uniforms';
 	import type { TouchTool } from './Viewport.svelte';
 
-	type RampPanel = 'all' | 'pick' | 'points' | 'interpolate' | 'adjust' | 'gamut-map' | 'export';
+	type RampPanel = 'all' | 'sources' | 'interpolate' | 'adjust' | 'gamut-map' | 'export';
 
 	let {
 		state: explorer = $bindable(),
@@ -22,8 +22,7 @@
 	let exportText = $state('');
 
 	const showAll = $derived(panel === 'all');
-	const showPick = $derived(showAll || panel === 'pick');
-	const showPoints = $derived(showAll || panel === 'points');
+	const showSources = $derived(showAll || panel === 'sources');
 	const showInterpolate = $derived(showAll || panel === 'interpolate');
 	const showAdjust = $derived(showAll || panel === 'adjust');
 	const showGamutMap = $derived(showAll || panel === 'gamut-map');
@@ -70,14 +69,10 @@
 
 	function setThemeMode(mode: typeof explorer.theme.mode) {
 		explorer.theme.mode = mode;
-		if (mode !== 'spline') {
-			explorer.theme.selectedPoint = null;
-			if (explorer.theme.arm === 'add') explorer.theme.arm = null;
-		}
 		track('theme_mode_change', { mode });
 	}
 
-	function toggleSplineAdd() {
+	function toggleAddPoint() {
 		explorer.theme.arm = explorer.theme.arm === 'add' ? null : 'add';
 	}
 
@@ -138,14 +133,9 @@
 		return `background: rgb(${rgb.join(',')}); ${stop.inG ? '' : 'outline: 1px dashed var(--warn); outline-offset: -2px;'}`;
 	}
 
-	function anchorStyle(anchor: ThemeAnchor | null) {
-		if (!anchor) return '';
-		return rampChipStyle({ srgbLin: anchor.srgbLin, inG: true });
-	}
-
 </script>
 
-{#if showPick}
+{#if showSources}
 	<div class="panel-label">Pick source colors</div>
 	<div class="segmented" style="--segments: 2">
 		<button
@@ -167,11 +157,9 @@
 			Set B
 		</button>
 	</div>
-	{#if explorer.theme.mode === 'spline'}
-		<button type="button" class:active={explorer.theme.arm === 'add'} onclick={toggleSplineAdd}>
-			{explorer.theme.arm === 'add' ? 'Adding… click the solid' : '+ Add control point'}
-		</button>
-	{/if}
+	<button type="button" class:active={explorer.theme.arm === 'add'} onclick={toggleAddPoint}>
+		{explorer.theme.arm === 'add' ? 'Adding… click the solid' : '+ Add point'}
+	</button>
 	<label class="field-row">
 		<span>Touch tool</span>
 		<select bind:value={touchTool}>
@@ -181,57 +169,42 @@
 		</select>
 	</label>
 	<p class="note">
-		Arm a target, then click the solid or slice cap. Picked colors become ramp anchors or spline control points.
+		Arm a target, then click the solid or slice cap. Drag a point to move it; click it to select, Delete to remove. Segment/arc use the first two (A, B); spline uses all.
 	</p>
-{/if}
 
-{#if showPoints}
-	{#if explorer.theme.mode !== 'spline'}
-		<div class="panel-label" class:separator={!showPick}>Anchors</div>
-		<div class="anchor-list">
-			<div class="anchor-row">
-				<span class="anchor-label">A</span>
-				<span class="cp-chip" style={anchorStyle(explorer.theme.points[0] ?? null)}></span>
-				<span class="cp-hex">{explorer.theme.points[0] ? srgbHex(explorer.theme.points[0].srgbLin) : 'Not set'}</span>
-			</div>
-			<div class="anchor-row">
-				<span class="anchor-label">B</span>
-				<span class="cp-chip" style={anchorStyle(explorer.theme.points[1] ?? null)}></span>
-				<span class="cp-hex">{explorer.theme.points[1] ? srgbHex(explorer.theme.points[1].srgbLin) : 'Not set'}</span>
-			</div>
-		</div>
-	{:else if explorer.theme.points.length}
-		<div class="panel-label" class:separator={!showPick}>Spline points</div>
+	{#if explorer.theme.points.length}
+		<div class="panel-label" style="margin-top: 8px">Points</div>
 		<div class="cp-list">
 			{#each explorer.theme.points as cp, i}
 				<div class="cp-row" class:active={explorer.theme.selectedPoint === i}>
 					<button type="button" class="cp-select" onclick={() => selectControlPoint(i)}>
+						<span class="anchor-label">{explorer.theme.mode !== 'spline' && i < 2 ? (i === 0 ? 'A' : 'B') : i + 1}</span>
 						<span class="cp-chip" style={rampChipStyle({ srgbLin: cp.srgbLin, inG: true })}></span>
 						<span class="cp-hex">{srgbHex(cp.srgbLin)}</span>
 					</button>
-					<button type="button" class="cp-action" title="Move control point earlier" disabled={i === 0} onclick={() => moveControlPoint(i, -1)}>
+					<button type="button" class="cp-action" title="Move point earlier" disabled={i === 0} onclick={() => moveControlPoint(i, -1)}>
 						Up
 					</button>
 					<button
 						type="button"
 						class="cp-action"
-						title="Move control point later"
+						title="Move point later"
 						disabled={i === explorer.theme.points.length - 1}
 						onclick={() => moveControlPoint(i, 1)}
 					>
 						Down
 					</button>
-					<button type="button" class="cp-action" title="Duplicate control point" onclick={() => duplicateControlPoint(i)}>
+					<button type="button" class="cp-action" title="Duplicate point" onclick={() => duplicateControlPoint(i)}>
 						Copy
 					</button>
-					<button type="button" class="cp-del" title="Remove control point" onclick={() => removeControlPoint(i)}>
+					<button type="button" class="cp-del" title="Remove point" onclick={() => removeControlPoint(i)}>
 						×
 					</button>
 				</div>
 			{/each}
 		</div>
 	{:else}
-		<p class="note">Spline control points appear here after using Add control point from Pick.</p>
+		<p class="note">No source points yet — pick from the solid to add them.</p>
 	{/if}
 {/if}
 
@@ -415,21 +388,10 @@
 		flex: 1;
 		max-width: 60%;
 	}
-	.anchor-list {
-		display: grid;
-		gap: 4px;
-		margin: 4px 0 8px;
-	}
-	.anchor-row {
-		display: grid;
-		grid-template-columns: 18px 16px minmax(0, 1fr);
-		align-items: center;
-		gap: 8px;
-		font-size: 11px;
-	}
 	.anchor-label {
 		color: var(--muted);
 		font-weight: 600;
+		min-width: 12px;
 	}
 	.cp-list {
 		display: flex;

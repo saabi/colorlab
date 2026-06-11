@@ -175,7 +175,9 @@ export class WebGlRenderer {
 			}
 		}
 
-		if (input.state.theme.mode === 'spline') {
+		// Draw source-point markers in every ramp mode; the spline curve itself only
+		// renders when splineCurve is populated (spline mode), handled inside drawSpline.
+		if (input.state.theme.points.length || input.state.theme.splineCurve.length > 1) {
 			this.drawSpline(input, proj, view);
 		}
 

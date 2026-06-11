@@ -8,8 +8,7 @@ export type PipelineNodeId =
 	| 'clip'
 	| 'view'
 	| 'cvd'
-	| 'pick'
-	| 'points'
+	| 'sources'
 	| 'interpolate'
 	| 'adjust'
 	| 'gamut-map'
@@ -121,22 +120,12 @@ export const PIPELINE_NODES: PipelineNode[] = [
 		status: (state) => (state.cvd === 'none' ? 'Normal' : `${state.cvd} ${state.cvdSev.toFixed(2)}`)
 	},
 	{
-		id: 'pick',
+		id: 'sources',
 		lane: 'Ramp',
-		label: 'Pick',
-		shortLabel: 'Pick',
-		description: 'Bridge from visible color solid to ramp anchors and control points.',
+		label: 'Sources',
+		shortLabel: 'Sources',
+		description: 'Pick, list, and edit the ordered source colors the ramp is built from (the unified points list).',
 		affects: 'Ramp',
-		status: (state) => state.theme.arm ?? 'Idle'
-	},
-	{
-		id: 'points',
-		lane: 'Ramp',
-		label: 'Anchors / points',
-		shortLabel: 'Points',
-		description: 'Editable source anchors and spline control points for ramp generation.',
-		affects: 'Ramp',
-		requiresSource: true,
 		status: (state) => `${state.theme.points.length} pt${state.theme.points.length === 1 ? '' : 's'}`
 	},
 	{

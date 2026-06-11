@@ -318,7 +318,7 @@
 
 	function nudgeSelectedControlPoint(dx: number, dy: number) {
 		const index = explorer.theme.selectedPoint;
-		if (explorer.theme.mode !== 'spline' || index === null) return false;
+		if (index === null) return false;
 		const cp = explorer.theme.points[index];
 		if (!cp) return false;
 
@@ -340,7 +340,8 @@
 	}
 
 	function chooseGesture(event: PointerEvent): CanvasGesture {
-		if (explorer.theme.mode === 'spline' && explorer.theme.arm !== 'add') {
+		// Any existing source point can be grabbed and dragged, in any ramp mode.
+		if (explorer.theme.arm !== 'add') {
 			const idx = getControlPointAtScreen(event.clientX, event.clientY, event.pointerType);
 			if (idx !== null) return { kind: 'drag-control-point', index: idx };
 		}
@@ -384,22 +385,23 @@
 		if (event.pointerType === 'touch') event.preventDefault();
 		const completedGesture = gesture.kind;
 		dragging = false;
-		if (moved < 5 && explorer.theme.mode === 'spline') {
+		if (moved < 5) {
+			// Unified click handling across all ramp modes (points[] is the single source list).
 			if (explorer.theme.arm === 'add') {
 				addControlPointAt(event.clientX, event.clientY);
+			} else if (keys.pickA || (event.pointerType === 'touch' && touchTool === 'pickA')) {
+				setThemeStopAt(event.clientX, event.clientY, 'A');
+			} else if (keys.pickB || (event.pointerType === 'touch' && touchTool === 'pickB')) {
+				setThemeStopAt(event.clientX, event.clientY, 'B');
+			} else if (explorer.theme.arm === 'A' || explorer.theme.arm === 'B') {
+				setThemeStopAt(event.clientX, event.clientY);
 			} else if (completedGesture !== 'drag-control-point') {
-				// click on empty space (or another point): update selection
-				explorer.theme.selectedPoint = getControlPointAtScreen(event.clientX, event.clientY, event.pointerType);
+				// Click selects an existing source point; empty space clears selection (and inspects on touch).
+				const idx = getControlPointAtScreen(event.clientX, event.clientY, event.pointerType);
+				explorer.theme.selectedPoint = idx;
+				if (idx === null && event.pointerType === 'touch') inspectAt(event.clientX, event.clientY);
 				draw();
 			}
-		} else if (moved < 5) {
-			let themed = false;
-			if (keys.pickA) themed = setThemeStopAt(event.clientX, event.clientY, 'A');
-			else if (keys.pickB) themed = setThemeStopAt(event.clientX, event.clientY, 'B');
-			else if (event.pointerType === 'touch' && touchTool === 'pickA') themed = setThemeStopAt(event.clientX, event.clientY, 'A');
-			else if (event.pointerType === 'touch' && touchTool === 'pickB') themed = setThemeStopAt(event.clientX, event.clientY, 'B');
-			else themed = setThemeStopAt(event.clientX, event.clientY);
-			if (!themed && event.pointerType === 'touch') inspectAt(event.clientX, event.clientY);
 		} else if (completedGesture === 'drag-control-point') {
 			track('theme_spline_point', { action: 'drag' });
 		} else if (completedGesture === 'pan') {
@@ -519,7 +521,6 @@
 		}
 		if (
 			(event.key === 'Delete' || event.key === 'Backspace') &&
-			explorer.theme.mode === 'spline' &&
 			explorer.theme.selectedPoint !== null
 		) {
 			event.preventDefault();
@@ -527,7 +528,6 @@
 			return;
 		}
 		if (
-			explorer.theme.mode === 'spline' &&
 			explorer.theme.selectedPoint !== null &&
 			['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(event.key)
 		) {

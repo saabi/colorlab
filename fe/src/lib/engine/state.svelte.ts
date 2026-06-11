@@ -36,7 +36,7 @@ function createExplorerDefaults(): ExplorerState {
 		outlineDepthTest: true,
 		surfaceGridAlpha: 0.25,
 		hideAids: false,
-		openSteps: ['gamut', 'pick', 'interpolate'],
+		openSteps: ['gamut', 'sources', 'interpolate'],
 		cvd: 'none',
 		cvdSev: 1,
 		theme: {

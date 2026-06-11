@@ -5,8 +5,7 @@ export type PipelineHelpId =
 	| 'pipelineTessellation'
 	| 'pipelineClip'
 	| 'pipelineVision'
-	| 'pipelinePick'
-	| 'pipelinePoints'
+	| 'pipelineSources'
 	| 'pipelineInterpolate'
 	| 'pipelineAdjust'
 	| 'pipelineGamutMap'
@@ -181,32 +180,18 @@ export const PIPELINE_HELP: Record<PipelineHelpId, PanelHelpContent> = {
 			{ label: 'solid.vert clip/flatten loop' }
 		]
 	},
-	pipelinePick: {
-		title: 'Pick',
-		summary: 'Selects where the next viewport click or tap writes a picked color into the ramp workflow.',
+	pipelineSources: {
+		title: 'Sources',
+		summary: 'Pick, list, and edit the ordered source colors the ramp is built from — one unified points list.',
 		stageRows: stageRows(
-			'Currently visible pick hit on the solid or clipped surface.',
-			'Active target, such as anchor A, anchor B, or adding a spline control point.',
-			'Linear-sRGB source colors stored as ramp inputs.',
-			'Interpolation mode, adjustment policy, gamut mapping, or export format.'
+			'Pick hits on the solid or clipped surface (click, drag, Set A/B, or Add point).',
+			'The points list: add, select, drag, reorder, duplicate, delete. Segment/arc use the first two (A, B); spline uses all.',
+			'Linear-sRGB source points feeding interpolation.',
+			'Interpolation method, adjustment policy, gamut mapping, or export format.'
 		),
 		sources: [
-			{ label: 'Viewport.svelte picking handlers' },
-			{ label: 'theme.ts anchor representation' }
-		]
-	},
-	pipelinePoints: {
-		title: 'Anchors / points',
-		summary: 'Shows and edits the source colors used by ramp generation.',
-		stageRows: stageRows(
-			'Picked linear-sRGB anchors and spline control points.',
-			'Point selection, ordering, duplication, deletion, and keyboard nudging.',
-			'Ordered ramp source points for interpolation.',
-			'Interpolation method, WCAG/even adjustments, gamut mapping policy, or final export format.'
-		),
-		sources: [
-			{ label: 'ThemeRamp.svelte control point panel' },
-			{ label: 'Spline gesture plan' }
+			{ label: 'Viewport.svelte picking + drag handlers' },
+			{ label: 'theme.ts points representation' }
 		]
 	},
 	pipelineInterpolate: {
