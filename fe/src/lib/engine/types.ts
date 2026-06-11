@@ -138,7 +138,6 @@ export interface ExplorerState {
 		showPalette: boolean;
 		/** Expanded 2-D palette: one row per base stop (runtime, not persisted). */
 		grid: ThemeStop[][];
-		aa: number;
 		wcagBg: 'white' | 'black';
 	};
 	hover: HoverHit | null;

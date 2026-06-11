@@ -192,12 +192,15 @@ export class WebGlRenderer {
 				gl.drawArrays(gl.POINTS, 0, 1);
 			}
 		};
-		if (t.showStops && t.stops.length) drawSwatches(t.stops, 11);
-		if (t.showPalette && t.grid.length) for (const row of t.grid) drawSwatches(row, 7);
+		// The master "hide viewport aids" toggle suppresses all ramp overlays too;
+		// per-step show* flags give finer control when aids are shown.
+		const aids = !input.state.hideAids;
+		if (aids && t.showStops && t.stops.length) drawSwatches(t.stops, 11);
+		if (aids && t.showPalette && t.grid.length) for (const row of t.grid) drawSwatches(row, 7);
 
 		// Draw source-point markers in every ramp mode; the spline curve itself only
 		// renders when splineCurve is populated (spline mode), handled inside drawSpline.
-		if (input.state.theme.points.length || input.state.theme.splineCurve.length > 1) {
+		if (aids && (input.state.theme.points.length || input.state.theme.splineCurve.length > 1)) {
 			this.drawSpline(input, proj, view);
 		}
 

@@ -1,13 +1,8 @@
 import { createAppState } from '$lib/engine/state.svelte';
 
-import type { AppState, ExplorerState, PersistedExplorer, ThemeAnchor } from '$lib/engine/types';
+import type { AppState, ExplorerState, PersistedExplorer } from '$lib/engine/types';
 import type { Camera } from '$lib/engine/camera';
 import { CURRENT_SNAPSHOT_VERSION, type ParameterSnapshot } from './types';
-
-function cloneAnchor(anchor: ThemeAnchor | null): ThemeAnchor | null {
-	if (!anchor) return null;
-	return { srgbLin: [anchor.srgbLin[0], anchor.srgbLin[1], anchor.srgbLin[2]] };
-}
 
 function cloneCamera(camera: Camera): Camera {
 	return {
@@ -75,7 +70,6 @@ export function toPersistedExplorer(explorer: ExplorerState): PersistedExplorer 
 			showCurve: theme.showCurve,
 			showStops: theme.showStops,
 			showPalette: theme.showPalette,
-			aa: theme.aa,
 			wcagBg: theme.wcagBg
 		}
 	};

@@ -131,7 +131,6 @@ function coerceTheme(raw: unknown, defaults: PersistedTheme): PersistedTheme {
 		showCurve: typeof theme.showCurve === 'boolean' ? theme.showCurve : defaults.showCurve,
 		showStops: typeof theme.showStops === 'boolean' ? theme.showStops : defaults.showStops,
 		showPalette: typeof theme.showPalette === 'boolean' ? theme.showPalette : defaults.showPalette,
-		aa: finiteNumber(theme.aa, defaults.aa, 'theme.aa'),
 		wcagBg: enumOf(theme.wcagBg, WCAG_BG, defaults.wcagBg, 'theme.wcagBg')
 	};
 }
@@ -239,7 +238,6 @@ export function coerceSnapshot(raw: unknown): ParameterSnapshot | null {
 				showCurve: factory.explorer.theme.showCurve,
 				showStops: factory.explorer.theme.showStops,
 				showPalette: factory.explorer.theme.showPalette,
-				aa: factory.explorer.theme.aa,
 				wcagBg: factory.explorer.theme.wcagBg
 			}
 		},

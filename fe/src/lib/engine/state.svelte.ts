@@ -68,7 +68,6 @@ function createExplorerDefaults(): ExplorerState {
 			showStops: true,
 			showPalette: true,
 			grid: [],
-			aa: 4.5,
 			wcagBg: 'white'
 		},
 		hover: null
@@ -157,7 +156,6 @@ export const EXAMPLE_STATES = [
 					dc: 0,
 					cprof: 'linear',
 					arcLong: true,
-					aa: 4.5,
 					wcagBg: 'white'
 				}
 			},
@@ -216,7 +214,6 @@ export const EXAMPLE_STATES = [
 					dc: 0,
 					cprof: 'linear',
 					arcLong: true,
-					aa: 4.5,
 					wcagBg: 'white'
 				}
 			},
