@@ -1,6 +1,8 @@
 <script lang="ts">
 	import ConfirmDialog from './ConfirmDialog.svelte';
 	import NamePromptDialog from './NamePromptDialog.svelte';
+	import AppInfo from './AppInfo.svelte';
+	import A11yPanel from '$lib/a11y/A11yPanel.svelte';
 	import { getGuideNoteContext } from '$lib/guide-note/context';
 	import { UNTITLED_SELECT_ID } from '$lib/documents/session.svelte';
 
@@ -141,10 +143,34 @@
 				aria-haspopup="menu"
 				onclick={toggleMore}
 			>
-				More
+				<span class="document-more-label">More</span>
+				<span class="document-more-icon-label" aria-hidden="true">⋯</span>
 			</button>
 			{#if moreOpen}
 				<div class="document-more-menu" role="menu">
+					<button
+						type="button"
+						role="menuitem"
+						class="document-more-item document-more-item-mobile"
+						onclick={() => {
+							void onNew();
+							closeMore();
+						}}
+					>
+						New
+					</button>
+					<button
+						type="button"
+						role="menuitem"
+						class="document-more-item document-more-item-mobile"
+						disabled={!session.canSave}
+						onclick={() => {
+							void onSave();
+							closeMore();
+						}}
+					>
+						Save
+					</button>
 					<button
 						type="button"
 						role="menuitem"
@@ -191,6 +217,23 @@
 					>
 						Delete…
 					</button>
+					{#if onTutorialClick}
+						<button
+							type="button"
+							role="menuitem"
+							class="document-more-item document-more-item-mobile"
+							onclick={() => {
+								onTutorialClick();
+								closeMore();
+							}}
+						>
+							Tutorial
+						</button>
+					{/if}
+					<div class="document-more-mobile-tools">
+						<A11yPanel />
+						<AppInfo />
+					</div>
 				</div>
 			{/if}
 		</div>
