@@ -218,7 +218,7 @@ export const B_QUICK_STEPS: TutorialStep[] = [
 	{
 		title: 'Add two or three source colors',
 		concept:
-			'Every ramp starts with ordered source colors — anchors — in the active source list. You can pick them on the 3D solid (arm "+ Pick on solid," then click the surface) or enter a color via the inline color picker. The list order matters: interpolation runs from the first anchor to the last.',
+			'Every ramp starts with ordered source colors — anchors — in the active source list. You can pick them on the 3D solid (arm "+ Pick on solid," then click the surface) or enter a color via the inline color picker. The list order matters: interpolation runs from the first anchor to the last. Color Lab also supports multiple source lists that produce parallel ramps — covered in the Ramp Pipeline lane.',
 		tryIt: 'In the Sources step, arm "+ Pick on solid," then click once on a dark region of the solid and once on a bright region. Two rows appear in the list.',
 		successCheck:
 			'Two anchor rows are visible in the Sources list and two markers appear in the 3D viewport where you clicked.',
