@@ -3,8 +3,13 @@
 
 	let {
 		tutorial,
+		hideAids = false,
 		loadExample
-	}: { tutorial: TutorialState; loadExample?: (id: string) => void | Promise<void> } = $props();
+	}: {
+		tutorial: TutorialState;
+		hideAids?: boolean;
+		loadExample?: (id: string) => void | Promise<void>;
+	} = $props();
 
 	let cardStyle = $state('');
 
@@ -146,13 +151,21 @@
 		</div>
 
 		{#if tutorial.step?.suggestedExample && loadExample}
-			<div class="tutorial-example-row">
-				<span class="tutorial-example-label">Example</span>
-				<button
-					type="button"
-					class="tutorial-example-btn"
-					onclick={() => loadExample!(tutorial.step!.suggestedExample!)}
-				>Load example →</button>
+			<div class="tutorial-example-block">
+				{#if hideAids}
+					<p class="tutorial-example-note">
+						Hide aids is on — shell, slice outlines, and ramp markers are hidden. Loading
+						the example will turn overlays back on.
+					</p>
+				{/if}
+				<div class="tutorial-example-row">
+					<span class="tutorial-example-label">Example</span>
+					<button
+						type="button"
+						class="tutorial-example-btn"
+						onclick={() => loadExample!(tutorial.step!.suggestedExample!)}
+					>Load example →</button>
+				</div>
 			</div>
 		{/if}
 
@@ -288,13 +301,25 @@
 		color: var(--accent);
 	}
 
+	.tutorial-example-block {
+		display: grid;
+		gap: 6px;
+		padding: 4px 0;
+		border-top: 1px solid rgba(255, 255, 255, 0.06);
+	}
+
+	.tutorial-example-note {
+		margin: 0;
+		color: var(--dim);
+		font-size: 10px;
+		line-height: 1.35;
+	}
+
 	.tutorial-example-row {
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
 		gap: 6px;
-		padding: 4px 0;
-		border-top: 1px solid rgba(255, 255, 255, 0.06);
 	}
 
 	.tutorial-example-label {

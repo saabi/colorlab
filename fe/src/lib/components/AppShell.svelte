@@ -33,6 +33,14 @@
 			localStorage.setItem(TUTORIAL_WELCOMED_KEY, '1');
 		}
 	});
+
+	/** Tutorial examples need shell, slice outlines, and ramp markers visible. */
+	async function loadTutorialExample(id: string) {
+		const ok = await session.loadDocument(id);
+		if (!ok) return;
+		appState.explorer.hideAids = false;
+		appState.explorer.autoRotate = false;
+	}
 </script>
 
 <GuideNoteEditorHost explorer={appState.explorer}>
@@ -76,6 +84,6 @@
 	<LanePicker {tutorial} onClose={() => (lanePickerOpen = false)} />
 {/if}
 {#if tutorial.progress?.active}
-	<TutorialPopover {tutorial} loadExample={(id) => session.loadDocument(id)} />
+	<TutorialPopover {tutorial} hideAids={explorer.hideAids} loadExample={loadTutorialExample} />
 {/if}
 
