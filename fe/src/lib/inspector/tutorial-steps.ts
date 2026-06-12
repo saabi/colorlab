@@ -94,10 +94,10 @@ export const A_QUICK_STEPS: TutorialStep[] = [
 	{
 		title: 'Shell overlay — two gamuts at once',
 		concept:
-			'The shell overlay draws the wire boundary of a reference gamut on top of the active solid. With a P3 solid and sRGB shell, you see exactly which P3 colors fall outside sRGB — they poke beyond the wire cage. This is the standard gamut-comparison view.',
-		tryIt: 'Set the active gamut to Display P3. In the Gamut step, set the Reference gamut shell to "sRGB." Orbit until the wire cage is visible inside the solid.',
+			'The shell overlay draws the wire boundary of a reference gamut on top of the active solid. With a P3 solid and sRGB shell, you see exactly which P3 colors fall outside sRGB — they poke beyond the wire cage. This is the standard gamut-comparison view. A companion overlay, "Chromaticity overlay," draws the spectral locus at X+Y+Z=1 — the outer boundary that no physically real stimulus can exceed. Try "Spectral locus rim" from the Chromaticity overlay select in the same Gamut step.',
+		tryIt: 'Set the active gamut to Display P3. In the Gamut step, set the Reference gamut shell to "sRGB." Orbit until the wire cage is visible inside the solid. Then set Chromaticity overlay to "Spectral locus rim" to see the spectral boundary glowing around the outside.',
 		successCheck:
-			'A wire outline smaller than the solid is visible. Colors between the cage and the solid surface are P3-only — not reproducible in sRGB.',
+			'A wire outline smaller than the solid is visible. Colors between the cage and the solid surface are P3-only. With the spectral locus rim enabled, a colored ring appears outside both — real-world stimuli cannot exceed it.',
 		commonMistake:
 			'Confusing the shell with slice outlines. The shell is a fixed reference boundary for a comparison gamut; slice outlines move with the clip plane.',
 		zone: 'sidebar-inline',
@@ -152,8 +152,8 @@ export const A_PIPELINE_STEPS: TutorialStep[] = [
 	{
 		title: 'World space — geometry only',
 		concept:
-			'World space chooses the 3D coordinate system: RGB (raw cube), XYZ, CIELAB, Oklab, or Luma. It is a display decision only — it does not change stored colors, source anchors, or exported ramp tokens.',
-		tryIt: 'Switch from Oklab to RGB — the solid snaps back to a regular cube. Switch to CIELAB. Verify that the hover chain values in the inspector are identical regardless of world space.',
+			'World space chooses the 3D coordinate system: RGB (raw cube), XYZ, CIELAB, Oklab, or Luma. It is a display decision only — it does not change stored colors, source anchors, or exported ramp tokens. Switching spaces triggers a short morph animation that shows the solid reshaping itself between the two coordinate systems.',
+		tryIt: 'Switch from Oklab to RGB — watch the solid morph into a regular cube. Switch to CIELAB. Verify that the hover chain values in the inspector are identical regardless of world space.',
 		successCheck:
 			'Changing world space reshapes the solid but the Values rows remain the same for the same hovered stimulus. Same colors, different geometric arrangement.',
 		commonMistake:
