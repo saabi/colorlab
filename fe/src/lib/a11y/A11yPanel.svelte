@@ -108,17 +108,21 @@
 
 	.a11y-trigger {
 		width: auto;
-		border: 0;
-		border-radius: 0;
-		background: transparent;
-		color: var(--dim);
-		padding: 0;
-		font-size: max(13px, 1rem);
+		border: 1px solid color-mix(in srgb, var(--accent), transparent 38%);
+		border-radius: 5px;
+		background: color-mix(in srgb, var(--accent), transparent 88%);
+		color: var(--txt);
+		padding: 3px 8px;
+		font-size: max(12px, 0.923rem);
+		font-weight: 600;
 		white-space: nowrap;
+		box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.03);
 	}
 
 	.a11y-trigger:hover,
 	.a11y-trigger[aria-expanded="true"] {
+		border-color: var(--accent);
+		background: color-mix(in srgb, var(--accent), transparent 80%);
 		color: var(--accent);
 	}
 
