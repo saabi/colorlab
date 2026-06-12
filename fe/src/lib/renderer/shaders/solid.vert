@@ -2,6 +2,8 @@
 precision highp float; precision highp int;
 layout(location=0) in vec2 aCorner;
 uniform int uN, uSpaceMode;
+uniform int uFromSpaceMode, uToSpaceMode;
+uniform float uMorphT;
 uniform float uMeshWarp;
 uniform mat3 uRgbToXyz, uXyzToRgb;
 uniform mat3 uOkM1, uOkM2;
@@ -27,16 +29,16 @@ vec3 warpRgbForMesh(vec3 rgb){
 }
 float labF(float t){ return t>0.008856 ? pow(t,1.0/3.0) : 7.787*t+16.0/116.0; }
 float labFi(float t){ float t3=t*t*t; return t3>0.008856 ? t3 : (t-16.0/116.0)/7.787; }
-vec3 toWorld(vec3 rgb){
-  if(uSpaceMode==0) return uCubeRot*(rgb-0.5);
-  if(uSpaceMode==5){
+vec3 toWorldMode(vec3 rgb, int mode){
+  if(mode==0) return uCubeRot*(rgb-0.5);
+  if(mode==5){
     vec3 p=uCubeRot*(rgb-0.5);
     float luma=dot(rgb,uLumaW);
     return vec3(p.x, luma-0.5, p.z);
   }
   vec3 xyz = uRgbToXyz*rgb;
-  if(uSpaceMode==1) return xyz-vec3(0.48,0.5,0.54);
-  if(uSpaceMode==2){
+  if(mode==1) return xyz-vec3(0.48,0.5,0.54);
+  if(mode==2){
     vec3 f=vec3(labF(xyz.x/uWhite.x),labF(xyz.y/uWhite.y),labF(xyz.z/uWhite.z));
     vec3 lab=vec3(116.0*f.y-16.0, 500.0*(f.x-f.y), 200.0*(f.y-f.z));
     return vec3(lab.y, lab.x-50.0, lab.z)*0.01;
@@ -61,7 +63,8 @@ void main(){
   int cells=uN*uN; int face=gl_InstanceID/cells; int cell=gl_InstanceID-face*cells;
   vec2 uv=(vec2(float(cell%uN),float(cell/uN))+aCorner)/float(uN);
   vec3 rgb=warpRgbForMesh(faceToRgb(face,uv));
-  vec3 p=toWorld(rgb);
+  // Clipping evaluated in target space (uSpaceMode).
+  vec3 p=toWorldMode(rgb, uSpaceMode);
   vec3 p0=p;
   if ((uSliceOn > 0.5 && (uCutAbove > 0.5 || uCutBelow > 0.5)) || uCylSlice > 0.5) {
     float smin = uCutBelow > 0.5 ? -uSliceEps : -1.0e9;
@@ -84,7 +87,7 @@ void main(){
         }
       }
       rgb = clamp(fromWorld(p), 0.0, 1.0);
-      p = toWorld(rgb);
+      p = toWorldMode(rgb, uSpaceMode);
     }
     vec3 pf = p;
     if (uSliceOn > 0.5 && (uCutAbove > 0.5 || uCutBelow > 0.5)) {
@@ -108,6 +111,10 @@ void main(){
       p = pf; rgb = clamp(rf, 0.0, 1.0);
     }
   }
-  vRgb=rgb; vWorld=p; vCutDist=length(p-p0);
-  gl_Position=uProj*uView*vec4(p,1.0);
+  // Morphed position: smoothstep blend between from and to world spaces.
+  float mt = uMorphT * uMorphT * (3.0 - 2.0 * uMorphT);
+  vec3 pTo = toWorldMode(rgb, uToSpaceMode);
+  vec3 pFrom = toWorldMode(rgb, uFromSpaceMode);
+  vRgb=rgb; vWorld=pTo; vCutDist=length(pTo-p0);
+  gl_Position=uProj*uView*vec4(mix(pFrom, pTo, mt),1.0);
 }

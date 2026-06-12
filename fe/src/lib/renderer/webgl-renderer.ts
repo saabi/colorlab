@@ -6,14 +6,17 @@ import { planeND } from '$lib/engine/plane';
 import { camEye, lookAt, persp, type Camera } from '$lib/engine/camera';
 import { FS_FLOOR, FS_LINE, FS_MARK, FS_SOLID, FS_SPLINE, VS_FLOOR, VS_LINE, VS_MARK, VS_SOLID, VS_SPLINE } from './shaders';
 
-import type { ExplorerState } from '$lib/engine/types';
+import type { ExplorerState, SpaceMode } from '$lib/engine/types';
 import type { DerivedMatrices } from './uniforms';
+
+export type MorphState = { from: SpaceMode; to: SpaceMode; t: number };
 
 interface DrawInput {
 	state: ExplorerState;
 	matrices: DerivedMatrices;
 	shellMatrices: DerivedMatrices | null;
 	camera: Camera;
+	morph?: MorphState;
 }
 
 function smoothstep(edge0: number, edge1: number, x: number) {
@@ -100,10 +103,15 @@ export class WebGlRenderer {
 		const proj = persp(input.camera.fov, aspect, 0.05, 40);
 		const view = lookAt(camEye(input.camera), input.camera.target, [0, 1, 0]);
 
+		const morph = input.morph;
+		const morphFrom = morph?.from ?? input.state.spaceMode;
+		const morphTo = morph?.to ?? input.state.spaceMode;
+		const morphT = morph?.t ?? 1.0;
+
 		if (input.shellMatrices) {
 			gl.useProgram(this.solidProgram);
 			gl.bindVertexArray(this.solidVao);
-			this.uploadSolidUniforms(input.state, input.shellMatrices, proj, view, 1, 96, 0, 0, 0, 0, 0);
+			this.uploadSolidUniforms(input.state, input.shellMatrices, proj, view, 1, 96, 0, 0, 0, 0, 0, morphFrom, morphTo, morphT);
 			gl.disable(gl.DEPTH_TEST);
 			gl.depthMask(false);
 			gl.enable(gl.BLEND);
@@ -116,7 +124,7 @@ export class WebGlRenderer {
 
 		gl.useProgram(this.solidProgram);
 		gl.bindVertexArray(this.solidVao);
-		this.uploadSolidUniforms(input.state, input.matrices, proj, view, 0, input.state.N, 0, 0, 0, 0, 0);
+		this.uploadSolidUniforms(input.state, input.matrices, proj, view, 0, input.state.N, 0, 0, 0, 0, 0, morphFrom, morphTo, morphT);
 		const solidAlpha = input.state.solidAlpha;
 		const solidInstances = 6 * input.state.N * input.state.N;
 		if (solidAlpha < 1) {
@@ -159,11 +167,12 @@ export class WebGlRenderer {
 					1,
 					0,
 					input.state.surfaceGridAlpha,
-					1
+					1,
+					morphFrom, morphTo, morphT
 				);
 			gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, 6 * input.state.N * input.state.N);
 			if (input.state.slice || input.state.cylSlice) {
-				this.uploadSolidUniforms(input.state, input.matrices, proj, view, 0, input.state.N, 1, 1, 1, 0, 0);
+				this.uploadSolidUniforms(input.state, input.matrices, proj, view, 0, input.state.N, 1, 1, 1, 0, 0, morphFrom, morphTo, morphT);
 				gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, 6 * input.state.N * input.state.N);
 			}
 			gl.disable(gl.POLYGON_OFFSET_FILL);
@@ -186,7 +195,7 @@ export class WebGlRenderer {
 			gl.depthMask(true);
 		}
 
-		if (this.spectralRimCount > 0 && !input.state.hideAids && input.state.chromaticityOverlay !== 'off') {
+		if (this.spectralRimCount > 0 && !input.state.hideAids && input.state.chromaticityOverlay !== 'off' && !morph) {
 			gl.useProgram(this.splineProgram);
 			gl.bindVertexArray(this.spectralVao);
 			gl.uniformMatrix4fv(this.U(this.splineProgram, 'uProj'), false, proj);
@@ -214,7 +223,7 @@ export class WebGlRenderer {
 		const aidsThroughGlass = solidAlpha < 1;
 		if (aidsThroughGlass) gl.disable(gl.DEPTH_TEST);
 
-		if (input.state.hover) {
+		if (input.state.hover && !morph) {
 			gl.useProgram(this.markProgram);
 			gl.uniformMatrix4fv(this.U(this.markProgram, 'uProj'), false, proj);
 			gl.uniformMatrix4fv(this.U(this.markProgram, 'uView'), false, view);
@@ -246,7 +255,8 @@ export class WebGlRenderer {
 		};
 		// The master "hide overlay aids" toggle suppresses ramp overlays too;
 		// per-step show* flags give finer control when aids are shown.
-		const aids = !input.state.hideAids;
+		// Overlays are suppressed during morph (world positions are stale until rebuilt).
+		const aids = !input.state.hideAids && !morph;
 		// Placed stops draw for every list (each list is its own ramp).
 		if (aids && t.showStops) {
 			for (const row of t.rows) if (row.length) drawSwatches(row, 11);
@@ -289,7 +299,7 @@ export class WebGlRenderer {
 
 		if (aidsThroughGlass) gl.enable(gl.DEPTH_TEST);
 
-		if (this.lineVertCount > 0 && !input.state.hideAids && input.state.slice && (input.state.planeOutline || input.state.cylinderOutline)) {
+		if (this.lineVertCount > 0 && !input.state.hideAids && input.state.slice && (input.state.planeOutline || input.state.cylinderOutline) && !morph) {
 			gl.useProgram(this.lineProgram);
 			gl.bindVertexArray(this.lineVao);
 			gl.uniformMatrix4fv(this.U(this.lineProgram, 'uProj'), false, proj);
@@ -497,8 +507,7 @@ export class WebGlRenderer {
 			gl.uniform1f(this.U(this.markProgram, 'uSize'), 16);
 			t.lists.forEach((cps, li) => {
 				for (let i = 0; i < cps.length; i += 1) {
-					const gamutRgb = m3.mulV(input.matrices.toSrgbLin.fromSrgb, cps[i].srgbLin);
-					const world = this.rgbToWorld(gamutRgb, input.state, input.matrices);
+					const world = this.worldForSrgbMorph(cps[i].srgbLin, input.state, input.matrices, input.morph);
 					const sim = simulateCvdSrgb(cps[i].srgbLin, input.state.cvd, input.state.cvdSev);
 					const c = sim.map((v) => TRC.srgb.enc(Math.min(Math.max(v, 0), 1)));
 					// Selection ring only applies inside the active list.
@@ -521,20 +530,37 @@ export class WebGlRenderer {
 		return [u, v, 1];
 	}
 
-	private rgbToWorld(rgb: Vec3, state: ExplorerState, matrices: DerivedMatrices): Vec3 {
-		if (state.spaceMode === 0) return m3.mulV(CUBE_ROT, [rgb[0] - 0.5, rgb[1] - 0.5, rgb[2] - 0.5]);
-		if (state.spaceMode === 5) {
+	private rgbToWorldMode(rgb: Vec3, mode: SpaceMode, matrices: DerivedMatrices): Vec3 {
+		if (mode === 0) return m3.mulV(CUBE_ROT, [rgb[0] - 0.5, rgb[1] - 0.5, rgb[2] - 0.5]);
+		if (mode === 5) {
 			const p = m3.mulV(CUBE_ROT, [rgb[0] - 0.5, rgb[1] - 0.5, rgb[2] - 0.5]);
 			return [p[0], REC709_Y[0] * rgb[0] + REC709_Y[1] * rgb[1] + REC709_Y[2] * rgb[2] - 0.5, p[2]];
 		}
 		const xyz = m3.mulV(matrices.rgb2xyz, rgb);
-		if (state.spaceMode === 1) return [xyz[0] - 0.48, xyz[1] - 0.5, xyz[2] - 0.54];
-		if (state.spaceMode === 2) {
+		if (mode === 1) return [xyz[0] - 0.48, xyz[1] - 0.5, xyz[2] - 0.54];
+		if (mode === 2) {
 			const lab = xyz2lab(xyz);
 			return [lab[1] * 0.01, (lab[0] - 50) * 0.01, lab[2] * 0.01];
 		}
 		const ok = lsrgb2oklab(m3.mulV(matrices.toSrgbLin.toSrgb, rgb));
 		return [ok[1] * 2.2, ok[0] - 0.5, ok[2] * 2.2];
+	}
+
+	private rgbToWorld(rgb: Vec3, state: ExplorerState, matrices: DerivedMatrices): Vec3 {
+		return this.rgbToWorldMode(rgb, state.spaceMode, matrices);
+	}
+
+	private worldForSrgbMorph(srgbLin: Vec3, state: ExplorerState, matrices: DerivedMatrices, morph?: MorphState): Vec3 {
+		const gamutRgb = m3.mulV(matrices.toSrgbLin.fromSrgb, srgbLin);
+		if (!morph) return this.rgbToWorldMode(gamutRgb, state.spaceMode, matrices);
+		const mt = morph.t * morph.t * (3 - 2 * morph.t);
+		const pFrom = this.rgbToWorldMode(gamutRgb, morph.from, matrices);
+		const pTo = this.rgbToWorldMode(gamutRgb, morph.to, matrices);
+		return [
+			pFrom[0] + (pTo[0] - pFrom[0]) * mt,
+			pFrom[1] + (pTo[1] - pFrom[1]) * mt,
+			pFrom[2] + (pTo[2] - pFrom[2]) * mt
+		];
 	}
 
 	rebuildSpectralOverlay(state: ExplorerState, matrices: DerivedMatrices) {
@@ -798,7 +824,10 @@ export class WebGlRenderer {
 		gridOnly: 0 | 1,
 		capGridOnly: 0 | 1,
 		clippedGridAlpha: number,
-		unclipped: 0 | 1
+		unclipped: 0 | 1,
+		morphFrom: SpaceMode = state.spaceMode,
+		morphTo: SpaceMode = state.spaceMode,
+		morphT = 1.0
 	) {
 		const { gl } = this;
 		const { n, d } = planeND(state);
@@ -807,7 +836,10 @@ export class WebGlRenderer {
 		gl.uniformMatrix4fv(this.U(p, 'uView'), false, view);
 		gl.uniform1i(this.U(p, 'uN'), N);
 		gl.uniform1i(this.U(p, 'uSpaceMode'), state.spaceMode);
-		gl.uniform1f(this.U(p, 'uMeshWarp'), this.meshWarpForSpace(state.spaceMode));
+		gl.uniform1i(this.U(p, 'uFromSpaceMode'), morphFrom);
+		gl.uniform1i(this.U(p, 'uToSpaceMode'), morphTo);
+		gl.uniform1f(this.U(p, 'uMorphT'), morphT);
+		gl.uniform1f(this.U(p, 'uMeshWarp'), this.meshWarpForSpace(morphFrom));
 		this.uploadMat3(p, 'uRgbToXyz', M.rgb2xyz);
 		this.uploadMat3(p, 'uXyzToRgb', M.xyz2rgb);
 		this.uploadMat3(p, 'uOkM1', M.okM1);

@@ -13,8 +13,9 @@
 	import PaletteStrip from './PaletteStrip.svelte';
 	import TeachingNote from './TeachingNote.svelte';
 
-	import type { ExplorerState, ThemeAnchor } from '$lib/engine/types';
+	import type { ExplorerState, SpaceMode, ThemeAnchor } from '$lib/engine/types';
 	import type { Camera } from '$lib/engine/camera';
+	import type { MorphState } from '$lib/renderer/webgl-renderer';
 
 	export type TouchTool = 'auto' | 'slice' | 'cylinder' | 'add';
 	/** A source point under the cursor: which list it belongs to and its index there. */
@@ -68,6 +69,12 @@
 	let autoRotateFrame = 0;
 	let autoRotatePrev = 0;
 	let reducedMotion = false;
+
+	let morph = $state<MorphState | null>(null);
+	let morphRafId = 0;
+	let morphPrev = 0;
+	let prevSpaceMode: SpaceMode = explorer.spaceMode;
+	const MORPH_DURATION_MS = 400;
 
 	const matrices = $derived(rebuildMatrices(explorer.gamut));
 	const shellMatrices = $derived(explorer.hideAids ? null : rebuildShell(explorer.shell));
@@ -170,9 +177,39 @@
 	function draw() {
 		if (!renderer) return;
 		const t0 = performance.now();
-		renderer.draw({ state: explorer, matrices, shellMatrices, camera });
+		renderer.draw({ state: explorer, matrices, shellMatrices, camera, morph: morph ?? undefined });
 		recordDrawPerformance(t0, performance.now() - t0);
 		scheduleFrameCadenceSample();
+	}
+
+	function cancelMorph() {
+		if (morphRafId) cancelAnimationFrame(morphRafId);
+		morphRafId = 0;
+		morphPrev = 0;
+		morph = null;
+	}
+
+	function startMorph(from: SpaceMode, to: SpaceMode) {
+		cancelMorph();
+		morph = { from, to, t: 0 };
+		const step = (ts: number) => {
+			const dt = morphPrev > 0 ? (ts - morphPrev) / MORPH_DURATION_MS : 0;
+			morphPrev = ts;
+			const next = Math.min(1, (morph?.t ?? 0) + dt);
+			if (morph) morph.t = next;
+			if (next >= 1) {
+				morph = null;
+				morphRafId = 0;
+				morphPrev = 0;
+				renderer?.rebuildBoundary(explorer, matrices);
+				renderer?.rebuildSpectralOverlay(explorer, matrices);
+				draw();
+			} else {
+				draw();
+				morphRafId = requestAnimationFrame(step);
+			}
+		};
+		morphRafId = requestAnimationFrame(step);
 	}
 
 	function stopAutoRotateLoop() {
@@ -666,12 +703,13 @@
 
 	onDestroy(() => {
 		stopAutoRotateLoop();
+		cancelMorph();
 		renderer?.dispose();
 		renderer = null;
 	});
 
 	$effect(() => {
-		explorer.spaceMode;
+		const currentMode = explorer.spaceMode;
 		explorer.gamut;
 		explorer.slice;
 		explorer.planeMode;
@@ -688,9 +726,16 @@
 		untrack(() => {
 			explorer.hover = null;
 			buildRamp(explorer, matrices);
-			renderer?.rebuildBoundary(explorer, matrices);
-			renderer?.rebuildSpectralOverlay(explorer, matrices);
-			draw();
+			const from = prevSpaceMode;
+			prevSpaceMode = currentMode;
+			if (from !== currentMode && !reducedMotion) {
+				startMorph(from, currentMode);
+			} else {
+				cancelMorph();
+				renderer?.rebuildBoundary(explorer, matrices);
+				renderer?.rebuildSpectralOverlay(explorer, matrices);
+				draw();
+			}
 		});
 	});
 
