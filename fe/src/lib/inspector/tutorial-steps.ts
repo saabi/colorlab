@@ -312,7 +312,7 @@ export const B_PIPELINE_STEPS: TutorialStep[] = [
 		title: 'Interpolate — path and space',
 		concept:
 			'Interpolate builds the continuous curve from anchors. Off passes anchors through unchanged. Linear connects with straight chords; Spline fits a smooth parametric arc. With exactly two anchors, spline and linear trace the same chord — the arc diverges only with three or more points. The interpolation space (Oklab, Oklch, sRGB, CIELAB, "world") is where that path bends — different spaces produce dramatically different arcs through the same anchor set.',
-		tryIt: 'Load "Spline Color Ramp" via the button above (seven surface-snapped anchors). Note: loading replaces your current source lists — rebuild your two-list setup afterwards for steps 5–9. Switch between linear and spline and watch the arc change. Change the interpolation space from Oklch to sRGB and observe how the arc bends.',
+		tryIt: 'Load "Spline Color Ramp" via the button above (five surface-snapped anchors). Note: loading replaces your current source lists — rebuild your two-list setup afterwards for steps 5–9. Switch between linear and spline and watch the arc change. Change the interpolation space from Oklch to sRGB and observe how the arc bends.',
 		successCheck:
 			'You can describe why the same anchor set produces different ramp paths in Oklch vs sRGB — the arc shape reflects the coordinate geometry of each space. Spline produces a visibly smoother arc than linear through the middle anchors.',
 		commonMistake:
@@ -337,26 +337,27 @@ export const B_PIPELINE_STEPS: TutorialStep[] = [
 		title: 'Expand — 1-D ramp to 2-D grid',
 		concept:
 			'Expand is a per-stop generator that turns the 1-D ramp into a 2-D palette by adding Oklch offsets per axis. Direction modes: ramp (0 → delta), sym (−delta → +delta), edges (delta at both ends, 0 at center). Row count is independent of Place step count.',
-		tryIt: 'Enable Expand. Set row count to 3, lightness axis to "sym," delta 0.15. The Palette tab shows a 3-row grid. Try "ramp" direction instead.',
+		tryIt: 'Load "Tonal grid (Expand)" via the button above for a pre-built 3-row blue grid. Or start fresh: enable Expand, set row count to 3, lightness axis to "sym," delta 0.15. The Palette tab shows a 3-row grid. Try "ramp" direction instead.',
 		successCheck:
 			'The Palette tab displays a 2-D grid. The Expand status chip reads "R×C" (e.g. "3×9").',
 		commonMistake:
 			'Confusing Expand rows with source lists. Expand rows are Oklch-offset copies of the base ramp; source lists are independent ramps with different anchors. Both can be active simultaneously.',
 		zone: 'sidebar-inline',
-		target: '[data-tutorial="node-expand"]'
+		target: '[data-tutorial="node-expand"]',
+		suggestedExample: 'example:expand-grid'
 	},
 	{
 		title: 'Gamut map — ramp-only OOG policy',
 		concept:
 			'Gamut map is the terminal ramp stage: it brings out-of-gamut stops into sRGB before export. "Clip (clamp)" hard-clips each RGB channel. "Preserve chroma" reduces chroma in Oklch (keeps hue and lightness). "None" passes OOG stops through unchanged. This stage is separate from the Explorer Gamut setting, the spline surface constraint, and CVD.',
-		tryIt: 'Load "Spline Color Ramp" and set the interpolation space to Oklch — the arc may cross gamut boundaries. Check the OOG badge on the Gamut map node. Switch between "Clip (clamp)" and "Preserve chroma" and watch affected stops change in the Palette tab.',
+		tryIt: 'Load "P3 OOG stops" via the button above — a ramp with a P3-exclusive vivid green anchor that sits beyond the sRGB boundary. The OOG badge on the Gamut map node shows how many stops exceed sRGB. Switch between "Clip (clamp)" and "Preserve chroma" and watch the affected stops shift in the Palette tab.',
 		successCheck:
 			'With "Preserve chroma," OOG stops shift inward in chroma while keeping hue angle. With "Clip (clamp)," they may shift hue because channels clamp independently.',
 		commonMistake:
 			'Thinking the Explorer Gamut setting controls ramp export clipping. The Explorer Gamut defines what the solid represents; the Ramp Gamut map is a separate, independent terminal policy.',
 		zone: 'sidebar-inline',
 		target: '[data-tutorial="node-gamut-map"]',
-		suggestedExample: 'example:spline-color-ramp'
+		suggestedExample: 'example:p3-oog-ramp'
 	},
 	{
 		title: 'Export — tokens and format',

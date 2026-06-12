@@ -135,7 +135,7 @@ export function createExampleState(partial: ExamplePartial): AppState {
 export const EXAMPLE_STATES = [
 	{
 		id: 'example:large-color-ramp',
-		name: 'Large Color Ramp',
+		name: 'Warm Neutral Ramp',
 		source: 'example' as const,
 		snapshot: createExampleState({
 			explorer: {
@@ -152,39 +152,43 @@ export const EXAMPLE_STATES = [
 				lines: true,
 				cutAbove: true,
 				cutBelow: false,
-				cylSlice: true,
-				cylRad: 0.361,
+				cylSlice: false,
+				cylRad: 0.2,
 				shell: 'none',
 				planeOutline: true,
 				cylinderOutline: true,
 				outlineDepthTest: true,
 				surfaceGridAlpha: 0.25,
+				solidAlpha: 0.75,
+				hideAids: false,
 				cvd: 'none',
 				cvdSev: 1,
+				openSteps: ['gamut', 'sources', 'interpolate'],
 				guideNote:
-					'This example builds a two-stop linear ramp in Oklch. The curve in the viewport is the interpolated path; the stops on the left are the placed palette swatches.\n\nOpen Interpolate and Place in the left pipeline to change how many steps are sampled, and try other interpolation spaces to see how the path bends through the solid.',
+					'A warm-neutral palette — dark brown to creamy light — spline-interpolated in Oklch. The warm undertone (R > G > B at each anchor) carries through consistently because Oklch\'s hue axis keeps it stable along the arc.\n\nThis is a practical starting point for UI neutrals and text containers. Try adding a mid-tone anchor to push the midpoint warmer or cooler, or enable Expand with a lightness offset to generate a tonal grid.',
 				guideNotePlacement: 'sidebar',
 				guideNoteDismissed: false,
 				theme: {
 					lists: [
 						[
-							{ srgbLin: [0.002353332407759444, 0.0038332058213883316, 0.17366576656361682] },
-							{ srgbLin: [0.7610351858718939, 0.9402926643687034, 0.15604940886754892] }
+							{ srgbLin: [0.020, 0.010, 0.006] as [number, number, number] },
+							{ srgbLin: [0.319, 0.214, 0.100] as [number, number, number] },
+							{ srgbLin: [0.912, 0.869, 0.748] as [number, number, number] }
 						]
 					],
-					splineConstraint: 'surface',
+					splineConstraint: 'free',
 					splineSpace: 'oklch',
 					steps: 11,
-					mode: 'linear',
-					arcLong: true,
+					mode: 'spline',
+					arcLong: false,
 					wcagBg: 'white'
 				}
 			},
 			camera: {
-				yaw: 1.355999999999995,
-				pitch: 0.31399999999999906,
-				dist: 1.5765230034944007,
-				target: [0.05967533848186085, 0.09576925068959358, -0.09536971427920843],
+				yaw: 1.356,
+				pitch: 0.314,
+				dist: 1.577,
+				target: [0.06, 0.10, -0.10] as [number, number, number],
 				fov: 0.7853981633974483
 			}
 		})
@@ -215,37 +219,159 @@ export const EXAMPLE_STATES = [
 				cylinderOutline: true,
 				outlineDepthTest: true,
 				surfaceGridAlpha: 0.25,
+				solidAlpha: 0.6,
+				hideAids: false,
 				cvd: 'none',
 				cvdSev: 1,
+				openSteps: ['gamut', 'sources', 'interpolate'],
 				guideNote:
-					'Seven source points define a spline curve snapped to the sRGB surface. Spline mode follows the control polygon through Oklch rather than a straight chord.\n\nAdjust source points on the solid or in the Sources step, then compare linear vs spline under Interpolate.',
+					'Five anchors on the sRGB surface — blue, blue-violet, rose, orange, yellow — spanning a full hue arc in Oklch. Spline mode curves smoothly between them; switch to linear in Interpolate to see straight-chord connections between the same anchors.\n\nThe semi-transparent solid and cylindrical clip reveal the interpolated path. Try changing the interpolation space from Oklch to Oklab or sRGB to see how the arc bends differently in each coordinate system.',
 				guideNotePlacement: 'sidebar',
 				guideNoteDismissed: false,
 				theme: {
 					lists: [
 						[
-							{ srgbLin: [0.15179282277131012, 0.9422662580510375, 0.9999999850358002] },
-							{ srgbLin: [0.03671407394983858, 0.3714108130672565, 0.9929783888548199] },
-							{ srgbLin: [0.028253499683098458, 0.012408419728036454, 0.24351054921984353] },
-							{ srgbLin: [0.9423321273143955, 0.4093936585477751, 0.007526737942892326] },
-							{ srgbLin: [0.6632663753802132, 0.7751983959873612, 0.09314133134117958] },
-							{ srgbLin: [0.01902375407757991, 0.23677381868771052, 0.01243050656641337] },
-							{ srgbLin: [1.460307339678016e-9, 0.020102723338920343, 0.0007882480511984311] }
+							{ srgbLin: [0, 0, 1] as [number, number, number] },
+							{ srgbLin: [0.25, 0, 1] as [number, number, number] },
+							{ srgbLin: [1, 0, 0.5] as [number, number, number] },
+							{ srgbLin: [1, 0.25, 0] as [number, number, number] },
+							{ srgbLin: [1, 1, 0] as [number, number, number] }
 						]
 					],
 					splineConstraint: 'surface',
 					splineSpace: 'oklch',
-					steps: 27,
+					steps: 11,
 					mode: 'spline',
-					arcLong: true,
+					arcLong: false,
 					wcagBg: 'white'
 				}
 			},
 			camera: {
-				yaw: -4.9800000000000075,
-				pitch: 0.37999999999999917,
-				dist: 2.221116252338258,
-				target: [0.05770219796035286, 0.007643969273462504, -0.0987838640618481],
+				yaw: 1.30,
+				pitch: 0.38,
+				dist: 2.22,
+				target: [0.058, 0.008, -0.099] as [number, number, number],
+				fov: 0.7853981633974483
+			}
+		})
+	},
+	{
+		id: 'example:p3-oog-ramp',
+		name: 'P3 OOG stops',
+		source: 'example' as const,
+		snapshot: createExampleState({
+			explorer: {
+				spaceMode: 3,
+				gamut: 'p3',
+				N: 256,
+				slice: false,
+				planeMode: 'L',
+				off: 1,
+				az: 0,
+				el: 90,
+				eps: 0,
+				floor: true,
+				lines: true,
+				cutAbove: true,
+				cutBelow: false,
+				cylSlice: false,
+				cylRad: 0.2,
+				shell: 'srgb',
+				planeOutline: true,
+				cylinderOutline: true,
+				outlineDepthTest: true,
+				surfaceGridAlpha: 0.25,
+				solidAlpha: 0.75,
+				hideAids: false,
+				cvd: 'none',
+				cvdSev: 1,
+				openSteps: ['gamut', 'sources', 'gamut-map'],
+				guideNote:
+					'A ramp from a dark teal through a P3-exclusive vivid green — out of sRGB gamut — to a warm near-white. The Display P3 solid is the large volume; the sRGB wire shell marks the boundary.\n\nWith Gamut map at "None," the OOG stops export unchanged (orange badge in the Palette tab). Switch to "Clip (clamp)" or "Preserve chroma" to bring all stops into sRGB and compare how each method shifts hue and chroma.',
+				guideNotePlacement: 'sidebar',
+				guideNoteDismissed: false,
+				theme: {
+					lists: [
+						[
+							{ srgbLin: [0.010, 0.013, 0.046] as [number, number, number] },
+							{ srgbLin: [-0.156, 0.721, 0.051] as [number, number, number] },
+							{ srgbLin: [0.912, 0.869, 0.748] as [number, number, number] }
+						]
+					],
+					splineConstraint: 'free',
+					splineSpace: 'oklch',
+					gamutMap: 'none',
+					steps: 11,
+					mode: 'linear',
+					arcLong: false,
+					wcagBg: 'white'
+				}
+			},
+			camera: { dist: 3.2 }
+		})
+	},
+	{
+		id: 'example:expand-grid',
+		name: 'Tonal grid (Expand)',
+		source: 'example' as const,
+		snapshot: createExampleState({
+			explorer: {
+				spaceMode: 3,
+				gamut: 'srgb',
+				N: 256,
+				slice: false,
+				planeMode: 'L',
+				off: 1,
+				az: 0,
+				el: 90,
+				eps: 0,
+				floor: true,
+				lines: true,
+				cutAbove: true,
+				cutBelow: false,
+				cylSlice: false,
+				cylRad: 0.2,
+				shell: 'none',
+				planeOutline: true,
+				cylinderOutline: true,
+				outlineDepthTest: true,
+				surfaceGridAlpha: 0.25,
+				solidAlpha: 0.75,
+				hideAids: false,
+				cvd: 'none',
+				cvdSev: 1,
+				openSteps: ['gamut', 'sources', 'expand'],
+				guideNote:
+					'Nine stops across a navy-to-sky-blue arc in Oklch, expanded to three lightness variants. The Expand row generator shifts every stop in Oklch L by ±0.20 (symmetric mode) — dark row, base row, light row.\n\nIncrease the row count or adjust the delta to widen the tonal spread. Try "ramp" direction instead of "sym" for a one-sided shift, or add a chroma axis to vary saturation across rows.',
+				guideNotePlacement: 'sidebar',
+				guideNoteDismissed: false,
+				theme: {
+					lists: [
+						[
+							{ srgbLin: [0.010, 0.030, 0.264] as [number, number, number] },
+							{ srgbLin: [0.051, 0.462, 0.912] as [number, number, number] }
+						]
+					],
+					splineConstraint: 'free',
+					splineSpace: 'oklch',
+					steps: 9,
+					mode: 'spline',
+					arcLong: false,
+					expandOn: true,
+					expandRows: {
+						count: 3,
+						hue: { delta: 0, dir: 'off' },
+						chroma: { delta: 0, dir: 'off' },
+						light: { delta: 0.20, dir: 'sym' }
+					},
+					wcagBg: 'white'
+				}
+			},
+			camera: {
+				yaw: 0.8,
+				pitch: 0.35,
+				dist: 1.8,
+				target: [0.06, 0.10, -0.06] as [number, number, number],
 				fov: 0.7853981633974483
 			}
 		})
@@ -261,6 +387,7 @@ export const EXAMPLE_STATES = [
 				planeMode: 'L',
 				off: 0.55,
 				cutAbove: true,
+				hideAids: false,
 				guideNote:
 					'The slice control cuts the 3D solid with a plane at fixed Oklab L. You are looking at a 2D cross-section of all colors at one lightness level.\n\nDrag the slice offset in Gamut & slice, or Alt-drag in the viewport to move the plane interactively.',
 				guideNotePlacement: 'overlay',
@@ -271,7 +398,7 @@ export const EXAMPLE_STATES = [
 	},
 	{
 		id: 'example:p3-shell',
-		name: 'Display P3 + shell',
+		name: 'Display P3 + sRGB shell',
 		source: 'example' as const,
 		snapshot: createExampleState({
 			explorer: {
@@ -279,6 +406,7 @@ export const EXAMPLE_STATES = [
 				shell: 'srgb',
 				cylSlice: true,
 				cylRad: 0.35,
+				hideAids: false,
 				guideNote:
 					'The volume shows Display P3; the wire shell outlines the sRGB boundary. Colors between the cage and the solid surface are P3-only — not reproducible in sRGB.\n\nOrbit until the wire cage is visible inside the solid. The cylindrical clip removes low-chroma colors to reveal the P3-exclusive region clearly.',
 				guideNotePlacement: 'overlay',
