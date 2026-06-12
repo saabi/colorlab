@@ -82,6 +82,7 @@
 </script>
 
 <div class="side-panel left-panel">
+	<div class="left-panel-scroll">
 	<!-- EXPLORER lane: data -> geometry -> view -> eye -->
 	<section class="lane-band" aria-label="Explorer pipeline">
 		<div class="lane-band-title">
@@ -248,6 +249,7 @@
 			</ControlGroup>
 		</div>
 	</section>
+	</div>
 
 	<!-- Renderer settings: policies/preferences, not pipeline stages -->
 	<div class="sidebar-footer">
