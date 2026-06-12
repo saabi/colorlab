@@ -1,3 +1,4 @@
+import { MOBILE_STARTUP_TESS } from '$lib/engine/mobile';
 import { listExampleDocuments } from './examples';
 import { applySnapshot, cloneSnapshot, defaultSnapshot, snapshotsEqual, toSnapshot } from './snapshot';
 import { track } from '$lib/analytics/umami';
@@ -69,8 +70,10 @@ export function createDocumentSession(getAppState: () => AppState) {
 	}
 
 	function applyDocument(doc: NonNullable<ReturnType<typeof resolveDocument>>, tracked = false) {
-		applySnapshot(getAppState(), doc.snapshot);
-		setBaseline(doc.snapshot);
+		const snapshot = cloneSnapshot(doc.snapshot);
+		if (useMobileDefaults) snapshot.explorer.N = MOBILE_STARTUP_TESS;
+		applySnapshot(getAppState(), snapshot);
+		setBaseline(snapshot);
 		activeId = doc.id;
 		activeName = doc.name;
 		activeSource = doc.source;
@@ -80,7 +83,7 @@ export function createDocumentSession(getAppState: () => AppState) {
 
 	function applyDefaults(mobile = useMobileDefaults) {
 		const snapshot = defaultSnapshot();
-		if (mobile) snapshot.explorer.N = 128;
+		if (mobile) snapshot.explorer.N = MOBILE_STARTUP_TESS;
 		applySnapshot(getAppState(), snapshot);
 		setBaseline(snapshot);
 		activeId = null;

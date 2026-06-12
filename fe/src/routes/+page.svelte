@@ -1,16 +1,21 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { browser } from '$app/environment';
 	import AppShell from '$lib/components/AppShell.svelte';
-	import { isMobileClient } from '$lib/engine/mobile';
+	import { isMobileLayout } from '$lib/engine/mobile';
 	import { createAppState } from '$lib/engine/state.svelte';
 	import { createDocumentSession } from '$lib/documents/session.svelte';
 
-	let appState = $state(createAppState());
+	const mobile = browser && isMobileLayout();
+	let appState = $state(createAppState({ mobile }));
 	const session = createDocumentSession(() => appState);
 
-	onMount(() => {
-		session.init({ mobile: isMobileClient() });
+	// Run before child Viewport mounts WebGL so tessellation is capped on mobile.
+	if (browser) {
+		session.init({ mobile });
+	}
 
+	onMount(() => {
 		const onBeforeUnload = (event: BeforeUnloadEvent) => {
 			if (session.isDirty) event.preventDefault();
 		};

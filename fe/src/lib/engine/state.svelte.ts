@@ -1,4 +1,5 @@
 import { createCamera } from './camera';
+import { MOBILE_STARTUP_TESS } from './mobile';
 
 import type { AppState, ExplorerState } from './types';
 import type { Camera } from './camera';
@@ -113,7 +114,7 @@ export function createAppState(options: { mobile?: boolean } = {}): AppState {
 		explorer: createExplorerDefaults(),
 		camera: createCamera()
 	};
-	if (options.mobile) state.explorer.N = 128;
+	if (options.mobile) state.explorer.N = MOBILE_STARTUP_TESS;
 	return state;
 }
 
