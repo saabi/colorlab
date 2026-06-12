@@ -291,7 +291,7 @@
 		color: var(--txt);
 		font-size: 0.846rem;
 		font-weight: 600;
-		line-height: 1.3;
+		line-height: var(--ui-line-height-tight);
 	}
 
 	.tutorial-close {
@@ -325,7 +325,7 @@
 		margin: 0;
 		color: var(--dim);
 		font-size: 0.769rem;
-		line-height: 1.35;
+		line-height: var(--ui-line-height-snug);
 	}
 
 	.tutorial-example-row {

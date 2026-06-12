@@ -137,7 +137,7 @@
 		box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
 		color: var(--txt);
 		font-size: max(14px, 1rem);
-		line-height: 1.45;
+		line-height: var(--ui-line-height);
 		backdrop-filter: blur(10px);
 	}
 

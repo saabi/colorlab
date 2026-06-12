@@ -175,7 +175,7 @@
 		margin: 0;
 		color: var(--txt);
 		font-size: 0.846rem;
-		line-height: 1.4;
+		line-height: var(--ui-line-height-note);
 	}
 
 	.panel-help-sources-label {
@@ -194,7 +194,7 @@
 		padding-left: 14px;
 		color: var(--dim);
 		font-size: 0.769rem;
-		line-height: 1.35;
+		line-height: var(--ui-line-height-snug);
 	}
 
 	.panel-help-sources a {

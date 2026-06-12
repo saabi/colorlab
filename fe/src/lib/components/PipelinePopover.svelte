@@ -155,13 +155,13 @@
 
 	.pipeline-step b {
 		font-size: 0.769rem;
-		line-height: 1.15;
+		line-height: var(--ui-line-height-dense);
 	}
 
 	.pipeline-step small {
 		color: var(--dim);
 		font-size: 0.692rem;
-		line-height: 1.2;
+		line-height: var(--ui-line-height-compact);
 	}
 
 	.pipeline-arrow {
@@ -176,6 +176,6 @@
 		margin: 0;
 		color: var(--dim);
 		font-size: 0.769rem;
-		line-height: 1.35;
+		line-height: var(--ui-line-height-snug);
 	}
 </style>

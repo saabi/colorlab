@@ -203,14 +203,14 @@
 		margin: 0 0 18px;
 		color: var(--dim);
 		font-size: 0.923rem;
-		line-height: 1.6;
+		line-height: var(--ui-line-height-loose);
 	}
 
 	.lane-picker-intro {
 		margin: 0 0 14px;
 		color: var(--dim);
 		font-size: 0.923rem;
-		line-height: 1.5;
+		line-height: var(--ui-line-height-relaxed);
 	}
 
 	.lane-picker-intro strong {
@@ -262,7 +262,7 @@
 
 	.lane-col-desc {
 		font-size: 0.846rem;
-		line-height: 1.45;
+		line-height: var(--ui-line-height);
 		color: var(--dim);
 	}
 

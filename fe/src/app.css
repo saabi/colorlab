@@ -9,7 +9,14 @@
 	--accent: #d6a93a;
 	--cool: #5fb8c4;
 	--warn: #e0533d;
-	--ui-line-height: 1.45;
+	--ui-line-height: var(--ui-line-height);
+	--ui-line-height-dense: calc(var(--ui-line-height) * 0.793);
+	--ui-line-height-compact: calc(var(--ui-line-height) * 0.828);
+	--ui-line-height-tight: calc(var(--ui-line-height) * 0.897);
+	--ui-line-height-snug: calc(var(--ui-line-height) * 0.931);
+	--ui-line-height-note: calc(var(--ui-line-height) * 0.966);
+	--ui-line-height-relaxed: calc(var(--ui-line-height) * 1.034);
+	--ui-line-height-loose: calc(var(--ui-line-height) * 1.103);
 	font-family:
 		"IBM Plex Sans",
 		Inter,
@@ -219,7 +226,7 @@ input[type="checkbox"] {
 	margin: 0 0 8px;
 	color: var(--dim);
 	font-size: 0.885rem;
-	line-height: 1.45;
+	line-height: var(--ui-line-height);
 }
 
 .app-info-panel p:last-child {
@@ -405,7 +412,7 @@ input[type="checkbox"] {
 .confirm-dialog p {
 	margin: 0 0 14px;
 	font-size: 1rem;
-	line-height: 1.45;
+	line-height: var(--ui-line-height);
 }
 
 .confirm-actions {
@@ -499,7 +506,7 @@ input[type="checkbox"] {
 	border-radius: 6px;
 	background: color-mix(in srgb, var(--panel) 92%, var(--accent) 8%);
 	font-size: 0.923rem;
-	line-height: 1.45;
+	line-height: var(--ui-line-height);
 }
 
 .guide-note--sidebar {
@@ -650,7 +657,7 @@ input[type="checkbox"] {
 	min-height: 120px;
 	font: inherit;
 	font-size: 0.923rem;
-	line-height: 1.45;
+	line-height: var(--ui-line-height);
 	border: 1px solid var(--line);
 	border-radius: 4px;
 	background: var(--bg);
@@ -795,7 +802,7 @@ input[type="checkbox"] {
 	margin: 0;
 	color: var(--dim);
 	font-size: 0.846rem;
-	line-height: 1.2;
+	line-height: var(--ui-line-height-compact);
 }
 
 .sidebar-footer-check {
@@ -1233,7 +1240,7 @@ input[type="checkbox"] {
 	color: var(--dim);
 	padding: 1px 5px;
 	font-size: 0.615rem;
-	line-height: 1.3;
+	line-height: var(--ui-line-height-tight);
 	text-transform: uppercase;
 	letter-spacing: 0.04em;
 }
@@ -1258,7 +1265,7 @@ input[type="checkbox"] {
 	padding: 0 5px;
 	font-size: 0.615rem;
 	font-weight: 600;
-	line-height: 1.4;
+	line-height: var(--ui-line-height-note);
 	white-space: nowrap;
 }
 
@@ -1409,7 +1416,7 @@ input[type="checkbox"] {
 	margin: 4px 0 0;
 	color: var(--faint);
 	font-size: 0.808rem;
-	line-height: 1.4;
+	line-height: var(--ui-line-height-note);
 }
 
 .swatch {
@@ -1800,7 +1807,7 @@ input[type="checkbox"] {
 	color: var(--dim);
 	font-size: 0.692rem;
 	font-weight: 700;
-	line-height: 1.35;
+	line-height: var(--ui-line-height-snug);
 	text-transform: uppercase;
 	letter-spacing: 0.08em;
 }
@@ -1808,7 +1815,7 @@ input[type="checkbox"] {
 .panel-help-stage-text {
 	color: var(--txt);
 	font-size: 0.846rem;
-	line-height: 1.4;
+	line-height: var(--ui-line-height-note);
 }
 
 @media (max-width: 520px) {
