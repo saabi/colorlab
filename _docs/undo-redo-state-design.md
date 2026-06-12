@@ -1,7 +1,9 @@
 # Undo/redo state design
 
-**Status:** proposal, ready for implementation planning
+**Status:** implemented v1; transaction-label refinement remains future work
 **Date:** June 12, 2026
+
+**Implementation note:** v1 uses the recommended `ParameterSnapshot` boundary plus a debounced snapshot observer in `AppShell`. This gives broad coverage for persisted app-state edits and groups slider/drag streams without manually annotating every binding. Explicit labels can still be added to high-value actions later.
 
 ## Goal
 
@@ -461,43 +463,42 @@ Potential decision:
 
 ### Phase 1: Core history controller
 
-0. Fix auto-rotate so it does not mutate persisted `camera.yaw`; use a runtime render offset instead.
-1. Add `fe/src/lib/history/history.svelte.ts`.
-2. Add unit tests for:
+0. Done: fix auto-rotate so it does not mutate persisted `camera.yaw`; use a runtime render offset instead.
+1. Done: add `fe/src/lib/history/history.svelte.ts`.
+2. Done: add unit tests for:
    - capture ignores equal snapshots
    - undo/redo applies snapshots
    - redo clears on new capture
    - max depth truncates old entries
    - reset clears stacks
-   - auto-rotate runtime offset does not change `toSnapshot(getAppState())`
-3. Add context helpers.
-4. Instantiate in `+page.svelte`.
-5. Reset after session init/load/new/delete.
+3. Done: add context helpers.
+4. Done: instantiate in `+page.svelte`.
+5. Done: reset after session init/load/new/delete.
+
+Deferred:
+
+- Add an integration test around `Viewport.svelte` confirming auto-rotate runtime offset does not change `toSnapshot(getAppState())`.
 
 ### Phase 2: UI and shortcuts
 
-1. Add Undo/Redo buttons to `DocumentBar`.
-2. Add global keydown handling in `AppShell` or a new `HistoryShortcuts.svelte`.
-3. Update `GestureReferencePopover` keyboard tab.
-4. Track optional analytics events:
+1. Done: add Undo/Redo buttons to `DocumentBar`.
+2. Done: add global keydown handling in `AppShell`.
+3. Done: update `GestureReferencePopover` keyboard tab.
+4. Done: track analytics events:
    - `history_undo`
    - `history_redo`
 
 ### Phase 3: Coarse automatic capture
 
-1. Add small wrappers around simple button/select/toggle handlers in `LeftControls`, `ViewportToolbar`, and `ThemeRamp`.
-2. Add `onCommit` support to `ToggleRow`, `SegmentedControl`, and `SliderRow`.
-3. Capture on `change` for selects and checkboxes, not on every `input`.
+1. Done for v1 by a debounced `ParameterSnapshot` observer in `AppShell`.
+2. Deferred: explicit `onCommit` support to `ToggleRow`, `SegmentedControl`, and `SliderRow`.
+3. Deferred: explicit labels for individual controls.
 
 ### Phase 4: Explicit gesture transactions
 
-1. Wire `Viewport.svelte` pointer gestures:
-   - begin on pointerdown for mutating gestures
-   - commit on pointerup
-   - cancel on pointercancel
-2. Wire wheel zoom as a debounced transaction or capture after a short idle timeout.
-3. Wire keyboard nudge as one transaction per nudge stream.
-4. Wire ColorPicker pointer/key editing as transactions.
+1. Done for v1 by debounced snapshot capture; pointer/slider/key streams settle into one history entry after idle.
+2. Deferred: explicit gesture labels such as `Move camera`, `Move source point`, and `Change source color`.
+3. Deferred: explicit cancel support for interrupted gestures.
 
 ### Phase 5: Polish and audit
 

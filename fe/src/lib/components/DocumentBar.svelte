@@ -5,11 +5,13 @@
 	import { UNTITLED_SELECT_ID } from '$lib/documents/session.svelte';
 
 	import type { DocumentSession } from '$lib/documents/session.svelte';
+	import type { HistoryController } from '$lib/history/history.svelte';
 
 	let {
 		session,
+		history,
 		onTutorialClick
-	} = $props<{ session: DocumentSession; onTutorialClick?: () => void }>();
+	} = $props<{ session: DocumentSession; history: HistoryController; onTutorialClick?: () => void }>();
 
 	let selectValue = $state(UNTITLED_SELECT_ID);
 	let moreOpen = $state(false);
@@ -112,6 +114,22 @@
 	</div>
 
 	<div class="document-actions">
+		<button
+			type="button"
+			class="document-btn document-btn-icon"
+			disabled={!history.canUndo}
+			aria-label="Undo"
+			title={history.undoLabel ? `Undo ${history.undoLabel}` : 'Undo'}
+			onclick={() => history.undo()}
+		>↶</button>
+		<button
+			type="button"
+			class="document-btn document-btn-icon"
+			disabled={!history.canRedo}
+			aria-label="Redo"
+			title={history.redoLabel ? `Redo ${history.redoLabel}` : 'Redo'}
+			onclick={() => history.redo()}
+		>↷</button>
 		<button type="button" class="document-btn" onclick={onNew}>New</button>
 		<button type="button" class="document-btn" data-tutorial="docbar-save" disabled={!session.canSave} onclick={onSave}>Save</button>
 

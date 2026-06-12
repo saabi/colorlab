@@ -289,6 +289,16 @@ input[type="checkbox"] {
 	white-space: nowrap;
 }
 
+.document-btn-icon {
+	display: grid;
+	place-items: center;
+	width: 28px;
+	min-width: 28px;
+	padding: 3px;
+	font-size: 1rem;
+	line-height: 1;
+}
+
 .document-btn:disabled {
 	opacity: 0.45;
 	cursor: default;

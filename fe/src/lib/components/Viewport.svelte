@@ -68,6 +68,8 @@
 	let lastAutoPerformanceStep = 0;
 	let autoRotateFrame = 0;
 	let autoRotatePrev = 0;
+	let autoRotateYawOffset = 0;
+	let lastCameraSignature = '';
 	let reducedMotion = false;
 
 	let morph = $state<MorphState | null>(null);
@@ -177,9 +179,32 @@
 	function draw() {
 		if (!renderer) return;
 		const t0 = performance.now();
-		renderer.draw({ state: explorer, matrices, shellMatrices, camera, morph: morph ?? undefined });
+		renderer.draw({ state: explorer, matrices, shellMatrices, camera: effectiveCamera(), morph: morph ?? undefined });
 		recordDrawPerformance(t0, performance.now() - t0);
 		scheduleFrameCadenceSample();
+	}
+
+	function effectiveCamera(): Camera {
+		if (autoRotateYawOffset === 0) return camera;
+		return {
+			...camera,
+			yaw: camera.yaw + autoRotateYawOffset,
+			target: [camera.target[0], camera.target[1], camera.target[2]]
+		};
+	}
+
+	function cameraSignature() {
+		return `${camera.yaw}|${camera.pitch}|${camera.dist}|${camera.target.join(',')}|${camera.fov}`;
+	}
+
+	function clearAutoRotateOffset() {
+		autoRotateYawOffset = 0;
+	}
+
+	function bakeAutoRotateOffset() {
+		if (autoRotateYawOffset === 0) return;
+		camera.yaw += autoRotateYawOffset;
+		autoRotateYawOffset = 0;
 	}
 
 	function cancelMorph() {
@@ -227,7 +252,7 @@
 		const dt = autoRotatePrev > 0 ? (ts - autoRotatePrev) / 1000 : 0;
 		autoRotatePrev = ts;
 		if (dt <= 0 || dt > 0.25) return;
-		camera.yaw -= dt * AUTO_ROTATE_RAD_PER_SEC;
+		autoRotateYawOffset -= dt * AUTO_ROTATE_RAD_PER_SEC;
 		draw();
 	}
 
@@ -252,6 +277,7 @@
 	}
 
 	function resetCamera() {
+		clearAutoRotateOffset();
 		resetCameraState(camera);
 		gestureStatus = 'Camera reset';
 		draw();
@@ -281,6 +307,7 @@
 	function onTouchStart(event: TouchEvent) {
 		if (event.touches.length !== 2) return;
 		event.preventDefault();
+		bakeAutoRotateOffset();
 		pinching = true;
 		pinchSpan = touchSpan(event.touches);
 		const center = touchCenter(event.touches);
@@ -315,7 +342,7 @@
 
 	function inspectAt(clientX: number, clientY: number) {
 		const rect = canvas.getBoundingClientRect();
-		const hit = pick(clientX - rect.left, clientY - rect.top, rect.width, rect.height, explorer, matrices, camera);
+		const hit = pick(clientX - rect.left, clientY - rect.top, rect.width, rect.height, explorer, matrices, effectiveCamera());
 		explorer.hover = hit ? { ...hit, chain: chain(hit.rgbLin, explorer, matrices) } : null;
 		draw();
 		return hit;
@@ -337,6 +364,7 @@
 	function getControlPointAtScreen(clientX: number, clientY: number, pointerType: string): PointHit | null {
 		const rect = canvas.getBoundingClientRect();
 		const radius = pointerType === 'touch' ? 24 : 12;
+		const viewCamera = effectiveCamera();
 		let best: PointHit | null = null;
 		let bestDist = radius;
 		const activeList = explorer.theme.activeList;
@@ -344,7 +372,7 @@
 		explorer.theme.lists.forEach((list: ThemeAnchor[], li: number) => {
 			list.forEach((cp: ThemeAnchor, pi: number) => {
 				const world = anchorWorld(cp, explorer, matrices);
-				const screen = projectToScreen(world, camera, rect.width, rect.height);
+				const screen = projectToScreen(world, viewCamera, rect.width, rect.height);
 				if (!screen) return;
 				const dist = Math.hypot(clientX - rect.left - screen[0], clientY - rect.top - screen[1]);
 				if (li === activeList && pi === selected && dist <= radius) {
@@ -369,7 +397,7 @@
 
 	function addControlPointAt(clientX: number, clientY: number) {
 		const rect = canvas.getBoundingClientRect();
-		const hit = pick(clientX - rect.left, clientY - rect.top, rect.width, rect.height, explorer, matrices, camera);
+		const hit = pick(clientX - rect.left, clientY - rect.top, rect.width, rect.height, explorer, matrices, effectiveCamera());
 		if (!hit) return false;
 		const srgbLin = m3.mulV(matrices.toSrgbLin.toSrgb, hit.rgbLin) as [number, number, number];
 		const next = [...themePoints, { srgbLin }];
@@ -400,10 +428,10 @@
 
 		const rect = canvas.getBoundingClientRect();
 		const world = anchorWorld(cp, explorer, matrices);
-		const screen = projectToScreen(world, camera, rect.width, rect.height);
+		const screen = projectToScreen(world, effectiveCamera(), rect.width, rect.height);
 		if (!screen) return false;
 
-		const hit = pick(screen[0] + dx, screen[1] + dy, rect.width, rect.height, explorer, matrices, camera);
+		const hit = pick(screen[0] + dx, screen[1] + dy, rect.width, rect.height, explorer, matrices, effectiveCamera());
 		if (!hit) return false;
 
 		themePoints[index] = {
@@ -452,6 +480,7 @@
 		capturedPointerId = event.pointerId;
 		canvas.setPointerCapture(event.pointerId);
 		gesture = chooseGesture(event);
+		if (gesture.kind === 'orbit' || gesture.kind === 'pan') bakeAutoRotateOffset();
 		if (gesture.kind === 'drag-control-point') {
 			focusPoint(gesture.point);
 			draw();
@@ -513,7 +542,7 @@
 					hoverPickPending = false;
 					if (dragging || pinching) return;
 					const rect = canvas.getBoundingClientRect();
-					const hit = pick(cx - rect.left, cy - rect.top, rect.width, rect.height, explorer, matrices, camera);
+					const hit = pick(cx - rect.left, cy - rect.top, rect.width, rect.height, explorer, matrices, effectiveCamera());
 					hoverSolid = !!hit && hoverPoint === null;
 					explorer.hover = hit ? { ...hit, chain: chain(hit.rgbLin, explorer, matrices) } : null;
 					draw();
@@ -531,7 +560,7 @@
 			if (gesture.kind === 'drag-control-point') {
 				if (explorer.theme.selectedPoint !== null) {
 					const rect = canvas.getBoundingClientRect();
-					const hit = pick(event.clientX - rect.left, event.clientY - rect.top, rect.width, rect.height, explorer, matrices, camera);
+					const hit = pick(event.clientX - rect.left, event.clientY - rect.top, rect.width, rect.height, explorer, matrices, effectiveCamera());
 					if (hit) {
 						themePoints[explorer.theme.selectedPoint] = {
 							srgbLin: m3.mulV(matrices.toSrgbLin.toSrgb, hit.rgbLin) as [number, number, number]
@@ -579,6 +608,7 @@
 
 	function onWheel(event: WheelEvent) {
 		event.preventDefault();
+		bakeAutoRotateOffset();
 		if (event.ctrlKey) {
 			zoomCamera(1 - event.deltaY * 0.01);
 		} else {
@@ -588,6 +618,7 @@
 
 	function onDoubleClick(event: MouseEvent) {
 		const hit = inspectAt(event.clientX, event.clientY);
+		bakeAutoRotateOffset();
 		if (hit) {
 			camera.target = hit.world;
 			gestureStatus = 'Target centered';
@@ -817,12 +848,12 @@
 	});
 
 	$effect(() => {
-		camera.yaw;
-		camera.pitch;
-		camera.dist;
-		camera.target;
-		camera.fov;
-		draw();
+		const sig = cameraSignature();
+		untrack(() => {
+			if (lastCameraSignature && sig !== lastCameraSignature) clearAutoRotateOffset();
+			lastCameraSignature = sig;
+			draw();
+		});
 	});
 </script>
 

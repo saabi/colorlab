@@ -66,7 +66,10 @@
 			title: 'View',
 			items: [
 				['R', 'reset camera'],
-				['Space (hold)', 'pan mode with drag']
+				['Space (hold)', 'pan mode with drag'],
+				['Ctrl / Cmd + Z', 'undo'],
+				['Ctrl / Cmd + Shift + Z', 'redo'],
+				['Ctrl + Y', 'redo']
 			]
 		},
 		{

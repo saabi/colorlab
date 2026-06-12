@@ -16,7 +16,10 @@ import type { DocumentSource, ParameterSnapshot, StoredDocument } from './types'
 
 export const UNTITLED_SELECT_ID = '__untitled__';
 
-export function createDocumentSession(getAppState: () => AppState) {
+export function createDocumentSession(
+	getAppState: () => AppState,
+	options: { onAppliedSnapshot?: (snapshot: ParameterSnapshot) => void } = {}
+) {
 	let activeId = $state<string | null>(null);
 	let activeName = $state('Untitled');
 	let activeSource = $state<DocumentSource>('user');
@@ -74,6 +77,7 @@ export function createDocumentSession(getAppState: () => AppState) {
 		if (useMobileDefaults) snapshot.explorer.N = MOBILE_STARTUP_TESS;
 		applySnapshot(getAppState(), snapshot);
 		setBaseline(snapshot);
+		options.onAppliedSnapshot?.(snapshot);
 		activeId = doc.id;
 		activeName = doc.name;
 		activeSource = doc.source;
@@ -86,6 +90,7 @@ export function createDocumentSession(getAppState: () => AppState) {
 		if (mobile) snapshot.explorer.N = MOBILE_STARTUP_TESS;
 		applySnapshot(getAppState(), snapshot);
 		setBaseline(snapshot);
+		options.onAppliedSnapshot?.(snapshot);
 		activeId = null;
 		activeName = 'Untitled';
 		activeSource = 'user';

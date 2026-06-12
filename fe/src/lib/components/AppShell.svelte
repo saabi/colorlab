@@ -10,15 +10,18 @@
 	import TutorialPopover from './TutorialPopover.svelte';
 	import { rebuildMatrices } from '$lib/renderer/uniforms';
 	import { createTutorialState } from '$lib/engine/tutorial.svelte';
+	import { toSnapshot } from '$lib/documents/snapshot';
 
 	import type { AppState } from '$lib/engine/types';
 	import type { DocumentSession } from '$lib/documents/session.svelte';
+	import type { HistoryController } from '$lib/history/history.svelte';
 	import type { TouchTool } from './Viewport.svelte';
 
 	let {
 		state: appState = $bindable(),
-		session
-	} = $props<{ state: AppState; session: DocumentSession }>();
+		session,
+		history
+	} = $props<{ state: AppState; session: DocumentSession; history: HistoryController }>();
 	const explorer = $derived(appState.explorer);
 	const camera = $derived(appState.camera);
 	const matrices = $derived(rebuildMatrices(explorer.gamut));
@@ -35,6 +38,11 @@
 		}
 	});
 
+	$effect(() => {
+		const snapshot = toSnapshot(appState);
+		if (!history.matchesCurrent(snapshot)) history.scheduleCapture('Edit parameters');
+	});
+
 	/** Tutorial examples need shell, slice outlines, and ramp markers visible. */
 	async function loadTutorialExample(id: string) {
 		const ok = await session.loadDocument(id);
@@ -42,7 +50,35 @@
 		appState.explorer.hideAids = false;
 		appState.explorer.autoRotate = false;
 	}
+
+	function isEditableTarget(target: EventTarget | null) {
+		const el = target as HTMLElement | null;
+		return !!el?.closest('input, select, textarea, [contenteditable="true"]');
+	}
+
+	function onWindowKeydown(event: KeyboardEvent) {
+		if (isEditableTarget(event.target)) return;
+		const mod = event.ctrlKey || event.metaKey;
+		if (!mod || event.altKey) return;
+		const key = event.key.toLowerCase();
+		if (key === 'z' && event.shiftKey) {
+			event.preventDefault();
+			history.redo();
+			return;
+		}
+		if (key === 'z') {
+			event.preventDefault();
+			history.undo();
+			return;
+		}
+		if (key === 'y') {
+			event.preventDefault();
+			history.redo();
+		}
+	}
 </script>
+
+<svelte:window onkeydown={onWindowKeydown} />
 
 <GuideNoteEditorHost explorer={appState.explorer}>
 	<div class:drawer-open={drawerOpen} class="app-shell">
@@ -63,7 +99,7 @@
 			</button>
 			<h1>COLOR LAB</h1>
 			<span class="sub">Gamut Explorer &amp; Ramp Generator</span>
-			<DocumentBar {session} onTutorialClick={() => (lanePickerOpen = true)} />
+			<DocumentBar {session} {history} onTutorialClick={() => (lanePickerOpen = true)} />
 			<A11yPanel />
 			<AppInfo />
 			<span class="badge">WebGL2</span>
