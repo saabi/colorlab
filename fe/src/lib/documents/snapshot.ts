@@ -46,6 +46,7 @@ export function toPersistedExplorer(explorer: ExplorerState): PersistedExplorer 
 		cylSlice: explorer.cylSlice,
 		cylRad: explorer.cylRad,
 		shell: explorer.shell,
+		chromaticityOverlay: explorer.chromaticityOverlay,
 		planeOutline: explorer.planeOutline,
 		cylinderOutline: explorer.cylinderOutline,
 		outlineDepthTest: explorer.outlineDepthTest,

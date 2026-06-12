@@ -31,6 +31,7 @@ function createExplorerDefaults(): ExplorerState {
 		cylSlice: false,
 		cylRad: 0.2,
 		shell: 'none',
+		chromaticityOverlay: 'off',
 		planeOutline: true,
 		cylinderOutline: true,
 		outlineDepthTest: true,

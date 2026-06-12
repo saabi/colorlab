@@ -3,6 +3,7 @@ import { createAppState } from '$lib/engine/state.svelte';
 
 import type {
 	AxisSpreadConfig,
+	ChromaticityOverlayKey,
 	CvdMode,
 	GamutKey,
 	PersistedExplorer,
@@ -27,6 +28,7 @@ const GAMUTS: readonly GamutKey[] = ['srgb', 'p3', 'rec2020', 'ntsc', 'ebu', 'sm
 const TESS: readonly PersistedExplorer['N'][] = [64, 128, 192, 256];
 const PLANE_MODES: readonly PlaneMode[] = ['L', 'H', 'C'];
 const SHELLS: readonly ShellKey[] = ['none', 'srgb', 'p3', 'rec2020', 'ntsc', 'cie'];
+const CHROMA_OVERLAYS: readonly ChromaticityOverlayKey[] = ['off', 'spectral-locus', 'spectral-surface'];
 const CVD_MODES: readonly CvdMode[] = ['none', 'protan', 'deutan', 'tritan'];
 const THEME_MODES: readonly ThemeMode[] = ['linear', 'spline'];
 const PLACE_POLICIES: readonly PlacePolicy[] = ['even', 'uniform', 'tones', 'contrast'];
@@ -203,6 +205,7 @@ function coerceExplorer(raw: unknown, defaults: PersistedExplorer): PersistedExp
 		cylSlice: typeof explorer.cylSlice === 'boolean' ? explorer.cylSlice : defaults.cylSlice,
 		cylRad: finiteNumber(explorer.cylRad, defaults.cylRad, 'cylRad'),
 		shell: enumOf(explorer.shell, SHELLS, defaults.shell, 'shell'),
+		chromaticityOverlay: enumOf(explorer.chromaticityOverlay, CHROMA_OVERLAYS, defaults.chromaticityOverlay, 'chromaticityOverlay'),
 		planeOutline: typeof explorer.planeOutline === 'boolean' ? explorer.planeOutline : defaults.planeOutline,
 		cylinderOutline:
 			typeof explorer.cylinderOutline === 'boolean' ? explorer.cylinderOutline : defaults.cylinderOutline,
@@ -259,6 +262,7 @@ export function coerceSnapshot(raw: unknown): ParameterSnapshot | null {
 			cylSlice: factory.explorer.cylSlice,
 			cylRad: factory.explorer.cylRad,
 			shell: factory.explorer.shell,
+			chromaticityOverlay: factory.explorer.chromaticityOverlay,
 			planeOutline: factory.explorer.planeOutline,
 			cylinderOutline: factory.explorer.cylinderOutline,
 			outlineDepthTest: factory.explorer.outlineDepthTest,

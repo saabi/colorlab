@@ -635,6 +635,7 @@
 			const ro = new ResizeObserver(draw);
 			ro.observe(canvas);
 			renderer.rebuildBoundary(explorer, matrices);
+			renderer.rebuildSpectralOverlay(explorer, matrices);
 			draw();
 			startAutoRotateLoop();
 			return () => {
@@ -688,6 +689,15 @@
 			explorer.hover = null;
 			buildRamp(explorer, matrices);
 			renderer?.rebuildBoundary(explorer, matrices);
+			renderer?.rebuildSpectralOverlay(explorer, matrices);
+			draw();
+		});
+	});
+
+	$effect(() => {
+		explorer.chromaticityOverlay;
+		untrack(() => {
+			renderer?.rebuildSpectralOverlay(explorer, matrices);
 			draw();
 		});
 	});
@@ -738,6 +748,7 @@
 		explorer.cvdSev;
 		untrack(() => {
 			if (explorer.hover) explorer.hover.chain = chain(explorer.hover.rgbLin, explorer, matrices);
+			renderer?.rebuildSpectralOverlay(explorer, matrices);
 			draw();
 		});
 	});

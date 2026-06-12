@@ -113,6 +113,15 @@
 					<p class="note">Overlays another gamut as a ghost shell for comparison.</p>
 				</div>
 				<div class="separator">
+					<label class="row" for="chroma-overlay-select"><span>Chromaticity overlay</span></label>
+					<select id="chroma-overlay-select" bind:value={explorer.chromaticityOverlay}>
+						<option value="off">None</option>
+						<option value="spectral-locus">Spectral locus rim</option>
+						<option value="spectral-surface">Spectral locus surface</option>
+					</select>
+					<p class="note">Spectral locus at XYZ chromaticity (X+Y+Z=1). Surface sweeps from black to the rim by stimulus magnitude.</p>
+				</div>
+				<div class="separator">
 					<SliderRow label="Solid opacity" bind:value={explorer.solidAlpha} min={0.05} max={1} step={0.05} format={(value) => value.toFixed(2)} />
 					<p class="note">Lower it to see ramp points, curves, and stops through the solid.</p>
 				</div>

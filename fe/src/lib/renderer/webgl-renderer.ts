@@ -1,6 +1,6 @@
 import { cross3, dot3, m3, m3gl, norm3, type Mat3, type Vec3 } from '$lib/color/math';
 import { CVD, simulateCvdSrgb } from '$lib/color/cvd';
-import { CUBE_ROT, CUBE_ROTi, LMS2RGB, RGB2LMS, REC709_Y, lsrgb2oklab, xyz2lab } from '$lib/color/pipeline';
+import { CUBE_ROT, CUBE_ROTi, LMS2RGB, RGB2LMS, REC709_Y, lsrgb2oklab, waveToXyz, xyz2lab } from '$lib/color/pipeline';
 import { TRC } from '$lib/color/transfer';
 import { planeND } from '$lib/engine/plane';
 import { camEye, lookAt, persp, type Camera } from '$lib/engine/camera';
@@ -37,7 +37,18 @@ export class WebGlRenderer {
 	private splineProgram: WebGLProgram;
 	private splineVao: WebGLVertexArrayObject;
 	private splineBuffer: WebGLBuffer;
+	private spectralVao: WebGLVertexArrayObject;
+	private spectralBuffer: WebGLBuffer;
+	private spectralIndexBuffer: WebGLBuffer;
+	private spectralSurfaceIndexCount = 0;
+	private spectralRimOffset = 0;
+	private spectralRimCount = 0;
+	private spectralPurplesOffset = 0;
 	private dpr = 1;
+
+	private static readonly SPECTRAL_NM_MIN = 402;
+	private static readonly SPECTRAL_NM_MAX = 682;
+	private static readonly SPECTRAL_NM_STEP = 2;
 
 	constructor(private canvas: HTMLCanvasElement) {
 		const gl = canvas.getContext('webgl2', { antialias: true });
@@ -51,6 +62,10 @@ export class WebGlRenderer {
 		const spline = this.createSplineVao();
 		this.splineVao = spline.vao;
 		this.splineBuffer = spline.buffer;
+		const spectral = this.createSpectralVao();
+		this.spectralVao = spectral.vao;
+		this.spectralBuffer = spectral.buffer;
+		this.spectralIndexBuffer = spectral.indexBuffer;
 		const solid = this.createSolidVao();
 		this.solidVao = solid.vao;
 		this.solidBuffer = solid.buffer;
@@ -169,6 +184,29 @@ export class WebGlRenderer {
 			gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 			gl.disable(gl.BLEND);
 			gl.depthMask(true);
+		}
+
+		if (this.spectralRimCount > 0 && !input.state.hideAids && input.state.chromaticityOverlay !== 'off') {
+			gl.useProgram(this.splineProgram);
+			gl.bindVertexArray(this.spectralVao);
+			gl.uniformMatrix4fv(this.U(this.splineProgram, 'uProj'), false, proj);
+			gl.uniformMatrix4fv(this.U(this.splineProgram, 'uView'), false, view);
+			gl.enable(gl.BLEND);
+			gl.blendFunc(gl.ONE, gl.ONE);
+			if (this.spectralSurfaceIndexCount > 0) {
+				gl.enable(gl.DEPTH_TEST);
+				gl.depthMask(false);
+				gl.drawElements(gl.TRIANGLES, this.spectralSurfaceIndexCount, gl.UNSIGNED_SHORT, 0);
+				gl.depthMask(true);
+			}
+			gl.disable(gl.DEPTH_TEST);
+			gl.depthMask(false);
+			gl.drawArrays(gl.LINE_STRIP, this.spectralRimOffset, this.spectralRimCount);
+			gl.drawArrays(gl.LINES, this.spectralPurplesOffset, 2);
+			gl.depthMask(true);
+			gl.enable(gl.DEPTH_TEST);
+			gl.disable(gl.BLEND);
+			gl.bindVertexArray(null);
 		}
 
 		// With a translucent solid its pre-pass depth would occlude markers/curves
@@ -499,6 +537,115 @@ export class WebGlRenderer {
 		return [ok[1] * 2.2, ok[0] - 0.5, ok[2] * 2.2];
 	}
 
+	rebuildSpectralOverlay(state: ExplorerState, matrices: DerivedMatrices) {
+		this.spectralSurfaceIndexCount = 0;
+		this.spectralRimOffset = 0;
+		this.spectralRimCount = 0;
+		this.spectralPurplesOffset = 0;
+		if (state.chromaticityOverlay === 'off') return;
+
+		const { gl } = this;
+		const { SPECTRAL_NM_MIN: NM_MIN, SPECTRAL_NM_MAX: NM_MAX, SPECTRAL_NM_STEP: NM_STEP } = WebGlRenderer;
+		const NW = Math.floor((NM_MAX - NM_MIN) / NM_STEP) + 1;
+		const withSurface = state.chromaticityOverlay === 'spectral-surface';
+		const NV = withSurface ? 13 : 1;
+		const SURFACE_DIM = 0.20;
+		const RIM_BRIGHT = 0.75;
+
+		// Precompute per-wavelength chromaticity XYZ and display (sRGB gamma) color.
+		const chromaXyzArr: Vec3[] = [];
+		const displayGammaArr: Vec3[] = [];
+		for (let i = 0; i < NW; i++) {
+			const nm = NM_MIN + i * NM_STEP;
+			const xyz = waveToXyz(nm) as Vec3;
+			const S = xyz[0] + xyz[1] + xyz[2];
+			const cx: Vec3 = S > 1e-7 ? [xyz[0] / S, xyz[1] / S, xyz[2] / S] : [0, 0, 0];
+			chromaXyzArr.push(cx);
+			// XYZ→sRGB-linear is gamut-independent: toSrgbLin.toSrgb * xyz2rgb = inv(sRGB_M).
+			const srgbLin = m3.mulV(matrices.toSrgbLin.toSrgb, m3.mulV(matrices.xyz2rgb, cx));
+			const cvd = simulateCvdSrgb(
+				[Math.max(0, srgbLin[0]), Math.max(0, srgbLin[1]), Math.max(0, srgbLin[2])],
+				state.cvd, state.cvdSev
+			);
+			displayGammaArr.push([
+				TRC.srgb.enc(Math.min(cvd[0], 1)),
+				TRC.srgb.enc(Math.min(cvd[1], 1)),
+				TRC.srgb.enc(Math.min(cvd[2], 1))
+			]);
+		}
+
+		const totalVerts = NW * NV + 2;
+		const verts = new Float32Array(totalVerts * 6);
+
+		for (let j = 0; j < NV; j++) {
+			const v = NV === 1 ? 1.0 : j / (NV - 1);
+			const dim = NV === 1 ? RIM_BRIGHT : v * SURFACE_DIM;
+			for (let i = 0; i < NW; i++) {
+				const cx = chromaXyzArr[i];
+				const scaledXyz: Vec3 = [cx[0] * v, cx[1] * v, cx[2] * v];
+				const w = this.xyzToWorld(scaledXyz, state, matrices);
+				const g = displayGammaArr[i];
+				const o = (j * NW + i) * 6;
+				verts[o] = w[0]; verts[o + 1] = w[1]; verts[o + 2] = w[2];
+				verts[o + 3] = g[0] * dim; verts[o + 4] = g[1] * dim; verts[o + 5] = g[2] * dim;
+			}
+		}
+
+		// Line of purples: 2 extra verts connecting short- and long-wavelength endpoints.
+		const rimRow = (NV - 1) * NW;
+		const PD = NV === 1 ? RIM_BRIGHT * 0.8 : SURFACE_DIM;
+		for (let k = 0; k < 2; k++) {
+			const src = (k === 0 ? rimRow : rimRow + NW - 1) * 6;
+			const dst = (NW * NV + k) * 6;
+			verts[dst] = verts[src]; verts[dst + 1] = verts[src + 1]; verts[dst + 2] = verts[src + 2];
+			// Muted magenta-gray for the line of purples (not a spectral colour).
+			verts[dst + 3] = 0.55 * PD; verts[dst + 4] = 0.32 * PD; verts[dst + 5] = 0.55 * PD;
+		}
+
+		this.spectralRimOffset = rimRow;
+		this.spectralRimCount = NW;
+		this.spectralPurplesOffset = NW * NV;
+
+		const idxCount = withSurface ? (NW - 1) * (NV - 1) * 6 : 0;
+		const indices = new Uint16Array(idxCount);
+		if (withSurface) {
+			let p = 0;
+			for (let j = 0; j < NV - 1; j++) {
+				for (let i = 0; i < NW - 1; i++) {
+					const tl = j * NW + i, tr = tl + 1, bl = (j + 1) * NW + i, br = bl + 1;
+					indices[p++] = tl; indices[p++] = tr; indices[p++] = bl;
+					indices[p++] = tr; indices[p++] = br; indices[p++] = bl;
+				}
+			}
+			this.spectralSurfaceIndexCount = idxCount;
+		}
+
+		gl.bindVertexArray(this.spectralVao);
+		gl.bindBuffer(gl.ARRAY_BUFFER, this.spectralBuffer);
+		gl.bufferData(gl.ARRAY_BUFFER, verts, gl.DYNAMIC_DRAW);
+		gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.spectralIndexBuffer);
+		gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, indices, gl.DYNAMIC_DRAW);
+		gl.bindVertexArray(null);
+	}
+
+	private xyzToWorld(xyz: Vec3, state: ExplorerState, matrices: DerivedMatrices): Vec3 {
+		if (state.spaceMode === 1) return [xyz[0] - 0.48, xyz[1] - 0.5, xyz[2] - 0.54];
+		if (state.spaceMode === 2) {
+			const lab = xyz2lab(xyz);
+			return [lab[1] * 0.01, (lab[0] - 50) * 0.01, lab[2] * 0.01];
+		}
+		const rgb = m3.mulV(matrices.xyz2rgb, xyz);
+		if (state.spaceMode === 0) return m3.mulV(CUBE_ROT, [rgb[0] - 0.5, rgb[1] - 0.5, rgb[2] - 0.5]);
+		if (state.spaceMode === 5) {
+			const p = m3.mulV(CUBE_ROT, [rgb[0] - 0.5, rgb[1] - 0.5, rgb[2] - 0.5]);
+			return [p[0], REC709_Y[0] * rgb[0] + REC709_Y[1] * rgb[1] + REC709_Y[2] * rgb[2] - 0.5, p[2]];
+		}
+		// spaceMode 3 (Oklab): XYZ → sRGB-linear → Oklab.
+		const srgbLin = m3.mulV(matrices.toSrgbLin.toSrgb, rgb);
+		const ok = lsrgb2oklab(srgbLin);
+		return [ok[1] * 2.2, ok[0] - 0.5, ok[2] * 2.2];
+	}
+
 	dispose() {
 		const { gl } = this;
 		gl.deleteProgram(this.solidProgram);
@@ -510,10 +657,13 @@ export class WebGlRenderer {
 		gl.deleteVertexArray(this.floorVao);
 		gl.deleteVertexArray(this.lineVao);
 		gl.deleteVertexArray(this.splineVao);
+		gl.deleteVertexArray(this.spectralVao);
 		gl.deleteBuffer(this.solidBuffer);
 		gl.deleteBuffer(this.floorBuffer);
 		gl.deleteBuffer(this.lineBuffer);
 		gl.deleteBuffer(this.splineBuffer);
+		gl.deleteBuffer(this.spectralBuffer);
+		gl.deleteBuffer(this.spectralIndexBuffer);
 	}
 
 	private createSolidVao() {
@@ -559,6 +709,25 @@ export class WebGlRenderer {
 		gl.vertexAttribPointer(0, 3, gl.FLOAT, false, 0, 0);
 		gl.bindVertexArray(null);
 		return { vao, buffer };
+	}
+
+	private createSpectralVao() {
+		const { gl } = this;
+		const vao = gl.createVertexArray();
+		const buffer = gl.createBuffer();
+		const indexBuffer = gl.createBuffer();
+		if (!vao || !buffer || !indexBuffer) throw new Error('Unable to create WebGL spectral buffers');
+		gl.bindVertexArray(vao);
+		gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+		gl.bufferData(gl.ARRAY_BUFFER, 4, gl.DYNAMIC_DRAW);
+		gl.enableVertexAttribArray(0);
+		gl.vertexAttribPointer(0, 3, gl.FLOAT, false, 24, 0);
+		gl.enableVertexAttribArray(1);
+		gl.vertexAttribPointer(1, 3, gl.FLOAT, false, 24, 12);
+		gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
+		gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, 2, gl.DYNAMIC_DRAW);
+		gl.bindVertexArray(null);
+		return { vao, buffer, indexBuffer };
 	}
 
 	private createSplineVao() {

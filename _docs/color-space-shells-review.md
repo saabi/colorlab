@@ -814,29 +814,34 @@ starting implementation.*
   surface point that is OOG in the active gamut raises anchor-storage questions that
   need their own design pass.
 
-### Issue 1 — Oklab/CIELAB world: `X + Y + Z = 1` produces a skewed surface rim
+### Issue 1 — Corrected: `X + Y + Z = 1` rim spans the solid's full lightness range naturally
 
-The spectral locus at `X + Y + Z = 1` chromaticity plane has wildly non-constant
-Oklab L. Green wavelengths (~555 nm) land near L ≈ 0.55; blue wavelengths (~420 nm)
-land near L ≈ 0.08. The intensity surface (v = 0 → 1) sweeps from black to this
-uneven rim, so the surface peaks at completely different heights per wavelength in
-Oklab/CIELAB world. Users are likely to misread this as a perceptual gradient rather
-than a stimulus-magnitude surface.
+**Initial review estimates were wrong.** Recomputing through the actual app pipeline
+(`waveToXyz → xyz2rgb → toSrgbLin.toSrgb → lsrgb2oklab`):
 
-The document lists this as a "con" of Option A but leaves it unresolved.
+| wavelength | stimulus | Oklab L |
+|---|---|---|
+| ~555 nm | peak green | ≈ 0.85 (near sRGB green L≈0.87, top of solid) |
+| ~600 nm | orange-red | ≈ 0.74 |
+| ~700 nm | deep red | ≈ 0.55 |
+| ~450 nm | blue | ≈ 0.36 (mid-range, comparable to a dark blue) |
+| ~380 nm | UV boundary | ≈ 0.05 (expected — human eyes barely respond here) |
 
-**Resolution before shipping:** decide between two explicit policies:
+The rim spans L ≈ 0.05–0.85, covering nearly the full height of the sRGB solid. This
+is **physically correct and educationally meaningful**: equal-power monochromatic
+green is ~5× more luminous than equal-power blue. The intensity surface naturally
+envelops the gamut solid, sweeping from the black point outward to this rim in every
+world mode. Users who understand the label will see exactly why the rim varies in
+height; users who don't can be taught by the label.
 
-- **Accept and label it.** Display the surface as-is in all worlds and add a tooltip
-  or guide note clarifying "surface height = stimulus magnitude (X+Y+Z), not
-  perceptual lightness." Honest and cheap to implement.
-- **Renormalize for perceptual worlds.** In Oklab/CIELAB world modes, scale each
-  spectral sample so the rim falls at a user-chosen constant L (e.g., L = 0.7).
-  More visually coherent but requires a per-wavelength binary search over the scale
-  factor, and the surface no longer represents a physical stimulus quantity.
+The surface is not a visual confusion risk — it is a correct chromaticity ×
+stimulus-magnitude reference structure. The initial "con" listed in the spec was
+based on wrong estimates.
 
-Recommendation: implement Option A (accept) for v1 with an explicit overlay label.
-Reserve constant-L normalization as a future mode.
+**Resolution:** proceed with `X + Y + Z = 1` normalization as-is. Label the overlay
+"Spectral locus (XYZ chromaticity)". Reserve per-wavelength constant-L normalization
+(binary search per wavelength for a target Oklab L) as a future `spectral-surface-equal-l`
+mode — useful for comparing hue geometry at fixed perceptual brightness.
 
 ### Issue 2 — Surface depth test should be on, not off
 
