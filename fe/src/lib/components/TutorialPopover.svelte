@@ -129,73 +129,77 @@
 </script>
 
 {#if tutorial.step}
-	<div
-		class="tutorial-card {arrowClass()}"
-		style={cardStyle}
-		role="dialog"
-		aria-label="Tutorial step"
-		tabindex="-1"
-		onkeydown={onTutorialKeydown}
-	>
-		<div class="tutorial-card-header">
-			<span class="tutorial-step-counter">{counterText}</span>
-			<span class="tutorial-step-title">{tutorial.step.title}</span>
-			<button
-				type="button"
-				class="tutorial-close"
-				onclick={() => tutorial.stop()}
-				aria-label="Stop tutorial"
-			>×</button>
-		</div>
-
-		<div class="panel-help-stage">
-			{#each rows as row}
-				<div
-					class="panel-help-stage-row"
-					class:neutral={row.tone === 'neutral'}
-					class:change={row.tone === 'change'}
-					class:output={row.tone === 'output'}
-					class:exclude={row.tone === 'exclude'}
-				>
-					<span class="panel-help-stage-label">{row.label}</span>
-					<span class="panel-help-stage-text">{row.text}</span>
-				</div>
-			{/each}
-		</div>
-
-		{#if tutorial.step?.suggestedExample && loadExample}
-			<div class="tutorial-example-block">
-				{#if hideAids}
-					<p class="tutorial-example-note">
-						Hide aids is on — shell, slice outlines, and ramp markers are hidden. Loading
-						the example will turn overlays back on.
-					</p>
-				{/if}
-				<div class="tutorial-example-row">
-					<span class="tutorial-example-label">Example</span>
-					<button
-						type="button"
-						class="tutorial-example-btn"
-						onclick={() => loadExample!(tutorial.step!.suggestedExample!)}
-					>Load example →</button>
-				</div>
+	{#key `${tutorial.progress?.trackId}:${tutorial.progress?.stepIndex}`}
+		<div
+			class="tutorial-card {arrowClass()}"
+			style={cardStyle}
+			role="dialog"
+			aria-label="Tutorial step"
+			lang="en"
+			translate="yes"
+			tabindex="-1"
+			onkeydown={onTutorialKeydown}
+		>
+			<div class="tutorial-card-header">
+				<span class="tutorial-step-counter">{counterText}</span>
+				<span class="tutorial-step-title">{tutorial.step.title}</span>
+				<button
+					type="button"
+					class="tutorial-close"
+					onclick={() => tutorial.stop()}
+					aria-label="Stop tutorial"
+				>×</button>
 			</div>
-		{/if}
 
-		<div class="tutorial-card-footer">
-			<button
-				type="button"
-				class="tutorial-nav-btn"
-				disabled={tutorial.isFirst}
-				onclick={() => tutorial.back()}
-			>← Back</button>
-			<button
-				type="button"
-				class="tutorial-nav-btn tutorial-nav-primary"
-				onclick={() => (tutorial.isLast ? tutorial.done() : tutorial.next())}
-			>{tutorial.isLast ? 'Done' : 'Next →'}</button>
+			<div class="panel-help-stage">
+				{#each rows as row (row.tone)}
+					<div
+						class="panel-help-stage-row"
+						class:neutral={row.tone === 'neutral'}
+						class:change={row.tone === 'change'}
+						class:output={row.tone === 'output'}
+						class:exclude={row.tone === 'exclude'}
+					>
+						<span class="panel-help-stage-label">{row.label}</span>
+						<span class="panel-help-stage-text">{row.text}</span>
+					</div>
+				{/each}
+			</div>
+
+			{#if tutorial.step?.suggestedExample && loadExample}
+				<div class="tutorial-example-block">
+					{#if hideAids}
+						<p class="tutorial-example-note">
+							Hide aids is on — shell, slice outlines, and ramp markers are hidden. Loading
+							the example will turn overlays back on.
+						</p>
+					{/if}
+					<div class="tutorial-example-row">
+						<span class="tutorial-example-label">Example</span>
+						<button
+							type="button"
+							class="tutorial-example-btn"
+							onclick={() => loadExample!(tutorial.step!.suggestedExample!)}
+						>Load example →</button>
+					</div>
+				</div>
+			{/if}
+
+			<div class="tutorial-card-footer">
+				<button
+					type="button"
+					class="tutorial-nav-btn"
+					disabled={tutorial.isFirst}
+					onclick={() => tutorial.back()}
+				>← Back</button>
+				<button
+					type="button"
+					class="tutorial-nav-btn tutorial-nav-primary"
+					onclick={() => (tutorial.isLast ? tutorial.done() : tutorial.next())}
+				>{tutorial.isLast ? 'Done' : 'Next →'}</button>
+			</div>
 		</div>
-	</div>
+	{/key}
 {/if}
 
 <style>
