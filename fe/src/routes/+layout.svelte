@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { browser } from '$app/environment';
 	import '../app.css';
+	import '$lib/a11y/a11y.css';
 	import { injectUmami } from '$lib/analytics/umami';
 
 	let { children, data } = $props();

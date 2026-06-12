@@ -60,10 +60,10 @@
 				{/if}
 			{/each}
 		</span>
-		<p class="pipeline-note">
+		<span class="pipeline-note">
 			The display step assumes an sRGB-compliant monitor. Future versions will let you set custom
 			chromaticities and gamma; the pipeline will update to match.
-		</p>
+		</span>
 	</span>
 </span>
 
@@ -123,7 +123,7 @@
 
 	.pipeline-title {
 		color: var(--dim);
-		font-size: 10px;
+		font-size: 0.769rem;
 		font-weight: 600;
 		text-transform: uppercase;
 		letter-spacing: 0.08em;
@@ -154,13 +154,13 @@
 	}
 
 	.pipeline-step b {
-		font-size: 10px;
+		font-size: 0.769rem;
 		line-height: 1.15;
 	}
 
 	.pipeline-step small {
 		color: var(--dim);
-		font-size: 9px;
+		font-size: 0.692rem;
 		line-height: 1.2;
 	}
 
@@ -169,13 +169,13 @@
 		align-items: center;
 		color: var(--accent);
 		font-family: "IBM Plex Mono", ui-monospace, monospace;
-		font-size: 10px;
+		font-size: 0.769rem;
 	}
 
 	.pipeline-note {
 		margin: 0;
 		color: var(--dim);
-		font-size: 10px;
+		font-size: 0.769rem;
 		line-height: 1.35;
 	}
 </style>

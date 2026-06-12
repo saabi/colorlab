@@ -7,6 +7,25 @@
 			content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
 		/>
 		<meta name="text-scale" content="scale" />
+		<script>
+			(() => {
+				try {
+					const raw = localStorage.getItem('colorlab:a11y');
+					if (!raw) return;
+					const prefs = JSON.parse(raw);
+					const fontScales = [100, 112, 125, 150, 175];
+					const lineHeights = [125, 145, 165, 185];
+					const contrasts = ['normal', 'high', 'maximum'];
+					const fontScale = fontScales.includes(prefs.fontScale) ? prefs.fontScale : 100;
+					const lineHeight = lineHeights.includes(prefs.lineHeight) ? prefs.lineHeight : 145;
+					const contrast = contrasts.includes(prefs.secondaryContrast) ? prefs.secondaryContrast : 'normal';
+					const root = document.documentElement;
+					root.style.fontSize = `calc(13px * ${fontScale / 100})`;
+					root.style.setProperty('--ui-line-height', `${lineHeight / 100}`);
+					root.dataset.a11ySecondary = contrast;
+				} catch {}
+			})();
+		</script>
 		%sveltekit.head%
 	</head>
 	<body data-sveltekit-preload-data="hover">

@@ -301,7 +301,7 @@
 		display: grid;
 		gap: 3px;
 		color: var(--muted);
-		font-size: 10px;
+		font-size: 0.769rem;
 		text-transform: uppercase;
 		letter-spacing: 0.04em;
 	}

@@ -1,0 +1,14 @@
+html {
+	font-size: 13px;
+	--ui-line-height: 1.45;
+}
+
+html[data-a11y-secondary="high"] {
+	--dim: #b8b9bf;
+	--faint: #8a8b91;
+}
+
+html[data-a11y-secondary="maximum"] {
+	--dim: #d0d1d6;
+	--faint: #a8a9af;
+}

@@ -279,7 +279,7 @@
 	.tutorial-step-counter {
 		flex-shrink: 0;
 		color: var(--dim);
-		font-size: 9px;
+		font-size: 0.692rem;
 		font-weight: 600;
 		font-variant-numeric: tabular-nums;
 		text-transform: uppercase;
@@ -289,7 +289,7 @@
 	.tutorial-step-title {
 		flex: 1;
 		color: var(--txt);
-		font-size: 11px;
+		font-size: 0.846rem;
 		font-weight: 600;
 		line-height: 1.3;
 	}
@@ -305,7 +305,7 @@
 		background: transparent;
 		color: var(--dim);
 		padding: 0;
-		font-size: 13px;
+		font-size: 1rem;
 		line-height: 1;
 	}
 
@@ -324,7 +324,7 @@
 	.tutorial-example-note {
 		margin: 0;
 		color: var(--dim);
-		font-size: 10px;
+		font-size: 0.769rem;
 		line-height: 1.35;
 	}
 
@@ -337,7 +337,7 @@
 
 	.tutorial-example-label {
 		color: var(--dim);
-		font-size: 9px;
+		font-size: 0.692rem;
 		font-weight: 600;
 		text-transform: uppercase;
 		letter-spacing: 0.08em;
@@ -350,7 +350,7 @@
 		border-radius: 4px;
 		background: transparent;
 		color: var(--accent);
-		font-size: 10px;
+		font-size: 0.769rem;
 		cursor: pointer;
 	}
 
@@ -373,7 +373,7 @@
 		border-radius: 4px;
 		background: transparent;
 		color: var(--dim);
-		font-size: 11px;
+		font-size: 0.846rem;
 		cursor: pointer;
 	}
 

@@ -3,6 +3,7 @@
 	import RightInspector from './RightInspector.svelte';
 	import Viewport from './Viewport.svelte';
 	import AppInfo from './AppInfo.svelte';
+	import A11yPanel from '$lib/a11y/A11yPanel.svelte';
 	import DocumentBar from './DocumentBar.svelte';
 	import GuideNoteEditorHost from './GuideNoteEditorHost.svelte';
 	import LanePicker from './LanePicker.svelte';
@@ -63,6 +64,7 @@
 			<h1>COLOR LAB</h1>
 			<span class="sub">Gamut Explorer &amp; Ramp Generator</span>
 			<DocumentBar {session} onTutorialClick={() => (lanePickerOpen = true)} />
+			<A11yPanel />
 			<AppInfo />
 			<span class="badge">WebGL2</span>
 		</header>

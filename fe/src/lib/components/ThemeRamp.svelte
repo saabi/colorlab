@@ -609,7 +609,7 @@
 		justify-content: space-between;
 		gap: 8px;
 		margin: 6px 0;
-		font-size: 12px;
+		font-size: 0.923rem;
 	}
 	.field-row select {
 		flex: 1;
@@ -630,7 +630,7 @@
 		flex: none;
 		width: 28px;
 		padding: 3px 0;
-		font-size: 11px;
+		font-size: 0.846rem;
 		font-variant-numeric: tabular-nums;
 		border: 1px solid transparent;
 		border-radius: 4px;
@@ -639,7 +639,7 @@
 		border-color: var(--accent, #5ab);
 	}
 	.list-del {
-		font-size: 14px;
+		font-size: 1.077rem;
 		line-height: 1;
 	}
 	.cp-list {
@@ -677,13 +677,13 @@
 	.cp-hex {
 		font-variant-numeric: tabular-nums;
 		text-transform: uppercase;
-		font-size: 11px;
+		font-size: 0.846rem;
 	}
 	.cp-action {
 		flex: none;
 		width: auto;
 		padding: 3px 6px;
-		font-size: 10px;
+		font-size: 0.769rem;
 	}
 	.cp-action:disabled {
 		cursor: default;
@@ -694,7 +694,7 @@
 		width: 24px;
 		padding: 0;
 		line-height: 1;
-		font-size: 16px;
+		font-size: 1.231rem;
 	}
 	.add-actions {
 		display: grid;
@@ -718,7 +718,7 @@
 		justify-content: space-between;
 		gap: 8px;
 		color: var(--muted);
-		font-size: 11px;
+		font-size: 0.846rem;
 	}
 	.raw-final {
 		display: grid;
@@ -727,7 +727,7 @@
 	}
 	.rf-label {
 		color: var(--dim);
-		font-size: 9px;
+		font-size: 0.692rem;
 		text-transform: uppercase;
 		letter-spacing: 0.06em;
 	}

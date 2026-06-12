@@ -1,13 +1,14 @@
 # Accessibility controls — design and handoff plan
 
-**Status:** keyboard/focus baseline partly implemented; text readability preferences still planned
+**Status:** keyboard/focus baseline and text readability preferences implemented; manual visual review pending
 **Triggered by:** Reddit feedback (r/computergraphics, June 2026) + comprehensive codebase audit
 
 **Implementation note (June 12, 2026):**
 - Phase A is implemented: controls landmark, skip link, viewport target, sidebar footer semantics, TutorialPopover Escape handling, and expanded viewport canvas keyboard guidance.
 - Phase B is implemented for true modal dialogs: `focusTrap` action plus NamePromptDialog, ConfirmDialog, GuideNoteEditor, and LanePicker. TutorialPopover is intentionally left untrapped because the walkthrough needs users to interact with highlighted controls while the card remains open.
-- Phase C is partly implemented: plane and bar canvases are focusable and support keyboard adjustments. The live hex announcement remains pending.
-- Phase E is still pending.
+- Phase C is implemented: plane and bar canvases are focusable, support keyboard adjustments, and announce the selected hex value.
+- Phase D is implemented as Mouse / Touch / Keyboard tabs in the gesture reference popover.
+- Phase E is implemented: browser-local readability preferences, root font-scale, secondary contrast, line-height preference, before-paint localStorage initialization, and rem-based font-size conversion.
 
 ---
 

@@ -174,7 +174,7 @@
 
 	.lane-picker-title {
 		color: var(--txt);
-		font-size: 14px;
+		font-size: 1.077rem;
 		font-weight: 700;
 		text-transform: uppercase;
 		letter-spacing: 0.08em;
@@ -190,7 +190,7 @@
 		background: transparent;
 		color: var(--dim);
 		padding: 0;
-		font-size: 15px;
+		font-size: 1.154rem;
 		line-height: 1;
 	}
 
@@ -202,14 +202,14 @@
 	.lane-mobile-notice {
 		margin: 0 0 18px;
 		color: var(--dim);
-		font-size: 12px;
+		font-size: 0.923rem;
 		line-height: 1.6;
 	}
 
 	.lane-picker-intro {
 		margin: 0 0 14px;
 		color: var(--dim);
-		font-size: 12px;
+		font-size: 0.923rem;
 		line-height: 1.5;
 	}
 
@@ -251,17 +251,17 @@
 	}
 
 	.lane-col-icon {
-		font-size: 18px;
+		font-size: 1.385rem;
 		line-height: 1;
 	}
 
 	.lane-col-name {
-		font-size: 13px;
+		font-size: 1rem;
 		font-weight: 700;
 	}
 
 	.lane-col-desc {
-		font-size: 11px;
+		font-size: 0.846rem;
 		line-height: 1.45;
 		color: var(--dim);
 	}
@@ -285,7 +285,7 @@
 
 	.lane-depth-legend {
 		color: var(--dim);
-		font-size: 10px;
+		font-size: 0.769rem;
 		font-weight: 600;
 		text-transform: uppercase;
 		letter-spacing: 0.08em;
@@ -296,7 +296,7 @@
 		display: flex;
 		align-items: baseline;
 		gap: 8px;
-		font-size: 12px;
+		font-size: 0.923rem;
 		color: var(--txt);
 		cursor: pointer;
 	}
@@ -324,7 +324,7 @@
 
 	.lane-summary-id {
 		color: var(--accent);
-		font-size: 12px;
+		font-size: 0.923rem;
 		font-weight: 700;
 		text-transform: uppercase;
 		letter-spacing: 0.06em;
@@ -333,7 +333,7 @@
 	.lane-summary-time,
 	.lane-summary-steps {
 		color: var(--dim);
-		font-size: 11px;
+		font-size: 0.846rem;
 	}
 
 	.lane-picker-actions {
@@ -348,7 +348,7 @@
 		border-radius: 5px;
 		background: transparent;
 		color: var(--txt);
-		font-size: 12px;
+		font-size: 0.923rem;
 		font-weight: 500;
 		cursor: pointer;
 	}

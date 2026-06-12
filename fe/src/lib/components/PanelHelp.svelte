@@ -133,7 +133,7 @@
 		background: transparent;
 		color: var(--dim);
 		padding: 0;
-		font-size: 10px;
+		font-size: 0.769rem;
 		font-weight: 600;
 		line-height: 1;
 	}
@@ -165,7 +165,7 @@
 
 	.panel-help-title {
 		color: var(--dim);
-		font-size: 10px;
+		font-size: 0.769rem;
 		font-weight: 600;
 		text-transform: uppercase;
 		letter-spacing: 0.08em;
@@ -174,7 +174,7 @@
 	.panel-help-summary {
 		margin: 0;
 		color: var(--txt);
-		font-size: 11px;
+		font-size: 0.846rem;
 		line-height: 1.4;
 	}
 
@@ -183,7 +183,7 @@
 		color: var(--faint);
 		margin-top: 2px;
 		padding-top: 7px;
-		font-size: 9px;
+		font-size: 0.692rem;
 		font-weight: 600;
 		text-transform: uppercase;
 		letter-spacing: 0.08em;
@@ -193,7 +193,7 @@
 		margin: 0;
 		padding-left: 14px;
 		color: var(--dim);
-		font-size: 10px;
+		font-size: 0.769rem;
 		line-height: 1.35;
 	}
 
