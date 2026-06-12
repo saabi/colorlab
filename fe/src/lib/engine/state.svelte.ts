@@ -26,7 +26,7 @@ function createExplorerDefaults(): ExplorerState {
 		eps: 0.0,
 		floor: true,
 		lines: true,
-		cutAbove: false,
+		cutAbove: true,
 		cutBelow: false,
 		cylSlice: false,
 		cylRad: 0.2,
@@ -260,6 +260,7 @@ export const EXAMPLE_STATES = [
 				slice: true,
 				planeMode: 'L',
 				off: 0.55,
+				cutAbove: true,
 				guideNote:
 					'The slice control cuts the 3D solid with a plane at fixed Oklab L. You are looking at a 2D cross-section of all colors at one lightness level.\n\nDrag the slice offset in Gamut & slice, or Alt-drag in the viewport to move the plane interactively.',
 				guideNotePlacement: 'overlay',
