@@ -25,6 +25,14 @@
 	let touchTool: TouchTool = $state('auto');
 	const tutorial = createTutorialState(() => explorer);
 	let lanePickerOpen = $state(false);
+
+	const TUTORIAL_WELCOMED_KEY = 'colorlab:tutorial-welcomed';
+	$effect(() => {
+		if (!localStorage.getItem(TUTORIAL_WELCOMED_KEY)) {
+			lanePickerOpen = true;
+			localStorage.setItem(TUTORIAL_WELCOMED_KEY, '1');
+		}
+	});
 </script>
 
 <GuideNoteEditorHost explorer={appState.explorer}>
