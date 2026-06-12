@@ -18,7 +18,7 @@ Both uses share the same 3D viewport: ramp source colors are picked directly on 
 |-------|----------------------|--------------------|----------------|
 | A-quick | 8 | ~15 | Compare two gamuts, slice the solid, read the full hover chain |
 | A-pipeline | 8 | ~25 | Full Explorer pipeline literacy from Gamut through Vision |
-| B-quick | 8 | ~15 | Export a 1-D ramp from 2–3 source colors |
+| B-quick | 8 | ~15 | Export a 1-D ramp from 3 source colors |
 | B-pipeline | 9 | ~30 | Multi-list ramps, 2-D Expand grids, all ramp pipeline stages |
 
 ---
@@ -77,11 +77,11 @@ Understand what the 3D solid represents, navigate and inspect it, compare two ga
 
 #### Step 6: Shell overlay — two gamuts at once
 
-- **Concept:** The shell overlay draws the wire boundary of a reference gamut on top of the active solid. With the solid set to Display P3 and the shell set to sRGB, you see exactly which P3 colors fall outside sRGB — those points poke beyond the wire cage. This is the standard gamut-comparison view.
-- **Try it:** Set the active gamut to Display P3 and enable the shell overlay for sRGB in the Gamut step. Orbit until you can see the wire cage sitting inside the solid. The region between the cage and the solid surface is "P3 only."
-- **Success check:** A wire outline smaller than the solid is visible. You can identify P3 colors that sRGB cannot reproduce (outside the cage) versus those that both can (inside).
+- **Concept:** The shell overlay draws the wire boundary of a reference gamut on top of the active solid. With the solid set to Display P3 and the Reference gamut shell set to sRGB, you see exactly which P3 colors fall outside sRGB — those points poke beyond the wire cage. This is the standard gamut-comparison view.
+- **Try it:** Set the active gamut to Display P3 and set the Reference gamut shell to "sRGB" in the Gamut step. Orbit until you can see the wire cage sitting inside the solid. The region between the cage and the solid surface is "P3 only."
+- **Success check:** A wire outline smaller than the solid is visible. Colors between the cage and the solid surface are P3-only — not reproducible in sRGB.
 - **Common mistake:** Confusing the shell with slice outlines. The shell is a fixed reference boundary for the comparison gamut; slice outlines move with the clip plane.
-- **Suggested example:** Load "Display P3 + shell" (`example:p3-shell`) to start in this configuration.
+- **Suggested example:** Load "Display P3 + shell" (`example:p3-shell`) — wired as `suggestedExample` on this step — to start with P3 solid + sRGB cage already configured.
 
 #### Step 7: Slice at fixed lightness
 
@@ -195,20 +195,20 @@ Go from zero source colors to a copied ramp export (CSS or DTCG) in under 15 min
 
 ### Steps
 
-#### Step 3: Add two or three source colors
+#### Step 3: Add three source colors
 
 - **Concept:** Every ramp starts with ordered source colors — "anchors" — stored in the active source list. You can pick them on the 3D solid (arm the "+ Pick on solid" button, then click the surface) or enter a color via the inline color picker. The list order matters: interpolation runs from the first anchor to the last.
-- **Try it:** In the Sources step, arm "+ Pick on solid," then click once on a dark region of the solid and once on a bright region. Two rows appear in the list. Their dots appear in the 3D viewport.
-- **Success check:** Two anchor rows are visible in the Sources list and two markers are visible in the viewport. The markers sit where you clicked.
-- **Common mistake:** Picking both anchors without noticing the order. The ramp interpolates row 1 → row 2. Use the Up/Down buttons to reorder if needed (dark first usually means lighter stops higher up the palette).
-- **Suggested example:** Load "Large Color Ramp" (`example:large-color-ramp`) to start with a working 2-anchor ramp you can explore without setup.
+- **Try it:** In the Sources step, arm "+ Pick on solid," then click once on a dark region, once in a mid-chroma region, and once on a bright region. Three rows appear in the list. Their dots appear in the 3D viewport.
+- **Success check:** Three anchor rows are visible in the Sources list and three markers are visible in the viewport.
+- **Common mistake:** Picking anchors without noticing the order. The ramp interpolates row 1 → row 2 → row 3. Use the Up/Down buttons to reorder if needed (dark first usually means lighter stops higher up the palette).
 
 #### Step 4: Interpolate on — linear vs spline
 
-- **Concept:** With Interpolate on, Color Lab draws a continuous path between your anchors. Linear mode connects them with straight chords; Spline mode fits a smooth arc through all points. The interpolation space (Oklab, Oklch, sRGB, etc.) controls where that path bends through the solid — Oklch tends to keep chroma high along the arc rather than cutting through the gray interior. By default the solid is opaque, which can hide the curve running through its interior — lower the solid opacity first.
-- **Try it:** In the Gamut step, lower "Solid opacity" to around 50–75% so the curve is visible through the solid. Then ensure Interpolate is on. Switch between "linear" and "spline" mode and watch the curve in the viewport change shape. Switch the interpolation space from Oklab to Oklch and back to see how the arc bends differently.
-- **Success check:** The curve is clearly visible inside the semi-transparent solid. With more than two anchors, spline produces a smooth arc; linear produces connected straight segments between each anchor pair.
+- **Concept:** With Interpolate on, Color Lab draws a continuous path between your anchors. Linear mode connects them with straight chords; Spline mode fits a smooth arc through all points. With exactly two anchors, the paths are geometrically identical — the difference is only visible with three or more points. The interpolation space (Oklab, Oklch, sRGB, etc.) controls where that path bends through the solid — Oklch tends to keep chroma high along the arc rather than cutting through the gray interior. By default the solid is opaque, which can hide the curve running through its interior — lower the solid opacity first.
+- **Try it:** In the Gamut step, lower "Solid opacity" to around 50–75% so the curve is visible through the solid. Switch between "linear" and "spline" mode and watch the curve in the viewport change shape. Switch the interpolation space from Oklab to Oklch and back to see how the arc bends differently.
+- **Success check:** The curve is clearly visible inside the semi-transparent solid. Spline mode produces a smooth arc through the mid-anchor; linear connects them with straight segments.
 - **Common mistake:** Confusing interpolation space with world space. Interpolation space is where the ramp path is computed; world space is the viewport's coordinate layout. These are independent — you can interpolate in Oklch while displaying in Oklab layout. That distinction matters practically: Oklch interpolation preserves chroma along the arc (useful for rainbow or hue-sweep ramps), while Oklab interpolation takes a more direct Cartesian path that may pass through a desaturated middle (useful for clean two-tone gradients that should not "rainbow" between endpoints).
+- **Suggested example:** Load "Spline Color Ramp" (`example:spline-color-ramp`) — wired as `suggestedExample` on this step — for a seven-anchor surface-snapped ramp that makes the linear-vs-spline difference immediately visible.
 
 #### Step 5: Place on — where the stops land
 
@@ -220,16 +220,16 @@ Go from zero source colors to a copied ramp export (CSS or DTCG) in under 15 min
 #### Step 6: Read the palette
 
 - **Concept:** The right inspector's Palette tab shows the final generated colors exactly as they will be exported — post gamut-map, with WCAG contrast ratios vs. the chosen background. This is the authoritative ramp preview; the 3D viewport markers are orientation aids, not pixel-accurate swatches.
-- **Try it:** Open the Palette tab. Hover each swatch to read its hex and Oklch values. Look for any OOG (out-of-gamut) indicators — orange chips on stops that exceed sRGB before gamut mapping.
-- **Success check:** You can read the hex value of each stop in the Palette tab and confirm the lightness progression matches your intent. Any OOG stops are flagged.
+- **Try it:** Open the Palette tab. Hover each swatch to read its hex and Oklch values. Check whether any OOG indicators appear on stops that exceed sRGB.
+- **Success check:** You can read the hex value of each stop in the Palette tab and confirm the lightness progression matches your intent. If any stops venture outside sRGB, an OOG indicator appears.
 - **Common mistake:** Treating the 3D viewport stop markers as final colors. They are accurate colorimetrically but rendered through your monitor profile; the Palette tab reads the computed values directly.
 
 #### Step 7: Export the ramp
 
-- **Concept:** Export serializes the final stops to CSS oklch() custom properties or DTCG JSON. The token values are the post-gamut-map stops. By default the gamut map clips to sRGB — to export wide-gamut values, change the gamut map policy to "none" or "oklch-c." CSS is for web stylesheets; DTCG is for design-tool token pipelines.
+- **Concept:** Export serializes the final stops to CSS oklch() custom properties or DTCG JSON. The token values are the post-gamut-map stops. By default the Gamut map policy is "None (show OOG)" — out-of-gamut stops export as-is. Switch to "Clip (clamp)" or "Preserve chroma" to bring stops into sRGB before export. CSS is for web stylesheets; DTCG is for design-tool token pipelines.
 - **Try it:** Open the Export step and copy the CSS output. Paste it into a text editor. Count the variables — there should be one per stop. Check that the oklch() L values increase or decrease monotonically as expected.
 - **Success check:** You have CSS (or DTCG JSON) text on your clipboard that you could paste into a real stylesheet. The lightness values reflect the dark-to-light order of your anchors.
-- **Common mistake:** Expecting wide-gamut values in the export without changing the gamut map policy. The default clips to sRGB. Stops that were OOG will appear clipped unless policy is changed.
+- **Common mistake:** Expecting stops to be auto-clipped to sRGB on export. The default Gamut map policy is "None" — OOG stops export as-is. Switch to "Clip (clamp)" or "Preserve chroma" to keep values in gamut.
 
 #### Step 8: Save the document
 
@@ -273,10 +273,11 @@ Understand every Ramp pipeline stage in order — Sources through Export — inc
 
 #### Step 4: Interpolate — path and space
 
-- **Concept:** Interpolate builds the continuous curve between anchors. **Off** means anchors pass through unchanged — useful for exact palettes where you want no curve fitting. **Linear** connects anchors with straight chords in the interpolation space. **Spline** fits a smooth parametric curve (Catmull-Rom style). The **interpolation space** (Oklab, Oklch, sRGB, CIELAB, "world") is where that path bends — different spaces produce dramatically different arcs through the same anchor set. "World" uses the viewport's geometric coordinate system directly.
-- **Try it:** Load "Spline Color Ramp" (`example:spline-color-ramp`). Switch between linear and spline while watching the curve in the viewport. Then change the space from Oklch to sRGB — observe how the arc through the solid changes shape, especially in the hue direction.
-- **Success check:** You can describe why the same anchor set produces different ramp paths in Oklch vs sRGB interpolation — the arc shape reflects the coordinate geometry of each space.
+- **Concept:** Interpolate builds the continuous curve between anchors. **Off** means anchors pass through unchanged — useful for exact palettes where you want no curve fitting. **Linear** connects anchors with straight chords in the interpolation space. **Spline** fits a smooth parametric curve (Catmull-Rom style). With exactly two anchors, spline and linear trace the same chord — the arc diverges only with three or more points. The **interpolation space** (Oklab, Oklch, sRGB, CIELAB, "world") is where that path bends — different spaces produce dramatically different arcs through the same anchor set.
+- **Try it:** Load "Spline Color Ramp" (`example:spline-color-ramp`) via the suggested example affordance (seven anchors, surface-snapped). Switch between linear and spline while watching the curve in the viewport. Then change the interpolation space from Oklch to sRGB — observe how the arc through the solid changes shape.
+- **Success check:** You can describe why the same anchor set produces different ramp paths in Oklch vs sRGB — the arc shape reflects the coordinate geometry of each space. Spline produces a visibly smoother arc than linear through the middle anchors.
 - **Common mistake:** Assuming "world" interpolation space always produces a straight line. In "world" mode the path is straight in the current viewport coordinate system, which may not be straight in Oklch or other perceptual spaces.
+- **Suggested example:** Load "Spline Color Ramp" (`example:spline-color-ramp`) — wired as `suggestedExample` in `tutorial-steps.ts`.
 - **Pipeline anchor:** `interpolate`
 
 #### Step 5: Place — sampling the curve
@@ -297,10 +298,11 @@ Understand every Ramp pipeline stage in order — Sources through Export — inc
 
 #### Step 7: Gamut map — ramp-only OOG policy
 
-- **Concept:** Gamut map is the terminal ramp stage: it brings any out-of-gamut stops into sRGB before export. **Clip** hard-clips each RGB channel at 0 and 1 (fast, may shift hue). **oklch-c** reduces chroma in Oklch until the stop is in-gamut (preserves hue and lightness). **None** passes OOG stops through unchanged — use deliberately for wide-gamut export. This stage is completely separate from the Explorer Gamut setting (which defines the 3D solid), from the spline surface constraint (which geometrically snaps the curve to the solid's surface), and from CVD (which is display only).
-- **Try it:** Build a ramp that crosses outside sRGB (e.g. highly chromatic Oklch arc). Note the OOG badge on the Gamut map node. Switch between clip and oklch-c and watch the affected stops change in the Palette tab. Switch to none and confirm the OOG badge on Export.
-- **Success check:** With oklch-c, previously OOG stops shift inward in chroma while keeping hue angle. With clip, they may shift hue because channels clamp independently. With none, OOG values appear in the export.
+- **Concept:** Gamut map is the terminal ramp stage: it brings any out-of-gamut stops into sRGB before export. **Clip (clamp)** hard-clips each RGB channel at 0 and 1 (fast, may shift hue). **Preserve chroma** reduces chroma in Oklch until the stop is in-gamut (preserves hue and lightness). **None** passes OOG stops through unchanged — use deliberately for wide-gamut export. This stage is completely separate from the Explorer Gamut setting, from the spline surface constraint, and from CVD.
+- **Try it:** Load "Spline Color Ramp" (via the suggested example button) and set interpolation space to Oklch — the arc may produce OOG stops. Note the OOG badge on the Gamut map node. Switch between "Clip (clamp)" and "Preserve chroma" and watch affected stops change in the Palette tab. Switch to "None" and confirm OOG values pass through to export.
+- **Success check:** With "Preserve chroma," OOG stops shift inward in chroma while keeping hue angle. With "Clip (clamp)," they may shift hue because channels clamp independently.
 - **Common mistake:** Thinking the Explorer Gamut setting controls ramp export clipping. The Explorer Gamut defines what the solid represents in the viewport; the Ramp Gamut map stage is a separate, independent terminal policy for export stops.
+- **Suggested example:** Load "Spline Color Ramp" (`example:spline-color-ramp`) — wired as `suggestedExample` on this step.
 - **Pipeline anchor:** `gamut-map`
 
 #### Step 8: Export — tokens and format
@@ -313,8 +315,8 @@ Understand every Ramp pipeline stage in order — Sources through Export — inc
 
 #### Step 9: Multi-list ramps — parallel pipelines
 
-- **Concept:** With more than one source list, each list runs independently through Interpolate → Place → Gamut map and produces its own output. The lists share interpolation settings (mode, space, step count) but have separate anchors — useful for distinct color families (warm ramp vs cool ramp, signal colors for different categories) that should have the same structural parameters but different color directions. When Expand is off, the palette grid shows all lists' ramps as parallel rows; when Expand is on, the Expand row generator applies to the combined set.
-- **Try it:** Create two lists with clearly different anchors (e.g. warm reds in list 1, cool blues in list 2). Enable Interpolate in Oklch, 9 stops, even Place. Without Expand, the Palette tab shows two 9-stop rows. Now enable Expand with 2 rows — observe the grid becomes 4 rows (2 lists × 2 Expand rows).
+- **Concept:** With more than one source list, each list runs independently through Interpolate → Place → Gamut map and produces its own output. The lists share interpolation settings (mode, space, step count) but have separate anchors — useful for distinct color families (warm ramp vs cool ramp, signal colors for different categories). When Expand is off, the palette grid shows all lists' ramps as parallel rows; when Expand is on, the Expand row generator applies to the combined set.
+- **Try it:** Verify you still have two source lists from step 3 (or rebuild: + chip in Sources, two contrasting anchors in each list). Enable Interpolate in Oklch, 9 stops, even Place. The Palette tab shows two parallel 9-stop rows. Enable Expand with 2 rows — 4 rows total (2 lists × 2 Expand rows).
 - **Success check:** Two distinct parallel ramps appear in the Palette tab when Expand is off. Enabling Expand multiplies rows correctly.
 - **Common mistake:** Trying to blend anchors from two lists into one combined ramp. Lists never merge automatically — cross-list blending requires putting all anchors into one list. Multi-list is for *parallel* output, not for blending.
 
@@ -338,8 +340,8 @@ Start from "Spline Color Ramp" (`example:spline-color-ramp`). Switch interpolati
 
 | Example id | Best for tracks | Key teaching moment |
 |------------|-----------------|---------------------|
-| `example:large-color-ramp` | B-quick step 3, B-pipeline Interpolate | Two-anchor linear Oklch ramp; minimal anchor set producing a full ramp with surface-constrained curve |
-| `example:spline-color-ramp` | B-quick step 4, B-pipeline Sources + Interpolate | Seven surface-snapped anchors; shows spline vs linear arc shape clearly with enough points |
+| `example:large-color-ramp` | (standalone exploration) | Two-anchor linear Oklch ramp; minimal working ramp for exploring the UI — not wired to any tutorial step since step 3 now asks for three anchors |
+| `example:spline-color-ramp` | B-quick step 4, B-pipeline step 4 | Seven surface-snapped anchors; makes linear-vs-spline arc difference immediately visible; wired as `suggestedExample` on both Interpolate steps |
 | `example:oklab-l-slice` | A-quick step 7, A-pipeline Clip | L-slice at offset 0.55; teaches fixed-lightness cross-section as a 2D chromaticity view |
 | `example:p3-shell` | A-quick step 6, A-pipeline Gamut | P3 solid + sRGB shell + cylinder cut; teaches gamut comparison via shell overlay |
 

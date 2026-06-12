@@ -26,7 +26,7 @@ const SPACE_MODES: readonly SpaceMode[] = [0, 1, 2, 3, 5];
 const GAMUTS: readonly GamutKey[] = ['srgb', 'p3', 'rec2020', 'ntsc', 'ebu', 'smptec', 'cie'];
 const TESS: readonly PersistedExplorer['N'][] = [64, 128, 192, 256];
 const PLANE_MODES: readonly PlaneMode[] = ['L', 'H', 'C'];
-const SHELLS: readonly ShellKey[] = ['none', 'p3', 'rec2020', 'ntsc', 'cie'];
+const SHELLS: readonly ShellKey[] = ['none', 'srgb', 'p3', 'rec2020', 'ntsc', 'cie'];
 const CVD_MODES: readonly CvdMode[] = ['none', 'protan', 'deutan', 'tritan'];
 const THEME_MODES: readonly ThemeMode[] = ['linear', 'spline'];
 const PLACE_POLICIES: readonly PlacePolicy[] = ['even', 'uniform', 'tones', 'contrast'];
@@ -155,9 +155,9 @@ function coerceTheme(raw: unknown, defaults: PersistedTheme): PersistedTheme {
 		splineSpace: enumOf(theme.splineSpace, INTERP_SPACES, defaults.splineSpace, 'theme.splineSpace'),
 		gamutMap: enumOf(theme.gamutMap, GAMUT_MAPS, defaults.gamutMap, 'theme.gamutMap'),
 		steps: Math.min(27, Math.max(1, Math.round(finiteNumber(theme.steps, defaults.steps, 'theme.steps')))),
-		mode: enumOf(theme.mode, THEME_MODES, defaults.mode, 'theme.mode'),
 		interpolateOn: typeof theme.interpolateOn === 'boolean' ? theme.interpolateOn : defaults.interpolateOn,
 		placeOn: typeof theme.placeOn === 'boolean' ? theme.placeOn : defaults.placeOn,
+		mode: enumOf(theme.mode, THEME_MODES, defaults.mode, 'theme.mode'),
 		arcLong: typeof theme.arcLong === 'boolean' ? theme.arcLong : defaults.arcLong,
 		place: enumOf(theme.place, PLACE_POLICIES, defaults.place, 'theme.place'),
 		contrastMin: Math.min(21, Math.max(1, finiteNumber(theme.contrastMin, defaults.contrastMin, 'theme.contrastMin'))),

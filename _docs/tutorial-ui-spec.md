@@ -1,8 +1,8 @@
 # Tutorial UI — implementation spec
 
-**Status:** design spec, not yet implemented.
-**Content source:** `_docs/tutorial-teaching-points.md` (authoritative for all copy).
-**Defer to a later pass:** animations, mobile layout, analytics events, keyboard-trap focus management.
+**Status:** implemented and shipped (`TutorialPopover.svelte`, `LanePicker.svelte`, `tutorial.svelte.ts`, adaptive prelude skipping via `skip` predicates, `suggestedExample` affordance).
+**Content source:** `fe/src/lib/inspector/tutorial-steps.ts` (authoritative for UI copy). `_docs/tutorial-teaching-points.md` is kept in sync.
+**Defer to a later pass:** animations, keyboard-trap focus management, capstone step UI.
 
 ---
 
@@ -97,6 +97,8 @@ A new `TutorialPopover.svelte` component. It is **not** a `PanelHelp` instance (
 │▌ Common mistake                         │  ← tone: exclude  (warning)
 │  Thinking the solid's shape is          │
 │  decorative…                            │
+├─────────────────────────────────────────┤
+│  EXAMPLE  [Load example →]              │  ← optional; shown when suggestedExample set
 ├─────────────────────────────────────────┤
 │  [← Back]          Step 3 / 8  [Next →] │  ← footer nav
 └─────────────────────────────────────────┘
@@ -280,8 +282,8 @@ Full list of step → placement zone → target selector. The `target` column is
 
 | Step | Title | Zone | Target |
 |------|-------|------|--------|
-| 3 | Add two or three source colors | `sidebar-inline` | `[data-tutorial="node-sources"]` |
-| 4 | Interpolate on — linear vs spline | `sidebar-inline` | `[data-tutorial="node-interpolate"]` |
+| 3 | Add three source colors | `sidebar-inline` | `[data-tutorial="node-sources"]` |
+| 4 | Interpolate on — linear vs spline | `sidebar-inline` | `[data-tutorial="node-gamut"]` (first action: lower opacity in Gamut step) |
 | 5 | Place on — where the stops land | `sidebar-inline` | `[data-tutorial="node-adjust"]` |
 | 6 | Read the palette | `inspector-adjacent` | `[data-tutorial="inspector-palette-tab"]` |
 | 7 | Export the ramp | `sidebar-inline` | `[data-tutorial="node-export"]` |
@@ -372,7 +374,8 @@ export interface TutorialTrack {
 
 export interface TutorialProgress {
   trackId: TrackId;
-  stepIndex: number;  // 0-based; 0 and 1 are always the two prelude steps
+  stepIndex: number;  // 0-based; first displayed step = skipCount (prelude steps may be skipped)
+  skipCount: number;  // leading prelude steps skipped at start time (already satisfied)
   active: boolean;    // false = stopped/paused but index preserved for resume
 }
 ```

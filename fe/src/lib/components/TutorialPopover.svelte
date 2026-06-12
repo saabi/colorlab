@@ -1,7 +1,10 @@
 <script lang="ts">
 	import type { TutorialState } from '$lib/engine/tutorial.svelte';
 
-	let { tutorial }: { tutorial: TutorialState } = $props();
+	let {
+		tutorial,
+		loadExample
+	}: { tutorial: TutorialState; loadExample?: (id: string) => void | Promise<void> } = $props();
 
 	let cardStyle = $state('');
 
@@ -142,6 +145,17 @@
 			{/each}
 		</div>
 
+		{#if tutorial.step?.suggestedExample && loadExample}
+			<div class="tutorial-example-row">
+				<span class="tutorial-example-label">Example</span>
+				<button
+					type="button"
+					class="tutorial-example-btn"
+					onclick={() => loadExample!(tutorial.step!.suggestedExample!)}
+				>Load example →</button>
+			</div>
+		{/if}
+
 		<div class="tutorial-card-footer">
 			<button
 				type="button"
@@ -272,6 +286,39 @@
 	.tutorial-close:hover {
 		border-color: var(--accent);
 		color: var(--accent);
+	}
+
+	.tutorial-example-row {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 6px;
+		padding: 4px 0;
+		border-top: 1px solid rgba(255, 255, 255, 0.06);
+	}
+
+	.tutorial-example-label {
+		color: var(--dim);
+		font-size: 9px;
+		font-weight: 600;
+		text-transform: uppercase;
+		letter-spacing: 0.08em;
+		flex-shrink: 0;
+	}
+
+	.tutorial-example-btn {
+		padding: 3px 8px;
+		border: 1px solid var(--accent);
+		border-radius: 4px;
+		background: transparent;
+		color: var(--accent);
+		font-size: 10px;
+		cursor: pointer;
+	}
+
+	.tutorial-example-btn:hover {
+		background: var(--accent);
+		color: #0a0a0b;
 	}
 
 	.tutorial-card-footer {

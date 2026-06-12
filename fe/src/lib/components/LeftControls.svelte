@@ -104,6 +104,7 @@
 					<label class="row" for="shell-select"><span>Reference gamut shell</span></label>
 					<select id="shell-select" bind:value={explorer.shell}>
 						<option value="none">None</option>
+						<option value="srgb">sRGB</option>
 						<option value="p3">DCI-P3 D65</option>
 						<option value="rec2020">Rec.2020</option>
 						<option value="ntsc">NTSC 1953</option>

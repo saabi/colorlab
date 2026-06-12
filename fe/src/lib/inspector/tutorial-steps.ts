@@ -94,10 +94,10 @@ export const A_QUICK_STEPS: TutorialStep[] = [
 	{
 		title: 'Shell overlay — two gamuts at once',
 		concept:
-			'The shell overlay draws the wire boundary of a reference gamut on top of the active solid. With P3 solid and sRGB shell, you see exactly which P3 colors fall outside sRGB — they poke beyond the wire cage. This is the standard gamut-comparison view.',
-		tryIt: 'Set the active gamut to Display P3. Enable the shell overlay for sRGB in the Gamut step. Orbit until the wire cage is visible inside the solid.',
+			'The shell overlay draws the wire boundary of a reference gamut on top of the active solid. With a P3 solid and sRGB shell, you see exactly which P3 colors fall outside sRGB — they poke beyond the wire cage. This is the standard gamut-comparison view.',
+		tryIt: 'Set the active gamut to Display P3. In the Gamut step, set the Reference gamut shell to "sRGB." Orbit until the wire cage is visible inside the solid.',
 		successCheck:
-			'A wire outline smaller than the solid is visible. You can identify P3-only colors (outside the cage) vs. those both gamuts share (inside).',
+			'A wire outline smaller than the solid is visible. Colors between the cage and the solid surface are P3-only — not reproducible in sRGB.',
 		commonMistake:
 			'Confusing the shell with slice outlines. The shell is a fixed reference boundary for a comparison gamut; slice outlines move with the clip plane.',
 		zone: 'sidebar-inline',
@@ -140,13 +140,14 @@ export const A_PIPELINE_STEPS: TutorialStep[] = [
 		title: 'Gamut — primaries and transfer',
 		concept:
 			'The Gamut stage decides which physical device the RGB cube represents: its primary chromaticities and transfer curve. The same (R, G, B) triple encodes a different spectral stimulus in sRGB vs Rec. 2020 because the primaries sit at different colorimetric positions.',
-		tryIt: 'Switch gamuts while hovering the same screen position. Watch the XYZ values in the inspector change even though the cursor did not move. Also enable the shell overlay for a different gamut.',
+		tryIt: 'Switch gamuts while hovering the same screen position. Watch the XYZ values in the inspector change even though the cursor did not move. Set active gamut to Display P3 and enable the sRGB shell overlay to see P3-exclusive colors.',
 		successCheck:
 			'You can explain why (R=1, G=0, B=0) encodes a different stimulus in sRGB vs Rec. 2020 — and see that difference as a geometric shift in the solid.',
 		commonMistake:
 			'Assuming the Gamut setting filters the ramp export to that gamut. The Gamut stage defines what the solid represents in the viewport; the ramp\'s Gamut map stage is a separate terminal policy.',
 		zone: 'sidebar-inline',
-		target: '[data-tutorial="node-gamut"]'
+		target: '[data-tutorial="node-gamut"]',
+		suggestedExample: 'example:p3-shell'
 	},
 	{
 		title: 'World space — geometry only',
@@ -216,29 +217,29 @@ export const A_PIPELINE_STEPS: TutorialStep[] = [
 
 export const B_QUICK_STEPS: TutorialStep[] = [
 	{
-		title: 'Add two or three source colors',
+		title: 'Add three source colors',
 		concept:
 			'Every ramp starts with ordered source colors — anchors — in the active source list. You can pick them on the 3D solid (arm "+ Pick on solid," then click the surface) or enter a color via the inline color picker. The list order matters: interpolation runs from the first anchor to the last. Color Lab also supports multiple source lists that produce parallel ramps — covered in the Ramp Pipeline lane.',
-		tryIt: 'In the Sources step, arm "+ Pick on solid," then click once on a dark region of the solid and once on a bright region. Two rows appear in the list.',
+		tryIt: 'In the Sources step, arm "+ Pick on solid," then click once on a dark region, once in a mid-chroma region, and once on a bright region. Three rows appear in the list.',
 		successCheck:
-			'Two anchor rows are visible in the Sources list and two markers appear in the 3D viewport where you clicked.',
+			'Three anchor rows are visible in the Sources list and three markers appear in the 3D viewport.',
 		commonMistake:
-			'Picking both anchors without noticing the order. The ramp interpolates row 1 → row 2. Use Up/Down buttons to reorder if needed.',
+			'Picking anchors without noticing the order. The ramp interpolates row 1 → row 2 → row 3. Use Up/Down buttons to reorder if needed (dark first usually means lighter stops higher up the palette).',
 		zone: 'sidebar-inline',
-		target: '[data-tutorial="node-sources"]',
-		suggestedExample: 'example:large-color-ramp'
+		target: '[data-tutorial="node-sources"]'
 	},
 	{
 		title: 'Interpolate on — linear vs spline',
 		concept:
-			'With Interpolate on, Color Lab draws a continuous path between anchors. Linear connects them with straight chords; Spline fits a smooth arc. The interpolation space controls where the path bends — Oklch keeps chroma high for rainbow ramps; Oklab takes a more direct path that may pass through a desaturated middle. Lower the solid opacity first so the curve is visible.',
-		tryIt: 'In the Gamut step, lower Solid opacity to 50–75%. Then switch between linear and spline in Interpolate and watch the curve change shape. Try switching from Oklab to Oklch interpolation space.',
+			'With Interpolate on, Color Lab draws a continuous path between anchors. Linear connects them with straight chords; Spline fits a smooth arc through all points. With exactly two anchors the paths coincide — three or more anchors are needed to see the arc diverge. The interpolation space also shapes the path: Oklch keeps chroma high along the arc; Oklab takes a more direct route that may pass through a desaturated middle. Lower the solid opacity first so the curve is visible through the solid.',
+		tryIt: 'First, in the Gamut step, lower Solid opacity to 50–75%. Then open Interpolate and switch between linear and spline — watch the curve change shape. Switch the interpolation space from Oklab to Oklch and back.',
 		successCheck:
-			'The curve is visible inside the semi-transparent solid. With more than two anchors, spline produces a smooth arc; linear produces connected straight segments.',
+			'The curve is visible inside the semi-transparent solid. Spline mode produces a smooth arc through the mid-anchor; linear connects them with straight segments.',
 		commonMistake:
 			'Confusing interpolation space with world space. Interpolation space is where the ramp path is computed; world space is viewport geometry only. These are independent settings.',
 		zone: 'sidebar-inline',
-		target: '[data-tutorial="node-interpolate"]'
+		target: '[data-tutorial="node-gamut"]',
+		suggestedExample: 'example:spline-color-ramp'
 	},
 	{
 		title: 'Place on — where the stops land',
@@ -256,9 +257,9 @@ export const B_QUICK_STEPS: TutorialStep[] = [
 		title: 'Read the palette',
 		concept:
 			'The right inspector\'s Palette tab shows the final generated colors exactly as they will be exported — post gamut-map, with WCAG contrast ratios. This is the authoritative ramp preview; the 3D viewport markers are orientation aids, not pixel-accurate swatches.',
-		tryIt: 'Open the Palette tab on the right. Hover each swatch to read its hex and Oklch values. Look for any OOG (out-of-gamut) indicators on stops that exceed sRGB.',
+		tryIt: 'Open the Palette tab on the right. Hover each swatch to read its hex and Oklch values. Check whether any OOG indicators appear on stops that exceed sRGB.',
 		successCheck:
-			'You can read the hex value of each stop and confirm the lightness progression matches your intent. OOG stops are flagged.',
+			'You can read the hex value of each stop and confirm the lightness progression matches your intent. If any stops venture outside sRGB, an OOG indicator appears.',
 		commonMistake:
 			'Treating 3D viewport stop markers as final colors. They are accurate colorimetrically but rendered through your monitor profile; the Palette tab reads the computed values directly.',
 		zone: 'inspector-adjacent',
@@ -267,12 +268,12 @@ export const B_QUICK_STEPS: TutorialStep[] = [
 	{
 		title: 'Export the ramp',
 		concept:
-			'Export serializes the final stops to CSS oklch() custom properties or DTCG JSON. Token values are post-gamut-map. By default the gamut map clips to sRGB — to export wide-gamut values, change the gamut map policy to "none" or "oklch-c."',
+			'Export serializes the final stops to CSS oklch() custom properties or DTCG JSON. Token values are post-gamut-map. By default the Gamut map policy is "None (show OOG)" — out-of-gamut stops export as-is. Switch to "Clip (clamp)" or "Preserve chroma" to bring stops into sRGB before export.',
 		tryIt: 'Open the Export step and copy the CSS output. Paste it into a text editor. Check that the oklch() L values increase or decrease monotonically as expected.',
 		successCheck:
 			'You have CSS (or DTCG JSON) on your clipboard that you could paste into a real stylesheet. The lightness values reflect the dark-to-light order of your anchors.',
 		commonMistake:
-			'Expecting wide-gamut values in the export without changing the gamut map policy. The default clips to sRGB; OOG stops will appear clipped unless policy is changed.',
+			'Expecting stops to be auto-clipped to sRGB on export. The default Gamut map policy is "None" — OOG stops export unchanged. Switch to "Clip (clamp)" or "Preserve chroma" to keep values in gamut.',
 		zone: 'sidebar-inline',
 		target: '[data-tutorial="node-export"]'
 	},
@@ -310,22 +311,23 @@ export const B_PIPELINE_STEPS: TutorialStep[] = [
 	{
 		title: 'Interpolate — path and space',
 		concept:
-			'Interpolate builds the continuous curve from anchors. Off passes anchors through unchanged. Linear connects with straight chords; Spline fits a smooth parametric arc. The interpolation space (Oklab, Oklch, sRGB, CIELAB, "world") determines where the path bends — different spaces produce dramatically different arcs through the same anchor set.',
-		tryIt: 'Switch between linear and spline while watching the curve. Change the space from Oklch to sRGB and observe how the arc through the solid changes shape.',
+			'Interpolate builds the continuous curve from anchors. Off passes anchors through unchanged. Linear connects with straight chords; Spline fits a smooth parametric arc. With exactly two anchors, spline and linear trace the same chord — the arc diverges only with three or more points. The interpolation space (Oklab, Oklch, sRGB, CIELAB, "world") is where that path bends — different spaces produce dramatically different arcs through the same anchor set.',
+		tryIt: 'Load "Spline Color Ramp" via the button above (seven surface-snapped anchors). Note: loading replaces your current source lists — rebuild your two-list setup afterwards for steps 5–9. Switch between linear and spline and watch the arc change. Change the interpolation space from Oklch to sRGB and observe how the arc bends.',
 		successCheck:
-			'You can describe why the same anchor set produces different ramp paths in Oklch vs sRGB — the arc shape reflects the coordinate geometry of each space.',
+			'You can describe why the same anchor set produces different ramp paths in Oklch vs sRGB — the arc shape reflects the coordinate geometry of each space. Spline produces a visibly smoother arc than linear through the middle anchors.',
 		commonMistake:
 			'"World" interpolation space does not always produce a straight line. The path is straight in the viewport\'s current coordinate system, which may not be straight in Oklch.',
 		zone: 'sidebar-inline',
-		target: '[data-tutorial="node-interpolate"]'
+		target: '[data-tutorial="node-interpolate"]',
+		suggestedExample: 'example:spline-color-ramp'
 	},
 	{
 		title: 'Place — sampling the curve',
 		concept:
 			'Place is the declarative sampling stage. Even distributes by arc length — approximately even perceptual steps in Oklab or CIELAB. Uniform uses the curve\'s own parametric t. Tones targets fixed Oklab L values. Contrast produces stops whose WCAG ratios fall within contrastMin/contrastMax. Off uses exact anchor positions.',
-		tryIt: 'Set 9 stops, even policy. Switch to contrast policy (contrastMin=2.5, contrastMax=12). Watch the stops relocate. Check the Palette tab — each stop should show a WCAG ratio in the target range.',
+		tryIt: 'Set 9 stops, even policy. Switch to contrast policy (contrastMin=2.5, contrastMax=12). Watch the stops relocate. Check the Palette tab — each stop should show a WCAG ratio near the target range.',
 		successCheck:
-			'With contrast policy, every stop in the Palette tab has a contrast ratio within the configured range against the chosen background.',
+			'Stops redistribute along the curve toward positions that hit the contrast targets. Short ramps or narrow chroma ranges may approximate the targets rather than land exactly.',
 		commonMistake:
 			'Disabling Place when OOG warnings appear, expecting it to help. OOG stops come from the path going outside the gamut — disabling Place doesn\'t remove the path. Fix OOG in Gamut map.',
 		zone: 'sidebar-inline',
@@ -346,14 +348,15 @@ export const B_PIPELINE_STEPS: TutorialStep[] = [
 	{
 		title: 'Gamut map — ramp-only OOG policy',
 		concept:
-			'Gamut map is the terminal ramp stage: it brings out-of-gamut stops into sRGB before export. Clip hard-clips each RGB channel. oklch-c reduces chroma in Oklch (preserves hue and lightness). None passes OOG stops through unchanged. This stage is separate from the Explorer Gamut setting, the spline surface constraint, and CVD.',
-		tryIt: 'Build a ramp that crosses outside sRGB (a wide-chroma Oklch arc). Note the OOG badge. Switch between clip and oklch-c and watch the affected stops change in the Palette tab.',
+			'Gamut map is the terminal ramp stage: it brings out-of-gamut stops into sRGB before export. "Clip (clamp)" hard-clips each RGB channel. "Preserve chroma" reduces chroma in Oklch (keeps hue and lightness). "None" passes OOG stops through unchanged. This stage is separate from the Explorer Gamut setting, the spline surface constraint, and CVD.',
+		tryIt: 'Load "Spline Color Ramp" and set the interpolation space to Oklch — the arc may cross gamut boundaries. Check the OOG badge on the Gamut map node. Switch between "Clip (clamp)" and "Preserve chroma" and watch affected stops change in the Palette tab.',
 		successCheck:
-			'With oklch-c, OOG stops shift inward in chroma while keeping hue angle. With clip, they may shift hue because channels clamp independently.',
+			'With "Preserve chroma," OOG stops shift inward in chroma while keeping hue angle. With "Clip (clamp)," they may shift hue because channels clamp independently.',
 		commonMistake:
 			'Thinking the Explorer Gamut setting controls ramp export clipping. The Explorer Gamut defines what the solid represents; the Ramp Gamut map is a separate, independent terminal policy.',
 		zone: 'sidebar-inline',
-		target: '[data-tutorial="node-gamut-map"]'
+		target: '[data-tutorial="node-gamut-map"]',
+		suggestedExample: 'example:spline-color-ramp'
 	},
 	{
 		title: 'Export — tokens and format',
@@ -371,7 +374,7 @@ export const B_PIPELINE_STEPS: TutorialStep[] = [
 		title: 'Multi-list ramps — parallel pipelines',
 		concept:
 			'With more than one source list, each list runs independently through Interpolate → Place → Gamut map and produces its own output. Lists share interpolation settings but have separate anchors — useful for parallel color families (warm + cool, signal + neutral). When Expand is off, the palette shows all lists\' ramps as parallel rows. More tutorials are available — click the Tutorial button again to explore the Explorer lanes or the Quick Ramp overview.',
-		tryIt: 'Create two lists with clearly different anchors (warm reds in list 1, cool blues in list 2). Enable Interpolate in Oklch, 9 stops, even Place. The Palette tab shows two 9-stop rows. Now enable Expand with 2 rows — observe 4 rows total (2 lists × 2).',
+		tryIt: 'Verify you still have two source lists from step 3 (or rebuild: + chip in Sources, two contrasting anchors in each list). Enable Interpolate in Oklch, 9 stops, even Place. The Palette tab shows two parallel 9-stop rows. Enable Expand with 2 rows — observe 4 rows total (2 lists × 2).',
 		successCheck:
 			'Two distinct parallel ramps appear in the Palette tab when Expand is off. Enabling Expand multiplies rows correctly.',
 		commonMistake:

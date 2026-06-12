@@ -276,11 +276,11 @@ export const EXAMPLE_STATES = [
 		snapshot: createExampleState({
 			explorer: {
 				gamut: 'p3',
-				shell: 'p3',
+				shell: 'srgb',
 				cylSlice: true,
 				cylRad: 0.35,
 				guideNote:
-					'The volume shows Display P3; the wire shell outlines the same boundary. The cylindrical clip reveals how much of P3 extends beyond sRGB along this view.\n\nSwitch gamuts or toggle the shell in Gamut & slice to compare standards.',
+					'The volume shows Display P3; the wire shell outlines the sRGB boundary. Colors between the cage and the solid surface are P3-only — not reproducible in sRGB.\n\nOrbit until the wire cage is visible inside the solid. The cylindrical clip removes low-chroma colors to reveal the P3-exclusive region clearly.',
 				guideNotePlacement: 'overlay',
 				guideNoteDismissed: false
 			},

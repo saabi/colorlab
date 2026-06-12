@@ -1,7 +1,7 @@
 export type SpaceMode = 0 | 1 | 2 | 3 | 5;
 export type PlaneMode = 'L' | 'H' | 'C';
 export type GamutKey = 'srgb' | 'p3' | 'rec2020' | 'ntsc' | 'ebu' | 'smptec' | 'cie';
-export type ShellKey = 'none' | 'p3' | 'rec2020' | 'ntsc' | 'cie';
+export type ShellKey = 'none' | 'srgb' | 'p3' | 'rec2020' | 'ntsc' | 'cie';
 export type CvdMode = 'none' | 'protan' | 'deutan' | 'tritan';
 // Interpolation path type (linear/spline) plus the spread generator. Segment and
 // Hue arc are just `linear` in a cartesian vs cylindrical space. (Spread is no

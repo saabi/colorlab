@@ -76,6 +76,6 @@
 	<LanePicker {tutorial} onClose={() => (lanePickerOpen = false)} />
 {/if}
 {#if tutorial.progress?.active}
-	<TutorialPopover {tutorial} />
+	<TutorialPopover {tutorial} loadExample={(id) => session.loadDocument(id)} />
 {/if}
 
