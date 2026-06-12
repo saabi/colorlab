@@ -33,6 +33,8 @@ export interface AxisSpreadConfig {
 // Out-of-gamut handling is a separate, global policy (theme.gamutMap).
 export type SplineConstraint = 'free' | 'surface';
 export type MinAverageFps = 15 | 30 | 60;
+/** Where a persisted example guide note is rendered in the UI. */
+export type GuideNotePlacement = 'sidebar' | 'overlay';
 
 /** One sample of the rendered spline curve: world position + linear-sRGB color. */
 export interface SplineSample {
@@ -98,12 +100,20 @@ export interface ExplorerState {
 	surfaceGridAlpha: number;
 	/** Opacity of the color solid (1 = opaque); < 1 reveals ramp markers/curves behind it. */
 	solidAlpha: number;
-	/** Master toggle hiding all viewport aids (floor, surface grid, outlines, shell) without losing each setting. */
+	/** Master toggle hiding viewport overlays (surface grid, outlines, shell, ramp markers) without losing each setting. Floor is separate. */
 	hideAids: boolean;
+	/** Slow automatic orbit of the camera (runtime-only; not persisted). */
+	autoRotate: boolean;
 	/** Pin the exported palette as an overlay on the 3D viewport (desktop). */
 	pinPalette: boolean;
 	/** Pipeline step ids currently expanded in the left sidebar (persisted UI state). */
 	openSteps: string[];
+	/** Optional teaching note for examples (persisted). Null hides the guide UI. */
+	guideNote: string | null;
+	/** Where guideNote is shown when not dismissed (persisted). */
+	guideNotePlacement: GuideNotePlacement;
+	/** Whether the user closed the guide note (persisted). */
+	guideNoteDismissed: boolean;
 	cvd: CvdMode;
 	cvdSev: number;
 	theme: {
@@ -174,8 +184,11 @@ export type PersistedTheme = Omit<
 	ExplorerState['theme'],
 	'arm' | 'stops' | 'selectedPoint' | 'splineCurve' | 'rawStops' | 'grid' | 'curves' | 'rawRows' | 'rows'
 >;
-// autoPerformance/minAverageFps are runtime-only renderer policy — not part of the saved artifact.
-export type PersistedExplorer = Omit<ExplorerState, 'hover' | 'theme' | 'autoPerformance' | 'minAverageFps'> & {
+// autoPerformance/minAverageFps/autoRotate are runtime-only renderer policy — not part of the saved artifact.
+export type PersistedExplorer = Omit<
+	ExplorerState,
+	'hover' | 'theme' | 'autoPerformance' | 'minAverageFps' | 'autoRotate'
+> & {
 	theme: PersistedTheme;
 };
 

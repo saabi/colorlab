@@ -215,6 +215,20 @@ function coerceExplorer(raw: unknown, defaults: PersistedExplorer): PersistedExp
 		openSteps: Array.isArray(explorer.openSteps)
 			? explorer.openSteps.filter((s): s is string => typeof s === 'string')
 			: defaults.openSteps,
+		guideNote:
+			typeof explorer.guideNote === 'string'
+				? explorer.guideNote
+				: explorer.guideNote === null
+					? null
+					: defaults.guideNote,
+		guideNotePlacement:
+			explorer.guideNotePlacement === 'sidebar' || explorer.guideNotePlacement === 'overlay'
+				? explorer.guideNotePlacement
+				: defaults.guideNotePlacement,
+		guideNoteDismissed:
+			typeof explorer.guideNoteDismissed === 'boolean'
+				? explorer.guideNoteDismissed
+				: defaults.guideNoteDismissed,
 		cvd: enumOf(explorer.cvd, CVD_MODES, defaults.cvd, 'cvd'),
 		cvdSev: finiteNumber(explorer.cvdSev, defaults.cvdSev, 'cvdSev'),
 		theme: coerceTheme(explorer.theme, defaults.theme)
@@ -253,6 +267,9 @@ export function coerceSnapshot(raw: unknown): ParameterSnapshot | null {
 			hideAids: factory.explorer.hideAids,
 			pinPalette: factory.explorer.pinPalette,
 			openSteps: factory.explorer.openSteps,
+			guideNote: factory.explorer.guideNote,
+			guideNotePlacement: factory.explorer.guideNotePlacement,
+			guideNoteDismissed: factory.explorer.guideNoteDismissed,
 			cvd: factory.explorer.cvd,
 			cvdSev: factory.explorer.cvdSev,
 			theme: {

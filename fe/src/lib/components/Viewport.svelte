@@ -11,6 +11,7 @@
 	import GestureReferencePopover from './GestureReferencePopover.svelte';
 	import ViewportToolbar from './ViewportToolbar.svelte';
 	import PaletteStrip from './PaletteStrip.svelte';
+	import TeachingNote from './TeachingNote.svelte';
 
 	import type { ExplorerState, ThemeAnchor } from '$lib/engine/types';
 	import type { Camera } from '$lib/engine/camera';
@@ -50,6 +51,7 @@
 	let keys = { space: false, addPoint: false };
 
 	const RESOLUTIONS = [64, 128, 192, 256] as const;
+	const AUTO_ROTATE_RAD_PER_SEC = 0.09;
 	const PERF_SAMPLE_COUNT = 12;
 	const PERF_MARGIN = 1.1;
 	const PERF_COOLDOWN_MS = 1200;
@@ -63,6 +65,9 @@
 	let frameSamplePending = false;
 	let performanceSampleToken = 0;
 	let lastAutoPerformanceStep = 0;
+	let autoRotateFrame = 0;
+	let autoRotatePrev = 0;
+	let reducedMotion = false;
 
 	const matrices = $derived(rebuildMatrices(explorer.gamut));
 	const shellMatrices = $derived(explorer.hideAids ? null : rebuildShell(explorer.shell));
@@ -168,6 +173,30 @@
 		renderer.draw({ state: explorer, matrices, shellMatrices, camera });
 		recordDrawPerformance(t0, performance.now() - t0);
 		scheduleFrameCadenceSample();
+	}
+
+	function stopAutoRotateLoop() {
+		if (autoRotateFrame) cancelAnimationFrame(autoRotateFrame);
+		autoRotateFrame = 0;
+		autoRotatePrev = 0;
+	}
+
+	function autoRotateLoop(ts: number) {
+		autoRotateFrame = requestAnimationFrame(autoRotateLoop);
+		if (!renderer || !explorer.autoRotate || reducedMotion || dragging || pinching) {
+			autoRotatePrev = ts;
+			return;
+		}
+		const dt = autoRotatePrev > 0 ? (ts - autoRotatePrev) / 1000 : 0;
+		autoRotatePrev = ts;
+		if (dt <= 0 || dt > 0.25) return;
+		camera.yaw -= dt * AUTO_ROTATE_RAD_PER_SEC;
+		draw();
+	}
+
+	function startAutoRotateLoop() {
+		stopAutoRotateLoop();
+		autoRotateFrame = requestAnimationFrame(autoRotateLoop);
 	}
 
 	function clamp(value: number, min: number, max: number) {
@@ -591,6 +620,7 @@
 	}
 
 	onMount(() => {
+		reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 		const touchOpts = { passive: false } as AddEventListenerOptions;
 		canvas.addEventListener('touchstart', onTouchStart, touchOpts);
 		canvas.addEventListener('touchmove', onTouchMove, touchOpts);
@@ -606,7 +636,9 @@
 			ro.observe(canvas);
 			renderer.rebuildBoundary(explorer, matrices);
 			draw();
+			startAutoRotateLoop();
 			return () => {
+				stopAutoRotateLoop();
 				canvas.removeEventListener('touchstart', onTouchStart);
 				canvas.removeEventListener('touchmove', onTouchMove);
 				canvas.removeEventListener('touchend', onTouchEnd);
@@ -620,6 +652,7 @@
 		} catch (err) {
 			error = err instanceof Error ? err.message : String(err);
 			return () => {
+				stopAutoRotateLoop();
 				canvas.removeEventListener('touchstart', onTouchStart);
 				canvas.removeEventListener('touchmove', onTouchMove);
 				canvas.removeEventListener('touchend', onTouchEnd);
@@ -631,6 +664,7 @@
 	});
 
 	onDestroy(() => {
+		stopAutoRotateLoop();
 		renderer?.dispose();
 		renderer = null;
 	});
@@ -749,6 +783,14 @@
 		ondblclick={onDoubleClick}
 		onwheel={onWheel}
 	></canvas>
+	{#if explorer.guideNote && explorer.guideNotePlacement === 'overlay'}
+		<TeachingNote
+			bind:note={explorer.guideNote}
+			bind:placement={explorer.guideNotePlacement}
+			bind:dismissed={explorer.guideNoteDismissed}
+			variant="overlay"
+		/>
+	{/if}
 	{#if explorer.pinPalette && paletteRows.length}
 		<div class="pin-overlay">
 			<PaletteStrip rows={paletteRows} swatch={16} cvd={explorer.cvd} cvdSev={explorer.cvdSev} ariaLabel="Pinned exported palette" />

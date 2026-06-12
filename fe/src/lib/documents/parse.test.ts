@@ -301,13 +301,38 @@ describe('parseSnapshot', () => {
 		expect(parseSnapshot(legacy).snapshot?.explorer.openSteps).toEqual(defaults.explorer.openSteps);
 	});
 
+	it('persists guide notes and defaults them when absent', () => {
+		const withGuide = {
+			...defaults,
+			explorer: {
+				...defaults.explorer,
+				guideNote: 'Try the slice plane.',
+				guideNotePlacement: 'overlay',
+				guideNoteDismissed: true
+			}
+		};
+		const snap = parseSnapshot(withGuide).snapshot?.explorer;
+		expect(snap?.guideNote).toBe('Try the slice plane.');
+		expect(snap?.guideNotePlacement).toBe('overlay');
+		expect(snap?.guideNoteDismissed).toBe(true);
+
+		const { guideNote: _n, guideNotePlacement: _p, guideNoteDismissed: _d, ...explorerNoGuide } =
+			defaults.explorer;
+		const legacy = { explorer: explorerNoGuide, camera: defaults.camera };
+		const legacySnap = parseSnapshot(legacy).snapshot?.explorer;
+		expect(legacySnap?.guideNote).toBe(defaults.explorer.guideNote);
+		expect(legacySnap?.guideNotePlacement).toBe(defaults.explorer.guideNotePlacement);
+		expect(legacySnap?.guideNoteDismissed).toBe(defaults.explorer.guideNoteDismissed);
+	});
+
 	it('does not persist runtime-only auto-reduce fields', () => {
 		const doc = {
 			...defaults,
-			explorer: { ...defaults.explorer, autoPerformance: false, minAverageFps: 15 }
+			explorer: { ...defaults.explorer, autoPerformance: false, minAverageFps: 15, autoRotate: false }
 		} as unknown;
 		const snap = parseSnapshot(doc).snapshot;
 		expect('autoPerformance' in (snap?.explorer ?? {})).toBe(false);
 		expect('minAverageFps' in (snap?.explorer ?? {})).toBe(false);
+		expect('autoRotate' in (snap?.explorer ?? {})).toBe(false);
 	});
 });

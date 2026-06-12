@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 	import PanelHeader from './PanelHeader.svelte';
 	import PaletteStrip from './PaletteStrip.svelte';
+	import TeachingNote from './TeachingNote.svelte';
 	import { track } from '$lib/analytics/umami';
 	import { drawConesPanel } from '$lib/panels/cones-panel';
 	import { drawTransferPanel } from '$lib/panels/transfer-panel';
@@ -94,6 +95,14 @@
 </script>
 
 <aside class="side-panel right-panel">
+	{#if explorer.guideNote && explorer.guideNotePlacement === 'sidebar'}
+		<TeachingNote
+			bind:note={explorer.guideNote}
+			bind:placement={explorer.guideNotePlacement}
+			bind:dismissed={explorer.guideNoteDismissed}
+			variant="sidebar"
+		/>
+	{/if}
 	<div class="inspector-tabs" aria-label="Inspector panels">
 		<button
 			type="button"

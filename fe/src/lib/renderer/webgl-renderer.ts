@@ -157,7 +157,7 @@ export class WebGlRenderer {
 			gl.depthMask(true);
 		}
 
-		if (input.state.floor && !input.state.hideAids) {
+		if (input.state.floor) {
 			gl.useProgram(this.floorProgram);
 			gl.bindVertexArray(this.floorVao);
 			gl.uniformMatrix4fv(this.U(this.floorProgram, 'uProj'), false, proj);
@@ -206,7 +206,7 @@ export class WebGlRenderer {
 				gl.drawArrays(gl.POINTS, 0, 1);
 			}
 		};
-		// The master "hide viewport aids" toggle suppresses all ramp overlays too;
+		// The master "hide overlay aids" toggle suppresses ramp overlays too;
 		// per-step show* flags give finer control when aids are shown.
 		const aids = !input.state.hideAids;
 		// Placed stops draw for every list (each list is its own ramp).

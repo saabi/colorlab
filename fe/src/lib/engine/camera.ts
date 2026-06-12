@@ -8,7 +8,13 @@ export interface Camera {
 	fov: number;
 }
 
-export const DEFAULT_CAMERA: Camera = { yaw: 0.7, pitch: 0.42, dist: 2.6, target: [0, -0.05, 0], fov: Math.PI / 4 };
+export const DEFAULT_CAMERA: Camera = {
+	yaw: Math.PI / 4,
+	pitch: 0,
+	dist: 1.89,
+	target: [0.05562906495458457, 0.07582162815580112, 0.007909043147040327],
+	fov: Math.PI / 4
+};
 export const MIN_CAMERA_DIST = 1.2;
 export const MAX_CAMERA_DIST = 8;
 export const MAX_CAMERA_PITCH = Math.PI / 2 - 0.04;

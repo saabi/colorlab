@@ -36,9 +36,13 @@ function createExplorerDefaults(): ExplorerState {
 		outlineDepthTest: true,
 		surfaceGridAlpha: 0.25,
 		solidAlpha: 1,
-		hideAids: false,
-		pinPalette: true,
+		hideAids: true,
+		autoRotate: true,
+		pinPalette: false,
 		openSteps: ['gamut', 'sources'],
+		guideNote: null,
+		guideNotePlacement: 'sidebar',
+		guideNoteDismissed: false,
 		cvd: 'none',
 		cvdSev: 1,
 		theme: {
@@ -77,10 +81,10 @@ function createExplorerDefaults(): ExplorerState {
 				chroma: { delta: 0.1, dir: 'off' },
 				light: { delta: -0.32, dir: 'off' }
 			},
-			showPoints: true,
-			showCurve: true,
-			showStops: true,
-			showPalette: true,
+			showPoints: false,
+			showCurve: false,
+			showStops: false,
+			showPalette: false,
 			grid: [],
 			wcagBg: 'white'
 		},
@@ -157,6 +161,10 @@ export const EXAMPLE_STATES = [
 				surfaceGridAlpha: 0.25,
 				cvd: 'none',
 				cvdSev: 1,
+				guideNote:
+					'This example builds a two-stop linear ramp in Oklch. The curve in the viewport is the interpolated path; the stops on the left are the placed palette swatches.\n\nOpen Interpolate and Place in the left pipeline to change how many steps are sampled, and try other interpolation spaces to see how the path bends through the solid.',
+				guideNotePlacement: 'sidebar',
+				guideNoteDismissed: false,
 				theme: {
 					lists: [
 						[
@@ -209,6 +217,10 @@ export const EXAMPLE_STATES = [
 				surfaceGridAlpha: 0.25,
 				cvd: 'none',
 				cvdSev: 1,
+				guideNote:
+					'Seven source points define a spline curve snapped to the sRGB surface. Spline mode follows the control polygon through Oklch rather than a straight chord.\n\nAdjust source points on the solid or in the Sources step, then compare linear vs spline under Interpolate.',
+				guideNotePlacement: 'sidebar',
+				guideNoteDismissed: false,
 				theme: {
 					lists: [
 						[
@@ -247,7 +259,11 @@ export const EXAMPLE_STATES = [
 				spaceMode: 3,
 				slice: true,
 				planeMode: 'L',
-				off: 0.55
+				off: 0.55,
+				guideNote:
+					'The slice control cuts the 3D solid with a plane at fixed Oklab L. You are looking at a 2D cross-section of all colors at one lightness level.\n\nDrag the slice offset in Gamut & slice, or Alt-drag in the viewport to move the plane interactively.',
+				guideNotePlacement: 'overlay',
+				guideNoteDismissed: false
 			},
 			camera: { yaw: 0.9, pitch: 0.35 }
 		})
@@ -261,7 +277,11 @@ export const EXAMPLE_STATES = [
 				gamut: 'p3',
 				shell: 'p3',
 				cylSlice: true,
-				cylRad: 0.35
+				cylRad: 0.35,
+				guideNote:
+					'The volume shows Display P3; the wire shell outlines the same boundary. The cylindrical clip reveals how much of P3 extends beyond sRGB along this view.\n\nSwitch gamuts or toggle the shell in Gamut & slice to compare standards.',
+				guideNotePlacement: 'overlay',
+				guideNoteDismissed: false
 			},
 			camera: { dist: 3.2 }
 		})

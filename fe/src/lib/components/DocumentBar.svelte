@@ -1,6 +1,7 @@
 <script lang="ts">
 	import ConfirmDialog from './ConfirmDialog.svelte';
 	import NamePromptDialog from './NamePromptDialog.svelte';
+	import { getGuideNoteContext } from '$lib/guide-note/context';
 	import { UNTITLED_SELECT_ID } from '$lib/documents/session.svelte';
 
 	import type { DocumentSession } from '$lib/documents/session.svelte';
@@ -17,6 +18,8 @@
 	let namePromptMode = $state<'save' | 'saveAs' | 'rename'>('save');
 
 	let deleteConfirmOpen = $state(false);
+
+	const guideNote = getGuideNoteContext();
 
 	const switcherTitle = $derived(
 		`${session.activeName}${session.isDirty ? ' (unsaved)' : ''}`
@@ -121,6 +124,18 @@
 			</button>
 			{#if moreOpen}
 				<div class="document-more-menu" role="menu">
+					<button
+						type="button"
+						role="menuitem"
+						class="document-more-item"
+						onclick={() => {
+							guideNote?.openEditor();
+							closeMore();
+						}}
+					>
+						<span class="document-more-icon" aria-hidden="true">✎</span>
+						Guide note…
+					</button>
 					<button
 						type="button"
 						role="menuitem"

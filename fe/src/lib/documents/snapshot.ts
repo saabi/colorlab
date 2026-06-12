@@ -54,6 +54,9 @@ export function toPersistedExplorer(explorer: ExplorerState): PersistedExplorer 
 		hideAids: explorer.hideAids,
 		pinPalette: explorer.pinPalette,
 		openSteps: [...explorer.openSteps],
+		guideNote: explorer.guideNote,
+		guideNotePlacement: explorer.guideNotePlacement,
+		guideNoteDismissed: explorer.guideNoteDismissed,
 		cvd: explorer.cvd,
 		cvdSev: explorer.cvdSev,
 		theme: {

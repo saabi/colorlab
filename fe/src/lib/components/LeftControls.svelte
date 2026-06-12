@@ -195,10 +195,7 @@
 						<input type="number" value={camera.target[2]} step="0.01" oninput={(event) => setCameraTarget(2, Number((event.currentTarget as HTMLInputElement).value))} />
 					</label>
 				</div>
-				<div class="separator">
-					<ToggleRow label="Floor grid" bind:checked={explorer.floor} />
-				</div>
-				<p class="note">Gestures remain active in the viewport; these controls edit the same camera state directly. Touch tool lives in the Pick stage.</p>
+				<p class="note">Gestures remain active in the viewport; these controls edit the same camera state directly. Touch tool lives in the Pick stage. Floor grid is in the sidebar footer.</p>
 			</ControlGroup>
 
 			<ControlGroup index={6} title={m.cvd.label} helpId="pipelineVision" status={m.cvd.status} affects={m.cvd.affects} open={isOpen('cvd')} onToggle={() => toggleStep('cvd')} bind:openHelp>
@@ -253,13 +250,25 @@
 
 	<!-- Renderer settings: policies/preferences, not pipeline stages -->
 	<div class="sidebar-footer">
-		<ToggleRow label="Hide viewport aids" bind:checked={explorer.hideAids} />
-		<ToggleRow label="Auto-reduce tessellation" bind:checked={explorer.autoPerformance} />
-		<label class="row" for="min-average-fps-select"><span>Minimum average FPS</span></label>
-		<select id="min-average-fps-select" bind:value={explorer.minAverageFps} disabled={!explorer.autoPerformance}>
-			{#each minAverageFpsOptions as fps}
-				<option value={fps}>{fps} fps</option>
-			{/each}
-		</select>
+		<div class="sidebar-footer-row">
+			<ToggleRow label="Floor grid" bind:checked={explorer.floor} />
+			<ToggleRow label="Hide aids" bind:checked={explorer.hideAids} />
+			<ToggleRow label="Auto-rotate" bind:checked={explorer.autoRotate} />
+		</div>
+		<div class="sidebar-footer-row">
+			<ToggleRow label="Auto-reduce" bind:checked={explorer.autoPerformance} />
+			<label class="sidebar-footer-fps" for="min-average-fps-select">
+				<span>Min FPS</span>
+				<select
+					id="min-average-fps-select"
+					bind:value={explorer.minAverageFps}
+					disabled={!explorer.autoPerformance}
+				>
+					{#each minAverageFpsOptions as fps}
+						<option value={fps}>{fps}</option>
+					{/each}
+				</select>
+			</label>
+		</div>
 	</div>
 </div>

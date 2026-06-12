@@ -312,6 +312,11 @@ input[type="checkbox"] {
 	color: #f0a0a0;
 }
 
+.document-more-icon {
+	margin-right: 6px;
+	opacity: 0.85;
+}
+
 .name-prompt-dialog {
 	position: fixed;
 	top: 50%;
@@ -459,6 +464,216 @@ input[type="checkbox"] {
 .right-panel {
 	grid-column: 3;
 	border-left: 1px solid var(--line);
+	display: flex;
+	flex-direction: column;
+	min-height: 0;
+}
+
+.guide-note {
+	border: 1px solid var(--line);
+	border-radius: 6px;
+	background: color-mix(in srgb, var(--panel) 92%, var(--accent) 8%);
+	font-size: 12px;
+	line-height: 1.45;
+}
+
+.guide-note--sidebar {
+	flex-shrink: 0;
+	margin: 10px 10px 0;
+}
+
+.guide-note--overlay {
+	position: absolute;
+	bottom: 12px;
+	left: 12px;
+	max-width: min(320px, calc(100% - 24px));
+	z-index: 5;
+	box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+}
+
+.guide-note-head {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+	padding: 6px 8px 4px;
+	border-bottom: 1px solid var(--line);
+}
+
+.guide-note-label {
+	color: var(--accent);
+	font-size: 10px;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.08em;
+}
+
+.guide-note-actions {
+	display: flex;
+	align-items: center;
+	gap: 2px;
+}
+
+.guide-note-icon-btn {
+	display: grid;
+	place-items: center;
+	width: 22px;
+	height: 22px;
+	padding: 0;
+	border: 0;
+	border-radius: 4px;
+	background: transparent;
+	color: var(--dim);
+	font-size: 16px;
+	line-height: 1;
+	cursor: pointer;
+}
+
+.guide-note-icon-btn:hover {
+	background: rgba(255, 255, 255, 0.06);
+	color: var(--txt);
+}
+
+.guide-icon {
+	font-size: 13px;
+	line-height: 1;
+}
+
+.guide-restore-row {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+}
+
+.guide-restore-row--sidebar {
+	flex-shrink: 0;
+	margin: 8px 10px 0;
+}
+
+.guide-restore-row--overlay {
+	position: absolute;
+	bottom: 12px;
+	left: 12px;
+	z-index: 5;
+}
+
+.guide-restore-edit {
+	border: 1px solid var(--line);
+	border-radius: 999px;
+	background: rgba(10, 10, 11, 0.72);
+}
+
+.guide-note-body {
+	padding: 8px 10px 10px;
+	color: var(--txt);
+}
+
+.guide-note-body p {
+	margin: 0;
+}
+
+.guide-note-body p + p {
+	margin-top: 8px;
+}
+
+.guide-restore {
+	padding: 4px 10px;
+	border: 1px solid var(--line);
+	border-radius: 999px;
+	background: rgba(10, 10, 11, 0.72);
+	color: var(--dim);
+	font-size: 11px;
+	cursor: pointer;
+}
+
+.guide-restore:hover {
+	border-color: var(--accent);
+	color: var(--txt);
+}
+
+.guide-note-editor {
+	position: fixed;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	z-index: 1001;
+	width: min(420px, calc(100vw - 32px));
+	padding: 16px;
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	background: var(--panel);
+	box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+}
+
+.guide-note-editor h2 {
+	margin: 0 0 12px;
+	font-size: 13px;
+	font-weight: 600;
+}
+
+.guide-editor-field {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	margin-bottom: 12px;
+	font-size: 11px;
+	color: var(--dim);
+}
+
+.guide-editor-field textarea {
+	resize: vertical;
+	min-height: 120px;
+	font: inherit;
+	font-size: 12px;
+	line-height: 1.45;
+	border: 1px solid var(--line);
+	border-radius: 4px;
+	background: var(--bg);
+	color: var(--text);
+	padding: 8px;
+}
+
+.guide-note-placement {
+	margin: 0 0 8px;
+	padding: 0;
+	border: 0;
+}
+
+.guide-note-placement legend {
+	margin-bottom: 6px;
+	font-size: 11px;
+	color: var(--dim);
+}
+
+.guide-placement-option {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	margin-bottom: 4px;
+	font-size: 12px;
+	color: var(--txt);
+	cursor: pointer;
+}
+
+.guide-editor-hint {
+	margin: 0 0 12px;
+	font-size: 10px;
+	color: var(--dim);
+}
+
+.guide-editor-actions {
+	justify-content: space-between;
+	align-items: center;
+}
+
+.guide-editor-actions-end {
+	display: flex;
+	gap: 8px;
+	margin-left: auto;
+}
+
+.guide-editor-remove {
+	margin-right: auto;
 }
 
 .viewport {
@@ -505,10 +720,68 @@ input[type="checkbox"] {
 /* Renderer settings footer (policies/preferences, not pipeline stages) */
 .sidebar-footer {
 	flex-shrink: 0;
-	padding: 12px 14px 14px;
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	padding: 10px 14px 12px;
 	border-top: 1px solid var(--line);
 	background: var(--panel);
 	box-shadow: 0 -6px 12px rgba(0, 0, 0, 0.22);
+}
+
+.sidebar-footer-row {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	min-width: 0;
+}
+
+.sidebar-footer-row .row {
+	flex: 1 1 0;
+	justify-content: flex-end;
+	min-width: 0;
+	margin: 0;
+	gap: 5px;
+	font-size: 11px;
+}
+
+.sidebar-footer-row .row span {
+	flex: 1 1 auto;
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	text-align: right;
+}
+
+.sidebar-footer-row .row input {
+	flex-shrink: 0;
+}
+
+.sidebar-footer-fps {
+	display: flex;
+	flex: 1 1 0;
+	justify-content: flex-end;
+	align-items: center;
+	gap: 5px;
+	min-width: 0;
+	margin: 0;
+	color: var(--dim);
+	font-size: 11px;
+}
+
+.sidebar-footer-fps span {
+	flex: 1 1 auto;
+	min-width: 0;
+	text-align: right;
+	white-space: nowrap;
+}
+
+.sidebar-footer-fps select {
+	flex: 1;
+	min-width: 0;
+	height: 26px;
+	font-size: 11px;
 }
 
 /* Continuous connector line behind the numbered step markers */
@@ -1282,6 +1555,13 @@ input[type="checkbox"] {
 		border-top: 1px solid var(--line);
 		border-left: 0;
 		padding: 8px 10px 10px;
+	}
+
+	.guide-note--overlay,
+	.guide-note--sidebar,
+	.guide-restore-row--overlay,
+	.guide-restore-row--sidebar {
+		display: none;
 	}
 
 	.viewport-toolbar {
