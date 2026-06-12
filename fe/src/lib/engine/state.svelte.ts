@@ -38,7 +38,7 @@ function createExplorerDefaults(): ExplorerState {
 		solidAlpha: 1,
 		hideAids: true,
 		autoRotate: true,
-		pinPalette: false,
+		pinPalette: true,
 		openSteps: ['gamut', 'sources'],
 		guideNote: null,
 		guideNotePlacement: 'sidebar',
@@ -81,10 +81,10 @@ function createExplorerDefaults(): ExplorerState {
 				chroma: { delta: 0.1, dir: 'off' },
 				light: { delta: -0.32, dir: 'off' }
 			},
-			showPoints: false,
-			showCurve: false,
-			showStops: false,
-			showPalette: false,
+			showPoints: true,
+			showCurve: true,
+			showStops: true,
+			showPalette: true,
 			grid: [],
 			wcagBg: 'white'
 		},
