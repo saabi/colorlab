@@ -849,17 +849,6 @@ input[type="checkbox"] {
 	font-size: 0.846rem;
 }
 
-@media (max-width: 720px) {
-	.sidebar-footer-grid-aids,
-	.sidebar-footer-grid-performance {
-		grid-template-columns: 1fr;
-	}
-
-	.sidebar-footer-fps {
-		justify-content: space-between;
-	}
-}
-
 /* Continuous connector line behind the numbered step markers */
 .lane-steps {
 	position: relative;
