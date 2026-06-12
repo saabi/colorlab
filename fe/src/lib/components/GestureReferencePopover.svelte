@@ -4,31 +4,74 @@
 
 	let { open = $bindable() } = $props<{ open: boolean }>();
 	let root: HTMLDivElement;
+	let tab = $state<'pointer' | 'touch' | 'keyboard'>('pointer');
 
-	const groups = [
+	const pointerGroups = [
 		{
 			title: 'View',
 			items: [
 				['Drag', 'orbit'],
-				['Wheel / pinch', 'zoom'],
+				['Wheel', 'zoom'],
 				['Shift or Space + drag', 'pan'],
-				['Double click solid', 'center target'],
-				['R', 'reset camera']
+				['Double click solid', 'center target']
 			]
 		},
 		{
 			title: 'Inspect and Pick',
 			items: [
 				['Hover solid', 'inspect'],
-				['Touch solid + drag', 'inspect'],
-				['A + click', 'add source point']
+				['Click point', 'select source point'],
+				['Drag point', 'move source point'],
+				['A + click solid', 'add source point']
 			]
 		},
 		{
 			title: 'Direct Edits',
 			items: [
 				['Alt + drag', 'slice offset'],
-				['Ctrl + drag', 'cylinder radius'],
+				['Ctrl / Cmd + drag', 'cylinder radius']
+			]
+		}
+	];
+
+	const touchGroups = [
+		{
+			title: 'View',
+			items: [
+				['Drag empty space', 'orbit'],
+				['Pinch', 'zoom'],
+				['Two-finger drag', 'pan']
+			]
+		},
+		{
+			title: 'Inspect and Pick',
+			items: [
+				['Drag solid', 'inspect'],
+				['Tap point', 'select source point'],
+				['Drag point', 'move source point']
+			]
+		},
+		{
+			title: 'Touch Tools',
+			items: [
+				['Slice tool + drag', 'slice offset'],
+				['Cylinder tool + drag', 'cylinder radius'],
+				['Add tool + tap solid', 'add source point']
+			]
+		}
+	];
+
+	const keyboardGroups = [
+		{
+			title: 'View',
+			items: [
+				['R', 'reset camera'],
+				['Space (hold)', 'pan mode with drag']
+			]
+		},
+		{
+			title: 'Direct Edits',
+			items: [
 				['[ / ]', 'step slice'],
 				['- / =', 'step cylinder']
 			]
@@ -36,11 +79,12 @@
 		{
 			title: 'Spline Points',
 			items: [
-				['Click / tap point', 'select'],
-				['Drag point', 'move'],
+				['A (hold)', 'add-point mode'],
 				['Arrow keys', 'nudge selected'],
-				['Alt / Shift + arrows', 'fine / coarse nudge'],
-				['Delete', 'remove selected']
+				['Alt + arrows', 'fine nudge'],
+				['Shift + arrows', 'coarse nudge'],
+				['Delete / Backspace', 'remove selected'],
+				['Escape', 'cancel add mode']
 			]
 		},
 		{
@@ -53,6 +97,10 @@
 			]
 		}
 	];
+
+	const groups = $derived(
+		tab === 'pointer' ? pointerGroups : tab === 'touch' ? touchGroups : keyboardGroups
+	);
 
 	function onDocumentPointerDown(event: PointerEvent) {
 		if (!open) return;
@@ -84,6 +132,29 @@
 
 	{#if open}
 		<div id="gesture-reference-panel" class="gesture-reference-panel" role="dialog" aria-label="Gesture reference">
+			<div class="gesture-reference-tabs" role="tablist" aria-label="Gesture reference categories">
+				<button
+					type="button"
+					role="tab"
+					aria-selected={tab === 'pointer'}
+					class:active={tab === 'pointer'}
+					onclick={() => (tab = 'pointer')}
+				>Mouse</button>
+				<button
+					type="button"
+					role="tab"
+					aria-selected={tab === 'touch'}
+					class:active={tab === 'touch'}
+					onclick={() => (tab = 'touch')}
+				>Touch</button>
+				<button
+					type="button"
+					role="tab"
+					aria-selected={tab === 'keyboard'}
+					class:active={tab === 'keyboard'}
+					onclick={() => (tab = 'keyboard')}
+				>Keyboard</button>
+			</div>
 			{#each groups as group}
 				<section>
 					<h2>{group.title}</h2>

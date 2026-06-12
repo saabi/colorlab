@@ -28,6 +28,7 @@
 	const markerLeft = $derived(`${coordToUnit(coords[xAxis], xAxis) * 100}%`);
 	const markerTop = $derived(`${(1 - coordToUnit(coords[yAxis], yAxis)) * 100}%`);
 	const barMarkerTop = $derived(`${(1 - coordToUnit(coords[barAxis], barAxis)) * 100}%`);
+	const liveText = $derived(`Selected color ${srgbHex(value).toUpperCase()}`);
 
 	function defaultBarAxis(key: InterpSpaceKey) {
 		return INTERP_SPACES[key].cyclic ?? 0;
@@ -279,6 +280,7 @@
 			onblur={() => (hexText = srgbHex(value).toUpperCase())}
 		/>
 	</div>
+	<p class="picker-live" aria-live="polite">{liveText}</p>
 </div>
 
 <style>
@@ -379,5 +381,14 @@
 		box-shadow:
 			inset 0 0 0 1px rgba(255, 255, 255, 0.3),
 			0 0 0 1px rgba(0, 0, 0, 0.35);
+	}
+	.picker-live {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		margin: -1px;
+		overflow: hidden;
+		clip: rect(0, 0, 0, 0);
+		white-space: nowrap;
 	}
 </style>

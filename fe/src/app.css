@@ -1007,6 +1007,28 @@ input[type="checkbox"] {
 	letter-spacing: 0.1em;
 }
 
+.gesture-reference-tabs {
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+	gap: 4px;
+	margin-bottom: 10px;
+}
+
+.gesture-reference-tabs button {
+	padding: 4px 6px;
+	border-radius: 5px;
+	background: #0d0e10;
+	color: var(--dim);
+	font-size: 10.5px;
+}
+
+.gesture-reference-tabs button.active,
+.gesture-reference-tabs button[aria-selected="true"] {
+	border-color: var(--accent);
+	background: #d6a93a18;
+	color: var(--accent);
+}
+
 .gesture-reference-row {
 	display: grid;
 	grid-template-columns: minmax(90px, 1fr) minmax(0, 1.15fr);
