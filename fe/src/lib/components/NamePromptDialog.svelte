@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { focusTrap } from '$lib/actions/focusTrap';
+
 	let {
 		open = false,
 		title = '',
@@ -37,7 +39,14 @@
 
 {#if open}
 	<div class="confirm-backdrop" role="presentation" onclick={onCancel}></div>
-	<div class="name-prompt-dialog" role="dialog" aria-modal="true" aria-labelledby="name-prompt-title">
+	<div
+		class="name-prompt-dialog"
+		role="dialog"
+		aria-modal="true"
+		aria-labelledby="name-prompt-title"
+		tabindex="-1"
+		use:focusTrap={{ onEscape: onCancel }}
+	>
 		<h2 id="name-prompt-title">{title}</h2>
 		<label class="name-prompt-label">
 			<span>{label}</span>

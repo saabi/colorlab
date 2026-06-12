@@ -826,11 +826,11 @@
 	});
 </script>
 
-<main class="viewport">
+<main id="main-viewport" class="viewport" tabindex="-1">
 	<ViewportToolbar bind:state={explorer} bind:touchTool />
 	<canvas
 		bind:this={canvas}
-		aria-label="Gamut explorer WebGL viewport"
+		aria-label="Gamut explorer WebGL viewport. Keyboard shortcuts include R to reset camera, Shift plus drag or Space plus drag to pan, X for slice, C for cylinder, G for grid, O for outlines, bracket keys for slice offset, minus and equals for cylinder radius, A to add a ramp point, arrow keys to nudge the selected point, Delete to remove it, and Escape to cancel."
 		class={`cursor-${cursorMode}`}
 		data-tutorial="viewport-canvas"
 		onpointerdown={onPointerDown}

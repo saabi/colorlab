@@ -45,6 +45,7 @@
 
 <GuideNoteEditorHost explorer={appState.explorer}>
 	<div class:drawer-open={drawerOpen} class="app-shell">
+		<a class="skip-link" href="#main-viewport">Skip to viewport</a>
 		<header class="app-header">
 			<button
 				type="button"
@@ -86,4 +87,3 @@
 {#if tutorial.progress?.active}
 	<TutorialPopover {tutorial} hideAids={explorer.hideAids} loadExample={loadTutorialExample} />
 {/if}
-

@@ -1,7 +1,13 @@
 # Accessibility controls — design and handoff plan
 
-**Status:** design / planning — not yet implemented  
+**Status:** keyboard/focus baseline partly implemented; text readability preferences still planned
 **Triggered by:** Reddit feedback (r/computergraphics, June 2026) + comprehensive codebase audit
+
+**Implementation note (June 12, 2026):**
+- Phase A is implemented: controls landmark, skip link, viewport target, sidebar footer semantics, TutorialPopover Escape handling, and expanded viewport canvas keyboard guidance.
+- Phase B is implemented for true modal dialogs: `focusTrap` action plus NamePromptDialog, ConfirmDialog, GuideNoteEditor, and LanePicker. TutorialPopover is intentionally left untrapped because the walkthrough needs users to interact with highlighted controls while the card remains open.
+- Phase C is partly implemented: plane and bar canvases are focusable and support keyboard adjustments. The live hex announcement remains pending.
+- Phase E is still pending.
 
 ---
 
@@ -161,8 +167,16 @@ Entry point: add "Accessibility" or ♿ button adjacent to `AppInfo` in `AppShel
 | File | Change |
 |------|--------|
 | `fe/src/lib/components/AppShell.svelte` | Entry button; init prefs before paint |
-| `fe/src/app.css` | Add `--ui-font-scale`, `--ui-line-height` custom properties; convert worst-offender `px` rules to `em` |
-| `fe/src/routes/+page.svelte` | Call `applyToDocument()` on load (before DOM paint, like mobile tessellation init) |
+| `fe/src/app.css` | Add `--ui-font-scale`, `--ui-line-height` custom properties; convert all ~95 `font-size: Npx` rules to `rem` |
+| `fe/src/routes/app.html` | Inline `<script>` to apply a11y prefs from localStorage before first paint (see open question below) |
+
+### Open questions before Phase E
+
+**OQ-E1 — Before-paint init location:** Three locations are mentioned across this doc (`+page.svelte`, `AppShell.svelte`, `app.html`). These have different timing in SvelteKit. `app.html` with an inline `<script>` is the only one that truly runs before first paint; `AppShell.svelte` runs after hydration. Decision needed: accept a brief flash-of-default-scale on load (simpler, use `AppShell.svelte` `onMount`) or eliminate it (harder, inline script in `app.html` reading localStorage directly in raw JS). The existing `mobile.ts` tessellation init does this in `+page.svelte` — check whether a FOUC is noticeable there as a reference point.
+
+**OQ-E2 — A11yPanel UI design:** The panel UI is unspecified. The three controls (font scale, secondary contrast, line height) need a widget choice — a segmented row of buttons (like the existing `SegmentedControl.svelte`), a `<select>`, or a radio strip. The panel also needs a reset affordance and a title. No wireframe or layout description exists. Design decision needed before implementation.
+
+**OQ-E3 — Line-height cascading:** `line-height` set on `html` does cascade to descendants. However, components that set explicit `line-height` in `px` will also need conversion (search for `line-height:.*px` across `app.css`). Scope not yet audited.
 
 ---
 
@@ -325,6 +339,8 @@ Self-contained action; apply to 5 dialogs.
 | C2 | `onkeydown` on plane (Arrow / Shift+Arrow / Home / End / Page) | `ColorPicker.svelte` |
 | C3 | `onkeydown` on bar (Arrow / Shift+Arrow) | `ColorPicker.svelte` |
 | C4 | `aria-live="polite"` region for hex value announcements | `ColorPicker.svelte` |
+
+**Open question before Phase C — axis mapping (OQ-C1):** The keyboard spec says "Arrow keys: ±1% on respective axis" for the plane but does not specify which arrow key maps to which color axis. The mapping depends on how the plane canvas renders its two axes for each color space (e.g. which is x/horizontal and which is y/vertical in Oklab a/b, in HSV S/V, etc.). Read `ColorPicker.svelte` `setFromPlane(nx, ny)` to confirm the x=horizontal / y=vertical convention before wiring keys, and document the convention here.
 
 ### Phase D — Keyboard shortcut reference (1–2 h)
 

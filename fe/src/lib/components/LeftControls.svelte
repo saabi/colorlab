@@ -81,7 +81,7 @@
 	}
 </script>
 
-<div class="side-panel left-panel" data-tutorial="sidebar">
+<aside class="side-panel left-panel" aria-label="Controls" data-tutorial="sidebar">
 	<div class="left-panel-scroll">
 	<!-- EXPLORER lane: data -> geometry -> view -> eye -->
 	<section class="lane-band" aria-label="Explorer pipeline">
@@ -259,7 +259,7 @@
 	</div>
 
 	<!-- Renderer settings: policies/preferences, not pipeline stages -->
-	<div class="sidebar-footer" aria-label="Viewport preferences">
+	<footer class="sidebar-footer" aria-label="Viewport preferences">
 		<section class="sidebar-footer-group" aria-label="View aids">
 			<div class="sidebar-footer-title">View aids</div>
 			<div class="sidebar-footer-grid sidebar-footer-grid-aids">
@@ -298,5 +298,5 @@
 				</label>
 			</div>
 		</section>
-	</div>
-</div>
+	</footer>
+</aside>

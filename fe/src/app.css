@@ -87,12 +87,37 @@ input[type="checkbox"] {
 }
 
 .app-shell {
+	position: relative;
 	display: grid;
 	grid-template-columns: 26em minmax(0, 1fr) 300px;
 	grid-template-rows: 48px minmax(0, 1fr);
 	height: 100vh;
 	min-width: 900px;
 	background: var(--bg);
+}
+
+.skip-link {
+	position: absolute;
+	z-index: 2000;
+	top: 8px;
+	left: 8px;
+	transform: translateY(-160%);
+	width: auto;
+	border: 1px solid var(--accent);
+	border-radius: 6px;
+	background: var(--panel);
+	color: var(--txt);
+	padding: 7px 10px;
+	font-size: 12px;
+	font-weight: 600;
+	text-decoration: none;
+	box-shadow: 0 8px 28px rgba(0, 0, 0, 0.45);
+}
+
+.skip-link:focus-visible {
+	transform: translateY(0);
+	outline: 1px solid var(--accent);
+	outline-offset: 2px;
 }
 
 .app-header {

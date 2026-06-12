@@ -120,10 +120,23 @@
 		window.addEventListener('resize', place);
 		return () => window.removeEventListener('resize', place);
 	});
+
+	function onTutorialKeydown(event: KeyboardEvent) {
+		if (event.key !== 'Escape') return;
+		event.stopPropagation();
+		tutorial.stop();
+	}
 </script>
 
 {#if tutorial.step}
-	<div class="tutorial-card {arrowClass()}" style={cardStyle} role="dialog" aria-label="Tutorial step">
+	<div
+		class="tutorial-card {arrowClass()}"
+		style={cardStyle}
+		role="dialog"
+		aria-label="Tutorial step"
+		tabindex="-1"
+		onkeydown={onTutorialKeydown}
+	>
 		<div class="tutorial-card-header">
 			<span class="tutorial-step-counter">{counterText}</span>
 			<span class="tutorial-step-title">{tutorial.step.title}</span>

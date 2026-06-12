@@ -152,6 +152,46 @@
 		handler(event);
 	}
 
+	function keyStep(event: KeyboardEvent) {
+		return event.shiftKey ? 0.1 : event.altKey ? 0.005 : 0.01;
+	}
+
+	function setAxisFromUnit(axis: number, unit: number) {
+		const next = tuple(coords);
+		next[axis] = unitToCoord(unit, axis);
+		commit(next);
+	}
+
+	function nudgeAxis(axis: number, delta: number) {
+		setAxisFromUnit(axis, coordToUnit(coords[axis], axis) + delta);
+	}
+
+	function onPlaneKeydown(event: KeyboardEvent) {
+		const step = keyStep(event);
+		if (event.key === 'ArrowLeft') nudgeAxis(xAxis, -step);
+		else if (event.key === 'ArrowRight') nudgeAxis(xAxis, step);
+		else if (event.key === 'ArrowUp') nudgeAxis(yAxis, step);
+		else if (event.key === 'ArrowDown') nudgeAxis(yAxis, -step);
+		else if (event.key === 'Home') setAxisFromUnit(xAxis, 0);
+		else if (event.key === 'End') setAxisFromUnit(xAxis, 1);
+		else if (event.key === 'PageUp') nudgeAxis(yAxis, 0.1);
+		else if (event.key === 'PageDown') nudgeAxis(yAxis, -0.1);
+		else return;
+		event.preventDefault();
+	}
+
+	function onBarKeydown(event: KeyboardEvent) {
+		const step = keyStep(event);
+		if (event.key === 'ArrowUp') nudgeAxis(barAxis, step);
+		else if (event.key === 'ArrowDown') nudgeAxis(barAxis, -step);
+		else if (event.key === 'PageUp') nudgeAxis(barAxis, 0.1);
+		else if (event.key === 'PageDown') nudgeAxis(barAxis, -0.1);
+		else if (event.key === 'Home') setAxisFromUnit(barAxis, 0);
+		else if (event.key === 'End') setAxisFromUnit(barAxis, 1);
+		else return;
+		event.preventDefault();
+	}
+
 	function parseHex(text: string): Vec3 | null {
 		const hex = text.trim().replace(/^#/, '');
 		const expanded =
@@ -202,11 +242,14 @@
 			<canvas
 				bind:this={planeCanvas}
 				class="plane"
-				aria-label={`${space.channels[xAxis].name} by ${space.channels[yAxis].name} color plane`}
+				tabindex="0"
+				aria-label={`${space.channels[xAxis].name} by ${space.channels[yAxis].name} color plane. Use arrow keys to adjust, Shift for larger steps, Alt for finer steps, Home and End for the horizontal axis, Page Up and Page Down for the vertical axis.`}
+				aria-keyshortcuts="ArrowLeft ArrowRight ArrowUp ArrowDown Shift+ArrowLeft Shift+ArrowRight Shift+ArrowUp Shift+ArrowDown Alt+ArrowLeft Alt+ArrowRight Alt+ArrowUp Alt+ArrowDown Home End PageUp PageDown"
 				onpointerdown={(event) => pointerStart(event, setPlaneFromPointer)}
 				onpointermove={(event) => {
 					if (event.buttons & 1) setPlaneFromPointer(event);
 				}}
+				onkeydown={onPlaneKeydown}
 			></canvas>
 			<span class="plane-marker" style={`left: ${markerLeft}; top: ${markerTop}`}></span>
 		</div>
@@ -214,11 +257,14 @@
 			<canvas
 				bind:this={barCanvas}
 				class="bar"
-				aria-label={`${space.channels[barAxis].name} color bar`}
+				tabindex="0"
+				aria-label={`${space.channels[barAxis].name} color bar. Use up and down arrows to adjust, Shift for larger steps, Alt for finer steps, Home for minimum, and End for maximum.`}
+				aria-keyshortcuts="ArrowUp ArrowDown Shift+ArrowUp Shift+ArrowDown Alt+ArrowUp Alt+ArrowDown Home End PageUp PageDown"
 				onpointerdown={(event) => pointerStart(event, setBarFromPointer)}
 				onpointermove={(event) => {
 					if (event.buttons & 1) setBarFromPointer(event);
 				}}
+				onkeydown={onBarKeydown}
 			></canvas>
 			<span class="bar-marker" style={`top: ${barMarkerTop}`}></span>
 		</div>
@@ -290,6 +336,11 @@
 		border-radius: 4px;
 		border: 1px solid rgba(255, 255, 255, 0.16);
 		cursor: ns-resize;
+	}
+	.plane:focus-visible,
+	.bar:focus-visible {
+		outline: 2px solid var(--accent);
+		outline-offset: 2px;
 	}
 	.plane-marker,
 	.bar-marker {

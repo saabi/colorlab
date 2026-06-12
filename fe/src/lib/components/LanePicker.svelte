@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { focusTrap } from '$lib/actions/focusTrap';
 	import { TRACKS, type TrackId, type TutorialState } from '$lib/engine/tutorial.svelte';
 
 	let {
@@ -46,7 +47,14 @@
 <!-- svelte-ignore a11y_no_static_element_interactions -->
 <div class="lane-picker-backdrop" onclick={onClose} onkeydown={handleBackdropKeydown}></div>
 
-<div class="lane-picker-card" role="dialog" aria-label="Choose a tutorial lane" aria-modal="true">
+<div
+	class="lane-picker-card"
+	role="dialog"
+	aria-label="Choose a tutorial lane"
+	aria-modal="true"
+	tabindex="-1"
+	use:focusTrap={{ onEscape: onClose }}
+>
 	<div class="lane-picker-header">
 		<span class="lane-picker-title">Start Tutorial</span>
 		<button type="button" class="lane-picker-close" onclick={onClose} aria-label="Close">×</button>

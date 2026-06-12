@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { focusTrap } from '$lib/actions/focusTrap';
+
 	let {
 		open = false,
 		message = '',
@@ -16,7 +18,14 @@
 
 {#if open}
 	<div class="confirm-backdrop" role="presentation" onclick={onCancel}></div>
-	<div class="confirm-dialog" role="alertdialog" aria-modal="true" aria-labelledby="confirm-title">
+	<div
+		class="confirm-dialog"
+		role="alertdialog"
+		aria-modal="true"
+		aria-labelledby="confirm-title"
+		tabindex="-1"
+		use:focusTrap={{ onEscape: onCancel }}
+	>
 		<p id="confirm-title">{message}</p>
 		<div class="confirm-actions">
 			<button type="button" class="confirm-btn" onclick={onCancel}>Cancel</button>

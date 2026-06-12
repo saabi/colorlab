@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { focusTrap } from '$lib/actions/focusTrap';
 	import { track } from '$lib/analytics/umami';
 
 	import type { GuideNotePlacement } from '$lib/engine/types';
@@ -46,7 +47,14 @@
 
 {#if open}
 	<div class="confirm-backdrop" role="presentation" onclick={onCancel}></div>
-	<div class="guide-note-editor" role="dialog" aria-modal="true" aria-labelledby="guide-note-editor-title">
+	<div
+		class="guide-note-editor"
+		role="dialog"
+		aria-modal="true"
+		aria-labelledby="guide-note-editor-title"
+		tabindex="-1"
+		use:focusTrap={{ onEscape: onCancel }}
+	>
 		<h2 id="guide-note-editor-title">Guide note</h2>
 		<label class="guide-editor-field">
 			<span>Note</span>
