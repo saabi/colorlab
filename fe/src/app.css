@@ -720,68 +720,96 @@ input[type="checkbox"] {
 /* Renderer settings footer (policies/preferences, not pipeline stages) */
 .sidebar-footer {
 	flex-shrink: 0;
-	display: flex;
-	flex-direction: column;
-	gap: 6px;
-	padding: 10px 14px 12px;
+	display: grid;
+	gap: 8px;
+	padding: 9px 12px 11px;
 	border-top: 1px solid var(--line);
-	background: var(--panel);
+	background: color-mix(in srgb, var(--panel) 94%, black);
 	box-shadow: 0 -6px 12px rgba(0, 0, 0, 0.22);
 }
 
-.sidebar-footer-row {
-	display: flex;
-	align-items: center;
-	gap: 8px;
-	min-width: 0;
-}
-
-.sidebar-footer-row .row {
-	flex: 1 1 0;
-	justify-content: flex-end;
-	min-width: 0;
-	margin: 0;
+.sidebar-footer-group {
+	display: grid;
 	gap: 5px;
-	font-size: 11px;
 }
 
-.sidebar-footer-row .row span {
-	flex: 1 1 auto;
-	min-width: 0;
-	overflow: hidden;
-	text-overflow: ellipsis;
-	white-space: nowrap;
-	text-align: right;
+.sidebar-footer-group + .sidebar-footer-group {
+	padding-top: 8px;
+	border-top: 1px solid color-mix(in srgb, var(--line), transparent 40%);
 }
 
-.sidebar-footer-row .row input {
-	flex-shrink: 0;
+.sidebar-footer-title {
+	color: var(--dim);
+	font-size: 9px;
+	font-weight: 700;
+	letter-spacing: 0.08em;
+	line-height: 1;
+	text-transform: uppercase;
 }
 
+.sidebar-footer-grid {
+	display: grid;
+	align-items: center;
+	gap: 6px 10px;
+}
+
+.sidebar-footer-grid-aids {
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.sidebar-footer-grid-performance {
+	grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.sidebar-footer-check,
 .sidebar-footer-fps {
 	display: flex;
-	flex: 1 1 0;
-	justify-content: flex-end;
 	align-items: center;
-	gap: 5px;
+	gap: 6px;
 	min-width: 0;
 	margin: 0;
 	color: var(--dim);
 	font-size: 11px;
+	line-height: 1.2;
 }
 
+.sidebar-footer-check {
+	cursor: pointer;
+}
+
+.sidebar-footer-check input {
+	flex: none;
+	margin: 0;
+}
+
+.sidebar-footer-check span,
 .sidebar-footer-fps span {
-	flex: 1 1 auto;
 	min-width: 0;
-	text-align: right;
+	overflow: hidden;
+	text-overflow: ellipsis;
 	white-space: nowrap;
 }
 
+.sidebar-footer-fps {
+	justify-content: flex-end;
+}
+
 .sidebar-footer-fps select {
-	flex: 1;
-	min-width: 0;
+	flex: none;
+	width: 62px;
 	height: 26px;
 	font-size: 11px;
+}
+
+@media (max-width: 720px) {
+	.sidebar-footer-grid-aids,
+	.sidebar-footer-grid-performance {
+		grid-template-columns: 1fr;
+	}
+
+	.sidebar-footer-fps {
+		justify-content: space-between;
+	}
 }
 
 /* Continuous connector line behind the numbered step markers */

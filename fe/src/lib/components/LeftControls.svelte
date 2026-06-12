@@ -249,26 +249,44 @@
 	</div>
 
 	<!-- Renderer settings: policies/preferences, not pipeline stages -->
-	<div class="sidebar-footer">
-		<div class="sidebar-footer-row">
-			<ToggleRow label="Floor grid" bind:checked={explorer.floor} />
-			<ToggleRow label="Hide aids" bind:checked={explorer.hideAids} />
-			<ToggleRow label="Auto-rotate" bind:checked={explorer.autoRotate} />
-		</div>
-		<div class="sidebar-footer-row">
-			<ToggleRow label="Auto-reduce" bind:checked={explorer.autoPerformance} />
-			<label class="sidebar-footer-fps" for="min-average-fps-select">
-				<span>Min FPS</span>
-				<select
-					id="min-average-fps-select"
-					bind:value={explorer.minAverageFps}
-					disabled={!explorer.autoPerformance}
-				>
-					{#each minAverageFpsOptions as fps}
-						<option value={fps}>{fps}</option>
-					{/each}
-				</select>
-			</label>
-		</div>
+	<div class="sidebar-footer" aria-label="Viewport preferences">
+		<section class="sidebar-footer-group" aria-label="View aids">
+			<div class="sidebar-footer-title">View aids</div>
+			<div class="sidebar-footer-grid sidebar-footer-grid-aids">
+				<label class="sidebar-footer-check" data-tutorial="floor-grid">
+					<input type="checkbox" bind:checked={explorer.floor} />
+					<span>Floor grid</span>
+				</label>
+				<label class="sidebar-footer-check" data-tutorial="hide-aids">
+					<input type="checkbox" bind:checked={explorer.hideAids} />
+					<span>Hide aids</span>
+				</label>
+				<label class="sidebar-footer-check" data-tutorial="auto-rotate">
+					<input type="checkbox" bind:checked={explorer.autoRotate} />
+					<span>Auto-rotate</span>
+				</label>
+			</div>
+		</section>
+		<section class="sidebar-footer-group" aria-label="Performance">
+			<div class="sidebar-footer-title">Performance</div>
+			<div class="sidebar-footer-grid sidebar-footer-grid-performance">
+				<label class="sidebar-footer-check">
+					<input type="checkbox" bind:checked={explorer.autoPerformance} />
+					<span>Auto-reduce</span>
+				</label>
+				<label class="sidebar-footer-fps" for="min-average-fps-select">
+					<span>Min FPS</span>
+					<select
+						id="min-average-fps-select"
+						bind:value={explorer.minAverageFps}
+						disabled={!explorer.autoPerformance}
+					>
+						{#each minAverageFpsOptions as fps}
+							<option value={fps}>{fps}</option>
+						{/each}
+					</select>
+				</label>
+			</div>
+		</section>
 	</div>
 </div>
