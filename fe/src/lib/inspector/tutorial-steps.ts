@@ -1,0 +1,382 @@
+import type { ExplorerState } from '$lib/engine/types';
+
+export type TutorialZone = 'sidebar-inline' | 'viewport-float' | 'inspector-adjacent' | 'docbar-adjacent';
+
+export interface TutorialStep {
+	title: string;
+	concept: string;
+	tryIt: string;
+	successCheck: string;
+	commonMistake: string;
+	zone: TutorialZone;
+	/** CSS selector targeting a `data-tutorial` attribute, or null for whole-area steps. */
+	target: string | null;
+	/** Example id to offer a "Load example" affordance — not auto-loaded. */
+	suggestedExample?: string;
+	/** If present and returns true at start time, this step is skipped. Only honoured for leading steps. */
+	skip?: (explorer: ExplorerState) => boolean;
+}
+
+// ---------------------------------------------------------------------------
+// Prelude — prepended to every track
+// ---------------------------------------------------------------------------
+
+export const PRELUDE_STEPS: TutorialStep[] = [
+	{
+		title: 'Turn off auto-rotation',
+		concept:
+			'Color Lab opens in a slow-orbit showcase mode. Tutorials need a stable scene while you read and click. Auto-rotate is a sidebar footer preference — it is runtime-only and never saved to documents.',
+		tryIt: 'Find "Auto-rotate" in the left sidebar footer and turn it off.',
+		successCheck:
+			'The solid stops orbiting on its own. Dragging the viewport now orbits only when you push.',
+		commonMistake:
+			'Confusing auto-rotate with camera reset. Camera Reset (View step) returns the viewpoint to a default angle — it is not auto-rotate.',
+		zone: 'sidebar-inline',
+		target: '[data-tutorial="auto-rotate"]',
+		skip: (e) => !e.autoRotate
+	},
+	{
+		title: 'Show overlay aids',
+		concept:
+			'"Hide aids" suppresses the surface grid, slice/cylinder outlines, reference shell, and ramp markers all at once — without losing the individual settings. Turning it off reveals the scaffolding you will use in later steps. The floor grid is a separate toggle.',
+		tryIt: 'Disable "Hide aids" in the left sidebar footer.',
+		successCheck:
+			'When relevant pipeline stages are active, overlays such as the surface grid and outlines are now visible.',
+		commonMistake:
+			'Expecting the floor grid to respond to Hide aids — it does not. Toggle it independently.',
+		zone: 'sidebar-inline',
+		target: '[data-tutorial="hide-aids"]',
+		skip: (e) => !e.hideAids
+	}
+];
+
+// ---------------------------------------------------------------------------
+// A-quick
+// ---------------------------------------------------------------------------
+
+export const A_QUICK_STEPS: TutorialStep[] = [
+	{
+		title: 'The solid is a gamut',
+		concept:
+			'The 3D solid is every legal RGB triple the active gamut can encode, placed in the chosen world space. Most tools show a gamut as a 2D triangle, which collapses lightness entirely. Here you navigate the full volume — shape, chroma, and lightness simultaneously.',
+		tryIt: 'Orbit by clicking and dragging. Locate the white corner (top) and black corner (bottom). Find the most saturated-looking region.',
+		successCheck:
+			'You can orient yourself — brighter up, more chromatic outward — and understand that the solid\'s shape communicates real perceptual geometry.',
+		commonMistake:
+			'Thinking the shape is decorative. In Oklab layout the vertical axis is perceptual lightness (L), so "higher" really does approximate "looks brighter."',
+		zone: 'viewport-float',
+		target: null
+	},
+	{
+		title: 'Orbit and inspect a hover',
+		concept:
+			'Moving the mouse over the solid runs an analytic ray test and feeds the result to the right inspector. The Values panel shows the full transform chain: encoded RGB → linear → XYZ → LMS → CIELAB → Oklab → Oklch. Every number uses the same math as the renderer — panels cannot disagree.',
+		tryIt: 'Hover slowly across the solid surface and watch the right panel update. Find a color near the red corner and read its Oklab L and C values.',
+		successCheck:
+			'The inspector updates live as the cursor moves. You can read lightness and chroma for any point without clicking.',
+		commonMistake:
+			'Expecting to have to click to "select" a color for reading. The chain updates on hover. Clicking to pick source anchors is covered in the Ramp lanes — it only works when "+ Pick on solid" is armed, or the A key is held.',
+		zone: 'viewport-float',
+		target: null
+	},
+	{
+		title: 'Change gamut, compare shape',
+		concept:
+			'Switching the gamut swaps which RGB primary set the solid represents. Display P3 has wider primaries than sRGB — its solid extends farther, especially in green and red-orange. The same stored code value encodes a different stimulus in each gamut.',
+		tryIt: 'Switch gamut from sRGB to Display P3. Notice the solid grow. Switch back to confirm the difference. Hover the same position in both and compare XYZ values in the inspector.',
+		successCheck:
+			'P3\'s solid visibly extends beyond where sRGB ended. The XYZ values differ at the same encoded position.',
+		commonMistake:
+			'Thinking changing the gamut alters source anchor colors or export output. The Gamut stage defines what the 3D solid represents — it does not touch ramp anchors or exported tokens.',
+		zone: 'sidebar-inline',
+		target: '[data-tutorial="node-gamut"]'
+	},
+	{
+		title: 'Shell overlay — two gamuts at once',
+		concept:
+			'The shell overlay draws the wire boundary of a reference gamut on top of the active solid. With P3 solid and sRGB shell, you see exactly which P3 colors fall outside sRGB — they poke beyond the wire cage. This is the standard gamut-comparison view.',
+		tryIt: 'Set the active gamut to Display P3. Enable the shell overlay for sRGB in the Gamut step. Orbit until the wire cage is visible inside the solid.',
+		successCheck:
+			'A wire outline smaller than the solid is visible. You can identify P3-only colors (outside the cage) vs. those both gamuts share (inside).',
+		commonMistake:
+			'Confusing the shell with slice outlines. The shell is a fixed reference boundary for a comparison gamut; slice outlines move with the clip plane.',
+		zone: 'sidebar-inline',
+		target: '[data-tutorial="node-gamut"]',
+		suggestedExample: 'example:p3-shell'
+	},
+	{
+		title: 'Slice at fixed lightness',
+		concept:
+			'Enabling the slice plane cuts the solid with a flat cross-section. With plane mode L, you see all colors at one Oklab lightness level — a 2D chromaticity diagram at one brightness. Moving the offset slides the plane through the solid.',
+		tryIt: 'Open the Clip / cut step in the sidebar (click its header to expand). Enable slice, set plane mode to L, and drag the offset to about 0.55. Orbit to see the cross-section face-on.',
+		successCheck:
+			'A flat cross-section appears. Moving the offset travels from dark (near 0) to light (near 1) through the solid.',
+		commonMistake:
+			'Thinking the slice boundary shows sRGB vs wide-gamut limits. The perimeter is the gamut boundary at that L value — use the shell for gamut comparisons.',
+		zone: 'sidebar-inline',
+		target: '[data-tutorial="node-clip"]',
+		suggestedExample: 'example:oklab-l-slice'
+	},
+	{
+		title: 'Inspector panels — what each adds',
+		concept:
+			'The right inspector has five tabs. Values is the full numeric chain (used above). Transfer plots the gamut\'s encoding curve. Cones shows LMS excitations. xy plots CIE 1931 chromaticity. All update from the same hover hit — they are views of the same calculation, not independent lookups. More tutorials are available — click the Tutorial button again to explore the Ramp lanes.',
+		tryIt: 'Hover a vivid green and click through Transfer, Cones, and xy. Notice all three panels respond to the same cursor movement without any extra click.',
+		successCheck:
+			'All tabs update when the cursor moves over the solid. You can correlate LMS bar heights with the xy position of the same color.',
+		commonMistake:
+			'Treating Transfer as the export encoding curve. Transfer shows the gamut\'s decoding assumption (encoded → linear); it has no direct relation to ramp token output.',
+		zone: 'inspector-adjacent',
+		target: '[data-tutorial="inspector-tabs"]'
+	}
+];
+
+// ---------------------------------------------------------------------------
+// A-pipeline
+// ---------------------------------------------------------------------------
+
+export const A_PIPELINE_STEPS: TutorialStep[] = [
+	{
+		title: 'Gamut — primaries and transfer',
+		concept:
+			'The Gamut stage decides which physical device the RGB cube represents: its primary chromaticities and transfer curve. The same (R, G, B) triple encodes a different spectral stimulus in sRGB vs Rec. 2020 because the primaries sit at different colorimetric positions.',
+		tryIt: 'Switch gamuts while hovering the same screen position. Watch the XYZ values in the inspector change even though the cursor did not move. Also enable the shell overlay for a different gamut.',
+		successCheck:
+			'You can explain why (R=1, G=0, B=0) encodes a different stimulus in sRGB vs Rec. 2020 — and see that difference as a geometric shift in the solid.',
+		commonMistake:
+			'Assuming the Gamut setting filters the ramp export to that gamut. The Gamut stage defines what the solid represents in the viewport; the ramp\'s Gamut map stage is a separate terminal policy.',
+		zone: 'sidebar-inline',
+		target: '[data-tutorial="node-gamut"]'
+	},
+	{
+		title: 'World space — geometry only',
+		concept:
+			'World space chooses the 3D coordinate system: RGB (raw cube), XYZ, CIELAB, Oklab, or Luma. It is a display decision only — it does not change stored colors, source anchors, or exported ramp tokens.',
+		tryIt: 'Switch from Oklab to RGB — the solid snaps back to a regular cube. Switch to CIELAB. Verify that the hover chain values in the inspector are identical regardless of world space.',
+		successCheck:
+			'Changing world space reshapes the solid but the Values rows remain the same for the same hovered stimulus. Same colors, different geometric arrangement.',
+		commonMistake:
+			'Assuming world space changes what ramp interpolation computes. The splineSpace setting is separate — you can interpolate in Oklch while displaying in Oklab layout.',
+		zone: 'sidebar-inline',
+		target: '[data-tutorial="node-world"]'
+	},
+	{
+		title: 'Tessellation — mesh resolution',
+		concept:
+			'Tessellation sets the subdivision count (N) per cube face. More subdivisions produce smoother slice edges but cost more GPU time. Auto-reduce in the sidebar footer lowers N automatically when frame timing exceeds the minimum FPS target — a performance preference, not a pipeline stage.',
+		tryIt: 'Set N to 64 and enable the slice at L≈0.55. Notice the faceted, stepped outline. Raise N to 256 and observe the edge smooth out. The surface grid shows the subdivision directly.',
+		successCheck:
+			'At N=64 the slice outline has visible steps; at N=256 it appears smooth. You can choose a value that balances quality and performance.',
+		commonMistake:
+			'Thinking higher N improves color math accuracy. The transform runs per-vertex; colorimetric precision is identical at any N — only geometric precision of slice edges changes.',
+		zone: 'sidebar-inline',
+		target: '[data-tutorial="node-tessellation"]'
+	},
+	{
+		title: 'Clip / cut — slice and cylinder',
+		concept:
+			'The Clip stage exposes the inside of the solid by cutting it with a plane and/or a cylinder. A slice at fixed L, H, or C creates a 2D cross-section; a cylindrical cut reveals a chroma column. Both affect what is visible and hoverable — they do not alter stored colors or ramp stops.',
+		tryIt: 'Enable the slice at planeMode L, offset 0.5. Then enable the cylinder cut and shrink the radius to reveal only the high-chroma perimeter. Combine both.',
+		successCheck:
+			'You can navigate to a specific lightness and chroma range simultaneously. The viewport shows the intersection of both cuts.',
+		commonMistake:
+			'Expecting the cylinder cut to clip export stops. It is viewport-only. Ramp stops outside the cylinder remain in the export unless the Gamut map stage removes them.',
+		zone: 'sidebar-inline',
+		target: '[data-tutorial="node-clip"]'
+	},
+	{
+		title: 'View — camera and floor',
+		concept:
+			'The View stage controls navigation and orientation aids: camera distance, field of view, floor grid, and camera reset. Camera reset returns to a sensible default angle without touching any color or pipeline setting. The floor grid is independent of the overlay aids toggle.',
+		tryIt: 'Orbit, zoom, and pan. Use camera reset in the View step to return to the default angle. Toggle the floor grid on and off to confirm it is independent.',
+		successCheck:
+			'You can return to a known viewpoint at any time without affecting gamut, world space, slice, or any other pipeline setting.',
+		commonMistake:
+			'Using camera reset to undo pipeline changes. Reset moves the camera only — all color and pipeline settings remain exactly as you left them.',
+		zone: 'sidebar-inline',
+		target: '[data-tutorial="node-view"]'
+	},
+	{
+		title: 'Vision — CVD is display only',
+		concept:
+			'The Vision stage applies a color-vision-deficiency simulation to everything on screen: protanopia, deuteranopia, or tritanopia at adjustable severity. It runs at the LMS stage. CVD is a display preview only — it does not alter source anchors, ramp stop values, or exported tokens. More tutorials are available — click the Tutorial button again to explore the Ramp lanes.',
+		tryIt: 'Enable protan CVD at full severity. The viewport shifts dramatically. Check the Export step and confirm the token values are unchanged. Turn CVD off — the viewport returns to normal.',
+		successCheck:
+			'CVD visibly shifts the viewport appearance; the Values panel shows the cvdLin row with simulated values. Export text is identical with and without CVD active.',
+		commonMistake:
+			'Assuming CVD-previewed stop colors are what gets exported. Only the ramp\'s Gamut map stage affects export; CVD is strictly visual simulation of the display signal.',
+		zone: 'sidebar-inline',
+		target: '[data-tutorial="node-cvd"]'
+	}
+];
+
+// ---------------------------------------------------------------------------
+// B-quick
+// ---------------------------------------------------------------------------
+
+export const B_QUICK_STEPS: TutorialStep[] = [
+	{
+		title: 'Add two or three source colors',
+		concept:
+			'Every ramp starts with ordered source colors — anchors — in the active source list. You can pick them on the 3D solid (arm "+ Pick on solid," then click the surface) or enter a color via the inline color picker. The list order matters: interpolation runs from the first anchor to the last.',
+		tryIt: 'In the Sources step, arm "+ Pick on solid," then click once on a dark region of the solid and once on a bright region. Two rows appear in the list.',
+		successCheck:
+			'Two anchor rows are visible in the Sources list and two markers appear in the 3D viewport where you clicked.',
+		commonMistake:
+			'Picking both anchors without noticing the order. The ramp interpolates row 1 → row 2. Use Up/Down buttons to reorder if needed.',
+		zone: 'sidebar-inline',
+		target: '[data-tutorial="node-sources"]',
+		suggestedExample: 'example:large-color-ramp'
+	},
+	{
+		title: 'Interpolate on — linear vs spline',
+		concept:
+			'With Interpolate on, Color Lab draws a continuous path between anchors. Linear connects them with straight chords; Spline fits a smooth arc. The interpolation space controls where the path bends — Oklch keeps chroma high for rainbow ramps; Oklab takes a more direct path that may pass through a desaturated middle. Lower the solid opacity first so the curve is visible.',
+		tryIt: 'In the Gamut step, lower Solid opacity to 50–75%. Then switch between linear and spline in Interpolate and watch the curve change shape. Try switching from Oklab to Oklch interpolation space.',
+		successCheck:
+			'The curve is visible inside the semi-transparent solid. With more than two anchors, spline produces a smooth arc; linear produces connected straight segments.',
+		commonMistake:
+			'Confusing interpolation space with world space. Interpolation space is where the ramp path is computed; world space is viewport geometry only. These are independent settings.',
+		zone: 'sidebar-inline',
+		target: '[data-tutorial="node-interpolate"]'
+	},
+	{
+		title: 'Place on — where the stops land',
+		concept:
+			'Place decides where the N discrete stops fall on the continuous path. "Even" spaces stops by arc-length — approximately even perceptual steps when interpolating in Oklab or CIELAB. This is the core capability that sets Color Lab apart from HSL-based tools: stops spread by how far apart they feel, producing ramps that are smooth and harmonic whether a two-tone gradient or a rainbow.',
+		tryIt: 'Enable Place. Set steps to 9. Nine colored dots appear along the curve. Slide the step count between 5 and 21.',
+		successCheck:
+			'Exactly N stops appear in the viewport and Palette tab. Changing the step count immediately updates the count.',
+		commonMistake:
+			'Leaving Place off. When disabled, stops are the exact source anchor positions only — not a sampled ramp. You need Place on to distribute colors evenly along the interpolated path.',
+		zone: 'sidebar-inline',
+		target: '[data-tutorial="node-adjust"]'
+	},
+	{
+		title: 'Read the palette',
+		concept:
+			'The right inspector\'s Palette tab shows the final generated colors exactly as they will be exported — post gamut-map, with WCAG contrast ratios. This is the authoritative ramp preview; the 3D viewport markers are orientation aids, not pixel-accurate swatches.',
+		tryIt: 'Open the Palette tab on the right. Hover each swatch to read its hex and Oklch values. Look for any OOG (out-of-gamut) indicators on stops that exceed sRGB.',
+		successCheck:
+			'You can read the hex value of each stop and confirm the lightness progression matches your intent. OOG stops are flagged.',
+		commonMistake:
+			'Treating 3D viewport stop markers as final colors. They are accurate colorimetrically but rendered through your monitor profile; the Palette tab reads the computed values directly.',
+		zone: 'inspector-adjacent',
+		target: '[data-tutorial="inspector-palette-tab"]'
+	},
+	{
+		title: 'Export the ramp',
+		concept:
+			'Export serializes the final stops to CSS oklch() custom properties or DTCG JSON. Token values are post-gamut-map. By default the gamut map clips to sRGB — to export wide-gamut values, change the gamut map policy to "none" or "oklch-c."',
+		tryIt: 'Open the Export step and copy the CSS output. Paste it into a text editor. Check that the oklch() L values increase or decrease monotonically as expected.',
+		successCheck:
+			'You have CSS (or DTCG JSON) on your clipboard that you could paste into a real stylesheet. The lightness values reflect the dark-to-light order of your anchors.',
+		commonMistake:
+			'Expecting wide-gamut values in the export without changing the gamut map policy. The default clips to sRGB; OOG stops will appear clipped unless policy is changed.',
+		zone: 'sidebar-inline',
+		target: '[data-tutorial="node-export"]'
+	},
+	{
+		title: 'Save the document',
+		concept:
+			'Color Lab stores ramp parameters as named documents. Saving writes all pipeline settings and camera position to localStorage. The session state (last-open) is written automatically on change; named documents require an explicit Save. More tutorials are available — click the Tutorial button again to explore the Explorer lanes or the Pipeline deep-dive.',
+		tryIt: 'Click Save or Save as in the document bar at the top. Give the document a name. Reload the browser tab — your ramp should restore automatically.',
+		successCheck:
+			'After reloading, source anchors, interpolation settings, and step count are all present without re-entering anything. The named document appears in the document list.',
+		commonMistake:
+			'Confusing the session (auto-restored last-open state) with a named document. The session always restores the last state, but a named checkpoint requires an explicit Save.',
+		zone: 'docbar-adjacent',
+		target: '[data-tutorial="docbar-save"]'
+	}
+];
+
+// ---------------------------------------------------------------------------
+// B-pipeline
+// ---------------------------------------------------------------------------
+
+export const B_PIPELINE_STEPS: TutorialStep[] = [
+	{
+		title: 'Sources — lists, anchors, picking',
+		concept:
+			'Sources is the top of the ramp pipeline. One source list is one ordered set of anchors that feeds one independent ramp. Multiple lists produce parallel ramps — each runs through the full pipeline independently. Only the active list (highlighted chip) is editable; switch by clicking a chip.',
+		tryIt: 'Add a second list using the + chip. Add two anchors with colors clearly different from list 1. Switch back to list 1 — the viewport now shows two distinct curves.',
+		successCheck:
+			'The Sources status chip reads "2 lists · N pts." Two separate curves appear in the 3D viewport.',
+		commonMistake:
+			'Expecting the two lists to blend into one ramp. Lists are parallel, not merged — each produces its own independent set of stops.',
+		zone: 'sidebar-inline',
+		target: '[data-tutorial="node-sources"]'
+	},
+	{
+		title: 'Interpolate — path and space',
+		concept:
+			'Interpolate builds the continuous curve from anchors. Off passes anchors through unchanged. Linear connects with straight chords; Spline fits a smooth parametric arc. The interpolation space (Oklab, Oklch, sRGB, CIELAB, "world") determines where the path bends — different spaces produce dramatically different arcs through the same anchor set.',
+		tryIt: 'Switch between linear and spline while watching the curve. Change the space from Oklch to sRGB and observe how the arc through the solid changes shape.',
+		successCheck:
+			'You can describe why the same anchor set produces different ramp paths in Oklch vs sRGB — the arc shape reflects the coordinate geometry of each space.',
+		commonMistake:
+			'"World" interpolation space does not always produce a straight line. The path is straight in the viewport\'s current coordinate system, which may not be straight in Oklch.',
+		zone: 'sidebar-inline',
+		target: '[data-tutorial="node-interpolate"]'
+	},
+	{
+		title: 'Place — sampling the curve',
+		concept:
+			'Place is the declarative sampling stage. Even distributes by arc length — approximately even perceptual steps in Oklab or CIELAB. Uniform uses the curve\'s own parametric t. Tones targets fixed Oklab L values. Contrast produces stops whose WCAG ratios fall within contrastMin/contrastMax. Off uses exact anchor positions.',
+		tryIt: 'Set 9 stops, even policy. Switch to contrast policy (contrastMin=2.5, contrastMax=12). Watch the stops relocate. Check the Palette tab — each stop should show a WCAG ratio in the target range.',
+		successCheck:
+			'With contrast policy, every stop in the Palette tab has a contrast ratio within the configured range against the chosen background.',
+		commonMistake:
+			'Disabling Place when OOG warnings appear, expecting it to help. OOG stops come from the path going outside the gamut — disabling Place doesn\'t remove the path. Fix OOG in Gamut map.',
+		zone: 'sidebar-inline',
+		target: '[data-tutorial="node-adjust"]'
+	},
+	{
+		title: 'Expand — 1-D ramp to 2-D grid',
+		concept:
+			'Expand is a per-stop generator that turns the 1-D ramp into a 2-D palette by adding Oklch offsets per axis. Direction modes: ramp (0 → delta), sym (−delta → +delta), edges (delta at both ends, 0 at center). Row count is independent of Place step count.',
+		tryIt: 'Enable Expand. Set row count to 3, lightness axis to "sym," delta 0.15. The Palette tab shows a 3-row grid. Try "ramp" direction instead.',
+		successCheck:
+			'The Palette tab displays a 2-D grid. The Expand status chip reads "R×C" (e.g. "3×9").',
+		commonMistake:
+			'Confusing Expand rows with source lists. Expand rows are Oklch-offset copies of the base ramp; source lists are independent ramps with different anchors. Both can be active simultaneously.',
+		zone: 'sidebar-inline',
+		target: '[data-tutorial="node-expand"]'
+	},
+	{
+		title: 'Gamut map — ramp-only OOG policy',
+		concept:
+			'Gamut map is the terminal ramp stage: it brings out-of-gamut stops into sRGB before export. Clip hard-clips each RGB channel. oklch-c reduces chroma in Oklch (preserves hue and lightness). None passes OOG stops through unchanged. This stage is separate from the Explorer Gamut setting, the spline surface constraint, and CVD.',
+		tryIt: 'Build a ramp that crosses outside sRGB (a wide-chroma Oklch arc). Note the OOG badge. Switch between clip and oklch-c and watch the affected stops change in the Palette tab.',
+		successCheck:
+			'With oklch-c, OOG stops shift inward in chroma while keeping hue angle. With clip, they may shift hue because channels clamp independently.',
+		commonMistake:
+			'Thinking the Explorer Gamut setting controls ramp export clipping. The Explorer Gamut defines what the solid represents; the Ramp Gamut map is a separate, independent terminal policy.',
+		zone: 'sidebar-inline',
+		target: '[data-tutorial="node-gamut-map"]'
+	},
+	{
+		title: 'Export — tokens and format',
+		concept:
+			'Export serializes the final (post gamut-map) stops. CSS produces oklch() custom properties; DTCG produces W3C design-token JSON. With one list and Expand off, output is N variables. With multiple lists and Expand off, the grid shows all lists\' ramps together. With Expand on, output is the Expand result.',
+		tryIt: 'With two source lists and Expand off, copy CSS. Count the variables — should be list-count × step-count. Enable Expand with 3 rows and re-copy: count rows × columns.',
+		successCheck:
+			'Token count matches: 1 list, Expand off → N; 2 lists, Expand off → 2N; Expand on → R×C.',
+		commonMistake:
+			'Not checking the OOG badge on Gamut map before exporting. When policy is "none," OOG values pass through to CSS unchanged.',
+		zone: 'sidebar-inline',
+		target: '[data-tutorial="node-export"]'
+	},
+	{
+		title: 'Multi-list ramps — parallel pipelines',
+		concept:
+			'With more than one source list, each list runs independently through Interpolate → Place → Gamut map and produces its own output. Lists share interpolation settings but have separate anchors — useful for parallel color families (warm + cool, signal + neutral). When Expand is off, the palette shows all lists\' ramps as parallel rows. More tutorials are available — click the Tutorial button again to explore the Explorer lanes or the Quick Ramp overview.',
+		tryIt: 'Create two lists with clearly different anchors (warm reds in list 1, cool blues in list 2). Enable Interpolate in Oklch, 9 stops, even Place. The Palette tab shows two 9-stop rows. Now enable Expand with 2 rows — observe 4 rows total (2 lists × 2).',
+		successCheck:
+			'Two distinct parallel ramps appear in the Palette tab when Expand is off. Enabling Expand multiplies rows correctly.',
+		commonMistake:
+			'Trying to blend anchors from two lists into one ramp. Lists never merge — cross-list blending requires putting all anchors into one list. Multi-list is for parallel output.',
+		zone: 'sidebar-inline',
+		target: '[data-tutorial="node-sources"]'
+	}
+];

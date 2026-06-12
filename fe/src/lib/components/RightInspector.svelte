@@ -94,7 +94,7 @@
 	});
 </script>
 
-<aside class="side-panel right-panel">
+<aside class="side-panel right-panel" data-tutorial="inspector">
 	{#if explorer.guideNote && explorer.guideNotePlacement === 'sidebar'}
 		<TeachingNote
 			bind:note={explorer.guideNote}
@@ -103,7 +103,7 @@
 			variant="sidebar"
 		/>
 	{/if}
-	<div class="inspector-tabs" aria-label="Inspector panels">
+	<div class="inspector-tabs" aria-label="Inspector panels" data-tutorial="inspector-tabs">
 		<button
 			type="button"
 			class:active={activeTab === 'transfer'}
@@ -136,6 +136,7 @@
 			type="button"
 			class="palette-tab"
 			class:active={activeTab === 'palette'}
+			data-tutorial="inspector-palette-tab"
 			onclick={() => {
 				setActiveTab('palette');
 			}}>Palette</button

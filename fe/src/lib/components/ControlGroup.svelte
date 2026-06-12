@@ -13,7 +13,8 @@
 		status,
 		affects,
 		warn = null,
-		disabled = false
+		disabled = false,
+		tutorialId = undefined
 	} = $props<{
 		title: string;
 		children: import('svelte').Snippet;
@@ -32,6 +33,8 @@
 		warn?: string | null;
 		/** Dim the step when its controls have nothing to act on yet. */
 		disabled?: boolean;
+		/** data-tutorial attribute value for this group's root section. */
+		tutorialId?: string;
 	}>();
 
 	const contentId = $derived(`group-${title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`);
@@ -49,7 +52,7 @@
 	});
 </script>
 
-<section class="group" class:collapsed={!open} class:disabled class:has-rail={index != null}>
+<section class="group" class:collapsed={!open} class:disabled class:has-rail={index != null} data-tutorial={tutorialId}>
 	{#if index != null}
 		<div class="group-rail" aria-hidden="true">
 			<span class="step-marker" class:pulse>{index}</span>

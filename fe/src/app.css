@@ -1703,3 +1703,70 @@ input[type="checkbox"] {
 		padding-right: 2px;
 	}
 }
+
+/* Tutorial target highlight */
+@keyframes tutorial-target-pulse {
+	0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 60%, transparent); }
+	100% { box-shadow: 0 0 0 8px transparent; }
+}
+
+.tutorial-target {
+	outline: 2px solid var(--accent) !important;
+	outline-offset: 2px !important;
+	border-radius: 3px;
+	animation: tutorial-target-pulse 1.4s ease-out infinite;
+}
+
+/* Panel help stage rows — global so TutorialPopover shares the same visual language */
+.panel-help-stage {
+	display: grid;
+	gap: 5px;
+	margin-top: 2px;
+}
+
+.panel-help-stage-row {
+	display: grid;
+	grid-template-columns: 82px minmax(0, 1fr);
+	gap: 8px;
+	align-items: start;
+	border-left: 2px solid transparent;
+	padding: 4px 0 4px 7px;
+}
+
+.panel-help-stage-row.neutral {
+	border-left-color: color-mix(in srgb, var(--dim), transparent 45%);
+}
+
+.panel-help-stage-row.change {
+	border-left-color: color-mix(in srgb, var(--accent), transparent 20%);
+}
+
+.panel-help-stage-row.output {
+	border-left-color: #65bfa8;
+}
+
+.panel-help-stage-row.exclude {
+	border-left-color: #a06f6f;
+}
+
+.panel-help-stage-label {
+	color: var(--dim);
+	font-size: 9px;
+	font-weight: 700;
+	line-height: 1.35;
+	text-transform: uppercase;
+	letter-spacing: 0.08em;
+}
+
+.panel-help-stage-text {
+	color: var(--txt);
+	font-size: 11px;
+	line-height: 1.4;
+}
+
+@media (max-width: 520px) {
+	.panel-help-stage-row {
+		grid-template-columns: 1fr;
+		gap: 1px;
+	}
+}

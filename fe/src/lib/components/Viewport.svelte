@@ -776,6 +776,7 @@
 		bind:this={canvas}
 		aria-label="Gamut explorer WebGL viewport"
 		class={`cursor-${cursorMode}`}
+		data-tutorial="viewport-canvas"
 		onpointerdown={onPointerDown}
 		onpointerup={onPointerUp}
 		onpointermove={onPointerMove}

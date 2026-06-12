@@ -6,7 +6,10 @@
 
 	import type { DocumentSession } from '$lib/documents/session.svelte';
 
-	let { session } = $props<{ session: DocumentSession }>();
+	let {
+		session,
+		onTutorialClick
+	} = $props<{ session: DocumentSession; onTutorialClick?: () => void }>();
 
 	let selectValue = $state(UNTITLED_SELECT_ID);
 	let moreOpen = $state(false);
@@ -110,7 +113,7 @@
 
 	<div class="document-actions">
 		<button type="button" class="document-btn" onclick={onNew}>New</button>
-		<button type="button" class="document-btn" disabled={!session.canSave} onclick={onSave}>Save</button>
+		<button type="button" class="document-btn" data-tutorial="docbar-save" disabled={!session.canSave} onclick={onSave}>Save</button>
 
 		<div class="document-more" bind:this={moreRoot}>
 			<button
@@ -173,6 +176,9 @@
 				</div>
 			{/if}
 		</div>
+		{#if onTutorialClick}
+			<button type="button" class="document-btn document-btn-tutorial" onclick={onTutorialClick}>Tutorial</button>
+		{/if}
 	</div>
 </div>
 

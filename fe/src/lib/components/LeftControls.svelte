@@ -81,7 +81,7 @@
 	}
 </script>
 
-<div class="side-panel left-panel">
+<div class="side-panel left-panel" data-tutorial="sidebar">
 	<div class="left-panel-scroll">
 	<!-- EXPLORER lane: data -> geometry -> view -> eye -->
 	<section class="lane-band" aria-label="Explorer pipeline">
@@ -90,7 +90,7 @@
 			<span class="lane-band-sub">what the 3D solid shows</span>
 		</div>
 		<div class="lane-steps">
-			<ControlGroup index={1} title={m.gamut.label} helpId="pipelineGamut" status={m.gamut.status} affects={m.gamut.affects} open={isOpen('gamut')} onToggle={() => toggleStep('gamut')} bind:openHelp>
+			<ControlGroup index={1} title={m.gamut.label} helpId="pipelineGamut" status={m.gamut.status} affects={m.gamut.affects} open={isOpen('gamut')} onToggle={() => toggleStep('gamut')} bind:openHelp tutorialId="node-gamut">
 				<label class="row" for="gamut-select"><span>Gamut (cube primaries)</span></label>
 				<select id="gamut-select" bind:value={explorer.gamut}>
 					{#each gamuts as gamut}
@@ -117,7 +117,7 @@
 				</div>
 			</ControlGroup>
 
-			<ControlGroup index={2} title={m.world.label} helpId="pipelineWorld" status={m.world.status} affects={m.world.affects} open={isOpen('world')} onToggle={() => toggleStep('world')} bind:openHelp>
+			<ControlGroup index={2} title={m.world.label} helpId="pipelineWorld" status={m.world.status} affects={m.world.affects} open={isOpen('world')} onToggle={() => toggleStep('world')} bind:openHelp tutorialId="node-world">
 				<label class="row" for="space-select"><span>World space</span></label>
 				<select id="space-select" bind:value={explorer.spaceMode}>
 					{#each spaces as space}
@@ -127,7 +127,7 @@
 				<p class="note">World space changes the 3D geometry, not the source RGB values or exported ramp tokens.</p>
 			</ControlGroup>
 
-			<ControlGroup index={3} title={m.tessellation.label} helpId="pipelineTessellation" status={m.tessellation.status} affects={m.tessellation.affects} open={isOpen('tessellation')} onToggle={() => toggleStep('tessellation')} bind:openHelp>
+			<ControlGroup index={3} title={m.tessellation.label} helpId="pipelineTessellation" status={m.tessellation.status} affects={m.tessellation.affects} open={isOpen('tessellation')} onToggle={() => toggleStep('tessellation')} bind:openHelp tutorialId="node-tessellation">
 				<label class="row" for="resolution-select"><span>Tessellation</span></label>
 				<select id="resolution-select" bind:value={explorer.N}>
 					{#each resolutions as resolution}
@@ -138,7 +138,7 @@
 				<ToggleRow label="Surface grid lines" bind:checked={explorer.lines} />
 			</ControlGroup>
 
-			<ControlGroup index={4} title={m.clip.label} helpId="pipelineClip" status={m.clip.status} affects={m.clip.affects} open={isOpen('clip')} onToggle={() => toggleStep('clip')} bind:openHelp>
+			<ControlGroup index={4} title={m.clip.label} helpId="pipelineClip" status={m.clip.status} affects={m.clip.affects} open={isOpen('clip')} onToggle={() => toggleStep('clip')} bind:openHelp tutorialId="node-clip">
 				<ToggleRow label="Enable slice" bind:checked={explorer.slice} />
 				<ToggleRow label="Cut above plane" bind:checked={explorer.cutAbove} />
 				<ToggleRow label="Cut below plane" bind:checked={explorer.cutBelow} />
@@ -174,7 +174,7 @@
 				</div>
 			</ControlGroup>
 
-			<ControlGroup index={5} title={m.view.label} helpId="pipelineView" status={m.view.status} affects={m.view.affects} open={isOpen('view')} onToggle={() => toggleStep('view')} bind:openHelp>
+			<ControlGroup index={5} title={m.view.label} helpId="pipelineView" status={m.view.status} affects={m.view.affects} open={isOpen('view')} onToggle={() => toggleStep('view')} bind:openHelp tutorialId="node-view">
 				<button type="button" onclick={() => resetCamera(camera)}>Reset camera</button>
 				<SliderRow label="Yaw" bind:value={camera.yaw} min={-Math.PI} max={Math.PI} step={0.01} format={(value) => `${((value * 180) / Math.PI).toFixed(0)} deg`} />
 				<SliderRow label="Pitch" bind:value={camera.pitch} min={-MAX_CAMERA_PITCH} max={MAX_CAMERA_PITCH} step={0.01} format={(value) => `${((value * 180) / Math.PI).toFixed(0)} deg`} />
@@ -198,7 +198,7 @@
 				<p class="note">Gestures remain active in the viewport; these controls edit the same camera state directly. Touch tool lives in the Pick stage. Floor grid is in the sidebar footer.</p>
 			</ControlGroup>
 
-			<ControlGroup index={6} title={m.cvd.label} helpId="pipelineVision" status={m.cvd.status} affects={m.cvd.affects} open={isOpen('cvd')} onToggle={() => toggleStep('cvd')} bind:openHelp>
+			<ControlGroup index={6} title={m.cvd.label} helpId="pipelineVision" status={m.cvd.status} affects={m.cvd.affects} open={isOpen('cvd')} onToggle={() => toggleStep('cvd')} bind:openHelp tutorialId="node-cvd">
 				<label class="row" for="cvd-select"><span>Color vision</span></label>
 				<select id="cvd-select" bind:value={explorer.cvd}>
 					<option value="none">Normal trichromat</option>
@@ -221,27 +221,27 @@
 			<span class="lane-band-sub">how export tokens are generated</span>
 		</div>
 		<div class="lane-steps">
-			<ControlGroup index={1} title={m.sources.label} helpId="pipelineSources" status={m.sources.status} affects={m.sources.affects} open={isOpen('sources')} onToggle={() => toggleStep('sources')} bind:openHelp>
+			<ControlGroup index={1} title={m.sources.label} helpId="pipelineSources" status={m.sources.status} affects={m.sources.affects} open={isOpen('sources')} onToggle={() => toggleStep('sources')} bind:openHelp tutorialId="node-sources">
 				<ThemeRamp state={explorer} {matrices} panel="sources" bind:touchTool />
 			</ControlGroup>
 
-			<ControlGroup index={2} title={m.interpolate.label} helpId="pipelineInterpolate" status={m.interpolate.status} affects={m.interpolate.affects} warn={m.interpolate.warn} disabled={m.interpolate.disabled} open={isOpen('interpolate')} onToggle={() => toggleStep('interpolate')} bind:openHelp>
+			<ControlGroup index={2} title={m.interpolate.label} helpId="pipelineInterpolate" status={m.interpolate.status} affects={m.interpolate.affects} warn={m.interpolate.warn} disabled={m.interpolate.disabled} open={isOpen('interpolate')} onToggle={() => toggleStep('interpolate')} bind:openHelp tutorialId="node-interpolate">
 				<ThemeRamp state={explorer} {matrices} panel="interpolate" />
 			</ControlGroup>
 
-			<ControlGroup index={3} title={m.adjust.label} helpId="pipelineAdjust" status={m.adjust.status} affects={m.adjust.affects} disabled={m.adjust.disabled} open={isOpen('adjust')} onToggle={() => toggleStep('adjust')} bind:openHelp>
+			<ControlGroup index={3} title={m.adjust.label} helpId="pipelineAdjust" status={m.adjust.status} affects={m.adjust.affects} disabled={m.adjust.disabled} open={isOpen('adjust')} onToggle={() => toggleStep('adjust')} bind:openHelp tutorialId="node-adjust">
 				<ThemeRamp state={explorer} {matrices} panel="adjust" />
 			</ControlGroup>
 
-			<ControlGroup index={4} title={m.expand.label} helpId="pipelineExpand" status={m.expand.status} affects={m.expand.affects} disabled={m.expand.disabled} open={isOpen('expand')} onToggle={() => toggleStep('expand')} bind:openHelp>
+			<ControlGroup index={4} title={m.expand.label} helpId="pipelineExpand" status={m.expand.status} affects={m.expand.affects} disabled={m.expand.disabled} open={isOpen('expand')} onToggle={() => toggleStep('expand')} bind:openHelp tutorialId="node-expand">
 				<ThemeRamp state={explorer} {matrices} panel="expand" />
 			</ControlGroup>
 
-			<ControlGroup index={5} title={m.gamutMap.label} helpId="pipelineGamutMap" status={m.gamutMap.status} affects={m.gamutMap.affects} warn={m.gamutMap.warn} disabled={m.gamutMap.disabled} open={isOpen('gamut-map')} onToggle={() => toggleStep('gamut-map')} bind:openHelp>
+			<ControlGroup index={5} title={m.gamutMap.label} helpId="pipelineGamutMap" status={m.gamutMap.status} affects={m.gamutMap.affects} warn={m.gamutMap.warn} disabled={m.gamutMap.disabled} open={isOpen('gamut-map')} onToggle={() => toggleStep('gamut-map')} bind:openHelp tutorialId="node-gamut-map">
 				<ThemeRamp state={explorer} {matrices} panel="gamut-map" />
 			</ControlGroup>
 
-			<ControlGroup index={6} title={m.exportStep.label} helpId="pipelineExport" status={m.exportStep.status} affects={m.exportStep.affects} disabled={m.exportStep.disabled} open={isOpen('export')} onToggle={() => toggleStep('export')} bind:openHelp>
+			<ControlGroup index={6} title={m.exportStep.label} helpId="pipelineExport" status={m.exportStep.status} affects={m.exportStep.affects} disabled={m.exportStep.disabled} open={isOpen('export')} onToggle={() => toggleStep('export')} bind:openHelp tutorialId="node-export">
 				<ThemeRamp state={explorer} {matrices} panel="export" />
 			</ControlGroup>
 		</div>

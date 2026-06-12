@@ -178,52 +178,6 @@
 		line-height: 1.4;
 	}
 
-	.panel-help-stage {
-		display: grid;
-		gap: 5px;
-		margin-top: 2px;
-	}
-
-	.panel-help-stage-row {
-		display: grid;
-		grid-template-columns: 82px minmax(0, 1fr);
-		gap: 8px;
-		align-items: start;
-		border-left: 2px solid transparent;
-		padding: 4px 0 4px 7px;
-	}
-
-	.panel-help-stage-row.neutral {
-		border-left-color: color-mix(in srgb, var(--dim), transparent 45%);
-	}
-
-	.panel-help-stage-row.change {
-		border-left-color: color-mix(in srgb, var(--accent), transparent 20%);
-	}
-
-	.panel-help-stage-row.output {
-		border-left-color: #65bfa8;
-	}
-
-	.panel-help-stage-row.exclude {
-		border-left-color: #a06f6f;
-	}
-
-	.panel-help-stage-label {
-		color: var(--dim);
-		font-size: 9px;
-		font-weight: 700;
-		line-height: 1.35;
-		text-transform: uppercase;
-		letter-spacing: 0.08em;
-	}
-
-	.panel-help-stage-text {
-		color: var(--txt);
-		font-size: 11px;
-		line-height: 1.4;
-	}
-
 	.panel-help-sources-label {
 		border-top: 1px solid rgba(255, 255, 255, 0.08);
 		color: var(--faint);
@@ -251,12 +205,5 @@
 
 	.panel-help-sources a:hover {
 		color: var(--txt);
-	}
-
-	@media (max-width: 520px) {
-		.panel-help-stage-row {
-			grid-template-columns: 1fr;
-			gap: 1px;
-		}
 	}
 </style>
