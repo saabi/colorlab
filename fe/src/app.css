@@ -144,6 +144,21 @@ input[type="checkbox"] {
 	letter-spacing: 0.04em;
 }
 
+.app-brand {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex-shrink: 0;
+}
+
+.app-isotype {
+	display: block;
+	width: 32px;
+	height: 32px;
+	object-fit: contain;
+	flex-shrink: 0;
+}
+
 .app-header .sub {
 	color: var(--dim);
 	font-size: 0.846rem;
@@ -1595,11 +1610,19 @@ input[type="checkbox"] {
 		padding: 0 10px;
 	}
 
-	.app-header h1 {
+	.app-header .app-brand {
 		grid-column: 2;
 		grid-row: 1;
+	}
+
+	.app-header h1 {
 		font-size: 0.923rem;
 		white-space: nowrap;
+	}
+
+	.app-isotype {
+		width: 28px;
+		height: 28px;
 	}
 
 	.app-header .sub {

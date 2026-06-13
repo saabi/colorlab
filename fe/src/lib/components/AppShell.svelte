@@ -97,7 +97,10 @@
 				<span></span>
 				<span></span>
 			</button>
-			<h1>COLOR LAB</h1>
+			<div class="app-brand">
+				<img class="app-isotype" src="/logo/isotype.png" alt="" width="32" height="32" />
+				<h1>COLOR LAB</h1>
+			</div>
 			<span class="sub">Gamut Explorer &amp; Ramp Generator</span>
 			<DocumentBar {session} {history} onTutorialClick={() => (lanePickerOpen = true)} />
 			<A11yPanel />
