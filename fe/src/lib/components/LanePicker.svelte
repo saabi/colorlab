@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { focusTrap } from '$lib/actions/focusTrap';
+	import { MOBILE_LAYOUT_MAX_WIDTH } from '$lib/engine/mobile';
 	import { TRACKS, type TrackId, type TutorialState } from '$lib/engine/tutorial.svelte';
 
 	let {
@@ -15,7 +16,7 @@
 	let isMobile = $state(false);
 
 	$effect(() => {
-		const mq = window.matchMedia('(max-width: 760px)');
+		const mq = window.matchMedia(`(max-width: ${MOBILE_LAYOUT_MAX_WIDTH}px)`);
 		isMobile = mq.matches;
 		const handler = (e: MediaQueryListEvent) => { isMobile = e.matches; };
 		mq.addEventListener('change', handler);

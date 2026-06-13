@@ -1,9 +1,20 @@
 import type { ExplorerState } from './types';
 
-/** Matches the mobile layout breakpoint in app.css. */
+/** Matches the compact layout breakpoint in app.css (sidebar drawer, 2-column main). */
+export const NARROW_LAYOUT_MAX_WIDTH = 1024;
+
+/** Matches the full mobile layout breakpoint in app.css. */
+export const MOBILE_LAYOUT_MAX_WIDTH = 820;
+
+/** Sidebar drawer; desktop header and viewport + inspector columns remain. */
+export function isNarrowLayout(): boolean {
+	if (typeof window === 'undefined') return false;
+	return window.matchMedia(`(max-width: ${NARROW_LAYOUT_MAX_WIDTH}px)`).matches;
+}
+
 export function isMobileLayout(): boolean {
 	if (typeof window === 'undefined') return false;
-	return window.matchMedia('(max-width: 760px)').matches;
+	return window.matchMedia(`(max-width: ${MOBILE_LAYOUT_MAX_WIDTH}px)`).matches;
 }
 
 /** Narrow layout with a coarse primary pointer (phones / most tablets). */

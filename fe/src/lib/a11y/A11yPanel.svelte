@@ -203,7 +203,7 @@
 		color: var(--accent);
 	}
 
-	@media (max-width: 760px) {
+	@media (max-width: 820px) {
 		.a11y-panel {
 			position: fixed;
 			top: auto;
