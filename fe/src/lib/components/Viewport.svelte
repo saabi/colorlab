@@ -99,6 +99,11 @@
 	let hoverPoint = $state<PointHit | null>(null);
 	let hoverSolid = $state(false);
 	let hoverPickPending = false;
+	let viewportUpdateQueued = false;
+	let pendingBoundaryRebuild = false;
+	let pendingSpectralRebuild = false;
+	let pendingRampRebuild = false;
+	let pendingHoverClear = false;
 	const cursorMode = $derived(hoverPoint !== null ? 'point' : hoverSolid ? 'inspect' : gesture.kind);
 
 	function resetPerformanceSamples() {
@@ -184,6 +189,41 @@
 		scheduleFrameCadenceSample();
 	}
 
+	function scheduleViewportUpdate({
+		boundary = false,
+		spectral = false,
+		ramp = false,
+		clearHover = false
+	}: {
+		boundary?: boolean;
+		spectral?: boolean;
+		ramp?: boolean;
+		clearHover?: boolean;
+	} = {}) {
+		pendingBoundaryRebuild ||= boundary;
+		pendingSpectralRebuild ||= spectral;
+		pendingRampRebuild ||= ramp;
+		pendingHoverClear ||= clearHover;
+		if (viewportUpdateQueued) return;
+		viewportUpdateQueued = true;
+		requestAnimationFrame(() => {
+			viewportUpdateQueued = false;
+			const rebuildBoundary = pendingBoundaryRebuild;
+			const rebuildSpectral = pendingSpectralRebuild;
+			const rebuildRamp = pendingRampRebuild;
+			const clearHoverState = pendingHoverClear;
+			pendingBoundaryRebuild = false;
+			pendingSpectralRebuild = false;
+			pendingRampRebuild = false;
+			pendingHoverClear = false;
+			if (clearHoverState) explorer.hover = null;
+			if (rebuildRamp) buildRamp(explorer, matrices);
+			if (rebuildBoundary) renderer?.rebuildBoundary(explorer, matrices);
+			if (rebuildSpectral) renderer?.rebuildSpectralOverlay(explorer, matrices);
+			draw();
+		});
+	}
+
 	function effectiveCamera(): Camera {
 		if (autoRotateYawOffset === 0) return camera;
 		return {
@@ -265,12 +305,6 @@
 		return Math.min(max, Math.max(min, value));
 	}
 
-	function refreshBoundary() {
-		renderer?.rebuildBoundary(explorer, matrices);
-		buildRamp(explorer, matrices);
-		draw();
-	}
-
 	function zoomCamera(factor: number) {
 		camera.dist = Math.min(MAX_CAMERA_DIST, Math.max(MIN_CAMERA_DIST, camera.dist * factor));
 		draw();
@@ -348,15 +382,8 @@
 		return hit;
 	}
 
-	let rampRebuildQueued = false;
 	function scheduleRampRebuild() {
-		if (rampRebuildQueued) return;
-		rampRebuildQueued = true;
-		requestAnimationFrame(() => {
-			rampRebuildQueued = false;
-			buildRamp(explorer, matrices);
-			draw();
-		});
+		scheduleViewportUpdate({ ramp: true });
 	}
 
 	// Hit-test every list's points so any anchor in the explorer can be grabbed;
@@ -583,13 +610,11 @@
 			if (gesture.kind === 'slice-offset') {
 				explorer.off = clamp(gesture.startOff - (event.clientY - gesture.startY) * 0.003, 0, 1);
 				updateStatusForGesture();
-				refreshBoundary();
 				return;
 			}
 			if (gesture.kind === 'cylinder-radius') {
 				explorer.cylRad = clamp(gesture.startRadius + (event.clientX - gesture.startX) * 0.002, 0, 0.8);
 				updateStatusForGesture();
-				refreshBoundary();
 				return;
 			}
 			camera.yaw -= dx * 0.008;
@@ -742,6 +767,20 @@
 	$effect(() => {
 		const currentMode = explorer.spaceMode;
 		explorer.gamut;
+		untrack(() => {
+			const from = prevSpaceMode;
+			prevSpaceMode = currentMode;
+			if (from !== currentMode && !reducedMotion) {
+				startMorph(from, currentMode);
+				scheduleViewportUpdate({ ramp: true, clearHover: true });
+			} else {
+				cancelMorph();
+				scheduleViewportUpdate({ boundary: true, spectral: true, ramp: true, clearHover: true });
+			}
+		});
+	});
+
+	$effect(() => {
 		explorer.slice;
 		explorer.planeMode;
 		explorer.off;
@@ -755,26 +794,14 @@
 		explorer.planeOutline;
 		explorer.cylinderOutline;
 		untrack(() => {
-			explorer.hover = null;
-			buildRamp(explorer, matrices);
-			const from = prevSpaceMode;
-			prevSpaceMode = currentMode;
-			if (from !== currentMode && !reducedMotion) {
-				startMorph(from, currentMode);
-			} else {
-				cancelMorph();
-				renderer?.rebuildBoundary(explorer, matrices);
-				renderer?.rebuildSpectralOverlay(explorer, matrices);
-				draw();
-			}
+			scheduleViewportUpdate({ boundary: true, clearHover: true });
 		});
 	});
 
 	$effect(() => {
 		explorer.chromaticityOverlay;
 		untrack(() => {
-			renderer?.rebuildSpectralOverlay(explorer, matrices);
-			draw();
+			scheduleViewportUpdate({ spectral: true });
 		});
 	});
 
@@ -793,8 +820,7 @@
 		JSON.stringify(explorer.theme.expandRows);
 		JSON.stringify(explorer.theme.expandCols);
 		untrack(() => {
-			buildRamp(explorer, matrices);
-			draw();
+			scheduleViewportUpdate({ ramp: true });
 		});
 	});
 
