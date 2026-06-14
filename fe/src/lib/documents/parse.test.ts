@@ -139,7 +139,7 @@ describe('parseSnapshot', () => {
 		} as unknown;
 		const result = parseSnapshot(v2);
 		expect(result.migrated).toBe(true);
-		expect(result.snapshot?.explorer.theme.splineConstraint).toBe('surface');
+		expect(result.snapshot?.explorer.theme.splineConstraint).toBe('surface-radial');
 		expect(result.snapshot?.explorer.theme.gamutMap).toBe('preserve-chroma');
 	});
 
@@ -275,6 +275,42 @@ describe('parseSnapshot', () => {
 		]);
 		expect(result.snapshot?.explorer.theme.activeList).toBe(0);
 		expect('points' in (result.snapshot?.explorer.theme ?? {})).toBe(false);
+	});
+
+	it('migrates v8 surface constraint to v9 radial surface and adds projection default', () => {
+		const v8 = {
+			schemaVersion: 8,
+			explorer: {
+				...defaults.explorer,
+				theme: {
+					...defaults.explorer.theme,
+					splineConstraint: 'surface'
+				}
+			},
+			camera: defaults.camera
+		} as unknown;
+		const result = parseSnapshot(v8);
+		expect(result.migrated).toBe(true);
+		expect(result.snapshot?.schemaVersion).toBe(CURRENT_SNAPSHOT_VERSION);
+		expect(result.snapshot?.explorer.theme.splineConstraint).toBe('surface-radial');
+		expect(result.snapshot?.explorer.theme.surfaceProjection).toBe('adaptive-0.5');
+	});
+
+	it('round-trips new surface projection constraint fields', () => {
+		const doc = {
+			...defaults,
+			explorer: {
+				...defaults.explorer,
+				theme: {
+					...defaults.explorer.theme,
+					splineConstraint: 'surface-oklab-project',
+					surfaceProjection: 'project-cusp'
+				}
+			}
+		};
+		const result = parseSnapshot(doc);
+		expect(result.snapshot?.explorer.theme.splineConstraint).toBe('surface-oklab-project');
+		expect(result.snapshot?.explorer.theme.surfaceProjection).toBe('project-cusp');
 	});
 
 	it('clamps a persisted activeList to the available lists', () => {

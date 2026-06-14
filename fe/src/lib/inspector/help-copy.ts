@@ -209,9 +209,9 @@ export const PIPELINE_HELP: Record<PipelineHelpId, PanelHelpContent> = {
 		summary: 'Builds the continuous ramp path from the source points (one engine for linear + spline).',
 		stageRows: stageRows(
 			'The ordered source points.',
-			'Path type (linear/spline), interpolation space (incl. World), long-hue direction, surface constraint, step count, and spread parameters.',
+			'Path type (linear/spline), interpolation space (incl. World), long-hue direction, curve constraint, projection method, step count, and spread parameters.',
 			'A hi-res curve in the chosen space, before placement and gamut mapping.',
-			'Final export serialization or CVD preview; out-of-gamut colors may still exist at this stage.'
+			'Final export serialization or CVD preview. Curve constraints shape the path; the later Gamut Map stage controls exported out-of-gamut stops.'
 		),
 		sources: [
 			{ label: 'theme.ts interpolateRamp' },

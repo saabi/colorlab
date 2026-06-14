@@ -20,7 +20,8 @@ import type {
 	PlacePolicy
 } from '$lib/engine/types';
 import { INTERP_SPACE_KEYS } from '$lib/color/interp';
-import { GAMUT_MAP_METHODS, type GamutMapMethod } from '$lib/color/gamut-map';
+import { GAMUT_CLIP_METHODS, GAMUT_MAP_METHODS, type GamutMapMethod } from '$lib/color/gamut-map';
+import type { SurfaceProjectionMethod } from '$lib/color/boundary-project';
 import { CURRENT_SNAPSHOT_VERSION, type ParameterSnapshot } from './types';
 
 const SPACE_MODES: readonly SpaceMode[] = [0, 1, 2, 3, 5];
@@ -34,7 +35,13 @@ const THEME_MODES: readonly ThemeMode[] = ['linear', 'spline'];
 const PLACE_POLICIES: readonly PlacePolicy[] = ['even', 'uniform', 'tones', 'contrast'];
 const SPREAD_DIRS: readonly SpreadDir[] = ['off', 'ramp', 'sym', 'edges'];
 const WCAG_BG: readonly PersistedTheme['wcagBg'][] = ['white', 'black'];
-const SPLINE_CONSTRAINTS: readonly SplineConstraint[] = ['free', 'surface'];
+const SPLINE_CONSTRAINTS: readonly SplineConstraint[] = [
+	'free',
+	'surface-radial',
+	'surface-oklab-chroma',
+	'surface-oklab-project'
+];
+const SURFACE_PROJECTIONS: readonly SurfaceProjectionMethod[] = GAMUT_CLIP_METHODS;
 const GAMUT_MAPS: readonly GamutMapMethod[] = GAMUT_MAP_METHODS;
 const INTERP_SPACES: readonly InterpSpaceChoice[] = [...INTERP_SPACE_KEYS, 'world'];
 
@@ -154,6 +161,7 @@ function coerceTheme(raw: unknown, defaults: PersistedTheme): PersistedTheme {
 			Math.max(0, Math.round(finiteNumber(theme.activeList, 0, 'theme.activeList')))
 		),
 		splineConstraint: enumOf(theme.splineConstraint, SPLINE_CONSTRAINTS, defaults.splineConstraint, 'theme.splineConstraint'),
+		surfaceProjection: enumOf(theme.surfaceProjection, SURFACE_PROJECTIONS, defaults.surfaceProjection, 'theme.surfaceProjection'),
 		splineSpace: enumOf(theme.splineSpace, INTERP_SPACES, defaults.splineSpace, 'theme.splineSpace'),
 		gamutMap: enumOf(theme.gamutMap, GAMUT_MAPS, defaults.gamutMap, 'theme.gamutMap'),
 		steps: Math.min(27, Math.max(1, Math.round(finiteNumber(theme.steps, defaults.steps, 'theme.steps')))),
@@ -280,6 +288,7 @@ export function coerceSnapshot(raw: unknown): ParameterSnapshot | null {
 				lists: factory.explorer.theme.lists,
 				activeList: factory.explorer.theme.activeList,
 				splineConstraint: factory.explorer.theme.splineConstraint,
+				surfaceProjection: factory.explorer.theme.surfaceProjection,
 				splineSpace: factory.explorer.theme.splineSpace,
 				gamutMap: factory.explorer.theme.gamutMap,
 				steps: factory.explorer.theme.steps,

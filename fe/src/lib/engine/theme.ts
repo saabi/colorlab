@@ -3,6 +3,7 @@ import { SPACES } from '$lib/color/registry';
 import { CUBE_ROT, REC709_Y, lsrgb2oklab, oklab2lsrgb, xyz2lab } from '$lib/color/pipeline';
 import { INTERP_SPACES, type InterpSpaceKey } from '$lib/color/interp';
 import { mapToGamut } from '$lib/color/gamut-map';
+import { oklabMaxChromaLine, oklabProjectionLine, oklabProjectionLinePoint, type OklabProjectionLine } from '$lib/color/boundary-project';
 import { TRC } from '$lib/color/transfer';
 import { solidField } from './picking';
 
@@ -227,7 +228,7 @@ const dist3 = (a: Vec3, b: Vec3) => Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - 
 // the neutral (Y) axis. Brackets outward first so interior points project out to
 // the shell, then bisects to the v == 0 crossing. Returns the point unchanged if
 // the radial line never exits the solid (e.g. degenerate slice geometry).
-function snapToSurface(p: Vec3, state: ExplorerState, matrices: DerivedMatrices): Vec3 {
+function snapToRadialWorldSurface(p: Vec3, state: ExplorerState, matrices: DerivedMatrices): Vec3 {
 	const dx = p[0];
 	const dz = p[2];
 	const at = (t: number): Vec3 => [dx * t, p[1], dz * t];
@@ -243,6 +244,60 @@ function snapToSurface(p: Vec3, state: ExplorerState, matrices: DerivedMatrices)
 	return at(tIn);
 }
 
+function snapOklabLineToClippedSurface(
+	line: OklabProjectionLine | null,
+	state: ExplorerState,
+	matrices: DerivedMatrices,
+	fallback: Vec3
+): Vec3 {
+	if (!line) return fallback;
+	const at = (t: number): Vec3 => jsToWorld(m3.mulV(matrices.toSrgbLin.fromSrgb, oklabProjectionLinePoint(line, t)), state, matrices);
+	const field = (t: number) => solidField(at(t), state, matrices).v;
+	const inside = (t: number) => field(t) <= 0;
+	const bisect = (lo: number, hi: number): Vec3 => {
+		let a = lo;
+		let b = hi;
+		const aInside = inside(a);
+		for (let i = 0; i < 28; i += 1) {
+			const mid = (a + b) / 2;
+			if (inside(mid) === aInside) a = mid;
+			else b = mid;
+		}
+		return at(aInside ? a : b);
+	};
+
+	if (inside(1)) {
+		let tOut = 1;
+		for (let i = 0; i < 24 && inside(tOut); i += 1) tOut *= 1.5;
+		if (inside(tOut)) return fallback;
+		return bisect(1, tOut);
+	}
+
+	const steps = 96;
+	let prevT = 0;
+	let prevInside = inside(prevT);
+	let best: [number, number] | null = null;
+	for (let i = 1; i <= steps; i += 1) {
+		const t = i / steps;
+		const currInside = inside(t);
+		if (currInside !== prevInside) best = [prevT, t];
+		prevT = t;
+		prevInside = currInside;
+	}
+	return best ? bisect(best[0], best[1]) : fallback;
+}
+
+function constrainCurveSample(world: Vec3, srgbLin: Vec3, state: ExplorerState, matrices: DerivedMatrices): Vec3 {
+	const constraint = state.theme.splineConstraint;
+	if (constraint === 'free') return world;
+	if (constraint === 'surface-radial') return snapToRadialWorldSurface(world, state, matrices);
+	const line =
+		constraint === 'surface-oklab-chroma'
+			? oklabMaxChromaLine(srgbLin)
+			: oklabProjectionLine(srgbLin, state.theme.surfaceProjection);
+	return snapOklabLineToClippedSurface(line, state, matrices, world);
+}
+
 // Unified interpolator for 'linear' and 'spline' path types over any interpolation
 // space (incl. stateful "world"). Pure per-list: source points in, hi-res curve out.
 function interpolateList(cps: ThemeAnchor[], state: ExplorerState, matrices: DerivedMatrices): SplineSample[] {
@@ -256,11 +311,14 @@ function interpolateList(cps: ThemeAnchor[], state: ExplorerState, matrices: Der
 	const cyclic = isWorld ? null : space!.cyclic;
 	const toCoord = (srgbLin: Vec3): Vec3 =>
 		isWorld ? jsToWorld(m3.mulV(matrices.toSrgbLin.fromSrgb, srgbLin), state, matrices) : space!.fromSrgbLin(srgbLin);
+	const srgbAt = (coord: Vec3): Vec3 =>
+		isWorld
+			? m3.mulV(matrices.toSrgbLin.toSrgb, SPACES[state.spaceMode].fromWorld(coord, matrices.rgb2xyz, matrices.toSrgbLin))
+			: space!.toSrgbLin(coord);
 	const worldAt = (coord: Vec3): Vec3 => {
-		const world = isWorld
-			? coord
-			: jsToWorld(m3.mulV(matrices.toSrgbLin.fromSrgb, space!.toSrgbLin(coord)), state, matrices);
-		return T.splineConstraint === 'surface' ? snapToSurface(world, state, matrices) : world;
+		const srgbLin = srgbAt(coord);
+		const world = isWorld ? coord : jsToWorld(m3.mulV(matrices.toSrgbLin.fromSrgb, srgbLin), state, matrices);
+		return constrainCurveSample(world, srgbLin, state, matrices);
 	};
 
 	// A single source point is a degenerate "curve" of one sample — Place reduces

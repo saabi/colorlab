@@ -68,6 +68,7 @@ export function toPersistedExplorer(explorer: ExplorerState): PersistedExplorer 
 			),
 			activeList: theme.activeList,
 			splineConstraint: theme.splineConstraint,
+			surfaceProjection: theme.surfaceProjection,
 			splineSpace: theme.splineSpace,
 			gamutMap: theme.gamutMap,
 			steps: theme.steps,

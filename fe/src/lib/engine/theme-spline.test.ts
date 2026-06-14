@@ -6,11 +6,17 @@ import { rebuildMatrices } from '$lib/renderer/uniforms';
 import { INTERP_SPACES, INTERP_SPACE_KEYS } from '$lib/color/interp';
 import { lsrgb2oklab, oklab2lsrgb } from '$lib/color/pipeline';
 import { GAMUT_MAP_METHODS } from '$lib/color/gamut-map';
+import { inSrgbGamut } from '$lib/color/boundary-project';
 import type { GamutMapMethod } from '$lib/color/gamut-map';
 import type { SplineConstraint } from './types';
 
 const matrices = rebuildMatrices('srgb');
-const CONSTRAINTS: readonly SplineConstraint[] = ['free', 'surface'];
+const CONSTRAINTS: readonly SplineConstraint[] = [
+	'free',
+	'surface-radial',
+	'surface-oklab-chroma',
+	'surface-oklab-project'
+];
 
 function splineState(
 	space: (typeof INTERP_SPACE_KEYS)[number],
@@ -94,6 +100,32 @@ describe('buildSplineRamp', () => {
 		const last = state.theme.splineCurve[state.theme.splineCurve.length - 1].srgbLin;
 		state.theme.lists[0][0].srgbLin.forEach((v: number, k: number) => expect(Math.abs(first[k] - v)).toBeLessThan(1e-6));
 		state.theme.lists[0][2].srgbLin.forEach((v: number, k: number) => expect(Math.abs(last[k] - v)).toBeLessThan(1e-6));
+	});
+
+	it('Oklab surface constraints project chromatic curve samples to the sRGB boundary', () => {
+		for (const constraint of ['surface-oklab-chroma', 'surface-oklab-project'] as const) {
+			const state = splineState('oklch', constraint, 5);
+			state.theme.surfaceProjection = 'adaptive-0.5';
+			buildRamp(state, matrices);
+			const sample = state.theme.splineCurve[Math.floor(state.theme.splineCurve.length / 2)].srgbLin;
+			expect(sample.every(finite), constraint).toBe(true);
+			expect(inSrgbGamut(sample, 2e-3), constraint).toBe(true);
+			expect(Math.min(...sample.map((value) => Math.min(Math.abs(value), Math.abs(1 - value)))), constraint).toBeLessThan(4e-3);
+		}
+	});
+
+	it('Oklab surface constraints target the active clipped solid, not the full gamut shell', () => {
+		for (const constraint of ['surface-oklab-chroma', 'surface-oklab-project'] as const) {
+			const state = splineState('oklch', constraint, 5);
+			state.cylSlice = true;
+			state.cylRad = 0.12;
+			state.theme.surfaceProjection = 'adaptive-0.5';
+			buildRamp(state, matrices);
+			const sample = state.theme.splineCurve[Math.floor(state.theme.splineCurve.length / 2)];
+			const radius = Math.hypot(sample.world[0], sample.world[2]);
+			expect(radius, constraint).toBeLessThanOrEqual(state.cylRad + 2e-3);
+			expect(radius, constraint).toBeGreaterThan(state.cylRad - 4e-3);
+		}
 	});
 
 	it('clears the curve and stops when there are no source points', () => {

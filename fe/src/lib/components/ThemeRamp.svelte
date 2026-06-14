@@ -48,7 +48,17 @@
 	// Spline curve geometry constraint (separate from gamut handling).
 	const SPLINE_CONSTRAINT_OPTIONS: Array<{ value: ExplorerState['theme']['splineConstraint']; label: string }> = [
 		{ value: 'free', label: 'Free' },
-		{ value: 'surface', label: 'Surface (radial shell)' }
+		{ value: 'surface-radial', label: 'Surface: radial shell' },
+		{ value: 'surface-oklab-chroma', label: 'Surface: Oklab chroma' },
+		{ value: 'surface-oklab-project', label: 'Surface: Oklab projection' }
+	];
+
+	const SURFACE_PROJECTION_OPTIONS: Array<{ value: ExplorerState['theme']['surfaceProjection']; label: string }> = [
+		{ value: 'preserve-chroma', label: 'Preserve lightness' },
+		{ value: 'project-0.5', label: 'Project to L 0.5' },
+		{ value: 'project-cusp', label: 'Project to hue cusp' },
+		{ value: 'adaptive-0.5', label: 'Adaptive L 0.5' },
+		{ value: 'adaptive-cusp', label: 'Adaptive cusp' }
 	];
 
 	// Global out-of-gamut policy (applies to every theme mode + export).
@@ -442,6 +452,16 @@
 			{/each}
 		</select>
 	</label>
+	{#if explorer.theme.splineConstraint === 'surface-oklab-project'}
+		<label class="field-row">
+			<span>Projection method</span>
+			<select bind:value={explorer.theme.surfaceProjection}>
+				{#each SURFACE_PROJECTION_OPTIONS as opt}
+					<option value={opt.value}>{opt.label}</option>
+				{/each}
+			</select>
+		</label>
+	{/if}
 
 	<p class="note">
 		Builds the ramp path from the source points. A single point yields one seed stop — useful with the spread expander.

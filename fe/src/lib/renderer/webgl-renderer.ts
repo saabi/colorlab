@@ -4,6 +4,7 @@ import { CUBE_ROT, CUBE_ROTi, LMS2RGB, RGB2LMS, REC709_Y, lsrgb2oklab, waveToXyz
 import { TRC } from '$lib/color/transfer';
 import { planeND } from '$lib/engine/plane';
 import { camEye, lookAt, persp, type Camera } from '$lib/engine/camera';
+import { solidField } from '$lib/engine/picking';
 import { FS_FLOOR, FS_LINE, FS_MARK, FS_SOLID, FS_SPLINE, VS_FLOOR, VS_LINE, VS_MARK, VS_SOLID, VS_SPLINE } from './shaders';
 
 import type { ExplorerState, SpaceMode } from '$lib/engine/types';
@@ -310,7 +311,9 @@ export class WebGlRenderer {
 
 		if (aidsThroughGlass) gl.enable(gl.DEPTH_TEST);
 
-		if (this.lineVertCount > 0 && !input.state.hideAids && input.state.slice && (input.state.planeOutline || input.state.cylinderOutline) && !morph) {
+		const showCutOutlines =
+			(input.state.slice && input.state.planeOutline) || (input.state.cylSlice && input.state.cylinderOutline);
+		if (this.lineVertCount > 0 && !input.state.hideAids && showCutOutlines && !morph) {
 			gl.useProgram(this.lineProgram);
 			gl.bindVertexArray(this.lineVao);
 			gl.uniformMatrix4fv(this.U(this.lineProgram, 'uProj'), false, proj);
@@ -325,57 +328,126 @@ export class WebGlRenderer {
 
 	rebuildBoundary(state: ExplorerState, matrices: DerivedMatrices) {
 		this.lineVertCount = 0;
-		if (!state.slice || (!state.planeOutline && !state.cylinderOutline)) return;
+		const needsPlaneOutline = state.slice && state.planeOutline;
+		const needsCylinderOutline = state.cylSlice && state.cylinderOutline;
+		if (!needsPlaneOutline && !needsCylinderOutline) return;
 		const { gl } = this;
-		const { n, d } = planeND(state);
-		const ref: Vec3 = Math.abs(n[1]) < 0.9 ? [0, 1, 0] : [1, 0, 0];
-		const u = norm3(cross3(n, ref));
-		const v = cross3(n, u);
 		const segs: number[] = [];
-		if (state.planeOutline) {
-			if (!state.cylSlice && (state.spaceMode === 0 || state.spaceMode === 1 || state.spaceMode === 5)) {
-				this.buildAffinePlaneOutline(state, matrices, n, d, u, v, segs);
-			} else {
-				this.buildFacePlaneOutline(state, matrices, n, d, segs);
-			}
-		}
-		if (state.cylSlice && state.cylinderOutline) {
-			const R = state.cylRad;
-			if (Math.abs(n[1]) >= 1e-4) {
-				const pts: Vec3[] = [];
-				const steps = 64;
-				for (let i = 0; i <= steps; i += 1) {
-					const th = (i * 2 * Math.PI) / steps;
-					const cx = R * Math.cos(th);
-					const cz = R * Math.sin(th);
-					const cy = (d - R * (n[0] * Math.cos(th) + n[2] * Math.sin(th))) / n[1];
-					pts.push([cx, cy, cz]);
+		if (state.slice) {
+			const { n, d } = planeND(state);
+			const ref: Vec3 = Math.abs(n[1]) < 0.9 ? [0, 1, 0] : [1, 0, 0];
+			const u = norm3(cross3(n, ref));
+			const v = cross3(n, u);
+			const planeOffsets = this.sliceOutlineOffsets(state, d);
+			for (const outlineD of planeOffsets) {
+				if (needsPlaneOutline) {
+					if (!state.cylSlice && (state.spaceMode === 0 || state.spaceMode === 1 || state.spaceMode === 5)) {
+						this.buildAffinePlaneOutline(state, matrices, n, outlineD, u, v, segs);
+					} else {
+						this.buildFacePlaneOutline(state, matrices, n, outlineD, segs);
+					}
 				}
-				for (let i = 0; i < steps; i += 1) {
-					segs.push(...pts[i], ...pts[i + 1]);
-				}
-			} else {
-				const dist = Math.abs(d);
-				if (R > dist) {
-					const h = Math.sqrt(R * R - d * d);
-					const px = d * n[0];
-					const pz = d * n[2];
-					const vx = -n[2];
-					const vz = n[0];
-					const q1x = px + h * vx;
-					const q1z = pz + h * vz;
-					const q2x = px - h * vx;
-					const q2z = pz - h * vz;
-					segs.push(q1x, -0.5, q1z, q1x, 0.5, q1z);
-					segs.push(q2x, -0.5, q2z, q2x, 0.5, q2z);
+				if (needsCylinderOutline) {
+					this.buildCylinderPlaneOutline(state, n, outlineD, segs);
 				}
 			}
+		} else if (needsCylinderOutline) {
+			this.buildCylinderWallOutline(state, matrices, segs);
 		}
 		gl.bindVertexArray(this.lineVao);
 		gl.bindBuffer(gl.ARRAY_BUFFER, this.lineBuffer);
 		gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(segs), gl.DYNAMIC_DRAW);
 		gl.bindVertexArray(null);
 		this.lineVertCount = segs.length / 3;
+	}
+
+	private sliceOutlineOffsets(state: ExplorerState, d: number) {
+		if (state.cutAbove && state.cutBelow && state.eps > 1e-6) return [d - state.eps, d + state.eps];
+		if (state.cutAbove) return [d + state.eps];
+		if (state.cutBelow) return [d - state.eps];
+		return [d];
+	}
+
+	private buildCylinderPlaneOutline(state: ExplorerState, n: Vec3, d: number, segs: number[]) {
+		const R = state.cylRad;
+		if (Math.abs(n[1]) >= 1e-4) {
+			const pts: Vec3[] = [];
+			const steps = 64;
+			for (let i = 0; i <= steps; i += 1) {
+				const th = (i * 2 * Math.PI) / steps;
+				const cx = R * Math.cos(th);
+				const cz = R * Math.sin(th);
+				const cy = (d - R * (n[0] * Math.cos(th) + n[2] * Math.sin(th))) / n[1];
+				pts.push([cx, cy, cz]);
+			}
+			for (let i = 0; i < steps; i += 1) {
+				segs.push(...pts[i], ...pts[i + 1]);
+			}
+		} else {
+			const dist = Math.abs(d);
+			if (R > dist) {
+				const h = Math.sqrt(R * R - d * d);
+				const px = d * n[0];
+				const pz = d * n[2];
+				const vx = -n[2];
+				const vz = n[0];
+				const q1x = px + h * vx;
+				const q1z = pz + h * vz;
+				const q2x = px - h * vx;
+				const q2z = pz - h * vz;
+				segs.push(q1x, -0.5, q1z, q1x, 0.5, q1z);
+				segs.push(q2x, -0.5, q2z, q2x, 0.5, q2z);
+			}
+		}
+	}
+
+	private buildCylinderWallOutline(state: ExplorerState, matrices: DerivedMatrices, segs: number[]) {
+		const R = state.cylRad;
+		const thetaSteps = 128;
+		const ySteps = 96;
+		const yMin = -1.25;
+		const yMax = 1.25;
+		const baseState = { ...state, cylSlice: false };
+		const yAt = (j: number) => yMin + ((yMax - yMin) * j) / ySteps;
+		const point = (theta: number, y: number): Vec3 => [R * Math.cos(theta), y, R * Math.sin(theta)];
+		const field = (theta: number, y: number) => solidField(point(theta, y), baseState, matrices).v;
+		const crossing = (theta: number, a: number, b: number) => {
+			let lo = a;
+			let hi = b;
+			const loInside = field(theta, lo) <= 0;
+			for (let i = 0; i < 24; i += 1) {
+				const mid = (lo + hi) / 2;
+				if ((field(theta, mid) <= 0) === loInside) lo = mid;
+				else hi = mid;
+			}
+			return loInside ? lo : hi;
+		};
+		const extrema: Array<{ bottom: Vec3; top: Vec3 } | null> = [];
+		for (let i = 0; i <= thetaSteps; i += 1) {
+			const theta = (i * 2 * Math.PI) / thetaSteps;
+			let prevY = yAt(0);
+			let prevInside = field(theta, prevY) <= 0;
+			const hits: number[] = [];
+			for (let j = 1; j <= ySteps; j += 1) {
+				const y = yAt(j);
+				const inside = field(theta, y) <= 0;
+				if (inside !== prevInside) hits.push(crossing(theta, prevY, y));
+				prevY = y;
+				prevInside = inside;
+			}
+			if (hits.length >= 2) {
+				extrema.push({ bottom: point(theta, hits[0]), top: point(theta, hits[hits.length - 1]) });
+			} else {
+				extrema.push(null);
+			}
+		}
+		for (let i = 0; i < thetaSteps; i += 1) {
+			const a = extrema[i];
+			const b = extrema[i + 1];
+			if (!a || !b) continue;
+			segs.push(...a.bottom, ...b.bottom);
+			segs.push(...a.top, ...b.top);
+		}
 	}
 
 	private buildAffinePlaneOutline(

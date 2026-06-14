@@ -18,8 +18,11 @@
  *   ({count, hue|chroma|light: {delta, dir: off|ramp|sym|edges}}). Harmony = row
  *   hue walks; tints = column light sym; spread = column hue sym + chroma
  *   sym/edges (dc scaled /2.2 from the old world-cylindrical frame).
- * v8 (CURRENT_SNAPSHOT_VERSION): multiple source lists. theme.points ->
+ * v8: multiple source lists. theme.points ->
  *   theme.lists = [points] (one ramp per list) + theme.activeList = 0.
+ * v9 (CURRENT_SNAPSHOT_VERSION): spline surface constraint methods. Old
+ *   theme.splineConstraint 'surface' -> 'surface-radial'; add
+ *   theme.surfaceProjection = 'adaptive-0.5'.
  *
  * When adding v8+, append a line here and implement migrateVNToVN+1 below.
  */
@@ -160,6 +163,17 @@ function migrateV7ToV8(raw: Record<string, unknown>) {
 	return raw;
 }
 
+function migrateV8ToV9(raw: Record<string, unknown>) {
+	raw.schemaVersion = 9;
+	const explorer = raw.explorer as Record<string, unknown> | undefined;
+	const theme = explorer?.theme as Record<string, unknown> | undefined;
+	if (theme) {
+		if (theme.splineConstraint === 'surface') theme.splineConstraint = 'surface-radial';
+		if (theme.surfaceProjection === undefined) theme.surfaceProjection = 'adaptive-0.5';
+	}
+	return raw;
+}
+
 export function migrateSnapshot(raw: unknown, fromVersion: number): unknown {
 	if (!raw || typeof raw !== 'object') return raw;
 	let current = { ...(raw as Record<string, unknown>) };
@@ -172,6 +186,7 @@ export function migrateSnapshot(raw: unknown, fromVersion: number): unknown {
 		if (version === 5) current = migrateV5ToV6(current);
 		if (version === 6) current = migrateV6ToV7(current);
 		if (version === 7) current = migrateV7ToV8(current);
+		if (version === 8) current = migrateV8ToV9(current);
 	}
 	return current;
 }

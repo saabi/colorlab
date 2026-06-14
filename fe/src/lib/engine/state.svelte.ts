@@ -52,6 +52,7 @@ function createExplorerDefaults(): ExplorerState {
 			activeList: 0,
 			selectedPoint: null,
 			splineConstraint: 'free',
+			surfaceProjection: 'adaptive-0.5',
 			splineSpace: 'oklab',
 			gamutMap: 'none',
 			curves: [],
@@ -110,7 +111,7 @@ export function cloneAppState(state: AppState): AppState {
 
 export function createAppState(options: { mobile?: boolean } = {}): AppState {
 	const state: AppState = {
-		schemaVersion: 8,
+		schemaVersion: 9,
 		explorer: createExplorerDefaults(),
 		camera: createCamera()
 	};
@@ -240,7 +241,8 @@ export const EXAMPLE_STATES = [
 							{ srgbLin: [1, 1, 0] as [number, number, number] }
 						]
 					],
-					splineConstraint: 'surface',
+					splineConstraint: 'surface-radial',
+					surfaceProjection: 'adaptive-0.5',
 					splineSpace: 'oklch',
 					steps: 11,
 					mode: 'spline',

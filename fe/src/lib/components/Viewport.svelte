@@ -791,10 +791,11 @@
 		explorer.cutBelow;
 		explorer.cylSlice;
 		explorer.cylRad;
+		const clipAffectsRamp = explorer.theme.interpolateOn && explorer.theme.splineConstraint !== 'free';
 		explorer.planeOutline;
 		explorer.cylinderOutline;
 		untrack(() => {
-			scheduleViewportUpdate({ boundary: true, clearHover: true });
+			scheduleViewportUpdate({ boundary: true, ramp: clipAffectsRamp, clearHover: true });
 		});
 	});
 
@@ -857,6 +858,7 @@
 
 	$effect(() => {
 		explorer.theme.splineConstraint;
+		explorer.theme.surfaceProjection;
 		explorer.theme.splineSpace;
 		explorer.theme.activeList;
 		// Track list count and every list's length (add/remove in any list rebuilds).

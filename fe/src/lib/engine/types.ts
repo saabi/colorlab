@@ -30,9 +30,13 @@ export interface AxisSpreadConfig {
 	light: SpreadAxis;
 }
 // Spline curve geometry constraint (not a gamut map): 'free' interpolates inside
-// the volume; 'surface' radially snaps samples to the active solid shell.
+// the volume; surface options snap samples to a boundary before placement/export.
 // Out-of-gamut handling is a separate, global policy (theme.gamutMap).
-export type SplineConstraint = 'free' | 'surface';
+export type SplineConstraint =
+	| 'free'
+	| 'surface-radial'
+	| 'surface-oklab-chroma'
+	| 'surface-oklab-project';
 export type MinAverageFps = 15 | 30 | 60;
 /** Where a persisted example guide note is rendered in the UI. */
 export type GuideNotePlacement = 'sidebar' | 'overlay';
@@ -126,8 +130,10 @@ export interface ExplorerState {
 		activeList: number;
 		/** Selected source-point index within the active list (runtime UI selection, not persisted). */
 		selectedPoint: number | null;
-		/** Spline curve geometry constraint: free vs radial shell snap (persisted). */
+		/** Spline curve geometry constraint: free vs boundary projection (persisted). */
 		splineConstraint: SplineConstraint;
+		/** Projection-line method used by surface-oklab-project (persisted). */
+		surfaceProjection: SurfaceProjectionMethod;
 		/** Color space the ramp is interpolated in — any interp space or "world" (persisted). */
 		splineSpace: InterpSpaceChoice;
 		/** Out-of-gamut mapping policy applied to all ramp stops + spline curve (persisted). */
@@ -177,9 +183,10 @@ export interface ExplorerState {
 }
 import type { Vec3 } from '$lib/color/math';
 import type { GamutMapMethod } from '$lib/color/gamut-map';
+import type { SurfaceProjectionMethod } from '$lib/color/boundary-project';
 import type { Camera } from './camera';
 
-export const CURRENT_STATE_SCHEMA_VERSION = 8 as const;
+export const CURRENT_STATE_SCHEMA_VERSION = 9 as const;
 export type StateSchemaVersion = typeof CURRENT_STATE_SCHEMA_VERSION;
 
 export type PersistedTheme = Omit<
