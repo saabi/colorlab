@@ -188,9 +188,20 @@ export class WebGlRenderer {
 			gl.uniformMatrix4fv(this.U(this.floorProgram, 'uView'), false, view);
 			gl.uniform1f(this.U(this.floorProgram, 'uY'), -0.502);
 			gl.depthMask(false);
+			gl.enable(gl.CULL_FACE);
+
+			gl.uniform1f(this.U(this.floorProgram, 'uFromBelow'), 1);
+			gl.cullFace(gl.BACK);
 			gl.enable(gl.BLEND);
+			gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+			gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+
+			gl.uniform1f(this.U(this.floorProgram, 'uFromBelow'), 0);
+			gl.cullFace(gl.FRONT);
 			gl.blendFunc(gl.ONE, gl.ONE);
 			gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+
+			gl.disable(gl.CULL_FACE);
 			gl.disable(gl.BLEND);
 			gl.depthMask(true);
 		}

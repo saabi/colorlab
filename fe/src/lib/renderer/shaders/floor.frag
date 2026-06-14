@@ -1,10 +1,11 @@
 #version 300 es
 precision highp float;
 in vec3 vW;
+uniform float uFromBelow;
 out vec4 frag;
 
 void main() {
-	float dF = clamp(1.0 / pow(length(vW)*1.4, 8.0), 0.0, 1.0);
+	float dF = clamp(1.0 / pow(length(vW) * 1.4, 8.0), 0.0, 1.0);
 	vec2 c = vW.xz;
 	vec2 g = abs(fract(c - 0.5) - 0.5) / fwidth(c * 3.0);
 	float v = 1.0 - min(min(g.x, g.y), 1.0);
@@ -16,6 +17,16 @@ void main() {
 	v += 1.0 - min(ring, 1.0);
 	v = clamp(v, 0.0, 1.0) + (1.0 - v) * 0.01;
 	v *= dF;
+
+	if (uFromBelow > 0.5) {
+		// Underside: grid lines darker than the clear color (halfway to black).
+		const vec3 bg = vec3(0.039, 0.039, 0.043);
+		vec3 dark = mix(bg, vec3(0.0), 0.5);
+		float alpha = clamp(v * 0.9, 0.0, 1.0);
+		frag = vec4(dark, alpha);
+		return;
+	}
+
 	v *= 0.5;
 	frag = vec4(vec3(v), 1.0);
 }
