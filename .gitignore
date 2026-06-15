@@ -12,6 +12,9 @@ fe/.env.*
 .claude
 .cursor/projects
 
+# Ephemeral working notes (canonical backlog: _docs/Roadmap.md)
+tmp/
+
 # Logs
 *.log
 npm-debug.log*

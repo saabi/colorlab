@@ -33,6 +33,7 @@ For build, deploy, environment variables, and project structure, see [`fe/README
 
 ## Documentation
 
+- [`_docs/Roadmap.md`](_docs/Roadmap.md) — current priorities and open work
 - [`_docs/design.md`](_docs/design.md) — architecture and color-pipeline design
 - [`_docs/references.md`](_docs/references.md) — external references (CIE/ISO, IEC/ITU/SMPTE, CSS/DTCG, Oklab, CVD, non-Riemannian geometry)
 - [`_docs/svelte-migration.md`](_docs/svelte-migration.md) — SvelteKit migration plan

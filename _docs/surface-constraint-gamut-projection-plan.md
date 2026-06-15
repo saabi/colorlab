@@ -848,11 +848,24 @@ Projection method
 
 Advanced
   Adaptive alpha 0.05
+  Alpha presets 0.05 / 0.50 / 5.00
+  Status Lightness-preserving ↔ more compression
   Custom focus L 0.50    (only for future custom-focus method)
   Neutral fallback Preserve
 ```
 
 Only show `Projection method` when `Surface: projection` is active.
+Only show `Adaptive alpha` for adaptive methods. Custom `focusL` and neutral fallback should stay hidden until they are implemented and user-tested.
+
+Immediate UI polish:
+
+- Add alpha preset chips matching Ottosson's examples: `0.05`, `0.5`, `5.0`.
+- Add a compact status line beside or below the alpha slider:
+  - low alpha: `Lightness-preserving`;
+  - mid alpha: `Balanced`;
+  - high alpha: `More compression`.
+- Keep the Advanced disclosure collapsed by default.
+- Make Interpolate help text explicit: Surface Projection constrains the path to the active clipped surface; it does not perform final export gamut mapping.
 
 For first implementation, a simpler UI is acceptable:
 
@@ -870,16 +883,22 @@ Current state:
 - Phase 1 is implemented.
 - Phase 2 is implemented.
 - Phase 3 is implemented in basic form.
+- Phase 4 backend/state is implemented in basic form: `surfaceProjectionParams.alpha` exists and defaults preserve current behavior.
 
 Next order:
 
-1. **Phase 4: parameterize surface projection.** This is the smallest useful increment. It touches the CPU projection core, Svelte UI, persistence, and tests, but keeps target gamut and shader behavior unchanged.
-2. **Extend terminal `Gamut Map` to share the same parameter model.** Once surface projection params are stable, reuse the same `ProjectionParams` shape for final ramp mapping. Keep default output identical.
-3. **Phase 5: generic target-gamut solver.** Add matrix-based line/boundary solving for P3/Rec.2020. Keep sRGB analytic code as a fast path.
-4. **Phase 6: Explorer display-gamut classification.** Start with shader classification only, because it is cheap and answers the main visual question.
-5. **Projected Explorer display mode.** Add only after classification and generic CPU projection are proven.
-6. **Phase 7: gamut compression.** Treat as a separate terminal ramp/export policy, not a surface constraint.
-7. **Phase 8: GPU/codegen evaluation.** Defer until duplicated projection algorithms exist in both TypeScript and GLSL.
+1. **Surface Projection UI polish.** Add alpha presets/status and clearer path-vs-export copy. This is low risk and makes Phase 4 understandable before adding more math.
+2. **Extend terminal `Gamut Map` to share the same parameter model.** Use a separate `gamutMapParams` object rather than sharing surface projection params. Keep default output identical.
+3. **Gamut Map UI.** Add an `Advanced gamut mapping` disclosure with the same alpha presets/status. Keep it separate from the Interpolate-stage Surface Projection controls.
+4. **Pipeline node/status cleanup.** Update Interpolate and Gamut Map node statuses together:
+   - Interpolate: `Oklab projection / α 0.05`;
+   - Gamut Map: `Adaptive cusp / α 0.05` only when mapping is active.
+   Also update help popups to say whether alpha affects path shape or final exported colors.
+5. **Phase 5: generic target-gamut solver.** Add matrix-based line/boundary solving for P3/Rec.2020. Keep sRGB analytic code as a fast path.
+6. **Phase 6: Explorer display-gamut classification.** Start with shader classification only, because it is cheap and answers the main visual question.
+7. **Projected Explorer display mode.** Add only after classification and generic CPU projection are proven.
+8. **Phase 7: gamut compression.** Treat as a separate terminal ramp/export policy, not a surface constraint.
+9. **Phase 8: GPU/codegen evaluation.** Defer until duplicated projection algorithms exist in both TypeScript and GLSL.
 
 Avoid making terminal `Gamut Map` target all gamuts in the same change as projection parameterization. That would touch persistence, UI, export semantics, tests, examples, and possibly renderer expectations. The safer path is: parameterize the current sRGB/Oklab implementation first, then generalize target gamut.
 

@@ -23,6 +23,10 @@ npm test        # vitest
 
 CI runs the same commands on push (see [`.github/workflows/ci.yml`](.github/workflows/ci.yml)).
 
+## Looking for something to work on?
+
+See [`_docs/Roadmap.md`](_docs/Roadmap.md) for current priorities and open work. Update that file in the same PR when you ship a feature or change what is actively planned (see **Maintaining this document** there).
+
 ## Project layout
 
 | Path | Role |

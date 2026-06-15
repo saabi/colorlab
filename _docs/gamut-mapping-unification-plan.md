@@ -69,10 +69,10 @@ export interface ProjectionParams {
 
 Most convenient implementation order:
 
-1. Parameterize the existing Oklab/sRGB projection line code (`alpha` first).
-2. Persist and expose surface projection params under an Advanced disclosure.
-3. Add tests proving default params reproduce current output and alternate alpha values produce distinct results.
-4. Reuse the same params in terminal `Gamut Map`.
+1. Finish Surface Projection UI polish: alpha presets, alpha status copy, and clearer path-vs-export wording.
+2. Reuse the same parameter shape in terminal `Gamut Map`, but store it separately as `gamutMapParams`.
+3. Add `Advanced gamut mapping` UI with the same alpha presets/status, shown only when the selected mapping method can use alpha.
+4. Update pipeline node statuses and help copy after both Surface Projection and Gamut Map have params, so the graph reflects both stages consistently.
 5. Add generic target-gamut solving after parameterized sRGB behavior is stable.
 6. Add Explorer display-gamut classification before any GPU-side projection.
 7. Consider compression and CPU/GPU code generation only after the clipping/projection surface area stabilizes.

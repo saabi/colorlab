@@ -28,18 +28,19 @@ Do not tie document-schema bumps to app semver automatically.
 ## Release checklist
 
 1. Ensure `main` is green (`npm run check` and `npm test` in `fe/`).
-2. Bump `fe/package.json` `"version"`.
-3. Update `fe/package-lock.json` if needed (`npm install` in `fe/`).
-4. Commit: `chore: release vX.Y.Z` (note user-facing changes in the body).
-5. Tag: `git tag vX.Y.Z`
-6. Push branch and tag to remotes:
+2. Update [`_docs/Roadmap.md`](_docs/Roadmap.md) — move shipped items to **Recently shipped**, drop them from **Open work**, adjust priorities if needed (see **Maintaining this document** in that file).
+3. Bump `fe/package.json` `"version"`.
+4. Update `fe/package-lock.json` if needed (`npm install` in `fe/`).
+5. Commit: `chore: release vX.Y.Z` (note user-facing changes in the body).
+6. Tag: `git tag vX.Y.Z`
+7. Push branch and tag to remotes:
 
 ```sh
 git push github main --tags
 git push gitlab main --tags
 ```
 
-7. Deploy production build if applicable (`npm run build` in `fe/`, then your usual host process).
+8. Deploy production build if applicable (`npm run build` in `fe/`, then your usual host process).
 
 ## Changelog
 

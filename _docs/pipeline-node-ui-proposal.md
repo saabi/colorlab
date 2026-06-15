@@ -314,7 +314,12 @@ Canonical controls:
 
 - Theme/ramp mode: segment, hue arc, spread A, spline.
 - Spline interpolation space.
-- Spline curve constraint: free vs surface.
+- Spline curve constraint: free, radial shell, Oklab chroma, Oklab projection.
+- Projection method when Oklab projection is active.
+- Advanced Surface Projection parameters:
+  - adaptive alpha slider;
+  - alpha presets `0.05`, `0.5`, `5.0`;
+  - compact status (`Lightness-preserving`, `Balanced`, `More compression`).
 - Hue arc long path.
 - Spread delta hue.
 - Spread delta chroma.
@@ -328,6 +333,7 @@ Do not include:
 - Even perceptual spacing button.
 - Gamut mapping policy.
 - Export buttons.
+- Terminal Gamut Map alpha. This panel shapes the path; Gamut Map parameters affect final/exported colors.
 
 #### Raw Stops
 
@@ -364,12 +370,16 @@ Canonical controls:
 - Gamut mapping policy: none, clip, preserve chroma, project to L 0.5, project to cusp, adaptive variants.
 - Destination gamut status. Today this is sRGB for ramp export.
 - OOG before/after summary.
-- Future method-specific parameters, if exposed.
+- Advanced gamut mapping parameters, after the terminal `Gamut Map` stage adopts the shared projection parameter shape:
+  - adaptive alpha slider;
+  - alpha presets `0.05`, `0.5`, `5.0`;
+  - compact status (`Lightness-preserving`, `Balanced`, `More compression`).
 
 Do not include:
 
 - The explorer gamut selector. The ramp map destination is currently separate from the visible solid gamut.
 - CVD mode. CVD only previews final colors.
+- Surface Projection alpha. Interpolate-stage surface projection shapes the path; Gamut Map parameters affect final/exported colors.
 
 #### Export
 
@@ -801,11 +811,14 @@ Goal: make the pipeline graph the main control navigation.
 
 Recommended extraction order:
 
-1. `ThemeRamp.svelte` into ramp lane panels. This fixes the largest mismatch immediately.
-2. `Color model` into `GamutEncodingPanel` and `WorldSpacePanel`.
-3. `Display` into `VisionPreviewPanel` and `DisplayAidsPanel`.
-4. `Clipping` into `ClipPanel`, leaving outline/grid style controls in `DisplayAidsPanel`.
-5. Replace the `All controls` legacy view with a pipeline-ordered composition of the new panels.
+1. Polish the existing Surface Projection controls inside `Interpolate`: alpha presets/status and clearer path-vs-export copy.
+2. Extend terminal `Gamut Map` with its own params and `Advanced gamut mapping` UI.
+3. Update Interpolate/Gamut Map node status and help copy together once both stages expose params.
+4. `ThemeRamp.svelte` into ramp lane panels. This fixes the largest mismatch immediately.
+5. `Color model` into `GamutEncodingPanel` and `WorldSpacePanel`.
+6. `Display` into `VisionPreviewPanel` and `DisplayAidsPanel`.
+7. `Clipping` into `ClipPanel`, leaving outline/grid style controls in `DisplayAidsPanel`.
+8. Replace the `All controls` legacy view with a pipeline-ordered composition of the new panels.
 
 ### Phase 3: Full Pipeline-Driven Layout
 
