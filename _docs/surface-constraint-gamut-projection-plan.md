@@ -25,6 +25,13 @@ This document proposes a staged design that improves curve-to-surface constraint
 - Explorer-gamut-to-display gamut clipping/visualization.
 - Future non-sRGB / active-gamut boundary projection.
 
+Terminology follows `_docs/color-space-role-architecture.md`:
+
+- **Active gamut** is the working and export-intent gamut.
+- **World space** is the geometric/perceptual coordinate system used for layout and interpolation.
+- **Display gamut** is the physical display capability used for on-screen classification/projection.
+- Ramp source colors should be stored in a gamut-independent colorimetric space such as XYZ D65.
+
 References:
 
 - `_docs/references.md`, "Björn Ottosson / sRGB gamut clipping"
@@ -44,16 +51,16 @@ Separate three concepts that currently sit close together:
    Optional projection of each interpolation sample to a boundary while the curve is being built.
 
 3. **Terminal gamut mapping**  
-   Final policy that maps generated stops/curves into the export gamut.
+   Transitional final policy that maps generated stops/curves. Long-term ramp construction should prefer constraints at the Interpolate and Extend/Expand stages, targeting the Active gamut.
 
 4. **Explorer display clipping**  
-   Optional visualization/mapping of the active Explorer gamut into a smaller display/export gamut such as sRGB.
+   Optional visualization/mapping of the Active gamut into the user's Display gamut.
 
 The UI should make this distinction clear:
 
 - Curve constraint changes the shape of the visual/interpolated path.
-- Gamut map changes exported/final colors.
-- Explorer display clipping changes how the primary solid is visualized or classified against a target gamut.
+- Gamut map changes exported/final ramp colors when retained.
+- Explorer display clipping changes how the primary solid is visualized or classified against the Display gamut.
 - Both may use similar projection algorithms, but at different pipeline stages.
 
 ## Current Behavior
@@ -330,7 +337,7 @@ Generalizing to all app gamuts means separating:
    likely Oklab first; later maybe CIELAB/OKLrCH/ProLab.
 
 2. **target RGB gamut**  
-   sRGB, P3, Rec.2020, etc.
+   Active gamut for ramp construction constraints; Display gamut for Explorer display mapping.
 
 3. **boundary solver**  
    find intersection of a line in perceptual coordinates with `rgb in [0,1]^3`.
@@ -344,20 +351,20 @@ For non-sRGB gamuts, Ottosson's fitted `compute_max_saturation()` constants are 
 
 This is slower than the sRGB closed-form approximation, but ramp generation has low sample counts compared with image processing. A binary search per ramp sample is acceptable for interactive use if coalesced and cached.
 
-## Explorer Gamut Clipping to sRGB
+## Explorer Active-Gamut Mapping to Display Gamut
 
-An upcoming related feature is optional clipping/visualization when the main Explorer `Gamut (cube primaries)` is not sRGB.
+An upcoming related feature is optional clipping/visualization when the Active gamut is wider or different than the user's Display gamut.
 
 Example:
 
-- Active Explorer gamut: Rec.2020.
-- Target/display gamut: sRGB.
-- Goal: show which Rec.2020 colors are present in sRGB, which are missing, and how outliers would map if clipped/projected.
+- Active gamut: Rec.2020.
+- Display gamut: sRGB.
+- Goal: show which Rec.2020 colors are present on the current display, which are missing, and how outliers would map if clipped/projected.
 
 This is adjacent to, but separate from, ramp `Gamut Map`:
 
-- Ramp `Gamut Map` operates on generated ramp stops and export tokens.
-- Explorer gamut clipping/classification operates on the primary 3D solid and its sampled surface/volume.
+- Ramp constraints operate on generated ramp stops, curves, and extensions against the Active gamut.
+- Explorer display mapping/classification operates on the primary 3D solid and its sampled surface/volume against the Display gamut.
 
 ### Pipeline Placement
 
@@ -368,8 +375,8 @@ Candidate label:
 ```text
 Display gamut
   Off
-  Classify against sRGB
-  Clip/project to sRGB
+  Classify against current display
+  Clip/project to current display
 ```
 
 Alternative label:
@@ -377,15 +384,15 @@ Alternative label:
 ```text
 Target gamut
   Native gamut
-  sRGB comparison
-  sRGB clipped projection
+  Display comparison
+  Display clipped projection
 ```
 
 Rationale:
 
 - It is not the same as selecting the primary RGB cube.
 - It is not the same as choosing a reference shell.
-- It answers a specific display/export question: "What part of this active gamut survives in sRGB?"
+- It answers a specific display question: "What part of this Active gamut survives on this Display gamut?"
 
 ### Visual Modes
 
@@ -455,7 +462,7 @@ Longer term, replace `sRGB` hardcoding with:
 targetDisplayGamut: GamutKey;
 ```
 
-For first implementation, `sRGB` is the correct target because browser/CSS export and most displays still make sRGB the baseline.
+For first implementation, `sRGB` is the correct default display target because browser/CSS display and most monitors still make sRGB the baseline. This should be treated as the initial Display gamut, not as the long-term ramp export intent.
 
 Renderer considerations:
 
@@ -464,7 +471,7 @@ Renderer considerations:
 - Projection is heavier; it may need CPU precomputed samples, shader approximations, or a lower-resolution projected overlay.
 - The reference shell should remain independently toggled and can default to sRGB when `Gamut != sRGB` and display comparison is active.
 
-This should be planned as an Explorer pipeline feature before exposing generalized gamut mapping for every ramp/export target.
+This should be planned as an Explorer pipeline feature before expanding ramp-side terminal mapping. Ramp output intent follows Active gamut; Explorer display mapping targets Display gamut.
 
 ## CPU/GPU Implementation Strategy
 
@@ -749,15 +756,17 @@ Non-goals:
 - Do not add GPU projection.
 - Do not add gamut compression yet.
 
-### Phase 5: Generalize target gamut
+### Phase 5: Generalize Active/Display Gamut Solving
 
 Goal:
 
-- Let ramp gamut mapping target sRGB/P3/Rec.2020 or the active/export gamut, not only sRGB.
+- Support matrix-based boundary solving for Active gamut and Display gamut relationships instead of hard-coding sRGB-only assumptions.
 
 Tasks:
 
-- Add a target gamut parameter to projection helpers.
+- Add explicit role-aware target parameters to projection helpers:
+  - Active gamut for ramp constraints;
+  - Display gamut for Explorer display mapping.
 - Implement a generic line-boundary solver:
   - choose perceptual projection line;
   - evaluate candidate perceptual point;
@@ -765,8 +774,8 @@ Tasks:
   - solve for first `rgb in [0,1]` boundary crossing.
 - Keep the current sRGB analytic implementation as a fast path.
 - Add UI copy distinguishing:
-  - display/export target;
-  - explorer gamut;
+  - Active gamut;
+  - Display gamut;
   - interpolation space.
 
 ### Phase 6: Add Explorer display-gamut comparison
@@ -935,16 +944,23 @@ Non-goals:
 
 Goal:
 
-- Prepare users for configurable target gamuts without changing behavior.
+- Prepare users for configurable gamut roles without changing behavior.
 
 Implemented behavior:
 
-- Terminal `Gamut Map` still targets sRGB only.
+- Terminal `Gamut Map` currently targets sRGB only.
 - The Gamut Map panel shows `Target gamut: sRGB` as a read-only row.
 - Pipeline help and tutorial copy explain:
   - Explorer Gamut controls the 3D solid being studied;
   - Interpolate surface projection shapes the ramp path against the visible clipped surface;
   - Gamut Map reconciles final generated ramp colors with the sRGB output target.
+
+Roadmap correction:
+
+- The sRGB target row is transitional copy. Future UI should distinguish Active gamut from Display gamut:
+  - ramp output intent follows Active gamut;
+  - Explorer display mapping targets Display gamut;
+  - Display gamut profiles are local preferences.
 
 Non-goals:
 
@@ -954,20 +970,22 @@ Non-goals:
 
 Next order:
 
-1. **Phase 5: generic target-gamut solver.** Add matrix-based line/boundary solving for P3/Rec.2020. Keep sRGB analytic code as a fast path.
-2. **Phase 6: Explorer display-gamut classification.** Start with shader classification only, because it is cheap and answers the main visual question.
-3. **Projected Explorer display mode.** Add only after classification and generic CPU projection are proven.
-4. **Phase 7: gamut compression.** Treat as a separate terminal ramp/export policy, not a surface constraint.
-5. **Phase 8: GPU/codegen evaluation.** Defer until duplicated projection algorithms exist in both TypeScript and GLSL.
+1. **Gamut-independent source storage.** Store source lists as XYZ D65 (or equivalent) so changing Active gamut preserves colors.
+2. **Per-list pipeline instances.** Give each source list independent interpolation, placement, extension, and constraint settings.
+3. **Independent extension constraints.** Add Extend/Expand constraints separate from main curve constraints.
+4. **Display-gamut classification.** Start with shader classification of Active gamut against Display gamut.
+5. **Generic active/display gamut solver.** Add matrix-based line/boundary solving for P3/Rec.2020/custom display profiles. Keep sRGB analytic code as a fast path where useful.
+6. **Projected Explorer display mode.** Add only after classification and generic CPU projection are proven.
+7. **Phase 7: gamut compression.** Treat as a separate display/ramp policy after Active/Display gamut roles stabilize.
+8. **Phase 8: GPU/codegen evaluation.** Defer until duplicated projection algorithms exist in both TypeScript and GLSL.
 
-Avoid making terminal `Gamut Map` target all gamuts in the same change as projection parameterization. That would touch persistence, UI, export semantics, tests, examples, and possibly renderer expectations. The safer path is: parameterize the current sRGB/Oklab implementation first, then generalize target gamut.
+Avoid making terminal `Gamut Map` the center of all future gamut selection. The roadmap direction is to centralize gamut roles in the Gamut/Display model and let ramp pipeline constraints target Active gamut.
 
 ## Open Questions
 
 - Should `Surface: radial shell` include active slice/cylinder clips, or should it always use the full RGB solid?
-- Should Oklab surface projection target sRGB only, or active `Gamut (cube primaries)`?
-- Should surface-projected curves be allowed to generate out-of-sRGB values when the active gamut is P3/Rec.2020?
-- Does `Gamut Map` mean "map to sRGB export" permanently, or should it become "map to selected export gamut"?
+- How should the UI present Active gamut and Display gamut without crowding the Gamut step?
+- Should surface-projected curves always target Active gamut, or should individual source-list pipelines allow another intent?
 - Should Explorer display-gamut comparison be a new pipeline node, or live inside `Display`?
 - Should reference shell auto-switch to sRGB when active gamut is not sRGB and sRGB comparison is enabled?
 - Should projected Explorer solids replace geometry, or be rendered as a separate overlay so the native active gamut remains visible?

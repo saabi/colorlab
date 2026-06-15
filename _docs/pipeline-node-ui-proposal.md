@@ -12,7 +12,7 @@ A post-draft review resolved several contradictions and under-specified decision
 4. **Positioning: navigation + teaching first; `All` is a fully-supported primary surface.** The rail is the map and the teacher; `All` (the default) remains the unthrottled workhorse for multi-step workflows. Do not degrade `All` into a legacy afterthought. Per-node focus is for learning and single-stage tweaks.
 5. **Node enablement.** Ramp nodes (`Anchors/Points`, `Interpolate`, `Adjust`, `Gamut Map`, `Export`) are dimmed/disabled until at least one source exists (anchor A/B set, or ≥1 spline control point). Informational nodes are always visible but read-only. This teaches dataflow and removes dead clicks.
 6. **`selectedNode` persistence.** Persist the last-selected node in **session** (last-open UI) state only — never in the document snapshot — so reload keeps working context instead of dumping the user back to `All`.
-7. **Destination-gamut is a first-class warning, not a footnote.** `Gamut Map` and `Export` must show the destination gamut (currently sRGB) and warn when it differs from the explorer gamut (e.g., solid = P3, export = sRGB). A `gamut explorer` silently flattening wide-gamut ramps to sRGB is a trap.
+7. **Color-space roles are first-class, not a footnote.** The UI must distinguish Active gamut, World space, and Display gamut. Active gamut defines the solid and ramp output intent; World space defines layout/interpolation coordinates; Display gamut defines what the current monitor can show. Warnings should focus on Active gamut vs Display gamut mismatch, not on a separate Export gamut selector.
 8. **Promote "Raw vs Final" preview and OOG badges to near-term.** A before/after stop preview on `Gamut Map`/`Export` (OOG count + swatch diff) is the payoff that makes the pipeline framing tangible, especially now that gamut mapping exists. Add OOG warning badges to `Interpolate` and `Gamut Map`. (Was buried under §Additional Suggestions.)
 9. **Wording.** User-facing copy says "pipeline steps/stages"; "node"/"graph" stays internal to avoid implying a rewireable editor.
 
@@ -363,21 +363,23 @@ Do not include:
 - Gamut mapping policy, although the panel should note that mapping runs after adjustments.
 - Export buttons.
 
-#### Gamut Map
+#### Gamut Map / Constraint Policy
 
 Canonical controls:
 
-- Gamut mapping policy: none, clip, preserve chroma, project to L 0.5, project to cusp, adaptive variants.
-- Destination gamut status. Today this is sRGB for ramp export.
+- Transitional gamut mapping policy: none, clip, preserve chroma, project to focus, project to cusp, adaptive variants.
+- Active gamut status. Long term, ramp constraints and mapping target the Active gamut.
 - OOG before/after summary.
 - Advanced gamut mapping parameters, after the terminal `Gamut Map` stage adopts the shared projection parameter shape:
+  - focus lightness slider;
   - adaptive alpha slider;
   - alpha presets `0.05`, `0.5`, `5.0`;
   - compact status (`Lightness-preserving`, `Balanced`, `More compression`).
 
 Do not include:
 
-- The explorer gamut selector. The ramp map destination is currently separate from the visible solid gamut.
+- The Active gamut selector itself. It belongs in the Gamut step and drives both Explorer solid and ramp output intent.
+- Display gamut calibration/profile controls. They belong to Display/Gamut support UI and local preferences.
 - CVD mode. CVD only previews final colors.
 - Surface Projection alpha. Interpolate-stage surface projection shapes the path; Gamut Map parameters affect final/exported colors.
 

@@ -2,6 +2,12 @@
 
 Status: Proposal and Implementation Plan
 
+Storage note: this older implementation plan shows `ThemeAnchor { srgbLin }`
+because that matched the state shape at the time. Roadmap direction now requires
+source colors to be stored in gamut-independent `XYZ D65` (or equivalent), with
+active-gamut RGB, display RGB, and world coordinates derived at runtime. See
+[`color-space-role-architecture.md`](color-space-role-architecture.md).
+
 ---
 
 ## 1. Overview and Goals

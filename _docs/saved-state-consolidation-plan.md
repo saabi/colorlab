@@ -223,6 +223,23 @@ These fields should not be saved:
 - gesture reference popup open/closed
 - active inspector tab
 - drawer open/closed
+
+## Future Source Color Storage
+
+The next persistence revision should make ramp source colors independent of the
+Active gamut and selected World space.
+
+Requirement:
+
+- store source-list colors in a colorimetric space such as `XYZ D65`;
+- treat existing `{ srgbLin }` anchors as legacy linear-sRGB-D65 values and
+  migrate them to `XYZ D65` once;
+- derive active-gamut RGB, display RGB, world coordinates, Oklab/Oklch, and
+  export values at runtime;
+- do not store source colors in active-gamut RGB or world-space coordinates.
+
+This keeps source lists stable when users switch Active gamut, World space, or
+Display gamut.
 - transient validation/dialog state
 
 Migration target:

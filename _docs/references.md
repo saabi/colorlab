@@ -66,3 +66,12 @@ Legacy museum gamuts in `pipeline.ts` (NTSC 1953, EBU, SMPTE-C, CIE RGB) follow 
 |-------|-----|-----------|
 | **Bujack, R. et al., *The non-Riemannian nature of perceptual color space*, PNAS 119(18), 2022** | [doi.org/10.1073/pnas.2119753119](https://doi.org/10.1073/pnas.2119753119) · [PMC full text](https://pmc.ncbi.nlm.nih.gov/articles/PMC9170152/) | Shows that human color difference perception exhibits diminishing returns, so perceptual color space cannot be modeled as a Riemannian manifold. Explains why standard ΔE metrics work for small steps but break down for large differences — relevant context for Oklab arc-length spacing and any future large-step interpolation. |
 | **Bujack, R. et al., *The Geometry of Color in the Light of a Non-Riemannian Space*, Computer Graphics Forum (EuroVis 2025)** | [doi.org/10.1111/cgf.70136](https://doi.org/10.1111/cgf.70136) | Builds on the non-Riemannian metric to formalize hue, saturation, and lightness from perceptual distance alone (geodesics, neutral axis, Bezold–Brücke effect). Cited in the in-app help for the transfer and color-model panels. |
+
+## Public Display Chromaticities Databases
+
+| Database | URL | Relevance |
+|----------|-----|-----------|
+| **linuxhw/EDID** | [github.com/linuxhw/EDID](https://github.com/linuxhw/EDID) | Community repository containing raw binary and text EDID dumps for thousands of displays. Source for automated model-based primary chromaticity (CIE 1931 xy) extraction. |
+| **DisplayCAL / ArgyllCMS CCSS Registry** | [displaycal.net](https://displaycal.net/) | Registry of community-contributed Colorimeter Calibration Spectral Samples (.ccss). Can be parsed to retrieve the spectral power distribution (SPD) of red/green/blue emitters for various display backlights. |
+| **DisplaySpecifications** | [displayspecifications.com](https://www.displayspecifications.com/) | Catalog of consumer monitor technical specifications. Reference for official gamut coverages (sRGB, DCI-P3, Adobe RGB) to estimate primaries when EDID is unavailable. |
+

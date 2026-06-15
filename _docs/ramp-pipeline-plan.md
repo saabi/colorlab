@@ -12,6 +12,12 @@ state and could be dropped from the persisted theme.)
 Subsequent display/interaction work is tracked separately in
 [ramp-display-plan.md](./ramp-display-plan.md).
 
+Storage note: this historical plan uses `ThemeAnchor = { srgbLin }` examples
+because that was the implementation at the time. Roadmap direction now requires
+source colors to be stored in gamut-independent `XYZ D65` (or equivalent), with
+active-gamut RGB and world coordinates derived at runtime. See
+[`color-space-role-architecture.md`](color-space-role-architecture.md).
+
 ## Summary
 
 The ramp side carries avoidable redundancy and a few missed generalizations:

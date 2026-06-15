@@ -4,6 +4,8 @@ Curated priorities and open work for COLOR LAB. Detailed design lives in linked 
 
 For the full feature catalog (including lower-priority ideas), see [`design-review-unimplemented-features.md`](design-review-unimplemented-features.md).
 
+For the current color-space role model, see [`color-space-role-architecture.md`](color-space-role-architecture.md). It defines **Active gamut**, **World space**, **Display gamut**, gamut-independent source storage, and per-list pipeline direction.
+
 ## Maintaining this document
 
 **This file is the canonical backlog.** Keep it current so contributors and agents do not rely on stale lists elsewhere.
@@ -39,40 +41,45 @@ Update `_docs/Roadmap.md` when you:
 
 Aligned with the **recommended next order** in [`surface-constraint-gamut-projection-plan.md`](surface-constraint-gamut-projection-plan.md) and [`gamut-mapping-unification-plan.md`](gamut-mapping-unification-plan.md). Projection math and target-gamut generalization: surface-constraint plan is canonical; gamut-unification plan covers terminal-stage policy and UI.
 
+### Architecture alignment
+
+1. **Color-space role cleanup** — reflect the three-role model in UI/docs: Active gamut = working/export intent, World space = layout/interpolation coordinate system, Display gamut = physical display capability. See [`color-space-role-architecture.md`](color-space-role-architecture.md).
+2. **Gamut-independent source storage** — migrate source lists from gamut-dependent `srgbLin` storage to canonical `XYZ D65` document/runtime source data. Switching Active gamut or World space must not reinterpret ramp colors.
+3. **Per-list ramp pipeline instances** — each source list should own its own interpolation, placement, extension, and constraint settings. Global controls become defaults or explicit batch commands.
+4. **Separate main-curve and extension constraints** — Interpolate constraints and Extend/Expand constraints should be independently configurable, per source list.
+5. **Display gamut preferences** — store display profiles/calibration in `localStorage`; users may have multiple displays. Initial default remains sRGB.
+
 ### Small scope, high value (projection params track)
 
-1. **Surface Projection UI polish** — alpha preset chips (`0.05` / `0.5` / `5.0`), lightness-preserving ↔ compression status copy, clearer path-vs-export help. Phase 4 backend exists; UI is the remainder.
-2. **`gamutMapParams`** — separate persisted object with the same `ProjectionParams` shape as surface projection (not a shared field). Defaults must preserve current output.
-3. **Advanced gamut mapping UI** — same alpha presets/status as surface projection; shown only when the selected method uses alpha.
-4. **Pipeline node status + help cleanup** — Interpolate and Gamut Map statuses reflect params (e.g. `Oklab projection / α 0.05`); help distinguishes path shape vs exported colors.
+6. **Target model copy cleanup** — recent UI names sRGB as the fixed Gamut Map target, but roadmap direction is Active gamut for ramp output and Display gamut for Explorer display mapping. Update UI copy as the implementation catches up.
+7. **Explorer display-gamut classification** — classify Active gamut against Display gamut (shader first) before projected display preview.
 
 ### Small scope, polish
 
-5. **Undo transaction labels** — named `scheduleCapture` / `capture` at high-value call sites. See [`undo-redo-state-design.md`](undo-redo-state-design.md).
+8. **Undo transaction labels** — named `scheduleCapture` / `capture` at high-value call sites. See [`undo-redo-state-design.md`](undo-redo-state-design.md).
 
 ### Medium scope
 
-6. **Pipeline node UI (Phase 1)** — static read-only navigation rail; canonical node set per [`pipeline-node-ui-proposal.md`](pipeline-node-ui-proposal.md). `All` remains the primary multi-step surface.
-7. **Destination-gamut warnings + OOG badges + raw/final preview** — warn when explorer gamut ≠ export target; OOG badges on Interpolate/Gamut Map; before/after stop preview on Gamut Map/Export (near-term items from pipeline UI proposal).
-8. **Okhsl/Okhsv picker coordinates** — H/S/L or H/S/V sliders for the selected ramp stop (`okhsv.ts` exists).
-9. **Direct xy chromaticity picking** — click/drag in the xy panel; define which Y/L is held constant.
-10. **Gamut boundary snap tools** — stop-level UX on top of existing Oklab boundary projection.
+9. **Pipeline node UI (Phase 1)** — static read-only navigation rail; canonical node set per [`pipeline-node-ui-proposal.md`](pipeline-node-ui-proposal.md). `All` remains the primary multi-step surface.
+10. **OOG badges + raw/final preview** — OOG badges on Interpolate/Gamut Map; before/after stop preview on Gamut Map/Export or its successor diagnostic.
+11. **Okhsl/Okhsv picker coordinates** — H/S/L or H/S/V sliders for the selected ramp stop (`okhsv.ts` exists).
+12. **Direct xy chromaticity picking** — click/drag in the xy panel; define which Y/L is held constant.
+13. **Gamut boundary snap tools** — stop-level UX on top of existing Oklab boundary projection.
 
 ### Large / design-first
 
-11. **Surface constraint Phase 5** — generic target-gamut solver (P3/Rec.2020); keep sRGB analytic fast path. Parameterize sRGB first; do not combine with step 2–3 above.
-12. **Surface constraint Phase 6** — Explorer display-gamut **classification** (shader); projected display mode only after classification is clear.
-13. **Custom Display Gamut** — calibration wizard UX before implementation.
-14. **Gradient designer improvements** — editable stops, per-stop OKLCh/Okhsl, CSS gradient preview.
-15. **Pipeline node UI (Phases 2–4)** — node-scoped parameter panel, full pipeline-driven layout, mobile optimization.
+14. **Generic active/display gamut solver** — matrix-based boundary solver for Active gamut and Display gamut relationships; keep sRGB analytic fast path where useful.
+15. **Custom Display Gamut** — calibration wizard UX before implementation.
+16. **Gradient designer improvements** — editable stops, per-stop OKLCh/Okhsl, CSS gradient preview.
+17. **Pipeline node UI (Phases 2–4)** — node-scoped parameter panel, full pipeline-driven layout, mobile optimization.
 
 ### Research / deferred
 
-16. Gamut compression (surface plan Phase 7) — terminal ramp/export policy only
-17. Projected Explorer display overlay vs geometry replacement (open question)
-18. Spectral/chromaticity intensity volume
-19. GPU/codegen evaluation (surface plan Phase 8; criteria-gated)
-20. WebGPU, HDR, EDID defaults, Color Accumulator, in-scene text — see design review
+18. Gamut compression — display/ramp policy after Active/Display gamut model stabilizes
+19. Projected Explorer display overlay vs geometry replacement (open question)
+20. Spectral/chromaticity intensity volume
+21. GPU/codegen evaluation (surface plan Phase 8; criteria-gated)
+22. WebGPU, HDR, EDID defaults, Color Accumulator, in-scene text — see design review
 
 ---
 
@@ -80,23 +87,38 @@ Aligned with the **recommended next order** in [`surface-constraint-gamut-projec
 
 ### Surface constraint & generalized gamut projection
 
-**Plan:** [`surface-constraint-gamut-projection-plan.md`](surface-constraint-gamut-projection-plan.md)  
-**Status:** Phases 1–4 backend/state implemented. Phase 4 UI polish and steps 2–4 above are the immediate next work before Phase 5.
+**Plan:** [`surface-constraint-gamut-projection-plan.md`](surface-constraint-gamut-projection-plan.md)
+**Status:** Phases 1–4C implemented or documented. The next work is architectural realignment around Active gamut / Display gamut, not more sRGB-export-target UI.
 
 | Phase | Description | Status |
 |-------|-------------|--------|
 | 4 (UI) | Alpha presets, status copy, Advanced disclosure polish | Backend done; UI pending |
-| 5 | Matrix-based boundary solver for P3/Rec.2020 / export gamut | Not started |
-| 6 | Explorer display-gamut classification (shader first) | Not started |
+| 5 | Matrix-based boundary solver for Active gamut / Display gamut relationships | Not started |
+| 6 | Explorer Display-gamut classification (shader first) | Not started |
 | 6+ | Projected Explorer display mode | After classification |
 | 7 | Gamut compression — smooth region before boundary | Not started |
 | 8 | GPU/codegen evaluation | Criteria-gated |
 
-**Open questions (unresolved):** see plan §Open Questions — includes radial shell vs clips, Oklab projection target gamut, export vs active gamut, display comparison placement (node vs `Display`), reference shell auto-switch, projected solid vs overlay, neutral-axis hue.
+**Open questions (unresolved):** see plan §Open Questions — includes radial shell vs clips, display comparison placement (node vs `Display`), reference shell auto-switch, projected solid vs overlay, neutral-axis hue.
+
+Resolved roadmap direction: Active gamut is the working/export intent; Display gamut is the physical display target and belongs to local preferences / calibration.
 
 ### Gamut Map — parameter model
 
-Core unification (`finalizeRamp`, terminal `gamutMap`, `PlacePolicy` stages) is **shipped**. Remaining work follows the amended [`gamut-mapping-unification-plan.md`](gamut-mapping-unification-plan.md): introduce `gamutMapParams` (same `ProjectionParams` shape as surface projection, stored separately), then Advanced UI and pipeline statuses. Target gamut beyond sRGB deferred to surface plan Phase 5.
+Core unification (`finalizeRamp`, terminal `gamutMap`, `PlacePolicy` stages) is **shipped**, including `gamutMapParams`. Roadmap direction has changed: terminal ramp mapping is transitional and may be replaced by stage-local curve/extension constraints. If retained, ramp mapping should target the **Active gamut**, not the Display gamut.
+
+### Color-space roles and source storage
+
+**Plan:** [`color-space-role-architecture.md`](color-space-role-architecture.md)
+**Status:** Design direction documented; implementation not started.
+
+Key requirements:
+
+- ramp source lists are stored in `XYZ D65` or another Active-gamut-independent colorimetric space;
+- switching Active gamut or World space must not reinterpret source colors;
+- Display gamut profiles live in `localStorage`, not shared document state;
+- each source list eventually owns independent pipeline settings;
+- main curve constraints and extension constraints are independent.
 
 ### Pipeline-driven parameter UI
 
