@@ -518,6 +518,9 @@ describe('parseSnapshot', () => {
 		const { openSteps: _omit, ...explorerNoSteps } = defaults.explorer;
 		const legacy = { explorer: explorerNoSteps, camera: defaults.camera };
 		expect(parseSnapshot(legacy).snapshot?.explorer.openSteps).toEqual(defaults.explorer.openSteps);
+
+		const oldRampUi = { ...defaults, explorer: { ...defaults.explorer, openSteps: ['gamut', 'sources'] } };
+		expect(parseSnapshot(oldRampUi).snapshot?.explorer.openSteps).toEqual(['gamut', 'sources', 'ramp-builder']);
 	});
 
 	it('persists guide notes and defaults them when absent', () => {

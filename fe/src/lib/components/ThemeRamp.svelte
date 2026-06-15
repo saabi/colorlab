@@ -15,7 +15,7 @@
 	import type { DerivedMatrices } from '$lib/renderer/uniforms';
 	import type { TouchTool } from './Viewport.svelte';
 
-	type RampPanel = 'all' | 'sources' | 'interpolate' | 'adjust' | 'expand' | 'gamut-map' | 'export';
+	type RampPanel = 'all' | 'list-manager' | 'sources' | 'interpolate' | 'adjust' | 'expand' | 'gamut-map' | 'export';
 
 	let {
 		state: explorer = $bindable(),
@@ -40,6 +40,7 @@
 	}
 
 	const showAll = $derived(panel === 'all');
+	const showListManager = $derived(showAll || panel === 'list-manager');
 	const showSources = $derived(showAll || panel === 'sources');
 	const showInterpolate = $derived(showAll || panel === 'interpolate');
 	const showAdjust = $derived(showAll || panel === 'adjust');
@@ -389,7 +390,7 @@
 
 </script>
 
-{#if showSources}
+{#if showListManager}
 	<!-- Order follows the edit flow: choose list -> see its points -> add/edit -> aux. -->
 	<div class="panel-label">Lists</div>
 	<div class="list-chips" role="tablist" aria-label="Source lists">
@@ -422,7 +423,9 @@
 			<p class="note">Some lists use different pipeline settings.</p>
 		{/if}
 	{/if}
+{/if}
 
+{#if showSources}
 	<div class="panel-label" style="margin-top: 8px">
 		Points{explorer.theme.lists.length > 1 ? ` — list ${explorer.theme.activeList + 1}` : ''}
 	</div>

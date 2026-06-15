@@ -5,6 +5,7 @@ export type PipelineHelpId =
 	| 'pipelineTessellation'
 	| 'pipelineClip'
 	| 'pipelineVision'
+	| 'pipelineRampBuilder'
 	| 'pipelineSources'
 	| 'pipelineInterpolate'
 	| 'pipelineAdjust'
@@ -191,8 +192,8 @@ export const PIPELINE_HELP: Record<PipelineHelpId, PanelHelpContent> = {
 		]
 	},
 	pipelineSources: {
-		title: 'Sources',
-		summary: 'Pick, list, and edit the ordered source colors the ramps are built from — one or more source lists.',
+		title: 'Source colors',
+		summary: 'Pick and edit the ordered source colors for the active source list.',
 		stageRows: stageRows(
 			'Pick hits on the solid or clipped surface (+ Pick on solid, A + click, drag) or use the color picker.',
 			'The source lists: add/remove lists, then add, select, drag, reorder, duplicate, delete points in the active list. Every point shapes its list’s ramp.',
@@ -202,6 +203,25 @@ export const PIPELINE_HELP: Record<PipelineHelpId, PanelHelpContent> = {
 		sources: [
 			{ label: 'Viewport.svelte picking + drag handlers' },
 			{ label: 'theme.ts points representation' }
+		]
+	},
+	pipelineRampBuilder: {
+		title: 'Ramp Builder',
+		summary:
+			'Owns the active source-list pipeline: source colors, interpolation, placement, and expansion. These settings belong to the selected list, while Gamut map and Export remain shared terminal steps.',
+		stageRows: stageRows(
+			'The selected source list and its source colors.',
+			'List-scoped settings: source points, interpolation path, stop placement, and optional expansion into a palette. Adding a new list clones the active list’s pipeline; Apply pipeline to all copies the full active pipeline to every list.',
+			'One ramp or expanded palette from the selected list; with multiple lists, each list runs through its own builder settings before the shared terminal Gamut map.',
+			'The Explorer solid, camera, CVD preview, shared terminal gamut-map policy, or export format.'
+		),
+		details: [
+			'Use 1.1-1.4 when changing how one list becomes ramp stops or palette cells. Use step 2 Gamut map when changing the shared output-gamut policy that runs after all lists have generated their colors.',
+			'The list manager is deliberately above 1.1 because selecting, adding, removing, or syncing lists chooses which per-list pipeline the substeps edit.'
+		],
+		sources: [
+			{ label: 'per-list-pipeline-plan.md' },
+			{ label: 'theme.ts buildRamp / buildExpand' }
 		]
 	},
 	pipelineInterpolate: {

@@ -5,6 +5,7 @@
 	import SliderRow from './SliderRow.svelte';
 	import ThemeRamp from './ThemeRamp.svelte';
 	import ToggleRow from './ToggleRow.svelte';
+	import PanelHelp from './PanelHelp.svelte';
 	import { MAX_CAMERA_DIST, MAX_CAMERA_FOV, MAX_CAMERA_PITCH, MIN_CAMERA_DIST, MIN_CAMERA_FOV, resetCamera } from '$lib/engine/camera';
 	import { getPipelineNode, isNodeEnabled, type PipelineNodeId } from './pipeline-nodes';
 
@@ -45,6 +46,7 @@
 		clip: meta('clip'),
 		view: meta('view'),
 		cvd: meta('cvd'),
+		rampBuilder: meta('ramp-builder'),
 		sources: meta('sources'),
 		interpolate: meta('interpolate'),
 		adjust: meta('adjust'),
@@ -233,34 +235,106 @@
 		</div>
 	</section>
 
-	<!-- RAMP lane: how export tokens are generated -->
+	<!-- RAMP lane: selected-list builder -> shared terminal map -> export -->
 	<section class="lane-band" aria-label="Ramp pipeline">
 		<div class="lane-band-title">
 			<span class="lane-band-name">Ramp</span>
 			<span class="lane-band-sub">how export tokens are generated</span>
 		</div>
 		<div class="lane-steps">
-			<ControlGroup index={1} title={m.sources.label} helpId="pipelineSources" status={m.sources.status} affects={m.sources.affects} open={isOpen('sources')} onToggle={() => toggleStep('sources')} bind:openHelp tutorialId="node-sources">
-				<ThemeRamp state={explorer} {matrices} panel="sources" bind:touchTool />
+			<ControlGroup index={1} title={m.rampBuilder.label} helpId="pipelineRampBuilder" status={m.rampBuilder.status} affects={m.rampBuilder.affects} open={isOpen('ramp-builder')} onToggle={() => toggleStep('ramp-builder')} bind:openHelp tutorialId="node-sources">
+				<div class="ramp-builder-manager">
+					<ThemeRamp state={explorer} {matrices} panel="list-manager" bind:touchTool />
+				</div>
+				<div class="ramp-substeps" aria-label="Selected list ramp builder steps">
+					<section class="ramp-substep" class:disabled={m.sources.disabled}>
+						<div class="ramp-substep-header">
+							<span class="ramp-substep-index">1.1</span>
+							<button type="button" class="ramp-substep-toggle" aria-expanded={isOpen('sources')} onclick={() => toggleStep('sources')}>
+								<span>{m.sources.label}</span>
+								<span class="ramp-substep-meta">
+									{#if m.sources.warn}<span class="group-warn" title="Out of gamut">{m.sources.warn}</span>{/if}
+									<span class="group-affects">{m.sources.affects}</span>
+									<span class="group-status">{m.sources.status}</span>
+									<span class="group-chevron" aria-hidden="true">▾</span>
+								</span>
+							</button>
+							<PanelHelp helpId="pipelineSources" instanceId="ramp-substep-sources" bind:openHelp />
+						</div>
+						{#if isOpen('sources')}
+							<div id="ramp-substep-sources" class="ramp-substep-body">
+								<ThemeRamp state={explorer} {matrices} panel="sources" bind:touchTool />
+							</div>
+						{/if}
+					</section>
+					<section class="ramp-substep" class:disabled={m.interpolate.disabled}>
+						<div class="ramp-substep-header">
+							<span class="ramp-substep-index">1.2</span>
+							<button type="button" class="ramp-substep-toggle" aria-expanded={isOpen('interpolate')} onclick={() => toggleStep('interpolate')}>
+								<span>{m.interpolate.label}</span>
+								<span class="ramp-substep-meta">
+									{#if m.interpolate.warn}<span class="group-warn" title="Out of gamut">{m.interpolate.warn}</span>{/if}
+									<span class="group-affects">{m.interpolate.affects}</span>
+									<span class="group-status">{m.interpolate.status}</span>
+									<span class="group-chevron" aria-hidden="true">▾</span>
+								</span>
+							</button>
+							<PanelHelp helpId="pipelineInterpolate" instanceId="ramp-substep-interpolate" bind:openHelp />
+						</div>
+						{#if isOpen('interpolate')}
+							<div id="ramp-substep-interpolate" class="ramp-substep-body">
+								<ThemeRamp state={explorer} {matrices} panel="interpolate" />
+							</div>
+						{/if}
+					</section>
+					<section class="ramp-substep" class:disabled={m.adjust.disabled}>
+						<div class="ramp-substep-header">
+							<span class="ramp-substep-index">1.3</span>
+							<button type="button" class="ramp-substep-toggle" aria-expanded={isOpen('adjust')} onclick={() => toggleStep('adjust')}>
+								<span>{m.adjust.label}</span>
+								<span class="ramp-substep-meta">
+									{#if m.adjust.warn}<span class="group-warn" title="Out of gamut">{m.adjust.warn}</span>{/if}
+									<span class="group-affects">{m.adjust.affects}</span>
+									<span class="group-status">{m.adjust.status}</span>
+									<span class="group-chevron" aria-hidden="true">▾</span>
+								</span>
+							</button>
+							<PanelHelp helpId="pipelineAdjust" instanceId="ramp-substep-adjust" bind:openHelp />
+						</div>
+						{#if isOpen('adjust')}
+							<div id="ramp-substep-adjust" class="ramp-substep-body">
+								<ThemeRamp state={explorer} {matrices} panel="adjust" />
+							</div>
+						{/if}
+					</section>
+					<section class="ramp-substep" class:disabled={m.expand.disabled}>
+						<div class="ramp-substep-header">
+							<span class="ramp-substep-index">1.4</span>
+							<button type="button" class="ramp-substep-toggle" aria-expanded={isOpen('expand')} onclick={() => toggleStep('expand')}>
+								<span>{m.expand.label}</span>
+								<span class="ramp-substep-meta">
+									{#if m.expand.warn}<span class="group-warn" title="Out of gamut">{m.expand.warn}</span>{/if}
+									<span class="group-affects">{m.expand.affects}</span>
+									<span class="group-status">{m.expand.status}</span>
+									<span class="group-chevron" aria-hidden="true">▾</span>
+								</span>
+							</button>
+							<PanelHelp helpId="pipelineExpand" instanceId="ramp-substep-expand" bind:openHelp />
+						</div>
+						{#if isOpen('expand')}
+							<div id="ramp-substep-expand" class="ramp-substep-body">
+								<ThemeRamp state={explorer} {matrices} panel="expand" />
+							</div>
+						{/if}
+					</section>
+				</div>
 			</ControlGroup>
 
-			<ControlGroup index={2} title={m.interpolate.label} helpId="pipelineInterpolate" status={m.interpolate.status} affects={m.interpolate.affects} warn={m.interpolate.warn} disabled={m.interpolate.disabled} open={isOpen('interpolate')} onToggle={() => toggleStep('interpolate')} bind:openHelp tutorialId="node-interpolate">
-				<ThemeRamp state={explorer} {matrices} panel="interpolate" />
-			</ControlGroup>
-
-			<ControlGroup index={3} title={m.adjust.label} helpId="pipelineAdjust" status={m.adjust.status} affects={m.adjust.affects} disabled={m.adjust.disabled} open={isOpen('adjust')} onToggle={() => toggleStep('adjust')} bind:openHelp tutorialId="node-adjust">
-				<ThemeRamp state={explorer} {matrices} panel="adjust" />
-			</ControlGroup>
-
-			<ControlGroup index={4} title={m.expand.label} helpId="pipelineExpand" status={m.expand.status} affects={m.expand.affects} disabled={m.expand.disabled} open={isOpen('expand')} onToggle={() => toggleStep('expand')} bind:openHelp tutorialId="node-expand">
-				<ThemeRamp state={explorer} {matrices} panel="expand" />
-			</ControlGroup>
-
-			<ControlGroup index={5} title={m.gamutMap.label} helpId="pipelineGamutMap" status={m.gamutMap.status} affects={m.gamutMap.affects} warn={m.gamutMap.warn} disabled={m.gamutMap.disabled} open={isOpen('gamut-map')} onToggle={() => toggleStep('gamut-map')} bind:openHelp tutorialId="node-gamut-map">
+			<ControlGroup index={2} title={m.gamutMap.label} helpId="pipelineGamutMap" status={m.gamutMap.status} affects={m.gamutMap.affects} warn={m.gamutMap.warn} disabled={m.gamutMap.disabled} open={isOpen('gamut-map')} onToggle={() => toggleStep('gamut-map')} bind:openHelp tutorialId="node-gamut-map">
 				<ThemeRamp state={explorer} {matrices} panel="gamut-map" />
 			</ControlGroup>
 
-			<ControlGroup index={6} title={m.exportStep.label} helpId="pipelineExport" status={m.exportStep.status} affects={m.exportStep.affects} disabled={m.exportStep.disabled} open={isOpen('export')} onToggle={() => toggleStep('export')} bind:openHelp tutorialId="node-export">
+			<ControlGroup index={3} title={m.exportStep.label} helpId="pipelineExport" status={m.exportStep.status} affects={m.exportStep.affects} disabled={m.exportStep.disabled} open={isOpen('export')} onToggle={() => toggleStep('export')} bind:openHelp tutorialId="node-export">
 				<ThemeRamp state={explorer} {matrices} panel="export" />
 			</ControlGroup>
 		</div>
@@ -309,3 +383,81 @@
 		</section>
 	</footer>
 </aside>
+
+<style>
+	.ramp-builder-manager {
+		margin-bottom: 8px;
+		border-bottom: 1px solid var(--border);
+		padding-bottom: 8px;
+	}
+	.ramp-substeps {
+		display: grid;
+		gap: 6px;
+	}
+	.ramp-substep {
+		border: 1px solid var(--border);
+		border-radius: 6px;
+		background: color-mix(in srgb, var(--panel2) 62%, transparent);
+	}
+	.ramp-substep.disabled {
+		opacity: 0.58;
+	}
+	.ramp-substep-header {
+		display: grid;
+		grid-template-columns: auto minmax(0, 1fr) auto;
+		align-items: center;
+		gap: 6px;
+		padding: 4px 5px;
+	}
+	.ramp-substep-index {
+		color: var(--accent, #d7b33f);
+		font-size: 0.769rem;
+		font-weight: 800;
+		font-variant-numeric: tabular-nums;
+	}
+	.ramp-substep-toggle {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 6px;
+		width: 100%;
+		min-width: 0;
+		border: 0;
+		background: transparent;
+		padding: 2px 0;
+		text-align: left;
+	}
+	.ramp-substep-meta {
+		display: flex;
+		align-items: center;
+		gap: 4px;
+		min-width: 0;
+		color: var(--muted);
+		font-size: 0.769rem;
+	}
+	.group-warn,
+	.group-affects,
+	.group-status {
+		border: 1px solid var(--border);
+		border-radius: 999px;
+		background: color-mix(in srgb, var(--panel) 80%, transparent);
+		padding: 1px 5px;
+		white-space: nowrap;
+	}
+	.group-warn {
+		border-color: color-mix(in srgb, var(--warn, #d7b33f) 65%, var(--border));
+		color: var(--warn, #d7b33f);
+	}
+	.group-status {
+		max-width: 86px;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+	.group-chevron {
+		color: var(--muted);
+	}
+	.ramp-substep-body {
+		border-top: 1px solid var(--border);
+		padding: 8px 7px;
+	}
+</style>

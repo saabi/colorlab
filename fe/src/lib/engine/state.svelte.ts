@@ -107,7 +107,7 @@ function createExplorerDefaults(): ExplorerState {
 		hideAids: true,
 		autoRotate: true,
 		pinPalette: true,
-		openSteps: ['gamut', 'sources'],
+		openSteps: ['gamut', 'ramp-builder', 'sources'],
 		guideNote: null,
 		guideNotePlacement: 'sidebar',
 		guideNoteDismissed: false,
@@ -207,7 +207,7 @@ export const EXAMPLE_STATES = [
 				hideAids: false,
 				cvd: 'none',
 				cvdSev: 1,
-				openSteps: ['gamut', 'sources', 'interpolate'],
+				openSteps: ['gamut', 'ramp-builder', 'sources', 'interpolate'],
 				guideNote:
 					'A warm-neutral palette — dark brown to creamy light — spline-interpolated in Oklch. The warm undertone (R > G > B at each anchor) carries through consistently because Oklch\'s hue axis keeps it stable along the arc.\n\nThis is a practical starting point for UI neutrals and text containers. Try adding a mid-tone anchor to push the midpoint warmer or cooler, or enable Expand with a lightness offset to generate a tonal grid.',
 				guideNotePlacement: 'sidebar',
@@ -264,7 +264,7 @@ export const EXAMPLE_STATES = [
 				hideAids: false,
 				cvd: 'none',
 				cvdSev: 1,
-				openSteps: ['gamut', 'sources', 'interpolate'],
+				openSteps: ['gamut', 'ramp-builder', 'sources', 'interpolate'],
 				guideNote:
 					'Five anchors on the sRGB surface — blue, blue-violet, rose, orange, yellow — spanning a full hue arc in Oklch. Spline mode curves smoothly between them; switch to linear in Interpolate to see straight-chord connections between the same anchors.\n\nThe semi-transparent solid and cylindrical clip reveal the interpolated path. Try changing the interpolation space from Oklch to Oklab or sRGB to see how the arc bends differently in each coordinate system.',
 				guideNotePlacement: 'sidebar',
@@ -330,7 +330,7 @@ export const EXAMPLE_STATES = [
 				hideAids: false,
 				cvd: 'none',
 				cvdSev: 1,
-				openSteps: ['gamut', 'sources', 'gamut-map'],
+				openSteps: ['gamut', 'ramp-builder', 'sources', 'gamut-map'],
 				guideNote:
 					'A ramp from a dark teal through a P3-exclusive vivid green — out of sRGB gamut — to a warm near-white. The Display P3 solid is the large volume; the sRGB wire shell marks the boundary.\n\nWith Gamut map at "None," the OOG stops export unchanged (orange badge in the Palette tab). Switch to "Clip (clamp)" or "Preserve chroma" to bring all stops into sRGB and compare how each method shifts hue and chroma.',
 				guideNotePlacement: 'sidebar',
@@ -382,7 +382,7 @@ export const EXAMPLE_STATES = [
 				hideAids: false,
 				cvd: 'none',
 				cvdSev: 1,
-				openSteps: ['gamut', 'sources', 'expand'],
+				openSteps: ['gamut', 'ramp-builder', 'sources', 'expand'],
 				guideNote:
 					'Nine stops across a navy-to-sky-blue arc in Oklch, expanded to three lightness variants. The Expand row generator shifts every stop in Oklch L by ±0.20 (symmetric mode) — dark row, base row, light row.\n\nIncrease the row count or adjust the delta to widen the tonal spread. Try "ramp" direction instead of "sym" for a one-sided shift, or add a chroma axis to vary saturation across rows.',
 				guideNotePlacement: 'sidebar',

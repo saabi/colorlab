@@ -10,6 +10,7 @@ export type PipelineNodeId =
 	| 'clip'
 	| 'view'
 	| 'cvd'
+	| 'ramp-builder'
 	| 'sources'
 	| 'interpolate'
 	| 'adjust'
@@ -123,9 +124,23 @@ export const PIPELINE_NODES: PipelineNode[] = [
 		status: (state) => (state.cvd === 'none' ? 'Normal' : `${state.cvd} ${state.cvdSev.toFixed(2)}`)
 	},
 	{
+		id: 'ramp-builder',
+		lane: 'Ramp',
+		label: 'Ramp Builder',
+		shortLabel: 'Builder',
+		description: 'Active source-list pipeline: source colors, interpolation, placement, and expansion settings owned by the selected list.',
+		affects: 'Ramp',
+		status: (state) => {
+			const lists = state.theme.lists;
+			const active = Math.min(Math.max(state.theme.activeList, 0), Math.max(0, lists.length - 1));
+			const pts = lists[active]?.anchors.length ?? 0;
+			return `List ${active + 1}/${lists.length} · ${pts} pt${pts === 1 ? '' : 's'}`;
+		}
+	},
+	{
 		id: 'sources',
 		lane: 'Ramp',
-		label: 'Sources',
+		label: 'Source colors',
 		shortLabel: 'Sources',
 		description: 'Pick, list, and edit the ordered source colors the ramps are built from (one or more source lists).',
 		affects: 'Ramp',

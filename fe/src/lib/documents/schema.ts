@@ -255,6 +255,14 @@ function coerceGamutMapParams(raw: unknown, defaults: GamutMapParams): GamutMapP
 	};
 }
 
+function coerceOpenSteps(raw: unknown, defaults: string[]): string[] {
+	const steps = Array.isArray(raw) ? raw.filter((s): s is string => typeof s === 'string') : defaults;
+	const builderSubsteps = ['sources', 'interpolate', 'adjust', 'expand'];
+	return builderSubsteps.some((step) => steps.includes(step)) && !steps.includes('ramp-builder')
+		? [...steps, 'ramp-builder']
+		: steps;
+}
+
 function coerceTheme(raw: unknown, defaults: PersistedTheme): PersistedTheme {
 	const theme = isRecord(raw) ? raw : {};
 	const pipelineDefaults = legacyPipelineFromTheme(theme, defaultPipeline());
@@ -314,9 +322,7 @@ function coerceExplorer(raw: unknown, defaults: PersistedExplorer): PersistedExp
 		solidAlpha: Math.min(1, Math.max(0.05, finiteNumber(explorer.solidAlpha, defaults.solidAlpha, 'solidAlpha'))),
 		hideAids: typeof explorer.hideAids === 'boolean' ? explorer.hideAids : defaults.hideAids,
 		pinPalette: typeof explorer.pinPalette === 'boolean' ? explorer.pinPalette : defaults.pinPalette,
-		openSteps: Array.isArray(explorer.openSteps)
-			? explorer.openSteps.filter((s): s is string => typeof s === 'string')
-			: defaults.openSteps,
+		openSteps: coerceOpenSteps(explorer.openSteps, defaults.openSteps),
 		guideNote:
 			typeof explorer.guideNote === 'string'
 				? explorer.guideNote
