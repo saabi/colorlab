@@ -174,15 +174,19 @@ Examples:
 **Decision: keep the terminal ramp `Gamut Map` stage** (shipped: `finalizeRamp`,
 `gamutMap`, `gamutMapParams`). It is not being removed.
 
-- For now it maps to **sRGB** (the Ottosson constants are sRGB-specific and
-  exports are sRGB hex / `oklch()`). This stays the default behaviour.
-- Long-term direction: ramp output intent is the **Active gamut**, and main
-  curve / extension constraints should prevent or repair out-of-active-gamut
-  colors at the stage they are produced. When the generic target-gamut solver
-  (surface-constraint plan Phase 5) lands, terminal mapping should be retargetable
-  to the Active gamut. Until then, keep sRGB and the existing UI.
-- It must never silently target the **Display** gamut — display reconciliation is
-  the Explorer display-mapping role, separate from ramp export.
+- **It is a single shared step, not per-list.** Output is always to the **active
+  colorspace** (Active gamut), and out-of-gamut colors are reconciled with **one**
+  method choice applied to **all** ramps/colors. There is no per-list or
+  per-color gamut-map choice.
+- Implementation status: the analytic mapper is sRGB-specific, so the active
+  target is fully supported only when Active gamut = sRGB (the default). Non-sRGB
+  active targets (P3, Rec.2020, …) await the generic target-gamut solver
+  (surface-constraint plan Phase 5).
+- Main curve / extension constraints (per-list) shape colors earlier; the shared
+  terminal step is the final reconciliation into the active gamut.
+- It must never target the **Display** gamut — display reconciliation is the
+  Explorer display-mapping role, separate from ramp output/export. Export
+  *encoding* for wide-gamut output is a downstream concern, not this step.
 
 ## Explorer Display Mapping
 

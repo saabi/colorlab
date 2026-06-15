@@ -54,7 +54,7 @@ Newer architecture direction is defined in `_docs/color-space-role-architecture.
 - **World space** is the geometric/perceptual coordinate system.
 - **Display gamut** is the physical display capability and local preference.
 - Ramp source colors are already gamut-independent: stored `srgbLin` is a fixed colorimetric anchor (≡ XYZ D65). The explicit XYZ-D65 migration is **deferred** (representational only — see role doc).
-- Terminal ramp `Gamut Map` is **kept** (decision); it targets sRGB for now. Stage-local constraints in Interpolate/Extend may reduce reliance on it over time, but it is not being removed.
+- Terminal ramp `Gamut Map` is **kept** (decision) as a **single shared step** (not per-list): output is always to the **active colorspace** with **one** OOG method for all colors. The analytic mapper is sRGB-specific, so non-sRGB active targets await the generic solver (Phase 5); Active gamut = sRGB is today's behavior. Per-list stage-local constraints (Interpolate/Extend) shape colors earlier but do not replace this step.
 
 Amendments:
 
@@ -73,8 +73,8 @@ export interface ProjectionParams {
 
 - Apply this parameter model to **surface projection first**, because it is easier to evaluate visually and does not change export semantics.
 - After the surface UI and tests settle, reuse the same parameter model for terminal `theme.gamutMap`.
-- The current UI names `sRGB` as the terminal `Gamut Map` target. This stays for now; it is the export target (sRGB hex / `oklch()`). Future direction:
-  - ramp output intent follows the **Active gamut** (once the generic solver lands);
+- The terminal `Gamut Map` target is the **active colorspace** (one shared method for all colors). The current UI labels it `sRGB` because the analytic mapper is sRGB-only; that label should track the Active gamut once the generic solver lands. Direction:
+  - ramp output intent follows the **Active gamut**;
   - display precision/preview uses the **Display gamut**;
   - Explorer display mapping classifies/projects Active gamut colors against Display gamut.
 

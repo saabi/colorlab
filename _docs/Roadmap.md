@@ -46,8 +46,8 @@ Aligned with the **recommended next order** in [`surface-constraint-gamut-projec
 
 1. **Color-space role cleanup** — reflect the three-role model in UI/docs: Active gamut = working/export intent, World space = layout/interpolation coordinate system, Display gamut = physical display capability. Includes documenting that `srgbLin` already **is** the gamut-independent colorimetric anchor (linear sRGB ↔ XYZ D65 is a fixed bijection); the proposed XYZ-D65 source-storage migration is **deferred** (representational relabeling, not a correctness fix — not worth a schema break). See [`color-space-role-architecture.md`](color-space-role-architecture.md).
 2. **White point & chromatic adaptation** — add a standard CAT (Bradford) wherever whites differ, for active color spaces and the display gamut; D65↔D65 stays a no-op. Today there is **no** adaptation, so non-D65 gamuts (NTSC = Illuminant C, CIE = Illuminant E) and any calibrated display white render wrong. Put the adaptation matrix in the shared `DerivedMatrices` bundle for CPU/GPU/picking parity.
-3. **Per-list ramp pipeline instances** — each source list owns its own interpolation, placement, extension, and constraint settings (the engine already computes per-list rows; the settings are still global). The architecture payoff; needs a schema bump — batch with any other breaking change.
-4. **Separate main-curve and extension constraints** — Interpolate constraints and Extend/Expand constraints independently configurable, per source list.
+3. **Per-list ramp pipeline instances** — each source list owns its own interpolation, placement, extension, and constraint settings (the engine already computes per-list rows; the settings are still global). The architecture payoff; needs a schema bump (v12 → v13). **Plan:** [`per-list-pipeline-plan.md`](per-list-pipeline-plan.md).
+4. **Separate main-curve and extension constraints** — Interpolate constraints and Extend/Expand constraints independently configurable, per source list. Batched into #3's schema bump (see plan); wiring lands in a later phase.
 5. **Display gamut preferences** — store display profiles/calibration in `localStorage`; users may have multiple displays. Initial default remains sRGB. Depends on #2 for correct white handling.
 
 ### Small scope, high value (projection params track)
@@ -106,7 +106,7 @@ Resolved roadmap direction: Active gamut is the working/export intent; Display g
 
 ### Gamut Map — parameter model
 
-Core unification (`finalizeRamp`, terminal `gamutMap`, `PlacePolicy` stages) is **shipped**, including `gamutMapParams`. **Decision: keep the terminal gamut-map stage.** It targets **sRGB for now** (matches sRGB export; Ottosson constants are sRGB-specific). Future direction: retarget to the **Active gamut** once the generic target-gamut solver (surface-constraint Phase 5) lands; stage-local curve/extension constraints may reduce reliance on it over time. It must never target the **Display** gamut (that is the Explorer display-mapping role).
+Core unification (`finalizeRamp`, terminal `gamutMap`, `PlacePolicy` stages) is **shipped**, including `gamutMapParams`. **Decision: keep it as a single shared terminal step** (not per-list). Output is always to the **active colorspace**, with **one** OOG method choice for all ramps/colors. The analytic mapper is sRGB-specific, so non-sRGB active targets await the generic target-gamut solver (surface-constraint Phase 5); when Active gamut = sRGB (default) this is today's behavior. It must never target the **Display** gamut (that is the Explorer display-mapping role).
 
 ### Color-space roles and source storage
 
@@ -118,7 +118,7 @@ Key points:
 - source lists stay in `srgbLin`, documented as the canonical gamut-independent colorimetric anchor (≡ XYZ D65); the XYZ-D65 migration is **deferred** (representational only);
 - add chromatic adaptation (Bradford) for non-D65 active/display whites — currently absent;
 - Display gamut profiles live in `localStorage`, not shared document state;
-- each source list owns independent pipeline settings (per-list pipelines) — the next architecture build, behind a schema bump;
+- each source list owns independent pipeline settings (per-list pipelines) — the next architecture build, behind a schema bump (see [`per-list-pipeline-plan.md`](per-list-pipeline-plan.md));
 - main curve and extension constraints are independent.
 
 ### Pipeline-driven parameter UI
