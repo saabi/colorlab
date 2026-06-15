@@ -27,8 +27,16 @@
  *   adaptive alpha/focus/neutral defaults derived from theme.surfaceProjection.
  * v11: add theme.gamutMapParams with adaptive alpha
  *   defaults for terminal ramp gamut mapping.
- * v12 (CURRENT_SNAPSHOT_VERSION): add theme.gamutMapParams.focusL so fixed
+ * v12: add theme.gamutMapParams.focusL so fixed
  *   `L 0.5` methods become defaulted focus-lightness methods.
+ * v13 (CURRENT_SNAPSHOT_VERSION): per-list pipelines. The global flat pipeline
+ *   fields (mode, splineSpace, splineConstraint, surfaceProjection[Params],
+ *   interpolateOn, placeOn, place, arcLong, contrastMin/Max, wcagBg, steps,
+ *   expandOn, expandRows, expandCols) move into each list's `pipeline`.
+ *   theme.lists: ThemeAnchor[][] -> RampList[] = { anchors, pipeline }.
+ *   theme.gamutMap/gamutMapParams stay global (single shared terminal step).
+ *   The main curve constraint becomes pipeline.main; pipeline.extension defaults
+ *   to a free constraint.
  *
  * When adding v8+, append a line here and implement migrateVNToVN+1 below.
  */
@@ -224,6 +232,74 @@ function migrateV11ToV12(raw: Record<string, unknown>) {
 	return raw;
 }
 
+const V13_FLAT_PIPELINE_KEYS = [
+	'mode',
+	'splineSpace',
+	'splineConstraint',
+	'surfaceProjection',
+	'surfaceProjectionParams',
+	'interpolateOn',
+	'placeOn',
+	'place',
+	'arcLong',
+	'contrastMin',
+	'contrastMax',
+	'wcagBg',
+	'steps',
+	'expandOn',
+	'expandRows',
+	'expandCols'
+];
+
+function migrateV12ToV13(raw: Record<string, unknown>) {
+	raw.schemaVersion = 13;
+	const explorer = raw.explorer as Record<string, unknown> | undefined;
+	const theme = explorer?.theme as Record<string, unknown> | undefined;
+	if (!theme || !Array.isArray(theme.lists)) return raw;
+
+	// Build the (single, formerly global) pipeline from the flat fields. Missing
+	// fields are left undefined; coerce fills defaults afterward.
+	const projection = theme.surfaceProjection;
+	const projectionParams = (theme.surfaceProjectionParams as Record<string, unknown>) ?? {};
+	const constraintFromProjection = () => ({
+		projection,
+		projectionParams: { ...projectionParams, method: projection }
+	});
+	const pipeline = {
+		mode: theme.mode,
+		splineSpace: theme.splineSpace,
+		interpolateOn: theme.interpolateOn,
+		placeOn: theme.placeOn,
+		place: theme.place,
+		arcLong: theme.arcLong,
+		contrastMin: theme.contrastMin,
+		contrastMax: theme.contrastMax,
+		wcagBg: theme.wcagBg,
+		steps: theme.steps,
+		main: { constraint: theme.splineConstraint, ...constraintFromProjection() },
+		expandOn: theme.expandOn,
+		expandRows: theme.expandRows,
+		expandCols: theme.expandCols,
+		// Extension is new; default to a free constraint (current behavior).
+		extension: { constraint: 'free', ...constraintFromProjection() }
+	};
+
+	// Each list gets its own deep copy of the lifted pipeline. Entries are either
+	// bare anchor arrays (genuine v12 docs) or already-wrapped { anchors } objects
+	// (e.g. a newer-shape base re-tagged as old in tests) — handle both.
+	theme.lists = (theme.lists as unknown[]).map((entry) => {
+		const anchors = Array.isArray(entry)
+			? entry
+			: entry && typeof entry === 'object' && Array.isArray((entry as Record<string, unknown>).anchors)
+				? (entry as Record<string, unknown>).anchors
+				: [];
+		return { anchors, pipeline: JSON.parse(JSON.stringify(pipeline)) };
+	});
+
+	for (const k of V13_FLAT_PIPELINE_KEYS) delete theme[k];
+	return raw;
+}
+
 export function migrateSnapshot(raw: unknown, fromVersion: number): unknown {
 	if (!raw || typeof raw !== 'object') return raw;
 	let current = { ...(raw as Record<string, unknown>) };
@@ -240,6 +316,7 @@ export function migrateSnapshot(raw: unknown, fromVersion: number): unknown {
 		if (version === 9) current = migrateV9ToV10(current);
 		if (version === 10) current = migrateV10ToV11(current);
 		if (version === 11) current = migrateV11ToV12(current);
+		if (version === 12) current = migrateV12ToV13(current);
 	}
 	return current;
 }

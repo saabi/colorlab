@@ -26,6 +26,10 @@ describe('detectSchemaVersion', () => {
 
 describe('parseSnapshot', () => {
 	const defaults = defaultSnapshot();
+	const anchorsOf = (snapshot: ReturnType<typeof parseSnapshot>['snapshot']) =>
+		snapshot?.explorer.theme.lists.map((list) => list.anchors);
+	const pipelineOf = (snapshot: ReturnType<typeof parseSnapshot>['snapshot'], index = 0) =>
+		snapshot?.explorer.theme.lists[index].pipeline;
 
 	it('loads v0 JSON missing a new field with factory default', () => {
 		const { cylSlice: _cylSlice, ...explorerWithoutCyl } = defaults.explorer;
@@ -98,16 +102,15 @@ describe('parseSnapshot', () => {
 	});
 
 	it('gives legacy saves without spline fields the factory defaults', () => {
-		const { lists: _cp, splineConstraint: _sc, splineSpace: _ss, ...themeWithoutSpline } =
-			defaults.explorer.theme;
+		const { lists: _cp, ...themeWithoutSpline } = defaults.explorer.theme;
 		const legacy = {
 			explorer: { ...defaults.explorer, theme: themeWithoutSpline },
 			camera: defaults.camera
 		};
 		const result = parseSnapshot(legacy);
-		expect(result.snapshot?.explorer.theme.lists).toEqual([[]]);
-		expect(result.snapshot?.explorer.theme.splineConstraint).toBe('free');
-		expect(result.snapshot?.explorer.theme.splineSpace).toBe('oklab');
+		expect(anchorsOf(result.snapshot)).toEqual([[]]);
+		expect(pipelineOf(result.snapshot)?.main.constraint).toBe('free');
+		expect(pipelineOf(result.snapshot)?.splineSpace).toBe('oklab');
 	});
 
 	it('round-trips a spline document with control points', () => {
@@ -123,9 +126,9 @@ describe('parseSnapshot', () => {
 			}
 		};
 		const result = parseSnapshot(doc);
-		expect(result.snapshot?.explorer.theme.mode).toBe('spline');
-		expect(result.snapshot?.explorer.theme.splineSpace).toBe('okhsv');
-		expect(result.snapshot?.explorer.theme.lists).toEqual([cps]);
+		expect(pipelineOf(result.snapshot)?.mode).toBe('spline');
+		expect(pipelineOf(result.snapshot)?.splineSpace).toBe('okhsv');
+		expect(anchorsOf(result.snapshot)).toEqual([cps]);
 	});
 
 	it('migrates a v2 spline-clip constraint to the v3 gamutMap policy', () => {
@@ -139,7 +142,7 @@ describe('parseSnapshot', () => {
 		} as unknown;
 		const result = parseSnapshot(v2);
 		expect(result.migrated).toBe(true);
-		expect(result.snapshot?.explorer.theme.splineConstraint).toBe('surface-radial');
+		expect(result.snapshot?.explorer.theme.lists[0].pipeline.main.constraint).toBe('surface-radial');
 		expect(result.snapshot?.explorer.theme.gamutMap).toBe('preserve-chroma');
 	});
 
@@ -156,7 +159,7 @@ describe('parseSnapshot', () => {
 			},
 			camera: defaults.camera
 		} as unknown;
-		expect(parseSnapshot(spline).snapshot?.explorer.theme.lists).toEqual([
+		expect(anchorsOf(parseSnapshot(spline).snapshot)).toEqual([
 			[
 				{ srgbLin: [0.2, 0.2, 0.2] },
 				{ srgbLin: [0.8, 0.1, 0.1] }
@@ -170,7 +173,7 @@ describe('parseSnapshot', () => {
 			},
 			camera: defaults.camera
 		} as unknown;
-		expect(parseSnapshot(seg).snapshot?.explorer.theme.lists).toEqual([
+		expect(anchorsOf(parseSnapshot(seg).snapshot)).toEqual([
 			[
 				{ srgbLin: [0.1, 0.1, 0.1] },
 				{ srgbLin: [0.9, 0.9, 0.9] }
@@ -185,8 +188,8 @@ describe('parseSnapshot', () => {
 			camera: defaults.camera
 		} as unknown;
 		const s = parseSnapshot(seg).snapshot?.explorer.theme;
-		expect(s?.mode).toBe('linear');
-		expect(s?.splineSpace).toBe('world');
+		expect(s?.lists[0].pipeline.mode).toBe('linear');
+		expect(s?.lists[0].pipeline.splineSpace).toBe('world');
 
 		const arc = {
 			schemaVersion: 4,
@@ -194,8 +197,8 @@ describe('parseSnapshot', () => {
 			camera: defaults.camera
 		} as unknown;
 		const a = parseSnapshot(arc).snapshot?.explorer.theme;
-		expect(a?.mode).toBe('linear');
-		expect(a?.splineSpace).toBe('oklch');
+		expect(a?.lists[0].pipeline.mode).toBe('linear');
+		expect(a?.lists[0].pipeline.splineSpace).toBe('oklch');
 	});
 
 	it('migrates v5 spread mode through to the v7 generalized Spread', () => {
@@ -205,18 +208,18 @@ describe('parseSnapshot', () => {
 			camera: defaults.camera
 		} as unknown;
 		const t = parseSnapshot(doc).snapshot?.explorer.theme;
-		expect(t?.mode).toBe('linear');
-		expect(t?.expandOn).toBe(true);
-		expect(t?.expandCols.count).toBe(9);
-		expect(t?.expandCols.hue).toEqual({ delta: 40, dir: 'sym' });
-		expect(t?.expandCols.chroma.dir).toBe('sym');
-		expect(t?.expandCols.chroma.delta).toBeCloseTo(0.22 / 2.2, 6);
+		expect(t?.lists[0].pipeline.mode).toBe('linear');
+		expect(t?.lists[0].pipeline.expandOn).toBe(true);
+		expect(t?.lists[0].pipeline.expandCols.count).toBe(9);
+		expect(t?.lists[0].pipeline.expandCols.hue).toEqual({ delta: 40, dir: 'sym' });
+		expect(t?.lists[0].pipeline.expandCols.chroma.dir).toBe('sym');
+		expect(t?.lists[0].pipeline.expandCols.chroma.delta).toBeCloseTo(0.22 / 2.2, 6);
 	});
 
 	it('migrates v6 expand operators to v7 Spread generators', () => {
 		const mk = (theme: Record<string, unknown>) =>
 			parseSnapshot({ schemaVersion: 6, explorer: { theme }, camera: defaults.camera } as unknown).snapshot
-				?.explorer.theme;
+				?.explorer.theme.lists[0].pipeline;
 
 		const none = mk({ expand: 'none' });
 		expect(none?.expandOn).toBe(false);
@@ -253,8 +256,8 @@ describe('parseSnapshot', () => {
 			}
 		};
 		const result = parseSnapshot(doc);
-		expect(result.snapshot?.explorer.theme.splineSpace).toBe('oklab');
-		expect(result.snapshot?.explorer.theme.lists).toEqual([[{ srgbLin: [0.1, 0.2, 0.3] }]]);
+		expect(pipelineOf(result.snapshot)?.splineSpace).toBe('oklab');
+		expect(anchorsOf(result.snapshot)).toEqual([[{ srgbLin: [0.1, 0.2, 0.3] }]]);
 	});
 
 	it('migrates a v7 points list into v8 lists with activeList 0', () => {
@@ -270,7 +273,7 @@ describe('parseSnapshot', () => {
 		} as unknown;
 		const result = parseSnapshot(v7);
 		expect(result.migrated).toBe(true);
-		expect(result.snapshot?.explorer.theme.lists).toEqual([
+		expect(anchorsOf(result.snapshot)).toEqual([
 			[{ srgbLin: [0.2, 0.3, 0.4] }, { srgbLin: [0.6, 0.5, 0.1] }]
 		]);
 		expect(result.snapshot?.explorer.theme.activeList).toBe(0);
@@ -292,9 +295,9 @@ describe('parseSnapshot', () => {
 		const result = parseSnapshot(v8);
 		expect(result.migrated).toBe(true);
 		expect(result.snapshot?.schemaVersion).toBe(CURRENT_SNAPSHOT_VERSION);
-		expect(result.snapshot?.explorer.theme.splineConstraint).toBe('surface-radial');
-		expect(result.snapshot?.explorer.theme.surfaceProjection).toBe('adaptive-0.5');
-		expect(result.snapshot?.explorer.theme.surfaceProjectionParams).toMatchObject({
+		expect(result.snapshot?.explorer.theme.lists[0].pipeline.main.constraint).toBe('surface-radial');
+		expect(result.snapshot?.explorer.theme.lists[0].pipeline.main.projection).toBe('adaptive-0.5');
+		expect(result.snapshot?.explorer.theme.lists[0].pipeline.main.projectionParams).toMatchObject({
 			method: 'adaptive-0.5',
 			alpha: 0.05,
 			focusL: 0.5,
@@ -317,7 +320,7 @@ describe('parseSnapshot', () => {
 		const result = parseSnapshot(v9);
 		expect(result.migrated).toBe(true);
 		expect(result.snapshot?.schemaVersion).toBe(CURRENT_SNAPSHOT_VERSION);
-		expect(result.snapshot?.explorer.theme.surfaceProjectionParams).toMatchObject({
+		expect(result.snapshot?.explorer.theme.lists[0].pipeline.main.projectionParams).toMatchObject({
 			method: 'adaptive-cusp',
 			alpha: 0.05,
 			focusL: 0.5,
@@ -370,28 +373,106 @@ describe('parseSnapshot', () => {
 		});
 	});
 
+	it('migrates v12 flat global settings to v13 per-list pipelines', () => {
+		const v12 = {
+			schemaVersion: 12,
+			explorer: {
+				theme: {
+					lists: [[{ srgbLin: [0.1, 0.2, 0.3] }], [{ srgbLin: [0.4, 0.5, 0.6] }]],
+					activeList: 1,
+					mode: 'spline',
+					splineSpace: 'oklch',
+					interpolateOn: true,
+					placeOn: true,
+					place: 'tones',
+					arcLong: true,
+					contrastMin: 2.0,
+					contrastMax: 10.0,
+					wcagBg: 'black',
+					steps: 9,
+					splineConstraint: 'surface-radial',
+					surfaceProjection: 'project-cusp',
+					surfaceProjectionParams: {
+						method: 'project-cusp',
+						alpha: 0.1,
+						focusL: 0.5,
+						neutral: 'radial-fallback'
+					},
+					expandOn: true,
+					expandRows: { count: 3, hue: { delta: 10, dir: 'sym' }, chroma: { delta: 0, dir: 'off' }, light: { delta: 0, dir: 'off' } },
+					expandCols: { count: 4, hue: { delta: 0, dir: 'off' }, chroma: { delta: 0.1, dir: 'sym' }, light: { delta: 0, dir: 'off' } },
+					gamutMap: 'adaptive-cusp',
+					gamutMapParams: { alpha: 0.5, focusL: 0.4 }
+				}
+			},
+			camera: defaults.camera
+		} as unknown;
+		const result = parseSnapshot(v12);
+		expect(result.migrated).toBe(true);
+		expect(result.snapshot?.schemaVersion).toBe(CURRENT_SNAPSHOT_VERSION);
+
+		const theme = result.snapshot?.explorer.theme;
+		expect(theme?.activeList).toBe(1);
+		expect(theme?.gamutMap).toBe('adaptive-cusp');
+		expect(theme?.gamutMapParams).toMatchObject({ alpha: 0.5, focusL: 0.4 });
+
+		expect(theme?.lists.length).toBe(2);
+		expect(theme?.lists[0].anchors).toEqual([{ srgbLin: [0.1, 0.2, 0.3] }]);
+		expect(theme?.lists[1].anchors).toEqual([{ srgbLin: [0.4, 0.5, 0.6] }]);
+
+		const p1 = theme?.lists[1].pipeline;
+		expect(p1?.mode).toBe('spline');
+		expect(p1?.splineSpace).toBe('oklch');
+		expect(p1?.interpolateOn).toBe(true);
+		expect(p1?.placeOn).toBe(true);
+		expect(p1?.place).toBe('tones');
+		expect(p1?.arcLong).toBe(true);
+		expect(p1?.contrastMin).toBe(2.0);
+		expect(p1?.contrastMax).toBe(10.0);
+		expect(p1?.wcagBg).toBe('black');
+		expect(p1?.steps).toBe(9);
+		expect(p1?.main.constraint).toBe('surface-radial');
+		expect(p1?.main.projection).toBe('project-cusp');
+		expect(p1?.main.projectionParams.neutral).toBe('radial-fallback');
+		expect(p1?.expandOn).toBe(true);
+		expect(p1?.expandRows.count).toBe(3);
+		expect(p1?.expandCols.count).toBe(4);
+		expect(p1?.extension.constraint).toBe('free');
+	});
+
 	it('round-trips new surface projection constraint fields', () => {
+		const list = defaults.explorer.theme.lists[0];
 		const doc = {
 			...defaults,
 			explorer: {
 				...defaults.explorer,
 				theme: {
 					...defaults.explorer.theme,
-					splineConstraint: 'surface-oklab-project',
-					surfaceProjection: 'adaptive-cusp',
-					surfaceProjectionParams: {
-						method: 'adaptive-cusp',
-						alpha: 0.5,
-						focusL: 0.5,
-						neutral: 'preserve'
-					}
+					lists: [
+						{
+							...list,
+							pipeline: {
+								...list.pipeline,
+								main: {
+									constraint: 'surface-oklab-project',
+									projection: 'adaptive-cusp',
+									projectionParams: {
+										method: 'adaptive-cusp',
+										alpha: 0.5,
+										focusL: 0.5,
+										neutral: 'preserve'
+									}
+								}
+							}
+						}
+					]
 				}
 			}
 		};
 		const result = parseSnapshot(doc);
-		expect(result.snapshot?.explorer.theme.splineConstraint).toBe('surface-oklab-project');
-		expect(result.snapshot?.explorer.theme.surfaceProjection).toBe('adaptive-cusp');
-		expect(result.snapshot?.explorer.theme.surfaceProjectionParams.alpha).toBe(0.5);
+		expect(result.snapshot?.explorer.theme.lists[0].pipeline.main.constraint).toBe('surface-oklab-project');
+		expect(result.snapshot?.explorer.theme.lists[0].pipeline.main.projection).toBe('adaptive-cusp');
+		expect(result.snapshot?.explorer.theme.lists[0].pipeline.main.projectionParams.alpha).toBe(0.5);
 	});
 
 	it('round-trips gamut map adaptive params', () => {

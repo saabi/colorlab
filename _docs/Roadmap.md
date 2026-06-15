@@ -64,24 +64,26 @@ Aligned with the **recommended next order** in [`surface-constraint-gamut-projec
 
 9. **Light UI color scheme** — add a **light** theme alongside today's dark (`:root` CSS variables in `app.css`). Persist in `colorlab:preferences` (same pattern as auto-rotate / auto-reduce). Panels, chrome, and instruments should stay readable; WebGL viewport may keep a separate backdrop policy (see #10).
 10. **Neutral explorer backdrop** — colorimetrically neutral surround for the 3D viewport: **Oklab L = 0.5** (a\* = b\* = 0) for WebGL clear color and/or the letterbox around the canvas, so the solid is judged without UI chroma bias. **Placement:** either a third UI scheme or — leaner — a toggle in the sidebar footer **Viewport preferences** panel (`LeftControls`, beside View aids / Performance), persisted in app preferences (not the document). Does not change the color solid itself.
-11. **Okhsl/Okhsv picker coordinates** — H/S/L or H/S/V sliders for the selected ramp stop (`okhsv.ts` exists).
-12. **Direct xy chromaticity picking** — click/drag in the xy panel; define which Y/L is held constant.
-13. **Gamut boundary snap tools** — stop-level UX on top of existing Oklab boundary projection.
+11. **Pipeline node UI (Phase 1)** — static read-only navigation rail; canonical node set per [`pipeline-node-ui-proposal.md`](pipeline-node-ui-proposal.md). `All` remains the primary multi-step surface.
+12. **OOG badges + raw/final preview** — OOG badges on Interpolate/Gamut Map; before/after stop preview on Gamut Map/Export or its successor diagnostic.
+13. **Okhsl/Okhsv picker coordinates** — H/S/L or H/S/V sliders for the selected ramp stop (`okhsv.ts` exists).
+14. **Direct xy chromaticity picking** — click/drag in the xy panel; define which Y/L is held constant.
+15. **Gamut boundary snap tools** — stop-level UX on top of existing Oklab boundary projection.
 
 ### Large / design-first
 
-14. **Generic active/display gamut solver** — matrix-based boundary solver for Active gamut and Display gamut relationships; keep sRGB analytic fast path where useful.
-15. **Custom Display Gamut** — calibration wizard UX before implementation.
-16. **Gradient designer improvements** — editable stops, per-stop OKLCh/Okhsl, CSS gradient preview.
-17. **Pipeline node UI (Phases 2–4)** — node-scoped parameter panel, full pipeline-driven layout, mobile optimization.
+16. **Generic active/display gamut solver** — matrix-based boundary solver for Active gamut and Display gamut relationships; keep sRGB analytic fast path where useful.
+17. **Custom Display Gamut** — calibration wizard UX before implementation.
+18. **Gradient designer improvements** — editable stops, per-stop OKLCh/Okhsl, CSS gradient preview.
+19. **Pipeline node UI (Phases 2–4)** — node-scoped parameter panel, full pipeline-driven layout, mobile optimization.
 
 ### Research / deferred
 
-18. Gamut compression — display/ramp policy after Active/Display gamut model stabilizes
-19. Projected Explorer display overlay vs geometry replacement (open question)
-20. Spectral/chromaticity intensity volume
-21. GPU/codegen evaluation (surface plan Phase 8; criteria-gated)
-22. WebGPU, HDR, EDID defaults, Color Accumulator, in-scene text — see design review
+20. Gamut compression — display/ramp policy after Active/Display gamut model stabilizes
+21. Projected Explorer display overlay vs geometry replacement (open question)
+22. Spectral/chromaticity intensity volume
+23. GPU/codegen evaluation (surface plan Phase 8; criteria-gated)
+24. WebGPU, HDR, EDID defaults, Color Accumulator, in-scene text — see design review
 
 ---
 

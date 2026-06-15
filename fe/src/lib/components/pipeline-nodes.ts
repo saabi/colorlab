@@ -1,3 +1,5 @@
+import { activePipeline } from '$lib/engine/theme';
+
 import type { ExplorerState } from '$lib/engine/types';
 
 export type PipelineNodeId =
@@ -48,7 +50,7 @@ const spaceLabels: Record<ExplorerState['spaceMode'], string> = {
 
 /** True once any source list has at least one color (anchor or control point). */
 export function hasRampSource(state: ExplorerState): boolean {
-	return state.theme.lists.some((list) => list.length > 0);
+	return state.theme.lists.some((list) => list.anchors.length > 0);
 }
 
 /** Whether a node's controls are meaningful given the current state. */
@@ -129,7 +131,7 @@ export const PIPELINE_NODES: PipelineNode[] = [
 		affects: 'Ramp',
 		status: (state) => {
 			const lists = state.theme.lists;
-			const n = lists.reduce((sum, list) => sum + list.length, 0);
+			const n = lists.reduce((sum, list) => sum + list.anchors.length, 0);
 			const pts = `${n} pt${n === 1 ? '' : 's'}`;
 			return lists.length > 1 ? `${lists.length} lists · ${pts}` : pts;
 		}
@@ -143,17 +145,16 @@ export const PIPELINE_NODES: PipelineNode[] = [
 		affects: 'Ramp',
 		requiresSource: true,
 		status: (state) => {
-			if (!state.theme.interpolateOn) return 'Off';
-			const mode = state.theme.mode === 'spline' ? 'Spline' : 'Linear';
-			if (state.theme.splineConstraint === 'surface-oklab-project') {
-				const focus = usesFocus(state.theme.surfaceProjection) ? ` L ${state.theme.surfaceProjectionParams.focusL.toFixed(2)}` : '';
-				const alpha = state.theme.surfaceProjection.startsWith('adaptive-')
-					? ` α ${state.theme.surfaceProjectionParams.alpha.toFixed(2)}`
-					: '';
-				return `${mode} ${state.theme.splineSpace}${focus}${alpha}`;
+			const p = activePipeline(state.theme);
+			if (!p.interpolateOn) return 'Off';
+			const mode = p.mode === 'spline' ? 'Spline' : 'Linear';
+			if (p.main.constraint === 'surface-oklab-project') {
+				const focus = usesFocus(p.main.projection) ? ` L ${p.main.projectionParams.focusL.toFixed(2)}` : '';
+				const alpha = p.main.projection.startsWith('adaptive-') ? ` α ${p.main.projectionParams.alpha.toFixed(2)}` : '';
+				return `${mode} ${p.splineSpace}${focus}${alpha}`;
 			}
-			const constrained = state.theme.splineConstraint === 'free' ? '' : ' constrained';
-			return `${mode} ${state.theme.splineSpace}${constrained}`;
+			const constrained = p.main.constraint === 'free' ? '' : ' constrained';
+			return `${mode} ${p.splineSpace}${constrained}`;
 		},
 		// Interpolation can produce out-of-gamut stops; the count is taken before the gamut-map stage.
 		warn: (state) => {
@@ -169,7 +170,10 @@ export const PIPELINE_NODES: PipelineNode[] = [
 		description: 'Samples the already-built path into N ramp stops; it does not change the path geometry.',
 		affects: 'Ramp',
 		requiresSource: true,
-		status: (state) => (!state.theme.interpolateOn ? '—' : !state.theme.placeOn ? 'Off' : state.theme.place)
+		status: (state) => {
+			const p = activePipeline(state.theme);
+			return !p.interpolateOn ? '—' : !p.placeOn ? 'Off' : p.place;
+		}
 	},
 	{
 		id: 'expand',
@@ -179,7 +183,8 @@ export const PIPELINE_NODES: PipelineNode[] = [
 		description: 'Per-stop generator that turns the 1-D ramp into a 2-D palette (e.g. tints & shades).',
 		affects: 'Export',
 		requiresSource: true,
-		status: (state) => (!state.theme.expandOn ? 'Off' : `${state.theme.grid.length}×${state.theme.grid[0]?.length ?? 0}`)
+		status: (state) =>
+			!activePipeline(state.theme).expandOn ? 'Off' : `${state.theme.grid.length}×${state.theme.grid[0]?.length ?? 0}`
 	},
 	{
 		id: 'gamut-map',

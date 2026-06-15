@@ -111,7 +111,7 @@
 
 <svelte:window onkeydown={onWindowKeydown} />
 
-<GuideNoteEditorHost explorer={appState.explorer}>
+<GuideNoteEditorHost bind:explorer={appState.explorer}>
 	<div class:drawer-open={drawerOpen} class="app-shell">
 		<a class="skip-link" href="#main-viewport">Skip to viewport</a>
 		<header class="app-header">
@@ -147,8 +147,8 @@
 				drawerOpen = false;
 			}}
 		></button>
-		<LeftControls explorer={appState.explorer} {matrices} {camera} bind:touchTool />
-		<Viewport state={explorer} {camera} bind:touchTool />
+		<LeftControls bind:explorer={appState.explorer} {matrices} bind:camera={appState.camera} bind:touchTool />
+		<Viewport bind:state={appState.explorer} bind:camera={appState.camera} bind:touchTool />
 		<RightInspector state={explorer} />
 	</div>
 </GuideNoteEditorHost>

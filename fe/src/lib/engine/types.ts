@@ -53,6 +53,42 @@ export interface ThemeAnchor {
 	srgbLin: [number, number, number];
 }
 
+/** A boundary constraint (main curve or extension) with its projection params. */
+export interface ConstraintConfig {
+	constraint: SplineConstraint;
+	projection: SurfaceProjectionMethod;
+	projectionParams: SurfaceProjectionParams;
+}
+
+/** Per-list ramp pipeline settings — one per source list (each list is one ramp).
+ *  The terminal gamut-map is intentionally NOT here; it is a single shared step
+ *  on `theme` targeting the active colorspace. */
+export interface ListPipeline {
+	mode: ThemeMode;
+	splineSpace: InterpSpaceChoice;
+	interpolateOn: boolean;
+	placeOn: boolean;
+	place: PlacePolicy;
+	arcLong: boolean;
+	contrastMin: number;
+	contrastMax: number;
+	wcagBg: 'white' | 'black';
+	steps: number;
+	/** Main curve boundary constraint (Interpolate stage). */
+	main: ConstraintConfig;
+	expandOn: boolean;
+	expandRows: AxisSpreadConfig;
+	expandCols: AxisSpreadConfig;
+	/** Extension boundary constraint (Extend/Expand stage). Wiring lands in a later phase. */
+	extension: ConstraintConfig;
+}
+
+/** One source ramp: its anchors plus its own pipeline. */
+export interface RampList {
+	anchors: ThemeAnchor[];
+	pipeline: ListPipeline;
+}
+
 export interface ThemeStop {
 	world: Vec3;
 	srgbLin: Vec3;
@@ -125,22 +161,15 @@ export interface ExplorerState {
 	cvd: CvdMode;
 	cvdSev: number;
 	theme: {
-		/** Ordered source-color lists (persisted). Each list is one ramp's anchors —
-		 *  multiple lists = multiple parallel ramps (e.g. several splines). Always >= 1 list. */
-		lists: ThemeAnchor[][];
+		/** Ordered source ramps (persisted). Each carries its own anchors + pipeline —
+		 *  multiple lists = multiple parallel ramps. Always >= 1 list. */
+		lists: RampList[];
 		/** Index of the list that edits/selection/picking target (persisted; clamped on load). */
 		activeList: number;
 		/** Selected source-point index within the active list (runtime UI selection, not persisted). */
 		selectedPoint: number | null;
-		/** Spline curve geometry constraint: free vs boundary projection (persisted). */
-		splineConstraint: SplineConstraint;
-		/** Projection-line method used by surface-oklab-project (persisted). */
-		surfaceProjection: SurfaceProjectionMethod;
-		/** Advanced projection-line parameters used by surface-oklab-project (persisted). */
-		surfaceProjectionParams: SurfaceProjectionParams;
-		/** Color space the ramp is interpolated in — any interp space or "world" (persisted). */
-		splineSpace: InterpSpaceChoice;
-		/** Out-of-gamut mapping policy applied to all ramp stops + spline curve (persisted). */
+		/** Out-of-gamut mapping policy — a SINGLE SHARED terminal step for all lists,
+		 *  targeting the active colorspace (persisted). Not per-list. */
 		gamutMap: GamutMapMethod;
 		/** Advanced parameters used by adaptive gamut-map policies (persisted). */
 		gamutMapParams: GamutMapParams;
@@ -154,36 +183,17 @@ export interface ExplorerState {
 		splineCurve: SplineSample[];
 		/** Active list's pre-map stops — alias of rawRows[activeList] (runtime, not persisted). */
 		rawStops: ThemeStop[];
-		steps: number;
 		/** Armed click action on the solid: append a point to the active list (runtime, not persisted). */
 		arm: 'add' | null;
-		/** Interpolate stage enabled (persisted). Off = source anchors pass through as stops. */
-		interpolateOn: boolean;
-		/** Place stage enabled (persisted). Off = stops are the exact picked colors. */
-		placeOn: boolean;
-		mode: ThemeMode;
 		/** Active list's final stops — alias of rows[activeList] (runtime, not persisted). */
 		stops: ThemeStop[];
-		arcLong: boolean;
-		/** Place stage: how the N stops are sampled along the interpolated curve (persisted). */
-		place: PlacePolicy;
-		/** Contrast-ladder target range (WCAG ratios vs the chosen background; persisted). */
-		contrastMin: number;
-		contrastMax: number;
-		/** Expand stage enabled (persisted). Off = 1-D ramp passes through. */
-		expandOn: boolean;
-		/** Row generator: related ramps — offsets applied to every stop of a ramp copy (persisted). */
-		expandRows: AxisSpreadConfig;
-		/** Column generator: per-stop variants — offsets expand each stop into a ladder (persisted). */
-		expandCols: AxisSpreadConfig;
-		/** 3D viewport aid visibility, each toggled from its producing step (persisted). */
+		/** 3D viewport aid visibility, each toggled from its producing step (persisted, global). */
 		showPoints: boolean;
 		showCurve: boolean;
 		showStops: boolean;
 		showPalette: boolean;
 		/** 2-D palette output: Expand result, or all lists' ramps when more than one (runtime, not persisted). */
 		grid: ThemeStop[][];
-		wcagBg: 'white' | 'black';
 	};
 	hover: HoverHit | null;
 }
@@ -192,7 +202,7 @@ import type { GamutMapMethod, GamutMapParams } from '$lib/color/gamut-map';
 import type { SurfaceProjectionMethod, SurfaceProjectionParams } from '$lib/color/boundary-project';
 import type { Camera } from './camera';
 
-export const CURRENT_STATE_SCHEMA_VERSION = 12 as const;
+export const CURRENT_STATE_SCHEMA_VERSION = 13 as const;
 export type StateSchemaVersion = typeof CURRENT_STATE_SCHEMA_VERSION;
 
 export type PersistedTheme = Omit<

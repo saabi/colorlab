@@ -14,9 +14,9 @@
 	import type { TouchTool } from './Viewport.svelte';
 
 	let {
-		explorer,
+		explorer = $bindable(),
 		matrices,
-		camera,
+		camera = $bindable(),
 		touchTool = $bindable('auto')
 	} = $props<{ explorer: ExplorerState; matrices: DerivedMatrices; camera: Camera; touchTool: TouchTool }>();
 	let openHelp = $state<string | null>(null);

@@ -7,7 +7,7 @@
 	import type { Snippet } from 'svelte';
 
 	let {
-		explorer,
+		explorer = $bindable(),
 		children
 	} = $props<{
 		explorer: ExplorerState;

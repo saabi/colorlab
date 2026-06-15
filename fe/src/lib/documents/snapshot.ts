@@ -1,6 +1,6 @@
 import { createAppState } from '$lib/engine/state.svelte';
 
-import type { AppState, AxisSpreadConfig, ExplorerState, PersistedExplorer } from '$lib/engine/types';
+import type { AppState, AxisSpreadConfig, ConstraintConfig, ExplorerState, ListPipeline, PersistedExplorer, RampList } from '$lib/engine/types';
 import type { Camera } from '$lib/engine/camera';
 import { CURRENT_SNAPSHOT_VERSION, type ParameterSnapshot } from './types';
 
@@ -10,6 +10,43 @@ function cloneSpread(g: AxisSpreadConfig): AxisSpreadConfig {
 		hue: { delta: g.hue.delta, dir: g.hue.dir },
 		chroma: { delta: g.chroma.delta, dir: g.chroma.dir },
 		light: { delta: g.light.delta, dir: g.light.dir }
+	};
+}
+
+function cloneConstraint(c: ConstraintConfig): ConstraintConfig {
+	return {
+		constraint: c.constraint,
+		projection: c.projection,
+		projectionParams: { ...c.projectionParams, method: c.projection }
+	};
+}
+
+function clonePipeline(p: ListPipeline): ListPipeline {
+	return {
+		mode: p.mode,
+		splineSpace: p.splineSpace,
+		interpolateOn: p.interpolateOn,
+		placeOn: p.placeOn,
+		place: p.place,
+		arcLong: p.arcLong,
+		contrastMin: p.contrastMin,
+		contrastMax: p.contrastMax,
+		wcagBg: p.wcagBg,
+		steps: p.steps,
+		main: cloneConstraint(p.main),
+		expandOn: p.expandOn,
+		expandRows: cloneSpread(p.expandRows),
+		expandCols: cloneSpread(p.expandCols),
+		extension: cloneConstraint(p.extension)
+	};
+}
+
+function cloneRampList(l: RampList): RampList {
+	return {
+		anchors: l.anchors.map((p) => ({
+			srgbLin: [p.srgbLin[0], p.srgbLin[1], p.srgbLin[2]] as [number, number, number]
+		})),
+		pipeline: clonePipeline(l.pipeline)
 	};
 }
 
@@ -61,34 +98,14 @@ export function toPersistedExplorer(explorer: ExplorerState): PersistedExplorer 
 		cvd: explorer.cvd,
 		cvdSev: explorer.cvdSev,
 		theme: {
-			lists: theme.lists.map((list) =>
-				list.map((p) => ({
-					srgbLin: [p.srgbLin[0], p.srgbLin[1], p.srgbLin[2]] as [number, number, number]
-				}))
-			),
+			lists: theme.lists.map(cloneRampList),
 			activeList: theme.activeList,
-			splineConstraint: theme.splineConstraint,
-			surfaceProjection: theme.surfaceProjection,
-			surfaceProjectionParams: { ...theme.surfaceProjectionParams, method: theme.surfaceProjection },
-			splineSpace: theme.splineSpace,
 			gamutMap: theme.gamutMap,
 			gamutMapParams: { ...theme.gamutMapParams },
-			steps: theme.steps,
-			interpolateOn: theme.interpolateOn,
-			placeOn: theme.placeOn,
-			mode: theme.mode,
-			arcLong: theme.arcLong,
-			place: theme.place,
-			contrastMin: theme.contrastMin,
-			contrastMax: theme.contrastMax,
-			expandOn: theme.expandOn,
-			expandRows: cloneSpread(theme.expandRows),
-			expandCols: cloneSpread(theme.expandCols),
 			showPoints: theme.showPoints,
 			showCurve: theme.showCurve,
 			showStops: theme.showStops,
-			showPalette: theme.showPalette,
-			wcagBg: theme.wcagBg
+			showPalette: theme.showPalette
 		}
 	};
 }

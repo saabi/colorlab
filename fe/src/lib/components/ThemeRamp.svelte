@@ -7,9 +7,10 @@
 	import { track } from '$lib/analytics/umami';
 	import { simulateCvdSrgb } from '$lib/color/cvd';
 	import { INTERP_SPACES, INTERP_SPACE_KEYS } from '$lib/color/interp';
-	import { buildRamp, exportDTCG, exportDTCGGrid, exportTokens, exportTokensGrid, srgbHex } from '$lib/engine/theme';
+	import { activePipeline, buildRamp, exportDTCG, exportDTCGGrid, exportTokens, exportTokensGrid, srgbHex } from '$lib/engine/theme';
 
-	import type { ExplorerState, ThemeAnchor } from '$lib/engine/types';
+	import type { AxisSpreadConfig, ExplorerState, ListPipeline, PlacePolicy, RampList, SpreadDir, SplineConstraint, ThemeAnchor } from '$lib/engine/types';
+	import type { SurfaceProjectionMethod } from '$lib/color/boundary-project';
 	import { MAX_RAMP_STOPS } from '$lib/engine/types';
 	import type { DerivedMatrices } from '$lib/renderer/uniforms';
 	import type { TouchTool } from './Viewport.svelte';
@@ -26,10 +27,16 @@
 	let pickerOpen = $state(false);
 	let stagedPickerColor = $state<[number, number, number]>([0.5, 0.5, 0.5]);
 
-	// All point edits/selection target the active source list.
-	const points = $derived(explorer.theme.lists[explorer.theme.activeList] ?? []) as ThemeAnchor[];
+	// All point edits/selection target the active source list and its pipeline.
+	const points = $derived(explorer.theme.lists[explorer.theme.activeList]?.anchors ?? []) as ThemeAnchor[];
+	const P = $derived(activePipeline(explorer.theme));
+	const activePipelineJson = $derived(JSON.stringify(P));
+	const pipelinesDiffer = $derived(
+		explorer.theme.lists.length > 1 &&
+			explorer.theme.lists.some((list: RampList, i: number) => i !== explorer.theme.activeList && JSON.stringify(list.pipeline) !== activePipelineJson)
+	);
 	function setPoints(next: ThemeAnchor[]) {
-		explorer.theme.lists[explorer.theme.activeList] = next;
+		explorer.theme.lists[explorer.theme.activeList].anchors = next;
 	}
 
 	const showAll = $derived(panel === 'all');
@@ -47,14 +54,14 @@
 	];
 
 	// Spline curve geometry constraint (separate from gamut handling).
-	const SPLINE_CONSTRAINT_OPTIONS: Array<{ value: ExplorerState['theme']['splineConstraint']; label: string }> = [
+	const SPLINE_CONSTRAINT_OPTIONS: Array<{ value: SplineConstraint; label: string }> = [
 		{ value: 'free', label: 'Free' },
 		{ value: 'surface-radial', label: 'Surface: radial shell' },
 		{ value: 'surface-oklab-chroma', label: 'Surface: Oklab chroma' },
 		{ value: 'surface-oklab-project', label: 'Surface: Oklab projection' }
 	];
 
-	const SURFACE_PROJECTION_OPTIONS: Array<{ value: ExplorerState['theme']['surfaceProjection']; label: string }> = [
+	const SURFACE_PROJECTION_OPTIONS: Array<{ value: SurfaceProjectionMethod; label: string }> = [
 		{ value: 'preserve-chroma', label: 'Preserve lightness' },
 		{ value: 'project-0.5', label: 'Project to focus' },
 		{ value: 'project-cusp', label: 'Project to hue cusp' },
@@ -63,10 +70,18 @@
 	];
 	const SURFACE_ALPHA_PRESETS = [0.05, 0.5, 5] as const;
 	const GAMUT_MAP_TARGET = 'sRGB';
-	const projectionUsesFocus = $derived(explorer.theme.surfaceProjection === 'project-0.5' || explorer.theme.surfaceProjection === 'adaptive-0.5');
-	const projectionUsesAlpha = $derived(explorer.theme.surfaceProjection.startsWith('adaptive-'));
+	const projectionUsesFocus = $derived(P.main.projection === 'project-0.5' || P.main.projection === 'adaptive-0.5');
+	const projectionUsesAlpha = $derived(P.main.projection.startsWith('adaptive-'));
+	const extensionUsesFocus = $derived(P.extension.projection === 'project-0.5' || P.extension.projection === 'adaptive-0.5');
+	const extensionUsesAlpha = $derived(P.extension.projection.startsWith('adaptive-'));
 	const projectionAlphaStatus = $derived.by(() => {
-		const alpha = explorer.theme.surfaceProjectionParams.alpha;
+		const alpha = P.main.projectionParams.alpha;
+		if (alpha <= 0.12) return 'Lightness-preserving';
+		if (alpha < 1.5) return 'Balanced';
+		return 'More compression';
+	});
+	const extensionAlphaStatus = $derived.by(() => {
+		const alpha = P.extension.projectionParams.alpha;
 		if (alpha <= 0.12) return 'Lightness-preserving';
 		if (alpha < 1.5) return 'Balanced';
 		return 'More compression';
@@ -80,7 +95,7 @@
 		return 'More compression';
 	});
 	const constraintScopeNote = $derived.by(() => {
-		switch (explorer.theme.splineConstraint) {
+		switch (P.main.constraint) {
 			case 'free':
 				return 'Path can pass through or outside the visible solid; final output can still be gamut-mapped later.';
 			case 'surface-radial':
@@ -89,6 +104,18 @@
 				return 'Constrains the path to the active clipped surface by reducing Oklab chroma.';
 			case 'surface-oklab-project':
 				return 'Constrains the path to the active clipped surface using the selected Oklab projection method.';
+		}
+	});
+	const extensionConstraintNote = $derived.by(() => {
+		switch (P.extension.constraint) {
+			case 'free':
+				return 'Generated palette variants are not surface-constrained before the terminal gamut-map step.';
+			case 'surface-radial':
+				return 'Generated palette variants are projected toward the active clipped surface by radial shell projection.';
+			case 'surface-oklab-chroma':
+				return 'Generated palette variants are projected to the active clipped surface by reducing Oklab chroma.';
+			case 'surface-oklab-project':
+				return 'Generated palette variants are projected to the active clipped surface using the selected Oklab projection method.';
 		}
 	});
 
@@ -109,13 +136,22 @@
 		track('theme_gamut_map', { method });
 	}
 
-	function setSurfaceProjection(method: ExplorerState['theme']['surfaceProjection']) {
-		explorer.theme.surfaceProjection = method;
-		explorer.theme.surfaceProjectionParams.method = method;
+	function setSurfaceProjection(method: SurfaceProjectionMethod) {
+		P.main.projection = method;
+		P.main.projectionParams.method = method;
+	}
+
+	function setExtensionProjection(method: SurfaceProjectionMethod) {
+		P.extension.projection = method;
+		P.extension.projectionParams.method = method;
 	}
 
 	function setSurfaceProjectionAlpha(alpha: number) {
-		explorer.theme.surfaceProjectionParams.alpha = alpha;
+		P.main.projectionParams.alpha = alpha;
+	}
+
+	function setExtensionProjectionAlpha(alpha: number) {
+		P.extension.projectionParams.alpha = alpha;
 	}
 
 	function setGamutMapAlpha(alpha: number) {
@@ -139,7 +175,7 @@
 	}
 
 	// Generalized Spread: presets only set the row/column generator parameters.
-	const SPREAD_DIR_OPTIONS: Array<{ value: ExplorerState['theme']['expandRows']['hue']['dir']; label: string }> = [
+	const SPREAD_DIR_OPTIONS: Array<{ value: SpreadDir; label: string }> = [
 		{ value: 'off', label: 'Off' },
 		{ value: 'ramp', label: 'Ramp (0 → δ)' },
 		{ value: 'sym', label: 'Symmetric (−δ → +δ)' },
@@ -174,19 +210,20 @@
 		}
 	];
 
-	function setSpread(
-		rows: ExplorerState['theme']['expandRows'] | null,
-		cols: ExplorerState['theme']['expandCols'] | null
-	) {
-		explorer.theme.expandOn = true;
-		explorer.theme.expandRows = rows ?? { count: 1, hue: off(), chroma: off(), light: off() };
-		explorer.theme.expandCols = cols ?? { count: 1, hue: off(), chroma: off(), light: off() };
+	function setSpread(rows: AxisSpreadConfig | null, cols: AxisSpreadConfig | null) {
+		P.expandOn = true;
+		P.expandRows = rows ?? { count: 1, hue: off(), chroma: off(), light: off() };
+		P.expandCols = cols ?? { count: 1, hue: off(), chroma: off(), light: off() };
 		track('theme_expand_preset');
 	}
 
-	function setThemeMode(mode: typeof explorer.theme.mode) {
-		explorer.theme.mode = mode;
+	function setThemeMode(mode: typeof P.mode) {
+		P.mode = mode;
 		track('theme_mode_change', { mode });
+	}
+
+	function clonePipeline(pipeline: ListPipeline): ListPipeline {
+		return JSON.parse(JSON.stringify(pipeline)) as ListPipeline;
 	}
 
 	function toggleAddPoint() {
@@ -201,23 +238,23 @@
 
 	// Long-hue only matters for cyclic (cylindrical) interpolation spaces.
 	const spaceIsCyclic = $derived(
-		explorer.theme.splineSpace !== 'world' &&
-			INTERP_SPACES[explorer.theme.splineSpace as keyof typeof INTERP_SPACES]?.cyclic !== null
+		P.splineSpace !== 'world' &&
+			INTERP_SPACES[P.splineSpace as keyof typeof INTERP_SPACES]?.cyclic !== null
 	);
 
 	// Presets are just (path type + space) shortcuts over the single interpolator.
 	function applyPreset(kind: 'segment' | 'arc' | 'spline') {
 		if (kind === 'segment') {
-			explorer.theme.mode = 'linear';
-			explorer.theme.splineSpace = 'world';
+			P.mode = 'linear';
+			P.splineSpace = 'world';
 		} else if (kind === 'arc') {
-			explorer.theme.mode = 'linear';
-			explorer.theme.splineSpace = 'oklch';
+			P.mode = 'linear';
+			P.splineSpace = 'oklch';
 		} else {
-			explorer.theme.mode = 'spline';
-			if (explorer.theme.splineSpace === 'world') explorer.theme.splineSpace = 'oklch';
+			P.mode = 'spline';
+			if (P.splineSpace === 'world') P.splineSpace = 'oklch';
 		}
-		track('theme_mode_change', { mode: explorer.theme.mode });
+		track('theme_mode_change', { mode: P.mode });
 	}
 
 	// Source-list management: each list is one ramp; edits target the active list.
@@ -230,17 +267,29 @@
 	}
 
 	function addList() {
-		explorer.theme.lists = [...explorer.theme.lists, []];
+		// New lists inherit the active list's pipeline (deep-cloned).
+		const pipeline = clonePipeline(P);
+		explorer.theme.lists = [...explorer.theme.lists, { anchors: [], pipeline }];
 		explorer.theme.activeList = explorer.theme.lists.length - 1;
 		explorer.theme.selectedPoint = null;
 		buildRamp(explorer, matrices);
 		track('theme_source_list', { action: 'add' });
 	}
 
+	function applyActivePipelineToAll() {
+		const pipeline = clonePipeline(P);
+		explorer.theme.lists = explorer.theme.lists.map((list: RampList) => ({
+			anchors: list.anchors,
+			pipeline: clonePipeline(pipeline)
+		}));
+		buildRamp(explorer, matrices);
+		track('theme_source_list', { action: 'apply_pipeline_all' });
+	}
+
 	function removeActiveList() {
 		if (explorer.theme.lists.length <= 1) return;
 		const index = explorer.theme.activeList;
-		explorer.theme.lists = explorer.theme.lists.filter((_: ThemeAnchor[], i: number) => i !== index);
+		explorer.theme.lists = explorer.theme.lists.filter((_: RampList, i: number) => i !== index);
 		explorer.theme.activeList = Math.min(index, explorer.theme.lists.length - 1);
 		explorer.theme.selectedPoint = null;
 		buildRamp(explorer, matrices);
@@ -321,7 +370,7 @@
 		track('theme_spline_point', { action: 'reorder_panel' });
 	}
 
-	const PLACE_OPTIONS: Array<{ value: ExplorerState['theme']['place']; label: string }> = [
+	const PLACE_OPTIONS: Array<{ value: PlacePolicy; label: string }> = [
 		{ value: 'even', label: 'Even (perceptual ΔE)' },
 		{ value: 'uniform', label: 'Uniform (curve parameter)' },
 		{ value: 'tones', label: 'Lightness tones' },
@@ -351,7 +400,7 @@
 				class:active={i === explorer.theme.activeList}
 				role="tab"
 				aria-selected={i === explorer.theme.activeList}
-				title={`List ${i + 1} — ${list.length} pt${list.length === 1 ? '' : 's'}`}
+				title={`List ${i + 1} — ${list.anchors.length} pt${list.anchors.length === 1 ? '' : 's'}`}
 				onclick={() => selectList(i)}
 			>
 				{i + 1}
@@ -363,7 +412,15 @@
 		{/if}
 	</div>
 	{#if explorer.theme.lists.length > 1}
-		<p class="note">Each list is its own ramp. Picking, dragging, and the rows below edit list {explorer.theme.activeList + 1}.</p>
+		<div class="list-meta">
+			<p class="note">Each list is its own ramp. Picking, dragging, and the rows below edit list {explorer.theme.activeList + 1}.</p>
+			<button type="button" class="compact-action" disabled={!pipelinesDiffer} onclick={applyActivePipelineToAll}>
+				Apply pipeline to all
+			</button>
+		</div>
+		{#if pipelinesDiffer}
+			<p class="note">Some lists use different pipeline settings.</p>
+		{/if}
 	{/if}
 
 	<div class="panel-label" style="margin-top: 8px">
@@ -447,8 +504,8 @@
 {/if}
 
 {#if showInterpolate}
-	<ToggleRow label="Enable interpolation" bind:checked={explorer.theme.interpolateOn} />
-	{#if !explorer.theme.interpolateOn}
+	<ToggleRow label="Enable interpolation" bind:checked={P.interpolateOn} />
+	{#if !P.interpolateOn}
 		<p class="note">Off: the picked source colors pass through as the stops (no curve).</p>
 	{:else}
 	<!-- Presets: quick (path type + space) combinations over the one interpolator. -->
@@ -458,7 +515,7 @@
 		<button type="button" onclick={() => applyPreset('spline')}>Spline</button>
 	</div>
 	<SegmentedControl
-		bind:value={explorer.theme.mode}
+		bind:value={P.mode}
 		onchange={setThemeMode}
 		columns={2}
 		options={[
@@ -469,7 +526,7 @@
 
 	<SliderRow
 		label="Steps"
-		bind:value={explorer.theme.steps}
+		bind:value={P.steps}
 		min={2}
 		max={MAX_RAMP_STOPS}
 		step={1}
@@ -478,7 +535,7 @@
 
 	<label class="field-row">
 		<span>Interpolate in</span>
-		<select bind:value={explorer.theme.splineSpace}>
+		<select bind:value={P.splineSpace}>
 			<option value="world">World (as shown)</option>
 			{#each INTERP_SPACE_KEYS as key}
 				<option value={key}>{INTERP_SPACES[key].label}</option>
@@ -486,21 +543,21 @@
 		</select>
 	</label>
 	{#if spaceIsCyclic}
-		<ToggleRow label="Long hue (other side)" bind:checked={explorer.theme.arcLong} />
+		<ToggleRow label="Long hue (other side)" bind:checked={P.arcLong} />
 	{/if}
 	<label class="field-row">
 		<span>Curve constraint</span>
-		<select bind:value={explorer.theme.splineConstraint}>
+		<select bind:value={P.main.constraint}>
 			{#each SPLINE_CONSTRAINT_OPTIONS as opt}
 				<option value={opt.value}>{opt.label}</option>
 			{/each}
 		</select>
 	</label>
 	<p class="note stage-note">{constraintScopeNote}</p>
-	{#if explorer.theme.splineConstraint === 'surface-oklab-project'}
+	{#if P.main.constraint === 'surface-oklab-project'}
 		<label class="field-row">
 			<span>Projection method</span>
-			<select value={explorer.theme.surfaceProjection} onchange={(event) => setSurfaceProjection(event.currentTarget.value as ExplorerState['theme']['surfaceProjection'])}>
+			<select value={P.main.projection} onchange={(event) => setSurfaceProjection(event.currentTarget.value as SurfaceProjectionMethod)}>
 				{#each SURFACE_PROJECTION_OPTIONS as opt}
 					<option value={opt.value}>{opt.label}</option>
 				{/each}
@@ -512,7 +569,7 @@
 				{#if projectionUsesFocus}
 					<SliderRow
 						label="Focus L"
-						bind:value={explorer.theme.surfaceProjectionParams.focusL}
+						bind:value={P.main.projectionParams.focusL}
 						min={0}
 						max={1}
 						step={0.01}
@@ -523,7 +580,7 @@
 				{#if projectionUsesAlpha}
 					<SliderRow
 						label="Adaptive alpha"
-						bind:value={explorer.theme.surfaceProjectionParams.alpha}
+						bind:value={P.main.projectionParams.alpha}
 						min={0}
 						max={5}
 						step={0.01}
@@ -533,7 +590,7 @@
 						{#each SURFACE_ALPHA_PRESETS as alpha}
 							<button
 								type="button"
-								class:preset-active={Math.abs(explorer.theme.surfaceProjectionParams.alpha - alpha) < 0.001}
+								class:preset-active={Math.abs(P.main.projectionParams.alpha - alpha) < 0.001}
 								onclick={() => setSurfaceProjectionAlpha(alpha)}
 							>
 								{alpha.toFixed(alpha < 0.1 ? 2 : 1)}
@@ -557,31 +614,31 @@
 {#if showAdjust}
 	<div class:separator={!showAll}>
 		<div class="panel-label" style="margin-top: 0">Place / sampling</div>
-		{#if !explorer.theme.interpolateOn}
+		{#if !P.interpolateOn}
 			<p class="note" style="margin-top: 0">Requires interpolation — the picked colors pass through unchanged.</p>
 		{:else}
 		<p class="note" style="margin-top: 0">Where the stops land on the interpolated curve. Runs after interpolation, before gamut mapping.</p>
-		<ToggleRow label="Enable placement" bind:checked={explorer.theme.placeOn} />
-		{#if explorer.theme.placeOn}
+		<ToggleRow label="Enable placement" bind:checked={P.placeOn} />
+		{#if P.placeOn}
 		<label class="field-row">
 			<span>Sampling</span>
-			<select bind:value={explorer.theme.place}>
+			<select bind:value={P.place}>
 				{#each PLACE_OPTIONS as opt}
 					<option value={opt.value}>{opt.label}</option>
 				{/each}
 			</select>
 		</label>
-		{#if explorer.theme.place === 'contrast'}
+		{#if P.place === 'contrast'}
 			<div class="segmented" style="--segments: 2">
-				<button type="button" class:active={explorer.theme.wcagBg === 'white'} onclick={() => (explorer.theme.wcagBg = 'white')}>
+				<button type="button" class:active={P.wcagBg === 'white'} onclick={() => (P.wcagBg = 'white')}>
 					vs White
 				</button>
-				<button type="button" class:active={explorer.theme.wcagBg === 'black'} onclick={() => (explorer.theme.wcagBg = 'black')}>
+				<button type="button" class:active={P.wcagBg === 'black'} onclick={() => (P.wcagBg = 'black')}>
 					vs Black
 				</button>
 			</div>
-			<SliderRow label="Min contrast" bind:value={explorer.theme.contrastMin} min={1} max={21} step={0.5} format={(value) => `${value.toFixed(1)}:1`} />
-			<SliderRow label="Max contrast" bind:value={explorer.theme.contrastMax} min={1} max={21} step={0.5} format={(value) => `${value.toFixed(1)}:1`} />
+			<SliderRow label="Min contrast" bind:value={P.contrastMin} min={1} max={21} step={0.5} format={(value) => `${value.toFixed(1)}:1`} />
+			<SliderRow label="Max contrast" bind:value={P.contrastMax} min={1} max={21} step={0.5} format={(value) => `${value.toFixed(1)}:1`} />
 		{/if}
 		{/if}
 		{/if}
@@ -595,9 +652,67 @@
 		<p class="note" style="margin-top: 0">
 			One generalized Spread: rows make related ramps; columns expand each stop into variants. Presets just set the parameters.
 		</p>
-		<ToggleRow label="Enable expand" bind:checked={explorer.theme.expandOn} />
-		{#if explorer.theme.expandOn}
+		<ToggleRow label="Enable expand" bind:checked={P.expandOn} />
+		{#if P.expandOn}
 			<ToggleRow label="Show palette in 3D" bind:checked={explorer.theme.showPalette} />
+			<label class="field-row">
+				<span>Extension constraint</span>
+				<select bind:value={P.extension.constraint}>
+					{#each SPLINE_CONSTRAINT_OPTIONS as opt}
+						<option value={opt.value}>{opt.label}</option>
+					{/each}
+				</select>
+			</label>
+			<p class="note stage-note">{extensionConstraintNote}</p>
+			{#if P.extension.constraint === 'surface-oklab-project'}
+				<label class="field-row">
+					<span>Projection method</span>
+					<select value={P.extension.projection} onchange={(event) => setExtensionProjection(event.currentTarget.value as SurfaceProjectionMethod)}>
+						{#each SURFACE_PROJECTION_OPTIONS as opt}
+							<option value={opt.value}>{opt.label}</option>
+						{/each}
+					</select>
+				</label>
+				{#if extensionUsesAlpha || extensionUsesFocus}
+					<details class="advanced">
+						<summary>Advanced extension projection</summary>
+						{#if extensionUsesFocus}
+							<SliderRow
+								label="Focus L"
+								bind:value={P.extension.projectionParams.focusL}
+								min={0}
+								max={1}
+								step={0.01}
+								format={(value) => value.toFixed(2)}
+							/>
+							<p class="note">Focus L is the neutral-axis lightness that generated palette variants project toward.</p>
+						{/if}
+						{#if extensionUsesAlpha}
+							<SliderRow
+								label="Adaptive alpha"
+								bind:value={P.extension.projectionParams.alpha}
+								min={0}
+								max={5}
+								step={0.01}
+								format={(value) => value.toFixed(2)}
+							/>
+							<div class="preset-row" aria-label="Extension adaptive alpha presets">
+								{#each SURFACE_ALPHA_PRESETS as alpha}
+									<button
+										type="button"
+										class:preset-active={Math.abs(P.extension.projectionParams.alpha - alpha) < 0.001}
+										onclick={() => setExtensionProjectionAlpha(alpha)}
+									>
+										{alpha.toFixed(alpha < 0.1 ? 2 : 1)}
+									</button>
+								{/each}
+								<span>{extensionAlphaStatus}</span>
+							</div>
+							<p class="note">Alpha controls how strongly generated palette variants compress toward the projection focus before terminal gamut mapping.</p>
+						{/if}
+					</details>
+				{/if}
+			{/if}
 			<div class="segmented" style="--segments: 3">
 				{#each EXPAND_PRESETS.slice(0, 3) as preset}
 					<button type="button" onclick={preset.apply}>{preset.label}</button>
@@ -610,8 +725,8 @@
 			</div>
 
 			{#each [
-				{ label: 'Related ramps (rows)', g: explorer.theme.expandRows },
-				{ label: 'Per-stop variants (columns)', g: explorer.theme.expandCols }
+				{ label: 'Related ramps (rows)', g: P.expandRows },
+				{ label: 'Per-stop variants (columns)', g: P.expandCols }
 			] as section}
 				<div class="panel-label" style="margin-top: 8px">{section.label}</div>
 				<SliderRow label="Count" bind:value={section.g.count} min={1} max={12} step={1} format={(value) => value.toFixed(0)} />
@@ -737,7 +852,7 @@
 		/>
 	{:else}
 		<div class="ramp" aria-label="Theme ramp preview">
-			{#each Array.from({ length: explorer.theme.steps }) as _}
+			{#each Array.from({ length: P.steps }) as _}
 				<div class="ramp-chip"></div>
 			{/each}
 		</div>
@@ -843,6 +958,19 @@
 	.list-del {
 		font-size: 1.077rem;
 		line-height: 1;
+	}
+	.list-meta {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) auto;
+		gap: 8px;
+		align-items: center;
+		margin: 4px 0 6px;
+	}
+	.compact-action {
+		width: auto;
+		white-space: nowrap;
+		padding: 5px 8px;
+		font-size: 0.846rem;
 	}
 	.cp-list {
 		display: flex;

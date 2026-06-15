@@ -6,14 +6,14 @@
 	import { WebGlRenderer } from '$lib/renderer/webgl-renderer';
 	import { rebuildMatrices, rebuildShell } from '$lib/renderer/uniforms';
 	import { chain, pick } from '$lib/engine/picking';
-	import { anchorWorld, buildRamp } from '$lib/engine/theme';
+	import { activePipeline, anchorWorld, buildRamp } from '$lib/engine/theme';
 	import { MAX_CAMERA_DIST, MAX_CAMERA_PITCH, MIN_CAMERA_DIST, panCamera, projectToScreen, resetCamera as resetCameraState } from '$lib/engine/camera';
 	import GestureReferencePopover from './GestureReferencePopover.svelte';
 	import ViewportToolbar from './ViewportToolbar.svelte';
 	import PaletteStrip from './PaletteStrip.svelte';
 	import TeachingNote from './TeachingNote.svelte';
 
-	import type { ExplorerState, SpaceMode, ThemeAnchor } from '$lib/engine/types';
+	import type { ExplorerState, RampList, SpaceMode, ThemeAnchor } from '$lib/engine/types';
 	import type { Camera } from '$lib/engine/camera';
 	import type { MorphState } from '$lib/renderer/webgl-renderer';
 
@@ -81,9 +81,10 @@
 	const matrices = $derived(rebuildMatrices(explorer.gamut));
 	const shellMatrices = $derived(explorer.hideAids ? null : rebuildShell(explorer.shell));
 	// All point edits/selection/picking target the active source list.
-	const themePoints = $derived(explorer.theme.lists[explorer.theme.activeList] ?? []) as ThemeAnchor[];
+	const themePoints = $derived(explorer.theme.lists[explorer.theme.activeList]?.anchors ?? []) as ThemeAnchor[];
+	const activeRampPipeline = $derived(activePipeline(explorer.theme));
 	function setThemePoints(next: ThemeAnchor[]) {
-		explorer.theme.lists[explorer.theme.activeList] = next;
+		explorer.theme.lists[explorer.theme.activeList].anchors = next;
 	}
 	// The exported palette: the 2-D grid when present (Expand, or multiple lists),
 	// else the 1-D active ramp as one row.
@@ -396,8 +397,8 @@
 		let bestDist = radius;
 		const activeList = explorer.theme.activeList;
 		const selected = explorer.theme.selectedPoint;
-		explorer.theme.lists.forEach((list: ThemeAnchor[], li: number) => {
-			list.forEach((cp: ThemeAnchor, pi: number) => {
+		explorer.theme.lists.forEach((list: RampList, li: number) => {
+			list.anchors.forEach((cp: ThemeAnchor, pi: number) => {
 				const world = anchorWorld(cp, explorer, matrices);
 				const screen = projectToScreen(world, viewCamera, rect.width, rect.height);
 				if (!screen) return;
@@ -791,7 +792,11 @@
 		explorer.cutBelow;
 		explorer.cylSlice;
 		explorer.cylRad;
-		const clipAffectsRamp = explorer.theme.interpolateOn && explorer.theme.splineConstraint !== 'free';
+		const clipAffectsRamp = explorer.theme.lists.some(
+			(list: RampList) =>
+				list.pipeline.interpolateOn &&
+				(list.pipeline.main.constraint !== 'free' || (list.pipeline.expandOn && list.pipeline.extension.constraint !== 'free'))
+		);
 		explorer.planeOutline;
 		explorer.cylinderOutline;
 		untrack(() => {
@@ -807,19 +812,7 @@
 	});
 
 	$effect(() => {
-		explorer.theme.steps;
-		explorer.theme.mode;
-		explorer.theme.arcLong;
-		explorer.theme.place;
-		explorer.theme.wcagBg;
-		explorer.theme.contrastMin;
-		explorer.theme.contrastMax;
-		explorer.theme.interpolateOn;
-		explorer.theme.placeOn;
-		explorer.theme.expandOn;
-		// Track every nested Spread field (count + per-axis delta/dir).
-		JSON.stringify(explorer.theme.expandRows);
-		JSON.stringify(explorer.theme.expandCols);
+		JSON.stringify(explorer.theme.lists.map((list: RampList) => list.pipeline));
 		untrack(() => {
 			scheduleViewportUpdate({ ramp: true });
 		});
@@ -864,18 +857,23 @@
 	});
 
 	$effect(() => {
-		explorer.theme.splineConstraint;
-		explorer.theme.surfaceProjection;
-		explorer.theme.surfaceProjectionParams.alpha;
-		explorer.theme.surfaceProjectionParams.focusL;
-		explorer.theme.surfaceProjectionParams.neutral;
-		explorer.theme.splineSpace;
+		activeRampPipeline.main.constraint;
+		activeRampPipeline.main.projection;
+		activeRampPipeline.main.projectionParams.alpha;
+		activeRampPipeline.main.projectionParams.focusL;
+		activeRampPipeline.main.projectionParams.neutral;
+		activeRampPipeline.splineSpace;
+		activeRampPipeline.extension.constraint;
+		activeRampPipeline.extension.projection;
+		activeRampPipeline.extension.projectionParams.alpha;
+		activeRampPipeline.extension.projectionParams.focusL;
+		activeRampPipeline.extension.projectionParams.neutral;
 		explorer.theme.gamutMap;
 		explorer.theme.gamutMapParams.alpha;
 		explorer.theme.gamutMapParams.focusL;
 		explorer.theme.activeList;
 		// Track list count and every list's length (add/remove in any list rebuilds).
-		JSON.stringify(explorer.theme.lists.map((list: ThemeAnchor[]) => list.length));
+		JSON.stringify(explorer.theme.lists.map((list: RampList) => list.anchors.length));
 		untrack(() => {
 			buildRamp(explorer, matrices);
 			draw();

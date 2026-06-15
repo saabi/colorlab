@@ -1,12 +1,76 @@
 import { createCamera } from './camera';
 import { MOBILE_STARTUP_TESS } from './mobile';
+import { CURRENT_STATE_SCHEMA_VERSION } from './types';
 import { DEFAULT_SURFACE_PROJECTION_PARAMS } from '$lib/color/boundary-project';
 import { DEFAULT_GAMUT_MAP_PARAMS } from '$lib/color/gamut-map';
 
-import type { AppState, ExplorerState } from './types';
+import type { AppState, ConstraintConfig, ExplorerState, ListPipeline, RampList, ThemeAnchor } from './types';
+import type { SplineConstraint } from './types';
+import type { SurfaceProjectionMethod } from '$lib/color/boundary-project';
 import type { Camera } from './camera';
 
 export const EXAMPLE_ID_PREFIX = 'example:';
+
+function defaultConstraint(): ConstraintConfig {
+	return {
+		constraint: 'free',
+		projection: 'adaptive-0.5',
+		projectionParams: { ...DEFAULT_SURFACE_PROJECTION_PARAMS }
+	};
+}
+
+/** Factory default per-list pipeline. */
+export function defaultPipeline(): ListPipeline {
+	return {
+		mode: 'spline',
+		splineSpace: 'oklab',
+		interpolateOn: true,
+		placeOn: true,
+		place: 'even',
+		arcLong: false,
+		contrastMin: 1.5,
+		contrastMax: 12,
+		wcagBg: 'white',
+		steps: 5,
+		main: defaultConstraint(),
+		expandOn: false,
+		// Prefilled but inert (all axes 'off'); presets and the Expand panel set dirs.
+		expandRows: {
+			count: 2,
+			hue: { delta: 180, dir: 'off' },
+			chroma: { delta: 0, dir: 'off' },
+			light: { delta: 0, dir: 'off' }
+		},
+		expandCols: {
+			count: 5,
+			hue: { delta: 40, dir: 'off' },
+			chroma: { delta: 0.1, dir: 'off' },
+			light: { delta: -0.32, dir: 'off' }
+		},
+		extension: defaultConstraint()
+	};
+}
+
+/** Build a source ramp from anchors + pipeline overrides. `constraint`/`projection`
+ *  are convenience shortcuts merged into `main`. */
+function rampList(
+	anchors: ThemeAnchor[],
+	overrides: Partial<ListPipeline> & {
+		constraint?: SplineConstraint;
+		projection?: SurfaceProjectionMethod;
+	} = {}
+): RampList {
+	const { constraint, projection, ...rest } = overrides;
+	const pipeline = { ...defaultPipeline(), ...rest };
+	if (constraint) pipeline.main = { ...pipeline.main, constraint };
+	if (projection)
+		pipeline.main = {
+			...pipeline.main,
+			projection,
+			projectionParams: { ...pipeline.main.projectionParams, method: projection }
+		};
+	return { anchors, pipeline };
+}
 
 type PartialTheme = Partial<Omit<ExplorerState['theme'], 'stops'>>;
 type ExamplePartial = {
@@ -50,13 +114,9 @@ function createExplorerDefaults(): ExplorerState {
 		cvd: 'none',
 		cvdSev: 1,
 		theme: {
-			lists: [[]],
+			lists: [rampList([])],
 			activeList: 0,
 			selectedPoint: null,
-			splineConstraint: 'free',
-			surfaceProjection: 'adaptive-0.5',
-			surfaceProjectionParams: { ...DEFAULT_SURFACE_PROJECTION_PARAMS },
-			splineSpace: 'oklab',
 			gamutMap: 'none',
 			gamutMapParams: { ...DEFAULT_GAMUT_MAP_PARAMS },
 			curves: [],
@@ -64,36 +124,13 @@ function createExplorerDefaults(): ExplorerState {
 			rows: [],
 			splineCurve: [],
 			rawStops: [],
-			steps: 5,
 			arm: null,
-			interpolateOn: true,
-			placeOn: true,
-			mode: 'spline',
 			stops: [],
-			arcLong: false,
-			place: 'even',
-			contrastMin: 1.5,
-			contrastMax: 12,
-			expandOn: false,
-			// Prefilled but inert (all axes 'off'); presets and the Expand panel set dirs.
-			expandRows: {
-				count: 2,
-				hue: { delta: 180, dir: 'off' },
-				chroma: { delta: 0, dir: 'off' },
-				light: { delta: 0, dir: 'off' }
-			},
-			expandCols: {
-				count: 5,
-				hue: { delta: 40, dir: 'off' },
-				chroma: { delta: 0.1, dir: 'off' },
-				light: { delta: -0.32, dir: 'off' }
-			},
 			showPoints: true,
 			showCurve: true,
 			showStops: true,
 			showPalette: true,
-			grid: [],
-			wcagBg: 'white'
+			grid: []
 		},
 		hover: null
 	};
@@ -115,7 +152,7 @@ export function cloneAppState(state: AppState): AppState {
 
 export function createAppState(options: { mobile?: boolean } = {}): AppState {
 	const state: AppState = {
-		schemaVersion: 12,
+		schemaVersion: CURRENT_STATE_SCHEMA_VERSION,
 		explorer: createExplorerDefaults(),
 		camera: createCamera()
 	};
@@ -177,18 +214,15 @@ export const EXAMPLE_STATES = [
 				guideNoteDismissed: false,
 				theme: {
 					lists: [
-						[
-							{ srgbLin: [0.020, 0.010, 0.006] as [number, number, number] },
-							{ srgbLin: [0.319, 0.214, 0.100] as [number, number, number] },
-							{ srgbLin: [0.912, 0.869, 0.748] as [number, number, number] }
-						]
-					],
-					splineConstraint: 'free',
-					splineSpace: 'oklch',
-					steps: 11,
-					mode: 'spline',
-					arcLong: false,
-					wcagBg: 'white'
+						rampList(
+							[
+								{ srgbLin: [0.020, 0.010, 0.006] as [number, number, number] },
+								{ srgbLin: [0.319, 0.214, 0.100] as [number, number, number] },
+								{ srgbLin: [0.912, 0.869, 0.748] as [number, number, number] }
+							],
+							{ splineSpace: 'oklch', steps: 11, mode: 'spline', arcLong: false, wcagBg: 'white' }
+						)
+					]
 				}
 			},
 			camera: {
@@ -237,22 +271,24 @@ export const EXAMPLE_STATES = [
 				guideNoteDismissed: false,
 				theme: {
 					lists: [
-						[
-							{ srgbLin: [0, 0, 1] as [number, number, number] },
-							{ srgbLin: [0.25, 0, 1] as [number, number, number] },
-							{ srgbLin: [1, 0, 0.5] as [number, number, number] },
-							{ srgbLin: [1, 0.25, 0] as [number, number, number] },
-							{ srgbLin: [1, 1, 0] as [number, number, number] }
-						]
-					],
-					splineConstraint: 'surface-radial',
-					surfaceProjection: 'adaptive-0.5',
-					surfaceProjectionParams: { ...DEFAULT_SURFACE_PROJECTION_PARAMS },
-					splineSpace: 'oklch',
-					steps: 11,
-					mode: 'spline',
-					arcLong: false,
-					wcagBg: 'white'
+						rampList(
+							[
+								{ srgbLin: [0, 0, 1] as [number, number, number] },
+								{ srgbLin: [0.25, 0, 1] as [number, number, number] },
+								{ srgbLin: [1, 0, 0.5] as [number, number, number] },
+								{ srgbLin: [1, 0.25, 0] as [number, number, number] },
+								{ srgbLin: [1, 1, 0] as [number, number, number] }
+							],
+							{
+								constraint: 'surface-radial',
+								splineSpace: 'oklch',
+								steps: 11,
+								mode: 'spline',
+								arcLong: false,
+								wcagBg: 'white'
+							}
+						)
+					]
 				}
 			},
 			camera: {
@@ -301,19 +337,16 @@ export const EXAMPLE_STATES = [
 				guideNoteDismissed: false,
 				theme: {
 					lists: [
-						[
-							{ srgbLin: [0.010, 0.013, 0.046] as [number, number, number] },
-							{ srgbLin: [-0.156, 0.721, 0.051] as [number, number, number] },
-							{ srgbLin: [0.912, 0.869, 0.748] as [number, number, number] }
-						]
+						rampList(
+							[
+								{ srgbLin: [0.010, 0.013, 0.046] as [number, number, number] },
+								{ srgbLin: [-0.156, 0.721, 0.051] as [number, number, number] },
+								{ srgbLin: [0.912, 0.869, 0.748] as [number, number, number] }
+							],
+							{ splineSpace: 'oklch', steps: 11, mode: 'linear', arcLong: false, wcagBg: 'white' }
+						)
 					],
-					splineConstraint: 'free',
-					splineSpace: 'oklch',
-					gamutMap: 'none',
-					steps: 11,
-					mode: 'linear',
-					arcLong: false,
-					wcagBg: 'white'
+					gamutMap: 'none'
 				}
 			},
 			camera: { dist: 3.2 }
@@ -356,24 +389,27 @@ export const EXAMPLE_STATES = [
 				guideNoteDismissed: false,
 				theme: {
 					lists: [
-						[
-							{ srgbLin: [0.010, 0.030, 0.264] as [number, number, number] },
-							{ srgbLin: [0.051, 0.462, 0.912] as [number, number, number] }
-						]
-					],
-					splineConstraint: 'free',
-					splineSpace: 'oklch',
-					steps: 9,
-					mode: 'spline',
-					arcLong: false,
-					expandOn: true,
-					expandRows: {
-						count: 3,
-						hue: { delta: 0, dir: 'off' },
-						chroma: { delta: 0, dir: 'off' },
-						light: { delta: 0.20, dir: 'sym' }
-					},
-					wcagBg: 'white'
+						rampList(
+							[
+								{ srgbLin: [0.010, 0.030, 0.264] as [number, number, number] },
+								{ srgbLin: [0.051, 0.462, 0.912] as [number, number, number] }
+							],
+							{
+								splineSpace: 'oklch',
+								steps: 9,
+								mode: 'spline',
+								arcLong: false,
+								wcagBg: 'white',
+								expandOn: true,
+								expandRows: {
+									count: 3,
+									hue: { delta: 0, dir: 'off' },
+									chroma: { delta: 0, dir: 'off' },
+									light: { delta: 0.20, dir: 'sym' }
+								}
+							}
+						)
+					]
 				}
 			},
 			camera: {

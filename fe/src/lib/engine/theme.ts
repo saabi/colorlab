@@ -7,7 +7,9 @@ import { oklabMaxChromaLine, oklabProjectionLine, oklabProjectionLinePoint, type
 import { TRC } from '$lib/color/transfer';
 import { solidField } from './picking';
 
-import type { AxisSpreadConfig, ExplorerState, SplineSample, SpreadAxis, ThemeAnchor, ThemeStop } from './types';
+import { defaultPipeline } from './state.svelte';
+
+import type { AxisSpreadConfig, ConstraintConfig, ExplorerState, ListPipeline, SplineSample, SpreadAxis, ThemeAnchor, ThemeStop } from './types';
 import type { DerivedMatrices } from '$lib/renderer/uniforms';
 
 const clamp01 = (v: number) => Math.min(Math.max(v, 0), 1);
@@ -70,7 +72,12 @@ function stopFromWorld(world: Vec3, state: ExplorerState, matrices: DerivedMatri
 /** The source list edits/selection/picking target. activeList is clamped on load,
  *  but list removal can transiently leave it out of range — guard anyway. */
 export function activeAnchors(theme: ExplorerState['theme']): ThemeAnchor[] {
-	return theme.lists[theme.activeList] ?? theme.lists[0] ?? [];
+	return (theme.lists[theme.activeList] ?? theme.lists[0])?.anchors ?? [];
+}
+
+/** The active list's pipeline — the settings the single-ramp UI edits. */
+export function activePipeline(theme: ExplorerState['theme']): ListPipeline {
+	return (theme.lists[theme.activeList] ?? theme.lists[0]).pipeline;
 }
 
 // Pipeline v2: explicit stage chain, run per source list (each list is one ramp).
@@ -80,21 +87,22 @@ export function activeAnchors(theme: ExplorerState['theme']): ThemeAnchor[] {
 // UI (gamut panel, export fallback, inspector) is list-count agnostic.
 export function buildRamp(state: ExplorerState, matrices: DerivedMatrices) {
 	const T = state.theme;
-	if (!T.lists.length) T.lists = [[]];
+	if (!T.lists.length) T.lists = [{ anchors: [], pipeline: defaultPipeline() }];
 	T.activeList = Math.min(Math.max(T.activeList, 0), T.lists.length - 1);
-	// Interpolate: anchors -> hi-res curve per list (off -> no curves; anchors pass through).
-	T.curves = T.interpolateOn
-		? T.lists.map((pts) => interpolateList(pts, state, matrices))
-		: T.lists.map(() => []);
+	// Interpolate: anchors -> hi-res curve per list, using that list's pipeline
+	// (off -> no curves; anchors pass through).
+	T.curves = T.lists.map((l) =>
+		l.pipeline.interpolateOn ? interpolateList(l.anchors, l.pipeline, state, matrices) : []
+	);
 	// Place: curve -> stops. With either stage off, the stops are the exact picked
 	// source colors (the curve, when present, remains a visual aid).
-	T.rawRows = T.lists.map((pts, i) =>
-		T.interpolateOn && T.placeOn
-			? placeList(T.curves[i], state, matrices)
-			: pts.map((p) => stopFromSrgbLin(p.srgbLin, state, matrices))
+	T.rawRows = T.lists.map((l, i) =>
+		l.pipeline.interpolateOn && l.pipeline.placeOn
+			? placeList(T.curves[i], l.pipeline, state, matrices)
+			: l.anchors.map((p) => stopFromSrgbLin(p.srgbLin, state, matrices))
 	);
-	finalizeRamp(state, matrices); // gamut-map rows + curves; sets active-list aliases
-	buildExpand(state, matrices); // rows -> theme.grid
+	finalizeRamp(state, matrices); // shared gamut-map of rows + curves; sets active-list aliases
+	buildExpand(state, matrices); // rows -> theme.grid (per-list expand)
 }
 
 // Expand stage (generalized Spread): one mechanism in Oklch. The row generator
@@ -122,58 +130,74 @@ function spreadColor(srgbLin: Vec3, dh: number, dC: number, dL: number): Vec3 {
 	return oklab2lsrgb([L2, C2 * Math.cos(h), C2 * Math.sin(h)]);
 }
 
-function buildExpand(state: ExplorerState, matrices: DerivedMatrices) {
-	const T = state.theme;
-	// Base rows: every non-empty list's final ramp. With Expand off (or inert), the
-	// grid is the base itself whenever output is genuinely 2-D (more than one ramp),
-	// so display and export stay 2-D-consistent for multi-list documents.
-	const base = T.rows.filter((row) => row.length);
-	const rowsId = spreadIdentity(T.expandRows);
-	const colsId = spreadIdentity(T.expandCols);
-	if (!T.expandOn || !base.length || (rowsId && colsId)) {
-		T.grid = base.length > 1 ? base : [];
-		return;
-	}
-	const mapCell = (lin: Vec3) => (T.gamutMap !== 'none' ? mapToGamut(lin, T.gamutMap, T.gamutMapParams) : lin);
+// Expand one list's final ramp into 2-D rows using that list's expand settings.
+// The terminal gamut-map (shared, global) is applied per generated cell.
+function expandList(
+	row: ThemeStop[],
+	pipeline: ListPipeline,
+	gamutMap: ExplorerState['theme']['gamutMap'],
+	gamutMapParams: ExplorerState['theme']['gamutMapParams'],
+	state: ExplorerState,
+	matrices: DerivedMatrices
+): ThemeStop[][] {
+	if (!row.length) return [];
+	const rowsId = spreadIdentity(pipeline.expandRows);
+	const colsId = spreadIdentity(pipeline.expandCols);
+	if (!pipeline.expandOn || (rowsId && colsId)) return [row];
+	const mapCell = (lin: Vec3) => (gamutMap !== 'none' ? mapToGamut(lin, gamutMap, gamutMapParams) : lin);
+	const constrainGenerated = (srgbLin: Vec3) => {
+		if (pipeline.extension.constraint === 'free') return srgbLin;
+		const world = jsToWorld(m3.mulV(matrices.toSrgbLin.fromSrgb, srgbLin), state, matrices);
+		const constrained = constrainCurveSample(world, srgbLin, pipeline.extension, state, matrices);
+		return stopFromWorld(constrained, state, matrices).srgbLin;
+	};
 	const cell = (srgbLin: Vec3, dh: number, dC: number, dL: number) =>
-		stopFromSrgbLin(mapCell(spreadColor(srgbLin, dh, dC, dL)), state, matrices);
+		stopFromSrgbLin(mapCell(constrainGenerated(spreadColor(srgbLin, dh, dC, dL))), state, matrices);
 
-	// 1. Row generator: R related ramps per base ramp (L·R x S).
+	// 1. Row generator: R related ramps (R x S).
+	const er = pipeline.expandRows;
 	const ramps: ThemeStop[][] = rowsId
-		? base
-		: base.flatMap((stops) =>
-				Array.from({ length: T.expandRows.count }, (_, r) => {
-					const t = T.expandRows.count === 1 ? 0 : r / (T.expandRows.count - 1);
-					const dh = spreadOffset(T.expandRows.hue, t);
-					const dC = spreadOffset(T.expandRows.chroma, t);
-					const dL = spreadOffset(T.expandRows.light, t);
-					return stops.map((s) => cell(s.srgbLin, dh, dC, dL));
-				})
-			);
+		? [row]
+		: Array.from({ length: er.count }, (_, r) => {
+				const t = er.count === 1 ? 0 : r / (er.count - 1);
+				const dh = spreadOffset(er.hue, t);
+				const dC = spreadOffset(er.chroma, t);
+				const dL = spreadOffset(er.light, t);
+				return row.map((s) => cell(s.srgbLin, dh, dC, dL));
+			});
 
-	// 2. Column generator: each stop -> K variants; grid flattens to (R*S) x K.
-	if (colsId) {
-		T.grid = ramps;
-		return;
-	}
-	const K = T.expandCols.count;
-	T.grid = ramps.flatMap((ramp) =>
+	// 2. Column generator: each stop -> K variants; flattens to (R*S) x K.
+	if (colsId) return ramps;
+	const ec = pipeline.expandCols;
+	const K = ec.count;
+	return ramps.flatMap((ramp) =>
 		ramp.map((s) => {
-			const row: ThemeStop[] = [];
+			const out: ThemeStop[] = [];
 			for (let j = 0; j < K; j += 1) {
 				const t = K === 1 ? 0.5 : j / (K - 1);
-				row.push(
-					cell(
-						s.srgbLin,
-						spreadOffset(T.expandCols.hue, t),
-						spreadOffset(T.expandCols.chroma, t),
-						spreadOffset(T.expandCols.light, t)
-					)
-				);
+				out.push(cell(s.srgbLin, spreadOffset(ec.hue, t), spreadOffset(ec.chroma, t), spreadOffset(ec.light, t)));
 			}
-			return row;
+			return out;
 		})
 	);
+}
+
+// Per-list expand: each list expands with its own settings; results concatenate.
+// A single 1-D ramp with no expansion yields no grid (the palette strip shows it).
+function buildExpand(state: ExplorerState, matrices: DerivedMatrices) {
+	const T = state.theme;
+	const out: ThemeStop[][] = [];
+	let anyExpanded = false;
+	T.lists.forEach((l, i) => {
+		const row = T.rows[i];
+		if (!row?.length) return;
+		const p = l.pipeline;
+		if (p.expandOn && !(spreadIdentity(p.expandRows) && spreadIdentity(p.expandCols))) anyExpanded = true;
+		out.push(...expandList(row, p, T.gamutMap, T.gamutMapParams, state, matrices));
+	});
+	// Grid stays empty only for a single, un-expanded 1-D ramp (the palette strip
+	// shows it). Any genuine expansion, or multiple ramps, produces a 2-D grid.
+	T.grid = anyExpanded || out.length > 1 ? out : [];
 }
 
 const HIRES = 200; // spline sampling resolution for arc length + visualization
@@ -287,27 +311,26 @@ function snapOklabLineToClippedSurface(
 	return best ? bisect(best[0], best[1]) : fallback;
 }
 
-function constrainCurveSample(world: Vec3, srgbLin: Vec3, state: ExplorerState, matrices: DerivedMatrices): Vec3 {
-	const constraint = state.theme.splineConstraint;
+function constrainCurveSample(world: Vec3, srgbLin: Vec3, main: ConstraintConfig, state: ExplorerState, matrices: DerivedMatrices): Vec3 {
+	const constraint = main.constraint;
 	if (constraint === 'free') return world;
 	if (constraint === 'surface-radial') return snapToRadialWorldSurface(world, state, matrices);
 	const line =
 		constraint === 'surface-oklab-chroma'
 			? oklabMaxChromaLine(srgbLin)
-			: oklabProjectionLine(srgbLin, { ...state.theme.surfaceProjectionParams, method: state.theme.surfaceProjection });
+			: oklabProjectionLine(srgbLin, { ...main.projectionParams, method: main.projection });
 	return snapOklabLineToClippedSurface(line, state, matrices, world);
 }
 
 // Unified interpolator for 'linear' and 'spline' path types over any interpolation
 // space (incl. stateful "world"). Pure per-list: source points in, hi-res curve out.
-function interpolateList(cps: ThemeAnchor[], state: ExplorerState, matrices: DerivedMatrices): SplineSample[] {
-	const T = state.theme;
+function interpolateList(cps: ThemeAnchor[], pipeline: ListPipeline, state: ExplorerState, matrices: DerivedMatrices): SplineSample[] {
 	if (!cps.length) return [];
 
 	// Space accessors. "world" interpolates directly in the active 3D geometry;
 	// every other space round-trips through the interp registry.
-	const isWorld = T.splineSpace === 'world';
-	const space = isWorld ? null : INTERP_SPACES[T.splineSpace as InterpSpaceKey];
+	const isWorld = pipeline.splineSpace === 'world';
+	const space = isWorld ? null : INTERP_SPACES[pipeline.splineSpace as InterpSpaceKey];
 	const cyclic = isWorld ? null : space!.cyclic;
 	const toCoord = (srgbLin: Vec3): Vec3 =>
 		isWorld ? jsToWorld(m3.mulV(matrices.toSrgbLin.fromSrgb, srgbLin), state, matrices) : space!.fromSrgbLin(srgbLin);
@@ -318,7 +341,7 @@ function interpolateList(cps: ThemeAnchor[], state: ExplorerState, matrices: Der
 	const worldAt = (coord: Vec3): Vec3 => {
 		const srgbLin = srgbAt(coord);
 		const world = isWorld ? coord : jsToWorld(m3.mulV(matrices.toSrgbLin.fromSrgb, srgbLin), state, matrices);
-		return constrainCurveSample(world, srgbLin, state, matrices);
+		return constrainCurveSample(world, srgbLin, pipeline.main, state, matrices);
 	};
 
 	// A single source point is a degenerate "curve" of one sample — Place reduces
@@ -330,14 +353,14 @@ function interpolateList(cps: ThemeAnchor[], state: ExplorerState, matrices: Der
 
 	// 1. Source points -> interpolation coordinates (hue unwrapped for cyclic spaces).
 	const coords = cps.map((cp) => toCoord(cp.srgbLin));
-	if (cyclic !== null) unwrapAngles(coords, cyclic, T.arcLong);
+	if (cyclic !== null) unwrapAngles(coords, cyclic, pipeline.arcLong);
 	const n = coords.length;
 
 	// 2. Hi-res curve in coord space. Linear = piecewise straight through the points;
 	//    spline = centripetal Catmull-Rom with reflected virtual endpoints (a straight
 	//    line at n = 2, so segment/arc are exactly the linear case).
 	const curve: SplineSample[] = [];
-	if (T.mode === 'spline') {
+	if (pipeline.mode === 'spline') {
 		const p0: Vec3 = [2 * coords[0][0] - coords[1][0], 2 * coords[0][1] - coords[1][1], 2 * coords[0][2] - coords[1][2]];
 		const pN: Vec3 = [
 			2 * coords[n - 1][0] - coords[n - 2][0],
@@ -377,9 +400,8 @@ function interpolateList(cps: ThemeAnchor[], state: ExplorerState, matrices: Der
 //   uniform  -> equidistant in curve parameter.
 //   tones    -> equidistant in Oklab lightness L (Material/Tailwind-style tonal ramp).
 //   contrast -> equidistant in WCAG contrast vs the chosen background (Leonardo-style).
-function placeList(curve: SplineSample[], state: ExplorerState, matrices: DerivedMatrices): ThemeStop[] {
-	const T = state.theme;
-	const steps = T.steps;
+function placeList(curve: SplineSample[], pipeline: ListPipeline, state: ExplorerState, matrices: DerivedMatrices): ThemeStop[] {
+	const steps = pipeline.steps;
 	const stops: ThemeStop[] = [];
 	// Degenerate single-sample curve (one source point): one seed stop.
 	if (curve.length === 1) return [stopFromWorld(curve[0].world, state, matrices)];
@@ -388,11 +410,11 @@ function placeList(curve: SplineSample[], state: ExplorerState, matrices: Derive
 	// Contrast ladder: place stops at explicit WCAG target ratios spanning
 	// [contrastMin, contrastMax] vs the chosen background (Leonardo-style). Each
 	// target snaps to the nearest curve sample (HIRES = fine granularity).
-	if (T.place === 'contrast') {
-		const bg: Vec3 = T.wcagBg === 'black' ? [0, 0, 0] : [1, 1, 1];
+	if (pipeline.place === 'contrast') {
+		const bg: Vec3 = pipeline.wcagBg === 'black' ? [0, 0, 0] : [1, 1, 1];
 		const cs = curve.map((s) => wcag(s.srgbLin, bg));
-		const lo = Math.min(T.contrastMin, T.contrastMax);
-		const hi = Math.max(T.contrastMin, T.contrastMax);
+		const lo = Math.min(pipeline.contrastMin, pipeline.contrastMax);
+		const hi = Math.max(pipeline.contrastMin, pipeline.contrastMax);
 		for (let s = 0; s < steps; s += 1) {
 			const target = steps === 1 ? lo : lo + (hi - lo) * (s / (steps - 1));
 			let best = 0;
@@ -414,9 +436,9 @@ function placeList(curve: SplineSample[], state: ExplorerState, matrices: Derive
 	// Build a non-decreasing axis to invert. 'even' uses cumulative arc length; the
 	// others use the metric value itself (ascending normalized so inversion works).
 	let axis: number[];
-	if (T.place === 'uniform') {
+	if (pipeline.place === 'uniform') {
 		axis = curve.map((_, i) => i);
-	} else if (T.place === 'tones') {
+	} else if (pipeline.place === 'tones') {
 		axis = oks.map((o) => o[0]);
 	} else {
 		axis = [0];
@@ -477,14 +499,14 @@ export function finalizeRamp(state: ExplorerState, matrices: DerivedMatrices) {
 		T.rows = T.rawRows;
 	} else {
 		T.rows = T.rawRows.map((row) => row.map((s) => stopFromSrgbLin(mapToGamut(s.srgbLin, method, T.gamutMapParams), state, matrices)));
-		if (T.mode === 'spline') {
-			T.curves = T.curves.map((curve) =>
-				curve.map((s) => {
-					const mapped = mapToGamut(s.srgbLin, method, T.gamutMapParams);
-					return { world: jsToWorld(m3.mulV(matrices.toSrgbLin.fromSrgb, mapped), state, matrices), srgbLin: mapped };
-				})
-			);
-		}
+		T.curves = T.curves.map((curve, i) =>
+			T.lists[i]?.pipeline.mode === 'spline'
+				? curve.map((s) => {
+						const mapped = mapToGamut(s.srgbLin, method, T.gamutMapParams);
+						return { world: jsToWorld(m3.mulV(matrices.toSrgbLin.fromSrgb, mapped), state, matrices), srgbLin: mapped };
+					})
+				: curve
+		);
 	}
 	T.splineCurve = T.curves[T.activeList] ?? [];
 	T.rawStops = T.rawRows[T.activeList] ?? [];

@@ -1,14 +1,17 @@
 import { type Camera } from '$lib/engine/camera';
-import { createAppState } from '$lib/engine/state.svelte';
+import { createAppState, defaultPipeline } from '$lib/engine/state.svelte';
 
 import type {
 	AxisSpreadConfig,
 	ChromaticityOverlayKey,
+	ConstraintConfig,
 	CvdMode,
 	GamutKey,
+	ListPipeline,
 	PersistedExplorer,
 	PersistedTheme,
 	PlaneMode,
+	RampList,
 	ShellKey,
 	SpaceMode,
 	SplineConstraint,
@@ -23,6 +26,7 @@ import { MAX_RAMP_STOPS } from '$lib/engine/types';
 import { INTERP_SPACE_KEYS } from '$lib/color/interp';
 import { DEFAULT_GAMUT_MAP_PARAMS, GAMUT_CLIP_METHODS, GAMUT_MAP_METHODS, type GamutMapMethod, type GamutMapParams } from '$lib/color/gamut-map';
 import type { SurfaceProjectionMethod, SurfaceProjectionNeutralFallback, SurfaceProjectionParams } from '$lib/color/boundary-project';
+import { toSnapshot } from './snapshot';
 import { CURRENT_SNAPSHOT_VERSION, type ParameterSnapshot } from './types';
 
 const SPACE_MODES: readonly SpaceMode[] = [0, 1, 2, 3, 5];
@@ -35,7 +39,7 @@ const CVD_MODES: readonly CvdMode[] = ['none', 'protan', 'deutan', 'tritan'];
 const THEME_MODES: readonly ThemeMode[] = ['linear', 'spline'];
 const PLACE_POLICIES: readonly PlacePolicy[] = ['even', 'uniform', 'tones', 'contrast'];
 const SPREAD_DIRS: readonly SpreadDir[] = ['off', 'ramp', 'sym', 'edges'];
-const WCAG_BG: readonly PersistedTheme['wcagBg'][] = ['white', 'black'];
+const WCAG_BG: readonly ('white' | 'black')[] = ['white', 'black'];
 const SPLINE_CONSTRAINTS: readonly SplineConstraint[] = [
 	'free',
 	'surface-radial',
@@ -135,21 +139,97 @@ function coerceSpread(raw: unknown, defaults: AxisSpreadConfig, label: string): 
 	};
 }
 
-function coerceLists(value: unknown, label: string): ThemeAnchor[][] {
-	const lists: ThemeAnchor[][] = [];
+function coerceConstraint(raw: unknown, defaults: ConstraintConfig, label: string): ConstraintConfig {
+	const c = isRecord(raw) ? raw : {};
+	const projection = enumOf(c.projection, SURFACE_PROJECTIONS, defaults.projection, `${label}.projection`);
+	return {
+		constraint: enumOf(c.constraint, SPLINE_CONSTRAINTS, defaults.constraint, `${label}.constraint`),
+		projection,
+		projectionParams: coerceSurfaceProjectionParams(c.projectionParams, defaults.projectionParams, projection)
+	};
+}
+
+function coercePipeline(raw: unknown, defaults: ListPipeline, label: string): ListPipeline {
+	const p = isRecord(raw) ? raw : {};
+	return {
+		mode: enumOf(p.mode, THEME_MODES, defaults.mode, `${label}.mode`),
+		splineSpace: enumOf(p.splineSpace, INTERP_SPACES, defaults.splineSpace, `${label}.splineSpace`),
+		interpolateOn: typeof p.interpolateOn === 'boolean' ? p.interpolateOn : defaults.interpolateOn,
+		placeOn: typeof p.placeOn === 'boolean' ? p.placeOn : defaults.placeOn,
+		place: enumOf(p.place, PLACE_POLICIES, defaults.place, `${label}.place`),
+		arcLong: typeof p.arcLong === 'boolean' ? p.arcLong : defaults.arcLong,
+		contrastMin: Math.min(21, Math.max(1, finiteNumber(p.contrastMin, defaults.contrastMin, `${label}.contrastMin`))),
+		contrastMax: Math.min(21, Math.max(1, finiteNumber(p.contrastMax, defaults.contrastMax, `${label}.contrastMax`))),
+		wcagBg: enumOf(p.wcagBg, WCAG_BG, defaults.wcagBg, `${label}.wcagBg`),
+		steps: Math.min(MAX_RAMP_STOPS, Math.max(1, Math.round(finiteNumber(p.steps, defaults.steps, `${label}.steps`)))),
+		main: coerceConstraint(p.main, defaults.main, `${label}.main`),
+		expandOn: typeof p.expandOn === 'boolean' ? p.expandOn : defaults.expandOn,
+		expandRows: coerceSpread(p.expandRows, defaults.expandRows, `${label}.expandRows`),
+		expandCols: coerceSpread(p.expandCols, defaults.expandCols, `${label}.expandCols`),
+		extension: coerceConstraint(p.extension, defaults.extension, `${label}.extension`)
+	};
+}
+
+function legacyPipelineFromTheme(theme: Record<string, unknown>, defaults: ListPipeline): ListPipeline {
+	const projection = enumOf(
+		theme.surfaceProjection,
+		SURFACE_PROJECTIONS,
+		defaults.main.projection,
+		'theme.surfaceProjection'
+	);
+	const main = {
+		constraint: theme.splineConstraint,
+		projection,
+		projectionParams: isRecord(theme.surfaceProjectionParams)
+			? { ...theme.surfaceProjectionParams, method: projection }
+			: undefined
+	};
+	return coercePipeline(
+		{
+			mode: theme.mode,
+			splineSpace: theme.splineSpace,
+			interpolateOn: theme.interpolateOn,
+			placeOn: theme.placeOn,
+			place: theme.place,
+			arcLong: theme.arcLong,
+			contrastMin: theme.contrastMin,
+			contrastMax: theme.contrastMax,
+			wcagBg: theme.wcagBg,
+			steps: theme.steps,
+			main,
+			expandOn: theme.expandOn,
+			expandRows: theme.expandRows,
+			expandCols: theme.expandCols,
+			extension: { ...main, constraint: 'free' }
+		},
+		defaults,
+		'theme.pipeline'
+	);
+}
+
+function coerceLists(value: unknown, defaults: ListPipeline, label: string): RampList[] {
+	const lists: RampList[] = [];
 	if (Array.isArray(value)) {
 		value.forEach((entry, i) => {
-			if (!Array.isArray(entry)) {
+			// Defensive: a bare anchor array (pre-migration shape) -> default pipeline.
+			if (Array.isArray(entry)) {
+				lists.push({ anchors: coerceAnchorList(entry, `${label}[${i}].anchors`), pipeline: coercePipeline(undefined, defaults, `${label}[${i}].pipeline`) });
+				return;
+			}
+			if (!isRecord(entry)) {
 				warn(`Dropping invalid source list ${label}[${i}].`);
 				return;
 			}
-			lists.push(coerceAnchorList(entry, `${label}[${i}]`));
+			lists.push({
+				anchors: coerceAnchorList(entry.anchors, `${label}[${i}].anchors`),
+				pipeline: coercePipeline(entry.pipeline, defaults, `${label}[${i}].pipeline`)
+			});
 		});
 	} else if (value !== undefined) {
-		warn(`Invalid source lists for ${label}; using one empty list.`);
+		warn(`Invalid source lists for ${label}; using one default list.`);
 	}
 	// Invariant: at least one list always exists (the active edit target).
-	if (!lists.length) lists.push([]);
+	if (!lists.length) lists.push({ anchors: [], pipeline: coercePipeline(undefined, defaults, `${label}[0].pipeline`) });
 	return lists;
 }
 
@@ -177,36 +257,20 @@ function coerceGamutMapParams(raw: unknown, defaults: GamutMapParams): GamutMapP
 
 function coerceTheme(raw: unknown, defaults: PersistedTheme): PersistedTheme {
 	const theme = isRecord(raw) ? raw : {};
-	const lists = coerceLists(theme.lists, 'theme.lists');
-	const surfaceProjection = enumOf(theme.surfaceProjection, SURFACE_PROJECTIONS, defaults.surfaceProjection, 'theme.surfaceProjection');
+	const pipelineDefaults = legacyPipelineFromTheme(theme, defaultPipeline());
+	const lists = coerceLists(theme.lists, pipelineDefaults, 'theme.lists');
 	return {
 		lists,
 		activeList: Math.min(
 			lists.length - 1,
 			Math.max(0, Math.round(finiteNumber(theme.activeList, 0, 'theme.activeList')))
 		),
-		splineConstraint: enumOf(theme.splineConstraint, SPLINE_CONSTRAINTS, defaults.splineConstraint, 'theme.splineConstraint'),
-		surfaceProjection,
-		surfaceProjectionParams: coerceSurfaceProjectionParams(theme.surfaceProjectionParams, defaults.surfaceProjectionParams, surfaceProjection),
-		splineSpace: enumOf(theme.splineSpace, INTERP_SPACES, defaults.splineSpace, 'theme.splineSpace'),
 		gamutMap: enumOf(theme.gamutMap, GAMUT_MAPS, defaults.gamutMap, 'theme.gamutMap'),
 		gamutMapParams: coerceGamutMapParams(theme.gamutMapParams, defaults.gamutMapParams ?? DEFAULT_GAMUT_MAP_PARAMS),
-		steps: Math.min(MAX_RAMP_STOPS, Math.max(1, Math.round(finiteNumber(theme.steps, defaults.steps, 'theme.steps')))),
-		interpolateOn: typeof theme.interpolateOn === 'boolean' ? theme.interpolateOn : defaults.interpolateOn,
-		placeOn: typeof theme.placeOn === 'boolean' ? theme.placeOn : defaults.placeOn,
-		mode: enumOf(theme.mode, THEME_MODES, defaults.mode, 'theme.mode'),
-		arcLong: typeof theme.arcLong === 'boolean' ? theme.arcLong : defaults.arcLong,
-		place: enumOf(theme.place, PLACE_POLICIES, defaults.place, 'theme.place'),
-		contrastMin: Math.min(21, Math.max(1, finiteNumber(theme.contrastMin, defaults.contrastMin, 'theme.contrastMin'))),
-		contrastMax: Math.min(21, Math.max(1, finiteNumber(theme.contrastMax, defaults.contrastMax, 'theme.contrastMax'))),
-		expandOn: typeof theme.expandOn === 'boolean' ? theme.expandOn : defaults.expandOn,
-		expandRows: coerceSpread(theme.expandRows, defaults.expandRows, 'theme.expandRows'),
-		expandCols: coerceSpread(theme.expandCols, defaults.expandCols, 'theme.expandCols'),
 		showPoints: typeof theme.showPoints === 'boolean' ? theme.showPoints : defaults.showPoints,
 		showCurve: typeof theme.showCurve === 'boolean' ? theme.showCurve : defaults.showCurve,
 		showStops: typeof theme.showStops === 'boolean' ? theme.showStops : defaults.showStops,
-		showPalette: typeof theme.showPalette === 'boolean' ? theme.showPalette : defaults.showPalette,
-		wcagBg: enumOf(theme.wcagBg, WCAG_BG, defaults.wcagBg, 'theme.wcagBg')
+		showPalette: typeof theme.showPalette === 'boolean' ? theme.showPalette : defaults.showPalette
 	};
 }
 
@@ -277,69 +341,9 @@ export function coerceSnapshot(raw: unknown): ParameterSnapshot | null {
 	if (!isRecord(raw)) return null;
 	if (!isRecord(raw.explorer) && !isRecord(raw.camera)) return null;
 
-	const factory = createAppState();
-	const defaults: ParameterSnapshot = {
-		schemaVersion: CURRENT_SNAPSHOT_VERSION,
-		explorer: {
-			spaceMode: factory.explorer.spaceMode,
-			gamut: factory.explorer.gamut,
-			N: factory.explorer.N,
-			slice: factory.explorer.slice,
-			planeMode: factory.explorer.planeMode,
-			off: factory.explorer.off,
-			az: factory.explorer.az,
-			el: factory.explorer.el,
-			eps: factory.explorer.eps,
-			floor: factory.explorer.floor,
-			lines: factory.explorer.lines,
-			cutAbove: factory.explorer.cutAbove,
-			cutBelow: factory.explorer.cutBelow,
-			cylSlice: factory.explorer.cylSlice,
-			cylRad: factory.explorer.cylRad,
-			shell: factory.explorer.shell,
-			chromaticityOverlay: factory.explorer.chromaticityOverlay,
-			planeOutline: factory.explorer.planeOutline,
-			cylinderOutline: factory.explorer.cylinderOutline,
-			outlineDepthTest: factory.explorer.outlineDepthTest,
-			surfaceGridAlpha: factory.explorer.surfaceGridAlpha,
-			solidAlpha: factory.explorer.solidAlpha,
-			hideAids: factory.explorer.hideAids,
-			pinPalette: factory.explorer.pinPalette,
-			openSteps: factory.explorer.openSteps,
-			guideNote: factory.explorer.guideNote,
-			guideNotePlacement: factory.explorer.guideNotePlacement,
-			guideNoteDismissed: factory.explorer.guideNoteDismissed,
-			cvd: factory.explorer.cvd,
-			cvdSev: factory.explorer.cvdSev,
-			theme: {
-				lists: factory.explorer.theme.lists,
-				activeList: factory.explorer.theme.activeList,
-				splineConstraint: factory.explorer.theme.splineConstraint,
-				surfaceProjection: factory.explorer.theme.surfaceProjection,
-				surfaceProjectionParams: factory.explorer.theme.surfaceProjectionParams,
-				splineSpace: factory.explorer.theme.splineSpace,
-				gamutMap: factory.explorer.theme.gamutMap,
-				gamutMapParams: factory.explorer.theme.gamutMapParams,
-				steps: factory.explorer.theme.steps,
-				mode: factory.explorer.theme.mode,
-				arcLong: factory.explorer.theme.arcLong,
-				place: factory.explorer.theme.place,
-				contrastMin: factory.explorer.theme.contrastMin,
-				contrastMax: factory.explorer.theme.contrastMax,
-				interpolateOn: factory.explorer.theme.interpolateOn,
-				placeOn: factory.explorer.theme.placeOn,
-				expandOn: factory.explorer.theme.expandOn,
-				expandRows: factory.explorer.theme.expandRows,
-				expandCols: factory.explorer.theme.expandCols,
-				showPoints: factory.explorer.theme.showPoints,
-				showCurve: factory.explorer.theme.showCurve,
-				showStops: factory.explorer.theme.showStops,
-				showPalette: factory.explorer.theme.showPalette,
-				wcagBg: factory.explorer.theme.wcagBg
-			}
-		},
-		camera: factory.camera
-	};
+	// Factory defaults as a clean persisted snapshot (single source of truth for
+	// the per-field fallbacks below).
+	const defaults: ParameterSnapshot = toSnapshot(createAppState());
 
 	return {
 		schemaVersion: CURRENT_SNAPSHOT_VERSION,

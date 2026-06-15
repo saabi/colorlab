@@ -275,7 +275,7 @@ export class WebGlRenderer {
 		}
 		// Expanded palette cells. Without Expand the grid is just the lists' ramps,
 		// already drawn above as stops + curves — skip to avoid double markers.
-		if (aids && t.showPalette && t.expandOn && t.grid.length) {
+		if (aids && t.showPalette && t.grid.length) {
 			for (const row of t.grid) drawSwatches(row, 7);
 			// Each grid row is its own ramp: draw a faint polyline through its stops.
 			gl.useProgram(this.splineProgram);
@@ -305,7 +305,7 @@ export class WebGlRenderer {
 
 		// Draw source-point markers and interpolated curves for every list; which
 		// layers actually render is gated per-layer inside drawSpline.
-		if (aids && (t.lists.some((l) => l.length) || t.curves.some((c) => c.length > 1))) {
+		if (aids && (t.lists.some((l) => l.anchors.length) || t.curves.some((c) => c.length > 1))) {
 			this.drawSpline(input, proj, view);
 		}
 
@@ -538,13 +538,14 @@ export class WebGlRenderer {
 			gl.bindVertexArray(null);
 		}
 
-		if (t.showPoints && t.lists.some((l) => l.length)) {
+		if (t.showPoints && t.lists.some((l) => l.anchors.length)) {
 			gl.useProgram(this.markProgram);
 			gl.uniformMatrix4fv(this.U(this.markProgram, 'uProj'), false, proj);
 			gl.uniformMatrix4fv(this.U(this.markProgram, 'uView'), false, view);
 			// Source points read larger than generated stops/cells to signal interactivity.
 			gl.uniform1f(this.U(this.markProgram, 'uSize'), 16);
-			t.lists.forEach((cps, li) => {
+			t.lists.forEach((list, li) => {
+				const cps = list.anchors;
 				for (let i = 0; i < cps.length; i += 1) {
 					const world = this.worldForSrgbMorph(cps[i].srgbLin, input.state, input.matrices, input.morph);
 					const sim = simulateCvdSrgb(cps[i].srgbLin, input.state.cvd, input.state.cvdSev);

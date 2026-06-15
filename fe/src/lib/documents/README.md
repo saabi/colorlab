@@ -118,7 +118,19 @@ When adding a persisted field, update **together**:
 | Version | Summary |
 |---------|---------|
 | 0 | Legacy implicit saves (no `schemaVersion` field) |
-| 1 | Current: explicit `schemaVersion` on `ParameterSnapshot` |
+| 1 | Explicit `schemaVersion` on `ParameterSnapshot` |
+| 2 | Snapshot schema becomes the durable app-state shape |
+| 3 | Gamut handling unified into `theme.gamutMap` |
+| 4 | `A`/`B`/`controlPoints` unified into one points list |
+| 5 | Segment/arc modes collapse into `linear` with explicit interpolation space |
+| 6 | Spread becomes an Expand operator instead of a mode |
+| 7 | Expand generalized to Oklch row/column spread generators |
+| 8 | Multiple source lists via `theme.lists` and `activeList` |
+| 9 | Surface constraint methods split from terminal gamut mapping |
+| 10 | Surface projection params added |
+| 11 | Gamut-map adaptive params added |
+| 12 | Gamut-map focus-lightness default added |
+| 13 | Current: per-list ramp pipelines; global `gamutMap` remains shared |
 
 See `migrate.ts` header for authoritative changelog.
 
