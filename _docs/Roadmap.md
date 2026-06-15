@@ -35,6 +35,7 @@ Update `_docs/Roadmap.md` when you:
 - **Layout & polish** — tablet drawer (≤1024px), full mobile layout (≤820px), floor grid underside, header isotype, app preferences in `localStorage`
 - **Open source** — MIT license, CI, CONTRIBUTING / RELEASING docs, dual GitHub/GitLab remotes
 - **Document sharing & ingestion v1** — Save to file, Share (copy link · copy JSON), Import (file · URL · paste · `#s=…` hash); client-side only via `parseSnapshot`
+- **Themed scrollbars** — app-wide dark-UI scrollbar tokens (`scrollbar-color` + `::-webkit-scrollbar`) in `app.css`
 
 ---
 
@@ -61,8 +62,8 @@ Aligned with the **recommended next order** in [`surface-constraint-gamut-projec
 
 ### Medium scope
 
-9. **Pipeline node UI (Phase 1)** — static read-only navigation rail; canonical node set per [`pipeline-node-ui-proposal.md`](pipeline-node-ui-proposal.md). `All` remains the primary multi-step surface.
-10. **OOG badges + raw/final preview** — OOG badges on Interpolate/Gamut Map; before/after stop preview on Gamut Map/Export or its successor diagnostic.
+9. **Light UI color scheme** — add a **light** theme alongside today's dark (`:root` CSS variables in `app.css`). Persist in `colorlab:preferences` (same pattern as auto-rotate / auto-reduce). Panels, chrome, and instruments should stay readable; WebGL viewport may keep a separate backdrop policy (see #10).
+10. **Neutral explorer backdrop** — colorimetrically neutral surround for the 3D viewport: **Oklab L = 0.5** (a\* = b\* = 0) for WebGL clear color and/or the letterbox around the canvas, so the solid is judged without UI chroma bias. **Placement:** either a third UI scheme or — leaner — a toggle in the sidebar footer **Viewport preferences** panel (`LeftControls`, beside View aids / Performance), persisted in app preferences (not the document). Does not change the color solid itself.
 11. **Okhsl/Okhsv picker coordinates** — H/S/L or H/S/V sliders for the selected ramp stop (`okhsv.ts` exists).
 12. **Direct xy chromaticity picking** — click/drag in the xy panel; define which Y/L is held constant.
 13. **Gamut boundary snap tools** — stop-level UX on top of existing Oklab boundary projection.
@@ -139,10 +140,23 @@ v1 shipped; production still uses generic `'Edit parameters'` for debounced capt
 **Plan:** [`state-sharing-ingestion-plan.md`](state-sharing-ingestion-plan.md)  
 **Status:** v1 shipped — Save to file, Share (link + JSON), Import (file · URL · paste · `#s=…` hash). Deferred: `?src=` deep-link, shared toast system, File System Access API.
 
+### UI & appearance
+
+**Status:** Dark UI only (`app.css` `:root` tokens; WebGL `clearColor` ≈ `#0a0a0b`). Scrollbars themed via `--scrollbar-*` tokens. No light theme switcher yet.
+
+| Item | Notes |
+|------|-------|
+| Light color scheme | Second token set + `colorlab:preferences` persistence |
+| Neutral explorer backdrop | Oklab L 0.5 surround; prefer sidebar-footer **Viewport preferences** toggle over a full third scheme unless light/dark both need it |
+
+Open question: should neutral backdrop apply only inside the WebGL canvas letterbox, or also replace the dark UI chrome when enabled?
+
 ### Feature backlog
 
 | Feature | Notes |
 |---------|-------|
+| Light UI theme | Alongside existing dark |
+| Neutral explorer backdrop | Oklab L 0.5 viewport surround; policies-panel option |
 | Custom Display Gamut | Wizard UX design before implementation |
 | Gradient designer improvements | Builds on existing ramp model |
 | Okhsl/Okhsv picker coordinates | Sliders for selected stop only |
