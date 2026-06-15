@@ -65,21 +65,22 @@ Aligned with the **recommended next order** in [`surface-constraint-gamut-projec
 11. **Okhsl/Okhsv picker coordinates** — H/S/L or H/S/V sliders for the selected ramp stop (`okhsv.ts` exists).
 12. **Direct xy chromaticity picking** — click/drag in the xy panel; define which Y/L is held constant.
 13. **Gamut boundary snap tools** — stop-level UX on top of existing Oklab boundary projection.
+14. **Document sharing & ingestion** — three intents, separate surfaces: **Save** (localStorage / file), **Share** (copy link · copy JSON), **Import** (share URL · file · remote JSON URL · pasted JSON). Client-side only (no hosting). Baseline exists; see [`state-sharing-ingestion-plan.md`](state-sharing-ingestion-plan.md).
 
 ### Large / design-first
 
-14. **Generic active/display gamut solver** — matrix-based boundary solver for Active gamut and Display gamut relationships; keep sRGB analytic fast path where useful.
-15. **Custom Display Gamut** — calibration wizard UX before implementation.
-16. **Gradient designer improvements** — editable stops, per-stop OKLCh/Okhsl, CSS gradient preview.
-17. **Pipeline node UI (Phases 2–4)** — node-scoped parameter panel, full pipeline-driven layout, mobile optimization.
+15. **Generic active/display gamut solver** — matrix-based boundary solver for Active gamut and Display gamut relationships; keep sRGB analytic fast path where useful.
+16. **Custom Display Gamut** — calibration wizard UX before implementation.
+17. **Gradient designer improvements** — editable stops, per-stop OKLCh/Okhsl, CSS gradient preview.
+18. **Pipeline node UI (Phases 2–4)** — node-scoped parameter panel, full pipeline-driven layout, mobile optimization.
 
 ### Research / deferred
 
-18. Gamut compression — display/ramp policy after Active/Display gamut model stabilizes
-19. Projected Explorer display overlay vs geometry replacement (open question)
-20. Spectral/chromaticity intensity volume
-21. GPU/codegen evaluation (surface plan Phase 8; criteria-gated)
-22. WebGPU, HDR, EDID defaults, Color Accumulator, in-scene text — see design review
+19. Gamut compression — display/ramp policy after Active/Display gamut model stabilizes
+20. Projected Explorer display overlay vs geometry replacement (open question)
+21. Spectral/chromaticity intensity volume
+22. GPU/codegen evaluation (surface plan Phase 8; criteria-gated)
+23. WebGPU, HDR, EDID defaults, Color Accumulator, in-scene text — see design review
 
 ---
 
@@ -132,6 +133,18 @@ First implementation target: read-only navigation rail with 12 initial nodes (Ga
 ### Undo/redo — transaction labels
 
 v1 shipped; production still uses generic `'Edit parameters'` for debounced captures. **Plan:** [`undo-redo-state-design.md`](undo-redo-state-design.md).
+
+### Document sharing & ingestion
+
+**Plan:** [`state-sharing-ingestion-plan.md`](state-sharing-ingestion-plan.md)
+**Status:** Design direction documented; partial baseline in the working tree (uncommitted), to be revised to match the plan.
+
+Move a document (a `ParameterSnapshot`) in/out of the app via client-side transports — **no server-side storage / hosting** (out of scope). Every ingestion path funnels through the canonical `parseSnapshot` (detect → migrate → coerce); no schema change.
+
+- **Save (durable):** localStorage named docs (exists) · Save to file (`.json`).
+- **Share (transient out):** copy share link · copy JSON as-is.
+- **Import (in):** from a share URL · from a local file · from a remote JSON URL (raw snapshot or share link, fetched client-side) · from pasted JSON.
+- Share and Import are **separate** surfaces; Save-to-file is a Save (not Share). Baseline covers share-URL and local-file both ways. Remaining: copy JSON, paste JSON, remote URL import, the Import dialog, More-menu regrouping. Lands as one unit (no partial shipping); optional `?src=` deep-link deferred.
 
 ### Feature backlog
 
