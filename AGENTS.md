@@ -50,11 +50,16 @@ Parameter sets are the app's document. A `ParameterSnapshot` is `PersistedAppSta
 
 There are two distinct localStorage concepts in `storage.ts`: the **session** (last-open state, `colorlab:session:v1`) and the **document registry** (named saves, `colorlab:documents:v1`). `session.svelte.ts` orchestrates dirty-tracking, save/save-as/rename/delete, and example docs.
 
+## Versioning
+
+App releases use semver; see [RELEASING.md](RELEASING.md). Do not bump `fe/package.json` unless preparing a release or the user asks. Mention major/minor/patch impact in summaries when a change warrants it.
+
 ## Key Documentation Reference
 
 For deeper design decisions, research, and workflows, consult the following files:
 - [README.md](README.md) — Overall project introduction and quick start guide.
 - [CONTRIBUTING.md](CONTRIBUTING.md) — Setup guidelines, testing commands, and Pull Request expectations.
+- [RELEASING.md](RELEASING.md) — Semantic versioning and release checklist.
 - [_docs/design.md](_docs/design.md) — Core architecture, color-pipeline design, and WebGL2 rendering/instancing details.
 - [_docs/references.md](_docs/references.md) — Industry standards bibliography (CIE, ISO, IEC, ITU, SMPTE, CSS, DTCG).
 - [_docs/svelte-migration.md](_docs/svelte-migration.md) — Historical design notes on the SvelteKit 5 migration.

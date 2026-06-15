@@ -37,6 +37,7 @@ For build, deploy, environment variables, and project structure, see [`fe/README
 - [`_docs/references.md`](_docs/references.md) — external references (CIE/ISO, IEC/ITU/SMPTE, CSS/DTCG, Oklab, CVD, non-Riemannian geometry)
 - [`_docs/svelte-migration.md`](_docs/svelte-migration.md) — SvelteKit migration plan
 - [`CONTRIBUTING.md`](CONTRIBUTING.md) — development setup, tests, and merge request expectations
+- [`RELEASING.md`](RELEASING.md) — semantic versioning and release checklist
 - [`fe/src/lib/documents/README.md`](fe/src/lib/documents/README.md) — parameter-set persistence
 
 ## License

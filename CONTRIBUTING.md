@@ -55,6 +55,13 @@ workflow in [`fe/src/lib/documents/README.md`](fe/src/lib/documents/README.md) a
 - Update help copy or tutorial steps when user-visible behavior changes.
 - Do not commit secrets (`.env`, API keys, tokens).
 - Do not add `Co-Authored-By` agent trailers to commit messages.
+- If your change is user-visible, note the likely **semver impact** (major / minor / patch) in the PR description. Maintainers bump versions at release time — see [RELEASING.md](RELEASING.md).
+
+## Versioning
+
+Releases follow [Semantic Versioning](https://semver.org/). Contributors do not need to bump `fe/package.json` in every PR; call out semver impact when relevant.
+
+Maintainers: full bump rules, tagging, and push steps are in [RELEASING.md](RELEASING.md).
 
 ## License
 
