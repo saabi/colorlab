@@ -28,6 +28,10 @@
 		<a href="https://ferreyrapons.com" target="_blank" rel="author noopener noreferrer">
 			Sebastian Ferreyra Pons
 		</a>
+		<span style="opacity: 0.3; margin: 0 4px">|</span>
+		<a href="https://github.com/ushiferreyra/colorlab" target="_blank" rel="noopener noreferrer">
+			GitHub
+		</a>
 	</span>
 	<button
 		type="button"
@@ -42,6 +46,13 @@
 
 	{#if open}
 		<div id="app-privacy-panel" class="app-info-panel" role="dialog" aria-label="Privacy statement">
+			<h2>Open Source</h2>
+			<p>
+				Color Lab is open source under the MIT License. You can inspect the math, submit issues, or contribute on
+				<a href="https://github.com/ushiferreyra/colorlab" target="_blank" rel="noopener noreferrer" style="text-decoration: underline; color: var(--txt)">
+					GitHub
+				</a>.
+			</p>
 			<h2>Privacy</h2>
 			<p>
 				Color Lab stores your saved parameter sets in this browser's local storage. They are not uploaded by the app.
