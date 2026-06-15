@@ -827,6 +827,13 @@
 
 	$effect(() => {
 		explorer.N;
+		untrack(() => {
+			resetPerformanceSamples();
+			scheduleViewportUpdate({ boundary: true });
+		});
+	});
+
+	$effect(() => {
 		explorer.autoPerformance;
 		explorer.minAverageFps;
 		explorer.lines;
