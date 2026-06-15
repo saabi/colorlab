@@ -347,11 +347,9 @@ export class WebGlRenderer {
 						this.buildFacePlaneOutline(state, matrices, n, outlineD, segs);
 					}
 				}
-				if (needsCylinderOutline) {
-					this.buildCylinderPlaneOutline(state, n, outlineD, segs);
-				}
 			}
-		} else if (needsCylinderOutline) {
+		}
+		if (needsCylinderOutline) {
 			this.buildCylinderWallOutline(state, matrices, segs);
 		}
 		gl.bindVertexArray(this.lineVao);
@@ -368,42 +366,9 @@ export class WebGlRenderer {
 		return [d];
 	}
 
-	private buildCylinderPlaneOutline(state: ExplorerState, n: Vec3, d: number, segs: number[]) {
-		const R = state.cylRad;
-		if (Math.abs(n[1]) >= 1e-4) {
-			const pts: Vec3[] = [];
-			const steps = 64;
-			for (let i = 0; i <= steps; i += 1) {
-				const th = (i * 2 * Math.PI) / steps;
-				const cx = R * Math.cos(th);
-				const cz = R * Math.sin(th);
-				const cy = (d - R * (n[0] * Math.cos(th) + n[2] * Math.sin(th))) / n[1];
-				pts.push([cx, cy, cz]);
-			}
-			for (let i = 0; i < steps; i += 1) {
-				segs.push(...pts[i], ...pts[i + 1]);
-			}
-		} else {
-			const dist = Math.abs(d);
-			if (R > dist) {
-				const h = Math.sqrt(R * R - d * d);
-				const px = d * n[0];
-				const pz = d * n[2];
-				const vx = -n[2];
-				const vz = n[0];
-				const q1x = px + h * vx;
-				const q1z = pz + h * vz;
-				const q2x = px - h * vx;
-				const q2z = pz - h * vz;
-				segs.push(q1x, -0.5, q1z, q1x, 0.5, q1z);
-				segs.push(q2x, -0.5, q2z, q2x, 0.5, q2z);
-			}
-		}
-	}
-
 	private buildCylinderWallOutline(state: ExplorerState, matrices: DerivedMatrices, segs: number[]) {
 		const R = state.cylRad;
-		const thetaSteps = 128;
+		const thetaSteps = 144;
 		const ySteps = 96;
 		const yMin = -1.25;
 		const yMax = 1.25;
@@ -411,42 +376,33 @@ export class WebGlRenderer {
 		const yAt = (j: number) => yMin + ((yMax - yMin) * j) / ySteps;
 		const point = (theta: number, y: number): Vec3 => [R * Math.cos(theta), y, R * Math.sin(theta)];
 		const field = (theta: number, y: number) => solidField(point(theta, y), baseState, matrices).v;
-		const crossing = (theta: number, a: number, b: number) => {
-			let lo = a;
-			let hi = b;
-			const loInside = field(theta, lo) <= 0;
-			for (let i = 0; i < 24; i += 1) {
-				const mid = (lo + hi) / 2;
-				if ((field(theta, mid) <= 0) === loInside) lo = mid;
-				else hi = mid;
-			}
-			return loInside ? lo : hi;
+		const thetaAt = (i: number) => (i * 2 * Math.PI) / thetaSteps;
+		const edgePoint = (a: { theta: number; y: number; f: number }, b: { theta: number; y: number; f: number }) => {
+			const t = Math.abs(a.f - b.f) < 1e-9 ? 0.5 : a.f / (a.f - b.f);
+			return point(a.theta + (b.theta - a.theta) * t, a.y + (b.y - a.y) * t);
 		};
-		const extrema: Array<{ bottom: Vec3; top: Vec3 } | null> = [];
-		for (let i = 0; i <= thetaSteps; i += 1) {
-			const theta = (i * 2 * Math.PI) / thetaSteps;
-			let prevY = yAt(0);
-			let prevInside = field(theta, prevY) <= 0;
-			const hits: number[] = [];
-			for (let j = 1; j <= ySteps; j += 1) {
+		const rows = Array.from({ length: ySteps + 1 }, (_, j) =>
+			Array.from({ length: thetaSteps + 1 }, (_, i) => {
+				const theta = thetaAt(i);
 				const y = yAt(j);
-				const inside = field(theta, y) <= 0;
-				if (inside !== prevInside) hits.push(crossing(theta, prevY, y));
-				prevY = y;
-				prevInside = inside;
+				return { theta, y, f: field(theta, y) };
+			})
+		);
+		for (let j = 0; j < ySteps; j += 1) {
+			for (let i = 0; i < thetaSteps; i += 1) {
+				const p00 = rows[j][i];
+				const p10 = rows[j][i + 1];
+				const p01 = rows[j + 1][i];
+				const p11 = rows[j + 1][i + 1];
+				const pts: Vec3[] = [];
+				if (p00.f * p10.f <= 0 && p00.f !== p10.f) pts.push(edgePoint(p00, p10));
+				if (p10.f * p11.f <= 0 && p10.f !== p11.f) pts.push(edgePoint(p10, p11));
+				if (p01.f * p11.f <= 0 && p01.f !== p11.f) pts.push(edgePoint(p01, p11));
+				if (p00.f * p01.f <= 0 && p00.f !== p01.f) pts.push(edgePoint(p00, p01));
+				for (let k = 0; k + 1 < pts.length; k += 2) {
+					segs.push(...pts[k], ...pts[k + 1]);
+				}
 			}
-			if (hits.length >= 2) {
-				extrema.push({ bottom: point(theta, hits[0]), top: point(theta, hits[hits.length - 1]) });
-			} else {
-				extrema.push(null);
-			}
-		}
-		for (let i = 0; i < thetaSteps; i += 1) {
-			const a = extrema[i];
-			const b = extrema[i + 1];
-			if (!a || !b) continue;
-			segs.push(...a.bottom, ...b.bottom);
-			segs.push(...a.top, ...b.top);
 		}
 	}
 
