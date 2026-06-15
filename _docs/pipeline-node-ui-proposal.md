@@ -12,7 +12,7 @@ A post-draft review resolved several contradictions and under-specified decision
 4. **Positioning: navigation + teaching first; `All` is a fully-supported primary surface.** The rail is the map and the teacher; `All` (the default) remains the unthrottled workhorse for multi-step workflows. Do not degrade `All` into a legacy afterthought. Per-node focus is for learning and single-stage tweaks.
 5. **Node enablement.** Ramp nodes (`Anchors/Points`, `Interpolate`, `Adjust`, `Gamut Map`, `Export`) are dimmed/disabled until at least one source exists (anchor A/B set, or ≥1 spline control point). Informational nodes are always visible but read-only. This teaches dataflow and removes dead clicks.
 6. **`selectedNode` persistence.** Persist the last-selected node in **session** (last-open UI) state only — never in the document snapshot — so reload keeps working context instead of dumping the user back to `All`.
-7. **Color-space roles are first-class, not a footnote.** The UI must distinguish Active gamut, World space, and Display gamut. Active gamut defines the solid and ramp output intent; World space defines layout/interpolation coordinates; Display gamut defines what the current monitor can show. Warnings should focus on Active gamut vs Display gamut mismatch, not on a separate Export gamut selector.
+7. **Color-space roles are first-class, not a footnote.** The UI must distinguish Active gamut, World space, and Display gamut. Active gamut defines the solid and ramp output intent; World space defines layout/interpolation coordinates; Display gamut defines what the current monitor can show. Active gamut and Display gamut should move to a global **Color Context** surface when chromatic adaptation / display-gamut work is implemented; they should not remain Explorer-only pipeline controls. Warnings should focus on Active gamut vs Display gamut mismatch, not on a separate Export gamut selector.
 8. **Promote "Raw vs Final" preview and OOG badges to near-term.** A before/after stop preview on `Gamut Map`/`Export` (OOG count + swatch diff) is the payoff that makes the pipeline framing tangible, especially now that gamut mapping exists. Add OOG warning badges to `Interpolate` and `Gamut Map`. (Was buried under §Additional Suggestions.)
 9. **Wording.** User-facing copy says "pipeline steps/stages"; "node"/"graph" stays internal to avoid implying a rewireable editor.
 
@@ -140,23 +140,51 @@ A good rule is:
 
 ### Explorer Lane Control Map
 
-#### Gamut / Encoding
+#### Color Context (Global, Not A Pipeline Node)
 
 Canonical controls:
 
-- Gamut / cube primaries.
-- Transfer function summary for the selected gamut.
-- Future custom chromaticities.
-- Future monitor/profile warning if the selected gamut conflicts with display assumptions.
-
-Quick-bar duplicate:
-
-- Gamut selector can remain in the viewport toolbar.
+- Active gamut / working gamut selector.
+- Display gamut/profile selector and calibration/profile summary.
+- Future observer/fundamentals selector, only after LMS/CVD/panel parity is
+  implemented.
+- Active-vs-display warning or status once display gamut classification exists.
 
 Do not include:
 
-- World-space selector. It acts after XYZ conversion.
-- Wide-gamut shell. It is a display/reference overlay.
+- Reference gamut shell. It is an Explorer visual aid.
+- World-space selector. It is Explorer geometry.
+- Ramp Gamut Map method. It is a shared terminal ramp-output policy.
+
+Implementation timing:
+
+- Keep the current selector visible until the global Color Context exists.
+- Best timing for the move is after chromatic adaptation or together with Display gamut preferences/classification. Before that, the Color Context would be mostly a renamed control with little explanatory payoff.
+- Do not expose observer selection before `fundamentals.ts` / `diagrams.ts`
+  registries and matching CVD matrices exist. A tail-stability fix can remain
+  invisible and does not need a new UI surface.
+
+#### Explorer Reference / Display Mapping
+
+Canonical controls:
+
+- Reference gamut shell.
+- Chromaticity/spectral overlays.
+- Chromaticity diagram selector, if it only changes reference/instrument
+  projection rather than document semantics.
+- Solid opacity and explorer-only active-solid presentation.
+- Future Explorer display-gamut classification and "clip/map Explorer view to Display gamut" toggle.
+- Transfer function summary may remain as read-only context for the active gamut, but the selector itself belongs to global Color Context.
+
+Quick-bar duplicate:
+
+- Active gamut may remain in the viewport toolbar during transition, but the canonical owner is global Color Context.
+
+Do not include:
+
+- Active gamut selector once Color Context exists. It drives both Explorer and Ramp output intent.
+- Display gamut/profile selector. It is a global device/profile preference.
+- World-space selector. It acts after active-gamut conversion.
 - CVD controls. They are a display simulation.
 
 #### Linear RGB
@@ -179,17 +207,20 @@ Do not include:
 Canonical controls:
 
 - Future white point and adaptation controls.
-- Future observer/CMF source selection, if added.
+- Future observer/CMF source summary; the selector itself belongs in global
+  Color Context if it changes document-level interpretation.
 - Links or toggles for chromaticity-related inspector overlays.
 
 Current app status:
 
-- Mostly informational until custom chromaticities/calibration work begins.
+- Mostly informational until chromatic adaptation, LMS fundamentals, and
+  chromaticity diagram registries exist.
 
 Do not include:
 
-- Gamut selector, except as a read-only upstream summary.
+- Active gamut selector, except as a read-only upstream summary.
 - LMS/CVD controls. LMS simulation is downstream display preview.
+- Ramp gamut mapping or source-list pipeline controls.
 
 #### World Space
 
@@ -378,8 +409,8 @@ Canonical controls:
 
 Do not include:
 
-- The Active gamut selector itself. It belongs in the Gamut step and drives both Explorer solid and ramp output intent.
-- Display gamut calibration/profile controls. They belong to Display/Gamut support UI and local preferences.
+- The Active gamut selector itself. It belongs to global Color Context and drives both Explorer solid and ramp output intent.
+- Display gamut calibration/profile controls. They belong to global Color Context / local display preferences.
 - CVD mode. CVD only previews final colors.
 - Surface Projection alpha. Interpolate-stage surface projection shapes the path; Gamut Map parameters affect final/exported colors.
 
@@ -807,7 +838,7 @@ Goal: validate labels, ordering, and scope without breaking workflows.
 - Do not route multiple nodes to the same broad legacy panel. `Pick`, `Interpolate`, `Adjust`, `Gamut Map`, and `Export` must not all show the full theme panel.
 - Split `ThemeRamp.svelte` first, because it currently hides most of the ramp pipeline distinctions.
 - Split display controls so `Vision / CVD` and `Display Aids` are separate panels.
-- Split color controls so `Gamut / Encoding` and `World Space` are separate panels.
+- Split color controls into global `Color Context`, Explorer `Reference / Display Mapping`, and Explorer `World Space` surfaces.
 
 Goal: make the pipeline graph the main control navigation.
 

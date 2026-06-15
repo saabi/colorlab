@@ -45,45 +45,46 @@ Aligned with the **recommended next order** in [`surface-constraint-gamut-projec
 
 ### Architecture alignment
 
-1. **Color-space role cleanup** — reflect the three-role model in UI/docs: Active gamut = working/export intent, World space = layout/interpolation coordinate system, Display gamut = physical display capability. Includes documenting that `srgbLin` already **is** the gamut-independent colorimetric anchor (linear sRGB ↔ XYZ D65 is a fixed bijection); the proposed XYZ-D65 source-storage migration is **deferred** (representational relabeling, not a correctness fix — not worth a schema break). See [`color-space-role-architecture.md`](color-space-role-architecture.md).
+1. **Color-space role cleanup** — reflect the three-role model in UI/docs: Active gamut = working/export intent, World space = layout/interpolation coordinate system, Display gamut = physical display capability. Includes a planned **global Color Context** surface: move Active gamut and Display gamut/profile selection out of the Explorer pipeline when chromatic adaptation / display-gamut work gives that surface real behavior. The Explorer lane keeps reference shell and future Explorer display-gamut clipping/mapping controls. Also documents that `srgbLin` already **is** the gamut-independent colorimetric anchor (linear sRGB ↔ XYZ D65 is a fixed bijection); the proposed XYZ-D65 source-storage migration is **deferred** (representational relabeling, not a correctness fix — not worth a schema break). See [`color-space-role-architecture.md`](color-space-role-architecture.md).
 2. **White point & chromatic adaptation** — add a standard CAT (Bradford) wherever whites differ, for active color spaces and the display gamut; D65↔D65 stays a no-op. Today there is **no** adaptation, so non-D65 gamuts (NTSC = Illuminant C, CIE = Illuminant E) and any calibrated display white render wrong. Put the adaptation matrix in the shared `DerivedMatrices` bundle for CPU/GPU/picking parity.
-3. **Per-list ramp pipeline instances** — each source list owns its own interpolation, placement, extension, and constraint settings (the engine already computes per-list rows; the settings are still global). The architecture payoff; needs a schema bump (v12 → v13). **Plan:** [`per-list-pipeline-plan.md`](per-list-pipeline-plan.md).
-4. **Separate main-curve and extension constraints** — Interpolate constraints and Extend/Expand constraints independently configurable, per source list. Batched into #3's schema bump (see plan); wiring lands in a later phase.
-5. **Display gamut preferences** — store display profiles/calibration in `localStorage`; users may have multiple displays. Initial default remains sRGB. Depends on #2 for correct white handling.
+3. **Observer fundamentals & chromaticity registry** — stabilize the current LMS/spectral tails, then add table-backed LMS/CMF and chromaticity-diagram registries. This supports the LMS/spectrum panels, spectral locus overlays, direct xy picking, future display-gamut diagnostics, and CVD parity. Tail stabilization can ship without a schema bump; user-selectable observer models belong to the global Color Context only after CVD/panel parity is ready. **Plan:** [`lms-fundamentals-chromaticity-plan.md`](lms-fundamentals-chromaticity-plan.md).
+4. **Per-list ramp pipeline instances** — each source list owns its own interpolation, placement, extension, and constraint settings (the engine already computes per-list rows; the settings are still global). The architecture payoff; needs a schema bump (v12 → v13). **Plan:** [`per-list-pipeline-plan.md`](per-list-pipeline-plan.md).
+5. **Separate main-curve and extension constraints** — Interpolate constraints and Extend/Expand constraints independently configurable, per source list. Batched into #4's schema bump (see plan); wiring lands in a later phase.
+6. **Display gamut preferences + Color Context UI** — store display profiles/calibration in `localStorage`; users may have multiple displays. Initial default remains sRGB. Depends on #2 for correct white handling and should share the global Color Context surface with future observer/fundamentals settings from #3. This is the preferred moment to move Display gamut out of the Explorer pipeline.
 
 ### Small scope, high value (projection params track)
 
-6. **Target model copy cleanup** — recent UI names sRGB as the fixed Gamut Map target, but roadmap direction is Active gamut for ramp output and Display gamut for Explorer display mapping. Update UI copy as the implementation catches up.
-7. **Explorer display-gamut classification** — classify Active gamut against Display gamut (shader first) before projected display preview.
+7. **Target model copy cleanup** — recent UI names sRGB as the fixed Gamut Map target, but roadmap direction is Active gamut for ramp output and Display gamut for Explorer display mapping. Update UI copy as the implementation catches up.
+8. **Explorer display-gamut classification** — classify Active gamut against Display gamut (shader first) before projected display preview. Whether to clip/map the Explorer view to Display gamut belongs in the Explorer pipeline; selecting Active/Display gamuts does not.
 
 ### Small scope, polish
 
-8. **Undo transaction labels** — named `scheduleCapture` / `capture` at high-value call sites. See [`undo-redo-state-design.md`](undo-redo-state-design.md).
+9. **Undo transaction labels** — named `scheduleCapture` / `capture` at high-value call sites. See [`undo-redo-state-design.md`](undo-redo-state-design.md).
 
 ### Medium scope
 
-9. **Light UI color scheme** — add a **light** theme alongside today's dark (`:root` CSS variables in `app.css`). Persist in `colorlab:preferences` (same pattern as auto-rotate / auto-reduce). Panels, chrome, and instruments should stay readable; WebGL viewport may keep a separate backdrop policy (see #10).
-10. **Neutral explorer backdrop** — colorimetrically neutral surround for the 3D viewport: **Oklab L = 0.5** (a\* = b\* = 0) for WebGL clear color and/or the letterbox around the canvas, so the solid is judged without UI chroma bias. **Placement:** either a third UI scheme or — leaner — a toggle in the sidebar footer **Viewport preferences** panel (`LeftControls`, beside View aids / Performance), persisted in app preferences (not the document). Does not change the color solid itself.
-11. **Pipeline node UI (Phase 1)** — static read-only navigation rail; canonical node set per [`pipeline-node-ui-proposal.md`](pipeline-node-ui-proposal.md). `All` remains the primary multi-step surface.
-12. **OOG badges + raw/final preview** — OOG badges on Interpolate/Gamut Map; before/after stop preview on Gamut Map/Export or its successor diagnostic.
-13. **Okhsl/Okhsv picker coordinates** — H/S/L or H/S/V sliders for the selected ramp stop (`okhsv.ts` exists).
-14. **Direct xy chromaticity picking** — click/drag in the xy panel; define which Y/L is held constant.
-15. **Gamut boundary snap tools** — stop-level UX on top of existing Oklab boundary projection.
+10. **Light UI color scheme** — add a **light** theme alongside today's dark (`:root` CSS variables in `app.css`). Persist in `colorlab:preferences` (same pattern as auto-rotate / auto-reduce). Panels, chrome, and instruments should stay readable; WebGL viewport may keep a separate backdrop policy (see #11).
+11. **Neutral explorer backdrop** — colorimetrically neutral surround for the 3D viewport: **Oklab L = 0.5** (a\* = b\* = 0) for WebGL clear color and/or the letterbox around the canvas, so the solid is judged without UI chroma bias. **Placement:** either a third UI scheme or — leaner — a toggle in the sidebar footer **Viewport preferences** panel (`LeftControls`, beside View aids / Performance), persisted in app preferences (not the document). Does not change the color solid itself.
+12. **Pipeline node UI (Phase 1)** — static read-only navigation rail; canonical node set per [`pipeline-node-ui-proposal.md`](pipeline-node-ui-proposal.md). `All` remains the primary multi-step surface.
+13. **OOG badges + raw/final preview** — OOG badges on Interpolate/Gamut Map; before/after stop preview on Gamut Map/Export or its successor diagnostic.
+14. **Okhsl/Okhsv picker coordinates** — H/S/L or H/S/V sliders for the selected ramp stop (`okhsv.ts` exists).
+15. **Direct xy chromaticity picking** — click/drag in the xy panel; define which Y/L is held constant and which chromaticity diagram/observer is active. Depends on the diagram registry in #3.
+16. **Gamut boundary snap tools** — stop-level UX on top of existing Oklab boundary projection.
 
 ### Large / design-first
 
-16. **Generic active/display gamut solver** — matrix-based boundary solver for Active gamut and Display gamut relationships; keep sRGB analytic fast path where useful.
-17. **Custom Display Gamut** — calibration wizard UX before implementation.
-18. **Gradient designer improvements** — editable stops, per-stop OKLCh/Okhsl, CSS gradient preview.
-19. **Pipeline node UI (Phases 2–4)** — node-scoped parameter panel, full pipeline-driven layout, mobile optimization.
+17. **Generic active/display gamut solver** — matrix-based boundary solver for Active gamut and Display gamut relationships; keep sRGB analytic fast path where useful.
+18. **Custom Display Gamut** — calibration wizard UX before implementation.
+19. **Gradient designer improvements** — editable stops, per-stop OKLCh/Okhsl, CSS gradient preview.
+20. **Pipeline node UI (Phases 2–4)** — node-scoped parameter panel, full pipeline-driven layout, mobile optimization.
 
 ### Research / deferred
 
-20. Gamut compression — display/ramp policy after Active/Display gamut model stabilizes
-21. Projected Explorer display overlay vs geometry replacement (open question)
-22. Spectral/chromaticity intensity volume
-23. GPU/codegen evaluation (surface plan Phase 8; criteria-gated)
-24. WebGPU, HDR, EDID defaults, Color Accumulator, in-scene text — see design review
+21. Gamut compression — display/ramp policy after Active/Display gamut model stabilizes
+22. Projected Explorer display overlay vs geometry replacement (open question)
+23. Spectral/chromaticity intensity volume — depends on the observer/fundamentals registry
+24. GPU/codegen evaluation (surface plan Phase 8; criteria-gated)
+25. WebGPU, HDR, EDID defaults, Color Accumulator, in-scene text — see design review
 
 ---
 
@@ -120,7 +121,9 @@ Key points:
 
 - source lists stay in `srgbLin`, documented as the canonical gamut-independent colorimetric anchor (≡ XYZ D65); the XYZ-D65 migration is **deferred** (representational only);
 - add chromatic adaptation (Bradford) for non-D65 active/display whites — currently absent;
+- stabilize LMS fundamentals / spectral locus tails and add an observer + chromaticity-diagram registry before relying on advanced spectral/chromaticity diagnostics;
 - Display gamut profiles live in `localStorage`, not shared document state;
+- Active gamut and Display gamut should become global Color Context controls, not Explorer pipeline controls; Explorer keeps reference shell and display-mapping/clipping controls;
 - each source list owns independent pipeline settings (per-list pipelines) — the next architecture build, behind a schema bump (see [`per-list-pipeline-plan.md`](per-list-pipeline-plan.md));
 - main curve and extension constraints are independent.
 
@@ -162,9 +165,10 @@ Open question: should neutral backdrop apply only inside the WebGL canvas letter
 | Custom Display Gamut | Wizard UX design before implementation |
 | Gradient designer improvements | Builds on existing ramp model |
 | Okhsl/Okhsv picker coordinates | Sliders for selected stop only |
-| Direct xy chromaticity picking | Needs luminance hold policy |
+| Observer fundamentals + chromaticity diagrams | Stable LMS/spectral locus registry; see `lms-fundamentals-chromaticity-plan.md` |
+| Direct xy chromaticity picking | Needs luminance hold policy and active diagram/observer semantics |
 | Gamut boundary snap tools | Stop-level UX on top of boundary projection |
-| Spectral/chromaticity intensity volume | Optional reference layer |
+| Spectral/chromaticity intensity volume | Optional reference layer; depends on stable observer/fundamentals registry |
 
 Full rationale: [`design-review-unimplemented-features.md`](design-review-unimplemented-features.md).
 

@@ -133,6 +133,87 @@ Requirement:
 This is a prerequisite for trustworthy non-D65 active gamuts and for the Display
 role's colorimetric-precision goal.
 
+## UI Placement: Global Color Context vs Pipelines
+
+Active gamut and Display gamut should eventually move out of the Explorer
+pipeline into a small global **Color Context** surface.
+
+Rationale:
+
+- **Active gamut** is document-level working/output intent. It drives the
+  Explorer solid and the ramp output target, so placing it inside the Explorer
+  lane makes it look viewport-only.
+- **Display gamut** is user/device preference data. It applies to every on-screen
+  preview and should live with local display/profile preferences, not inside a
+  document pipeline step.
+- **World space** remains an Explorer pipeline step because it is the geometric
+  coordinate system used to lay out the active gamut in the 3D view.
+
+Recommended UI shape:
+
+1. Add a global Color Context strip/panel above the Explorer and Ramp lanes:
+   Active gamut, Display gamut/profile summary, and warnings when the active
+   gamut exceeds the display gamut.
+2. Rename/split the current Explorer `Gamut` step after the global move. It
+   should keep controls that truly affect the Explorer pipeline:
+   - reference shell gamut;
+   - chromaticity/spectral overlays;
+   - solid opacity and related explorer-only display of the active solid;
+   - future "clip/map Explorer view to Display gamut" toggle.
+3. Keep **Explorer display-gamut clipping/mapping** inside the Explorer lane.
+   That control answers how the active solid is presented through the display
+   gamut. It is not the same as selecting the Active gamut or Display profile.
+
+Implementation timing:
+
+- Do **not** move these controls before the role model is ready in copy and
+  status badges; otherwise the UI loses the only visible gamut selector.
+- Best timing: after chromatic adaptation is implemented (#2 in the roadmap) or
+  together with Display gamut preferences/classification. That gives the global
+  Color Context enough substance to stand on its own.
+- Until then, label/copy can progressively call the current selector "Active
+  gamut" while it remains in its existing position.
+
+## Observer and Chromaticity Context
+
+The LMS fundamentals / chromaticity work is related to Color Context, but it is
+not another gamut role.
+
+Definitions:
+
+- **Observer model / fundamentals** defines the spectral-to-LMS/XYZ reference:
+  which cone fundamentals or CMFs turn wavelengths into tristimulus values.
+- **Chromaticity diagram** defines the 2D projection used to visualize
+  tristimulus data (`xy`, `u'v'`, future physiological diagrams, etc.).
+
+These settings should not be stored under `theme`, and they should not be owned
+by the ramp pipeline. They affect instruments, spectral locus geometry, CVD
+math, and future chromaticity picking/reference layers.
+
+Recommended sequencing:
+
+1. First, stabilize the current default fundamentals implementation
+   (table/spline-backed tails) without changing document schema or exposing new
+   user settings.
+2. Next, add `fundamentals.ts` / `diagrams.ts` registries behind the existing
+   default behavior.
+3. Expose a chromaticity diagram selector in Explorer Reference / instrument UI
+   if it only changes the panel projection.
+4. Expose observer-model selection only after CVD matrices, spectrum/LMS panels,
+   chromaticity overlays, and picking all agree.
+
+Persistence policy:
+
+- If `observerModel` changes document-level scientific interpretation or CVD
+  output, persist it in the document under global color/observer context.
+- If `chromaticityDiagram` only changes an instrument view, keep it as local app
+  preference or session UI state.
+- Do not spend a document schema bump on a visual-only diagram preference.
+
+This work should align with white-point adaptation and display-gamut
+classification. The same `DerivedMatrices`/shared-math path should keep CPU,
+GPU, picker, and panel behavior in sync.
+
 ## Source Lists as Pipeline Instances
 
 Different source lists should eventually own independent ramp pipeline settings.
