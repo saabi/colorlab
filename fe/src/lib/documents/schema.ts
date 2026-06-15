@@ -19,6 +19,7 @@ import type {
 	InterpSpaceChoice,
 	PlacePolicy
 } from '$lib/engine/types';
+import { MAX_RAMP_STOPS } from '$lib/engine/types';
 import { INTERP_SPACE_KEYS } from '$lib/color/interp';
 import { GAMUT_CLIP_METHODS, GAMUT_MAP_METHODS, type GamutMapMethod } from '$lib/color/gamut-map';
 import type { SurfaceProjectionMethod, SurfaceProjectionNeutralFallback, SurfaceProjectionParams } from '$lib/color/boundary-project';
@@ -181,7 +182,7 @@ function coerceTheme(raw: unknown, defaults: PersistedTheme): PersistedTheme {
 		surfaceProjectionParams: coerceSurfaceProjectionParams(theme.surfaceProjectionParams, defaults.surfaceProjectionParams, surfaceProjection),
 		splineSpace: enumOf(theme.splineSpace, INTERP_SPACES, defaults.splineSpace, 'theme.splineSpace'),
 		gamutMap: enumOf(theme.gamutMap, GAMUT_MAPS, defaults.gamutMap, 'theme.gamutMap'),
-		steps: Math.min(27, Math.max(1, Math.round(finiteNumber(theme.steps, defaults.steps, 'theme.steps')))),
+		steps: Math.min(MAX_RAMP_STOPS, Math.max(1, Math.round(finiteNumber(theme.steps, defaults.steps, 'theme.steps')))),
 		interpolateOn: typeof theme.interpolateOn === 'boolean' ? theme.interpolateOn : defaults.interpolateOn,
 		placeOn: typeof theme.placeOn === 'boolean' ? theme.placeOn : defaults.placeOn,
 		mode: enumOf(theme.mode, THEME_MODES, defaults.mode, 'theme.mode'),

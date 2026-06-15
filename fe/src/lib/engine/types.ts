@@ -13,6 +13,8 @@ export type ThemeMode = 'linear' | 'spline';
 export type InterpSpaceChoice = import('$lib/color/interp').InterpSpaceKey | 'world';
 // Place stage: where the N stops land on the interpolated curve.
 export type PlacePolicy = 'even' | 'uniform' | 'tones' | 'contrast';
+/** Upper bound for theme.steps (Interpolate / Place stop count). */
+export const MAX_RAMP_STOPS = 105;
 // Expand stage (generalized Spread): offsets in Oklch per axis across columns.
 //   ramp:  delta·t           (0 -> delta; sign of delta = direction)
 //   sym:   delta·(2t-1)      (-delta -> +delta, centered)

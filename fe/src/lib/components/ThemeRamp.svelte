@@ -10,6 +10,7 @@
 	import { buildRamp, exportDTCG, exportDTCGGrid, exportTokens, exportTokensGrid, srgbHex } from '$lib/engine/theme';
 
 	import type { ExplorerState, ThemeAnchor } from '$lib/engine/types';
+	import { MAX_RAMP_STOPS } from '$lib/engine/types';
 	import type { DerivedMatrices } from '$lib/renderer/uniforms';
 	import type { TouchTool } from './Viewport.svelte';
 
@@ -444,7 +445,7 @@
 		label="Steps"
 		bind:value={explorer.theme.steps}
 		min={2}
-		max={27}
+		max={MAX_RAMP_STOPS}
 		step={1}
 		format={(value) => value.toFixed(0)}
 	/>
