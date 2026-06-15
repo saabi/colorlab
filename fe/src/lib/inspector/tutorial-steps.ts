@@ -349,12 +349,12 @@ export const B_PIPELINE_STEPS: TutorialStep[] = [
 	{
 		title: 'Gamut map — ramp-only OOG policy',
 		concept:
-			'Gamut map is the terminal ramp stage: it brings out-of-gamut stops into sRGB before export. "Clip (clamp)" hard-clips each RGB channel. "Preserve chroma" reduces chroma in Oklch (keeps hue and lightness). "None" passes OOG stops through unchanged. This stage is separate from the Explorer Gamut setting, the spline surface constraint, and CVD.',
-		tryIt: 'Load "P3 OOG stops" via the button above — a ramp with a P3-exclusive vivid green anchor that sits beyond the sRGB boundary. The OOG badge on the Gamut map node shows how many stops exceed sRGB. Switch between "Clip (clamp)" and "Preserve chroma" and watch the affected stops shift in the Palette tab.',
+			'Gamut map is the terminal ramp stage: it brings out-of-gamut stops into the sRGB output target before export. "Clip (clamp)" hard-clips each RGB channel. "Preserve chroma" reduces chroma in Oklch (keeps hue and lightness). "None" passes OOG stops through unchanged. This target is separate from the Explorer Gamut setting, the spline surface constraint, and CVD.',
+		tryIt: 'Load "P3 OOG stops" via the button above — a ramp with a P3-exclusive vivid green anchor that sits beyond the sRGB target boundary. The OOG badge on the Gamut map node shows how many stops exceed sRGB. Switch between "Clip (clamp)" and "Preserve chroma" and watch the affected stops shift in the Palette tab.',
 		successCheck:
 			'With "Preserve chroma," OOG stops shift inward in chroma while keeping hue angle. With "Clip (clamp)," they may shift hue because channels clamp independently.',
 		commonMistake:
-			'Thinking the Explorer Gamut setting controls ramp export clipping. The Explorer Gamut defines what the solid represents; the Ramp Gamut map is a separate, independent terminal policy.',
+			'Thinking the Explorer Gamut setting controls ramp export clipping. The Explorer Gamut defines what the solid represents; the Ramp Gamut map currently targets sRGB output independently.',
 		zone: 'sidebar-inline',
 		target: '[data-tutorial="node-gamut-map"]',
 		suggestedExample: 'example:p3-oog-ramp'

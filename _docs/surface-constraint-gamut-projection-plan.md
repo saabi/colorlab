@@ -888,6 +888,10 @@ Current state:
   - `gamutMapParams.alpha` controls adaptive terminal gamut mapping.
   - Both default to `0.05`, preserving previous output.
   - Pipeline copy/status now separates path shaping from final/export gamut correction.
+- Phase 4B focus parameterization is implemented:
+  - `surfaceProjectionParams.focusL` controls focus-based Interpolate projection.
+  - `gamutMapParams.focusL` controls focus-based terminal gamut mapping.
+  - Legacy method names `project-0.5` / `adaptive-0.5` remain compatibility preset values.
 
 ### Phase 4B: Convert fixed-focus presets into method + params
 
@@ -927,14 +931,34 @@ Non-goals:
 - Do not generalize target gamut in this change.
 - Do not add compression controls.
 
+### Phase 4C: Make the current output target explicit
+
+Goal:
+
+- Prepare users for configurable target gamuts without changing behavior.
+
+Implemented behavior:
+
+- Terminal `Gamut Map` still targets sRGB only.
+- The Gamut Map panel shows `Target gamut: sRGB` as a read-only row.
+- Pipeline help and tutorial copy explain:
+  - Explorer Gamut controls the 3D solid being studied;
+  - Interpolate surface projection shapes the ramp path against the visible clipped surface;
+  - Gamut Map reconciles final generated ramp colors with the sRGB output target.
+
+Non-goals:
+
+- No target-gamut selector yet.
+- No non-sRGB gamut-boundary solver yet.
+- No Explorer display-gamut classification yet.
+
 Next order:
 
-1. **Phase 4B focus parameterization.** Convert fixed `L 0.5` behavior into defaulted `focusL` params while keeping persisted method strings compatible.
-2. **Phase 5: generic target-gamut solver.** Add matrix-based line/boundary solving for P3/Rec.2020. Keep sRGB analytic code as a fast path.
-3. **Phase 6: Explorer display-gamut classification.** Start with shader classification only, because it is cheap and answers the main visual question.
-4. **Projected Explorer display mode.** Add only after classification and generic CPU projection are proven.
-5. **Phase 7: gamut compression.** Treat as a separate terminal ramp/export policy, not a surface constraint.
-6. **Phase 8: GPU/codegen evaluation.** Defer until duplicated projection algorithms exist in both TypeScript and GLSL.
+1. **Phase 5: generic target-gamut solver.** Add matrix-based line/boundary solving for P3/Rec.2020. Keep sRGB analytic code as a fast path.
+2. **Phase 6: Explorer display-gamut classification.** Start with shader classification only, because it is cheap and answers the main visual question.
+3. **Projected Explorer display mode.** Add only after classification and generic CPU projection are proven.
+4. **Phase 7: gamut compression.** Treat as a separate terminal ramp/export policy, not a surface constraint.
+5. **Phase 8: GPU/codegen evaluation.** Defer until duplicated projection algorithms exist in both TypeScript and GLSL.
 
 Avoid making terminal `Gamut Map` target all gamuts in the same change as projection parameterization. That would touch persistence, UI, export semantics, tests, examples, and possibly renderer expectations. The safer path is: parameterize the current sRGB/Oklab implementation first, then generalize target gamut.
 

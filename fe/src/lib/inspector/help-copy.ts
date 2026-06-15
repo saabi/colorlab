@@ -250,15 +250,16 @@ export const PIPELINE_HELP: Record<PipelineHelpId, PanelHelpContent> = {
 	},
 	pipelineGamutMap: {
 		title: 'Gamut map',
-		summary: 'Applies the terminal ramp-only policy for generated stops after interpolation, placement, and expansion.',
+		summary: 'Applies the terminal ramp-only policy for generated stops after interpolation, placement, and expansion. The current output target is sRGB.',
 		stageRows: stageRows(
-			'Generated ramp or palette stops, possibly outside the current export gamut.',
-			'Clipping or Oklab projection method used to bring those stops into the export gamut. Focus-based methods expose focus lightness; adaptive methods also expose alpha. This is a terminal correction, not a curve constraint.',
+			'Generated ramp or palette stops, possibly outside the sRGB output target.',
+			'Clipping or Oklab projection method used to bring those stops into sRGB. Focus-based methods expose focus lightness; adaptive methods also expose alpha. This is a terminal correction, not a curve constraint.',
 			'Final in-gamut ramp colors for preview, palette display, and export.',
 			'The 3D explorer solid, hover readouts, CVD simulation, source anchors, or the upstream curve path.'
 		),
 		details: [
-			'This stage is deliberately separate from Interpolate. Surface projection answers “where should the path run?”; Gamut map answers “what should exported/generated colors become if they are outside the target gamut?”'
+			'This stage is deliberately separate from Interpolate. Surface projection answers “where should the path run?”; Gamut map answers “what should exported/generated colors become if they are outside the sRGB target gamut?”',
+			'The Explorer Gamut setting controls the 3D solid being studied. The Gamut map target controls ramp output; for now that target is fixed to sRGB.'
 		],
 		sources: [
 			{ label: 'gamut-map.ts' },
@@ -268,7 +269,7 @@ export const PIPELINE_HELP: Record<PipelineHelpId, PanelHelpContent> = {
 	},
 	pipelineExport: {
 		title: 'Export',
-		summary: 'Serializes final ramp colors after interpolation, adjustment, and gamut mapping.',
+		summary: 'Serializes final ramp colors after interpolation, adjustment, and sRGB-target gamut mapping.',
 		stageRows: stageRows(
 			'Final ramp stops.',
 			'Export action and output text format.',

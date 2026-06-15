@@ -66,6 +66,10 @@ export interface ProjectionParams {
 - Apply this parameter model to **surface projection first**, because it is easier to evaluate visually and does not change export semantics.
 - After the surface UI and tests settle, reuse the same parameter model for terminal `theme.gamutMap`.
 - Keep `sRGB` as the first target gamut. Add P3/Rec.2020 through a matrix-based generic boundary solver later.
+- Make the current fixed target visible in the UI/help/tutorial before adding target selection:
+  - `Gamut Map` shows `Target gamut: sRGB`;
+  - pipeline help explains Explorer Gamut controls the studied solid, while Gamut Map controls ramp output;
+  - tutorials teach P3/Rec.2020 explorer colors as possibly outside the sRGB output target.
 
 Most convenient implementation order:
 
@@ -73,9 +77,10 @@ Most convenient implementation order:
 2. Reuse the same parameter shape in terminal `Gamut Map`, but store it separately as `gamutMapParams`.
 3. Add `Advanced gamut mapping` UI with the same alpha presets/status, shown only when the selected mapping method can use alpha.
 4. Update pipeline node statuses and help copy after both Surface Projection and Gamut Map have params, so the graph reflects both stages consistently.
-5. Add generic target-gamut solving after parameterized sRGB behavior is stable.
-6. Add Explorer display-gamut classification before any GPU-side projection.
-7. Consider compression and CPU/GPU code generation only after the clipping/projection surface area stabilizes.
+5. Surface the current fixed target as `sRGB` in UI/help/tutorial copy.
+6. Add generic target-gamut solving after parameterized sRGB behavior is stable.
+7. Add Explorer display-gamut classification before any GPU-side projection.
+8. Consider compression and CPU/GPU code generation only after the clipping/projection surface area stabilizes.
 
 ### 3.1 A single gamut-map module
 

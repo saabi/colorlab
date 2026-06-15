@@ -19,6 +19,7 @@ The canonical version string is `fe/package.json` → `"version"`. Update this f
 ### Changed
 
 - Pipeline and help copy clarifying path-shape surface projection vs terminal export gamut mapping.
+- Gamut Map UI, help, and tutorial copy now explicitly identify the current output target as sRGB.
 - Canonical backlog in `_docs/Roadmap.md` with maintenance rules.
 
 ## [0.0.1] - 2026-06-09

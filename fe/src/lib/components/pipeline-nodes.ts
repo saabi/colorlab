@@ -186,11 +186,11 @@ export const PIPELINE_NODES: PipelineNode[] = [
 		lane: 'Ramp',
 		label: 'Gamut map',
 		shortLabel: 'Map',
-		description: 'Terminal ramp-only policy that brings generated stops into the export gamut after the path is built and sampled.',
+		description: 'Terminal ramp-only policy that brings generated stops into the sRGB export target after the path is built and sampled.',
 		affects: 'Export',
 		requiresSource: true,
 		status: (state) =>
-			`${state.theme.gamutMap}${usesFocus(state.theme.gamutMap) ? ` L ${state.theme.gamutMapParams.focusL.toFixed(2)}` : ''}${
+			`sRGB · ${state.theme.gamutMap}${usesFocus(state.theme.gamutMap) ? ` L ${state.theme.gamutMapParams.focusL.toFixed(2)}` : ''}${
 				state.theme.gamutMap.startsWith('adaptive-') ? ` α ${state.theme.gamutMapParams.alpha.toFixed(2)}` : ''
 			}`,
 		// Stops still outside sRGB after the policy runs (only when policy is 'none').

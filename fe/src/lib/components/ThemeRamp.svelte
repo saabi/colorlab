@@ -62,6 +62,7 @@
 		{ value: 'adaptive-cusp', label: 'Adaptive cusp' }
 	];
 	const SURFACE_ALPHA_PRESETS = [0.05, 0.5, 5] as const;
+	const GAMUT_MAP_TARGET = 'sRGB';
 	const projectionUsesFocus = $derived(explorer.theme.surfaceProjection === 'project-0.5' || explorer.theme.surfaceProjection === 'adaptive-0.5');
 	const projectionUsesAlpha = $derived(explorer.theme.surfaceProjection.startsWith('adaptive-'));
 	const projectionAlphaStatus = $derived.by(() => {
@@ -653,6 +654,10 @@
 {/if}
 
 {#if showGamutMap}
+	<div class="target-row" aria-label="Gamut map target">
+		<span>Target gamut</span>
+		<strong>{GAMUT_MAP_TARGET}</strong>
+	</div>
 	<label class="field-row">
 		<span>Gamut mapping</span>
 		<select
@@ -665,7 +670,7 @@
 		</select>
 	</label>
 	<p class="note">
-		This terminal ramp policy reconciles generated stops with sRGB export. It does not reshape the 3D solid.
+		This terminal ramp policy reconciles generated stops with the sRGB export target. It is independent of the Explorer gamut and does not reshape the 3D solid.
 	</p>
 	{#if gamutMapUsesAlpha || gamutMapUsesFocus}
 		<details class="advanced">
@@ -679,7 +684,7 @@
 					step={0.01}
 					format={(value) => value.toFixed(2)}
 				/>
-				<p class="note">Focus L is the neutral-axis lightness that generated colors project toward before intersecting the export gamut.</p>
+				<p class="note">Focus L is the neutral-axis lightness that generated colors project toward before intersecting the sRGB target gamut.</p>
 			{/if}
 			{#if gamutMapUsesAlpha}
 				<SliderRow
@@ -741,7 +746,7 @@
 	<button type="button" onclick={() => showExportText('css')}>Export CSS tokens (oklch)</button>
 	<button type="button" style="margin-top: 4px" onclick={() => showExportText('json')}>Export DTCG JSON</button>
 	<textarea class="export-box" class:visible={!!exportText} readonly spellcheck="false" bind:value={exportText}></textarea>
-	<p class="note">Exports serialize final stops after adjustment and gamut mapping.</p>
+	<p class="note">Exports serialize final stops after adjustment and sRGB-target gamut mapping.</p>
 {/if}
 
 <style>
@@ -756,6 +761,24 @@
 	.field-row select {
 		flex: 1;
 		max-width: 60%;
+	}
+	.target-row {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 8px;
+		margin: 0 0 6px;
+		border: 1px solid var(--border);
+		border-radius: 6px;
+		background: color-mix(in srgb, var(--panel2) 70%, transparent);
+		padding: 5px 7px;
+		color: var(--muted);
+		font-size: 0.846rem;
+	}
+	.target-row strong {
+		color: var(--text);
+		font-size: 0.846rem;
+		font-weight: 700;
 	}
 	.advanced {
 		margin: 6px 0;
