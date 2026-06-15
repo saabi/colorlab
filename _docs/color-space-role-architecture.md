@@ -192,10 +192,11 @@ math, and future chromaticity picking/reference layers.
 
 Recommended sequencing:
 
-1. First, stabilize the current default fundamentals implementation
-   (table/spline-backed tails) without changing document schema or exposing new
-   user settings.
-2. Next, add `fundamentals.ts` / `diagrams.ts` registries behind the existing
+1. First, audit the current default analytical fundamentals evaluator against
+   authoritative reference data, keeping accurate analytical segments and
+   replacing only the regions/methods that fail error or tail-behavior criteria.
+   This does not require document schema changes or new user settings.
+2. Next, add `fundamentals.ts` / `diagrams.ts` registries behind the corrected
    default behavior.
 3. Expose a chromaticity diagram selector in Explorer Reference / instrument UI
    if it only changes the panel projection.

@@ -1,6 +1,6 @@
 # Specification & Plan: Modular LMS Cone Fundamentals & Chromaticity Diagrams
 
-This specification outlines the modularization of **LMS Cone Fundamentals** and the implementation of **Multiple Chromaticity Diagrams** in COLOR LAB. It addresses the tail divergence of the current analytical fits, maps the user's custom curve to its experimental origins, and details the impact on active and planned color pipelines.
+This specification outlines the modularization of **LMS Cone Fundamentals** and the implementation of **Multiple Chromaticity Diagrams** in COLOR LAB. It replaces the current analytical wavelength fits with reference observer data as the source of truth, maps the user's custom curve to its experimental origins, and details the impact on active and planned color pipelines.
 
 ---
 
@@ -48,10 +48,29 @@ Each fundamental model will define:
 2. **Stockman & Sharpe (2000) 10°**: Large-field physiological model.
 3. **Smith & Pokorny (1975)**: Derived from the Judd-modified CIE 1931 CMFs.
 
-#### Resolving Tail Instability:
-To achieve stable analytical evaluation down to 380nm and up to 780nm, we will support two approaches:
-- **Cubic Spline Interpolation**: Read official 1nm/5nm tables from CVRL and perform natural cubic spline interpolation. This is mathematically analytical, matches the experimental data exactly, decays naturally to zero, and is highly stable.
-- **Asymmetrical Gaussian/Log-Normal Models**: If a closed-form formula is preferred, replace the Gaussian-derivative fits with an asymmetrical log-normal formulation (e.g., the Govardovskii template) that guarantees asymptotic decay to zero at the bounds.
+#### Reference-Validated Evaluator Requirement
+The first implementation must not hide the current edge artifacts by clamping,
+windowing, or otherwise cosmetically stabilizing an evaluator that is wrong at
+the edges. Range extremes are colorimetrically meaningful for spectral locus and
+observer work, so the evaluator must be validated against authoritative
+measured/tabulated data across the full visible range.
+
+Recommended approach:
+
+- Use CVRL / CIE-published table data for the selected observer model at the
+  finest practical wavelength interval available as the benchmark.
+- Evaluate both table-based interpolation and continuous analytical fits against
+  that benchmark. A good continuous fit can be preferable between tabulated
+  samples if its error is lower than interpolation and it behaves correctly at
+  the extremes.
+- For interpolation, prefer monotone or shape-preserving methods where possible.
+  Natural cubic splines are acceptable only if they do not overshoot low-energy
+  tails or create negative lobes.
+- For analytical fits, require explicit error thresholds, correct non-negative
+  tail behavior, and no oscillation/divergence outside the fitted core range.
+- Keep the current analytical fit as a candidate/comparison fixture. If it is
+  within acceptable error over a documented subrange, keep using it there and
+  replace only the failing region with a better reference-validated evaluator.
 
 ### B. Chromaticity Diagrams (`fe/src/lib/color/diagrams.ts`)
 Each diagram defines:
@@ -117,17 +136,20 @@ This means the UI should not introduce a ramp-local or theme-local
 Recommended split:
 
 - `observerModel`: document-level only once it affects saved analysis or CVD
-  behavior. Until then, keep it fixed at the current default and use the new
-  registry internally to stabilize tails.
+  behavior. Until then, keep it fixed at the current default and move that
+  default onto reference data internally.
 - `chromaticityDiagram`: local UI preference if it only changes the xy/u'v'
   instrument view; document-level only if diagram selection becomes semantic
   for picking, saved annotations, or exported analysis.
 
 ### Sequencing with the Current Roadmap
 
-1. **Tail stabilization can ship first without a schema bump.** Replacing the
-   unstable analytical tails with table/spline data behind the current default
-   observer is a correctness fix for existing behavior.
+1. **Reference-validated evaluator work can ship first without a schema bump.**
+   Replacing or segmenting the unstable analytical evaluator behind the current
+   default observer is a correctness fix for existing behavior. The replacement
+   may be table-interpolated or analytical, but it must be benchmarked against
+   reference data and preserve colorimetric outputs at range extremes rather
+   than merely suppress visible artifacts.
 2. **Chromatic adaptation should precede exposed observer/profile choices.**
    The same shared `DerivedMatrices` path should carry white-point adaptation
    and observer/display matrices so CPU, GPU, picking, and panels agree.
@@ -160,8 +182,9 @@ The CVD simulation is performed by projecting RGB colors into the LMS color spac
 - **Impact**: Exposing user-selectable observer/diagram settings may require
   persistence, but only after deciding whether each setting is document semantic
   or local preference.
-- **Resolution**: Do **not** bump the schema for the tail-stability fix. If a
-  later phase persists document-level observer choices, store them under the
+- **Resolution**: Do **not** bump the schema for evaluator replacement while the
+  selected observer identity stays the same. If a later phase persists
+  document-level observer choices, store them under the
   global color/observer context, not `theme`, and then follow the document
   persistence playbook with an explicit migration.
 
@@ -169,20 +192,25 @@ The CVD simulation is performed by projecting RGB colors into the LMS color spac
 
 ## 6. Detailed Implementation Plan
 
-### Phase 1: Experimental Data & Fit Comparison
-1. Write a scratch script under `fe/src/lib/color/scratch/compare-fundamentals.ts` to load CVRL datasets.
-2. Compare the user's custom Gaussian formula from `pipeline.ts` to identify its exact source data (e.g., Stockman & Sharpe 2°).
-3. Evaluate the fit MSE and determine stable bounds.
-4. Replace only the current default evaluator if the comparison confirms a
-   drop-in table/spline fix; this phase should not add UI or persistence.
+### Phase 1: Reference Data & Fit Audit
+1. Write a scratch script under `fe/src/lib/color/scratch/compare-fundamentals.ts` to load CVRL/CIE reference datasets.
+2. Compare the current Gaussian-derivative formula from `pipeline.ts` against the relevant reference data to identify its closest source model and quantify errors across the full visible range, with special attention to the low-energy tails.
+3. Select the reference dataset that should define the current default observer. Prefer newer physiological observer measurements where they match the intended model; document any mismatch with CIE 1931/1964 diagram geometry.
+4. Compare evaluator strategies:
+   - current analytical fit over any range where it remains accurate;
+   - shape-preserving interpolation from reference samples;
+   - continuous analytical alternatives or segmented fits.
+5. Implement the default evaluator from the strategy with the best documented accuracy/behavior tradeoff. Reject interpolation or analytical methods that overshoot, go negative, oscillate, diverge, or distort spectral-locus extremes.
+6. Keep this phase UI-free and persistence-free: it changes the numeric evaluator for the same observer identity, not the saved document shape.
 
 ### Phase 2: Registry & Mathematical Foundation
 1. Implement `fe/src/lib/color/fundamentals.ts` containing:
-   - Analytical spline evaluators for Stockman-Sharpe 2°/10° and Smith-Pokorny 2°.
+   - Reference-validated evaluators for Stockman-Sharpe 2°/10° and Smith-Pokorny 2°.
    - Matrices for LMS $\leftrightarrow$ XYZ mapping.
 2. Implement `fe/src/lib/color/diagrams.ts` containing the coordinate projection math for CIE 1931 xy, CIE 1976 UCS u'v', and CIE 2006 xy.
-3. Keep the active runtime default identical to current behavior until CVD and
-   panel parity are ready.
+3. Keep the selected default observer identity unchanged until CVD and panel
+   parity are ready, but preserve only evaluator segments that meet the
+   documented reference-data error and tail-behavior criteria.
 
 ### Phase 3: WebGL & CVD Updates
 1. Modify `rebuildMatrices` in `fe/src/lib/renderer/uniforms.ts` to compute `RGB2LMS` and `LMS2RGB` dynamically using the active LMS model.

@@ -161,8 +161,9 @@ Implementation timing:
 - Keep the current selector visible until the global Color Context exists.
 - Best timing for the move is after chromatic adaptation or together with Display gamut preferences/classification. Before that, the Color Context would be mostly a renamed control with little explanatory payoff.
 - Do not expose observer selection before `fundamentals.ts` / `diagrams.ts`
-  registries and matching CVD matrices exist. A tail-stability fix can remain
-  invisible and does not need a new UI surface.
+  registries and matching CVD matrices exist. Auditing/correcting the current
+  evaluator against reference observer data can remain invisible and does not
+  need a new UI surface.
 
 #### Explorer Reference / Display Mapping
 
