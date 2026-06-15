@@ -866,6 +866,9 @@
 	$effect(() => {
 		explorer.theme.splineConstraint;
 		explorer.theme.surfaceProjection;
+		explorer.theme.surfaceProjectionParams.alpha;
+		explorer.theme.surfaceProjectionParams.focusL;
+		explorer.theme.surfaceProjectionParams.neutral;
 		explorer.theme.splineSpace;
 		explorer.theme.activeList;
 		// Track list count and every list's length (add/remove in any list rebuilds).

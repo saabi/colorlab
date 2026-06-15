@@ -1,5 +1,6 @@
 import { createCamera } from './camera';
 import { MOBILE_STARTUP_TESS } from './mobile';
+import { DEFAULT_SURFACE_PROJECTION_PARAMS } from '$lib/color/boundary-project';
 
 import type { AppState, ExplorerState } from './types';
 import type { Camera } from './camera';
@@ -53,6 +54,7 @@ function createExplorerDefaults(): ExplorerState {
 			selectedPoint: null,
 			splineConstraint: 'free',
 			surfaceProjection: 'adaptive-0.5',
+			surfaceProjectionParams: { ...DEFAULT_SURFACE_PROJECTION_PARAMS },
 			splineSpace: 'oklab',
 			gamutMap: 'none',
 			curves: [],
@@ -111,7 +113,7 @@ export function cloneAppState(state: AppState): AppState {
 
 export function createAppState(options: { mobile?: boolean } = {}): AppState {
 	const state: AppState = {
-		schemaVersion: 9,
+		schemaVersion: 10,
 		explorer: createExplorerDefaults(),
 		camera: createCamera()
 	};
@@ -243,6 +245,7 @@ export const EXAMPLE_STATES = [
 					],
 					splineConstraint: 'surface-radial',
 					surfaceProjection: 'adaptive-0.5',
+					surfaceProjectionParams: { ...DEFAULT_SURFACE_PROJECTION_PARAMS },
 					splineSpace: 'oklch',
 					steps: 11,
 					mode: 'spline',

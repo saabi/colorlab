@@ -20,9 +20,11 @@
  *   sym/edges (dc scaled /2.2 from the old world-cylindrical frame).
  * v8: multiple source lists. theme.points ->
  *   theme.lists = [points] (one ramp per list) + theme.activeList = 0.
- * v9 (CURRENT_SNAPSHOT_VERSION): spline surface constraint methods. Old
+ * v9: spline surface constraint methods. Old
  *   theme.splineConstraint 'surface' -> 'surface-radial'; add
  *   theme.surfaceProjection = 'adaptive-0.5'.
+ * v10 (CURRENT_SNAPSHOT_VERSION): add theme.surfaceProjectionParams with
+ *   adaptive alpha/focus/neutral defaults derived from theme.surfaceProjection.
  *
  * When adding v8+, append a line here and implement migrateVNToVN+1 below.
  */
@@ -174,6 +176,21 @@ function migrateV8ToV9(raw: Record<string, unknown>) {
 	return raw;
 }
 
+function migrateV9ToV10(raw: Record<string, unknown>) {
+	raw.schemaVersion = 10;
+	const explorer = raw.explorer as Record<string, unknown> | undefined;
+	const theme = explorer?.theme as Record<string, unknown> | undefined;
+	if (theme && theme.surfaceProjectionParams === undefined) {
+		theme.surfaceProjectionParams = {
+			method: typeof theme.surfaceProjection === 'string' ? theme.surfaceProjection : 'adaptive-0.5',
+			alpha: 0.05,
+			focusL: 0.5,
+			neutral: 'preserve'
+		};
+	}
+	return raw;
+}
+
 export function migrateSnapshot(raw: unknown, fromVersion: number): unknown {
 	if (!raw || typeof raw !== 'object') return raw;
 	let current = { ...(raw as Record<string, unknown>) };
@@ -187,6 +204,7 @@ export function migrateSnapshot(raw: unknown, fromVersion: number): unknown {
 		if (version === 6) current = migrateV6ToV7(current);
 		if (version === 7) current = migrateV7ToV8(current);
 		if (version === 8) current = migrateV8ToV9(current);
+		if (version === 9) current = migrateV9ToV10(current);
 	}
 	return current;
 }

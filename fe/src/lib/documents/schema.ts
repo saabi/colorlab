@@ -21,7 +21,7 @@ import type {
 } from '$lib/engine/types';
 import { INTERP_SPACE_KEYS } from '$lib/color/interp';
 import { GAMUT_CLIP_METHODS, GAMUT_MAP_METHODS, type GamutMapMethod } from '$lib/color/gamut-map';
-import type { SurfaceProjectionMethod } from '$lib/color/boundary-project';
+import type { SurfaceProjectionMethod, SurfaceProjectionNeutralFallback, SurfaceProjectionParams } from '$lib/color/boundary-project';
 import { CURRENT_SNAPSHOT_VERSION, type ParameterSnapshot } from './types';
 
 const SPACE_MODES: readonly SpaceMode[] = [0, 1, 2, 3, 5];
@@ -42,6 +42,7 @@ const SPLINE_CONSTRAINTS: readonly SplineConstraint[] = [
 	'surface-oklab-project'
 ];
 const SURFACE_PROJECTIONS: readonly SurfaceProjectionMethod[] = GAMUT_CLIP_METHODS;
+const SURFACE_NEUTRAL_FALLBACKS: readonly SurfaceProjectionNeutralFallback[] = ['preserve', 'radial-fallback', 'remember-hue'];
 const GAMUT_MAPS: readonly GamutMapMethod[] = GAMUT_MAP_METHODS;
 const INTERP_SPACES: readonly InterpSpaceChoice[] = [...INTERP_SPACE_KEYS, 'world'];
 
@@ -151,9 +152,24 @@ function coerceLists(value: unknown, label: string): ThemeAnchor[][] {
 	return lists;
 }
 
+function coerceSurfaceProjectionParams(
+	raw: unknown,
+	defaults: SurfaceProjectionParams,
+	method: SurfaceProjectionMethod
+): SurfaceProjectionParams {
+	const params = isRecord(raw) ? raw : {};
+	return {
+		method,
+		alpha: Math.min(5, Math.max(0, finiteNumber(params.alpha, defaults.alpha, 'theme.surfaceProjectionParams.alpha'))),
+		focusL: Math.min(1, Math.max(0, finiteNumber(params.focusL, defaults.focusL, 'theme.surfaceProjectionParams.focusL'))),
+		neutral: enumOf(params.neutral, SURFACE_NEUTRAL_FALLBACKS, defaults.neutral, 'theme.surfaceProjectionParams.neutral')
+	};
+}
+
 function coerceTheme(raw: unknown, defaults: PersistedTheme): PersistedTheme {
 	const theme = isRecord(raw) ? raw : {};
 	const lists = coerceLists(theme.lists, 'theme.lists');
+	const surfaceProjection = enumOf(theme.surfaceProjection, SURFACE_PROJECTIONS, defaults.surfaceProjection, 'theme.surfaceProjection');
 	return {
 		lists,
 		activeList: Math.min(
@@ -161,7 +177,8 @@ function coerceTheme(raw: unknown, defaults: PersistedTheme): PersistedTheme {
 			Math.max(0, Math.round(finiteNumber(theme.activeList, 0, 'theme.activeList')))
 		),
 		splineConstraint: enumOf(theme.splineConstraint, SPLINE_CONSTRAINTS, defaults.splineConstraint, 'theme.splineConstraint'),
-		surfaceProjection: enumOf(theme.surfaceProjection, SURFACE_PROJECTIONS, defaults.surfaceProjection, 'theme.surfaceProjection'),
+		surfaceProjection,
+		surfaceProjectionParams: coerceSurfaceProjectionParams(theme.surfaceProjectionParams, defaults.surfaceProjectionParams, surfaceProjection),
 		splineSpace: enumOf(theme.splineSpace, INTERP_SPACES, defaults.splineSpace, 'theme.splineSpace'),
 		gamutMap: enumOf(theme.gamutMap, GAMUT_MAPS, defaults.gamutMap, 'theme.gamutMap'),
 		steps: Math.min(27, Math.max(1, Math.round(finiteNumber(theme.steps, defaults.steps, 'theme.steps')))),
@@ -289,6 +306,7 @@ export function coerceSnapshot(raw: unknown): ParameterSnapshot | null {
 				activeList: factory.explorer.theme.activeList,
 				splineConstraint: factory.explorer.theme.splineConstraint,
 				surfaceProjection: factory.explorer.theme.surfaceProjection,
+				surfaceProjectionParams: factory.explorer.theme.surfaceProjectionParams,
 				splineSpace: factory.explorer.theme.splineSpace,
 				gamutMap: factory.explorer.theme.gamutMap,
 				steps: factory.explorer.theme.steps,

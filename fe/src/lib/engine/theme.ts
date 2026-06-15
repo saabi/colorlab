@@ -294,7 +294,7 @@ function constrainCurveSample(world: Vec3, srgbLin: Vec3, state: ExplorerState, 
 	const line =
 		constraint === 'surface-oklab-chroma'
 			? oklabMaxChromaLine(srgbLin)
-			: oklabProjectionLine(srgbLin, state.theme.surfaceProjection);
+			: oklabProjectionLine(srgbLin, { ...state.theme.surfaceProjectionParams, method: state.theme.surfaceProjection });
 	return snapOklabLineToClippedSurface(line, state, matrices, world);
 }
 

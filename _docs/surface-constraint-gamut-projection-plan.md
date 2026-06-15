@@ -148,6 +148,21 @@ Recommended v1 UI:
 - Add a second selector: `Projection method`.
 - Reuse the existing gamut-map method labels where possible.
 
+### Missing Configurability To Add
+
+The current implementation covers the basic projection-line families, but it is still less configurable than the algorithms described in Ottosson's gamut clipping article.
+
+Missing features:
+
+- **Adaptive alpha parameter.** Current code hard-codes `alpha = 0.05`. The reference article shows that this value materially changes behavior, with low values preserving lightness more strongly and high values compressing lightness more aggressively toward the projection focus.
+- **Custom focus lightness.** Current choices are fixed `L0 = 0.5`, hue cusp `L0 = L_cusp`, or adaptive versions. There is no user-configurable neutral-axis focus such as `L0 = 0.35` or `L0 = 0.65`.
+- **Named presets plus advanced parameters.** Current UI exposes only method names. It should support simple presets first and reveal advanced parameters only when needed.
+- **Separate projection roles.** The same method names are used by Interpolate-stage surface projection and terminal ramp gamut mapping, but they do different things. Surface projection uses the selected method as a line direction, then intersects the active clipped solid. Gamut mapping maps final generated colors into the export/display target gamut.
+- **Generic target gamut.** Current analytic cusp math is sRGB/Oklab-specific. A later generalized solver needs a target gamut parameter and matrix-based boundary checks for P3, Rec.2020, etc.
+- **Gamut compression.** Current behavior is clipping/projection only. There is no smooth compression region that starts before the target gamut boundary.
+- **Fallback policy.** Near-neutral samples and failed intersections currently fall back implicitly. Users cannot choose preserve, radial fallback, nearest visible surface, or remembered hue fallback.
+- **CPU/GPU parity controls.** Projection is CPU-only for ramp generation. Shader work should start with classification, not full projection, until algorithms stabilize.
+
 ## Data Model
 
 Current type:
@@ -171,6 +186,13 @@ export type SurfaceProjectionMethod =
   | 'project-cusp'
   | 'adaptive-0.5'
   | 'adaptive-cusp';
+
+export interface ProjectionParams {
+  method: SurfaceProjectionMethod;
+  alpha: number;      // adaptive methods; default 0.05
+  focusL: number;     // custom focus method; future
+  neutral: 'preserve' | 'radial-fallback' | 'remember-hue';
+}
 ```
 
 Migration:
@@ -184,6 +206,16 @@ Recommended v1:
 - Keep `splineConstraint: 'free' | 'surface'` for compatibility.
 - Add `theme.surfaceProjection?: SurfaceProjectionMethod` only if implementing Oklab projection.
 - Later schema migration can rename `'surface'` to `'surface-radial'`.
+
+Recommended next migration:
+
+- Keep `theme.surfaceProjection` for backward compatibility.
+- Add `theme.surfaceProjectionParams` only when advanced parameters are introduced.
+- Derive params from the legacy method field on load:
+  - `surfaceProjectionParams.method = theme.surfaceProjection`;
+  - `surfaceProjectionParams.alpha = 0.05`;
+  - `surfaceProjectionParams.neutral = 'preserve'`.
+- Do not expose the params object for terminal `Gamut Map` until the surface projection UI has validated the controls.
 
 ## Shared Projection Core
 
@@ -606,6 +638,8 @@ Pragmatic staged path:
 
 ### Phase 1: Clarify and preserve current behavior
 
+Status: implemented.
+
 Goal:
 
 - Make the current heuristic explicit.
@@ -624,6 +658,8 @@ Tasks:
 No schema change required.
 
 ### Phase 2: Add Oklab max-chroma surface constraint
+
+Status: implemented.
 
 Goal:
 
@@ -648,6 +684,8 @@ Recommended default:
 
 ### Phase 3: Reuse Ottosson projection methods for curve constraints
 
+Status: implemented in basic form.
+
 Goal:
 
 - Expose projection-line choices analogous to ramp gamut mapping.
@@ -666,7 +704,52 @@ Tests:
 - in-gamut samples either remain unchanged for pull-in mode or move to boundary for surface mode;
 - endpoints and near-neutral colors are stable.
 
-### Phase 4: Generalize target gamut
+### Phase 4: Parameterize Ottosson projection controls
+
+Goal:
+
+- Add the configurability missing from the basic implementation while keeping the simple presets usable.
+
+Recommended scope:
+
+- Surface projection first.
+- Terminal `Gamut Map` second, after the surface UI proves the parameter model.
+
+Tasks:
+
+- Replace the internal hard-coded adaptive `alpha = 0.05` with a parameter.
+- Keep preset labels stable:
+  - `Adaptive L 0.5`
+  - `Adaptive cusp`
+- Add an Advanced disclosure under `Surface: Oklab projection`:
+  - adaptive alpha slider;
+  - optional custom focus `L0` slider only after alpha is validated;
+  - neutral fallback policy if user testing shows neutral samples are confusing.
+- Add a parameter object beside the existing method field:
+
+```ts
+theme.surfaceProjectionParams = {
+  method: theme.surfaceProjection,
+  alpha: 0.05,
+  focusL: 0.5,
+  neutral: 'preserve'
+}
+```
+
+- Update `boundary-project.ts` so `oklabProjectionLine()` accepts method + params.
+- Keep `surfaceProjection` as a compatibility alias and derive params on load.
+- Add tests:
+  - `alpha = 0.05`, `0.5`, and `5.0` produce distinct projection lines for chromatic samples;
+  - default params reproduce current output;
+  - neutral fallback remains finite and stable.
+
+Non-goals:
+
+- Do not generalize target gamut in this phase.
+- Do not add GPU projection.
+- Do not add gamut compression yet.
+
+### Phase 5: Generalize target gamut
 
 Goal:
 
@@ -686,7 +769,7 @@ Tasks:
   - explorer gamut;
   - interpolation space.
 
-### Phase 5: Add Explorer display-gamut comparison
+### Phase 6: Add Explorer display-gamut comparison
 
 Goal:
 
@@ -706,6 +789,45 @@ Tests:
 - P3/Rec.2020 active gamut should classify known pure-primary regions as outside sRGB.
 - CVD simulation should run after this display-gamut visualization step, not before it.
 
+### Phase 7: Add optional gamut compression
+
+Goal:
+
+- Add smooth compression as a separate policy from hard clipping/projection.
+
+Rationale:
+
+- Projection is useful for exact boundary mapping, but it creates a discontinuity at the boundary: in-gamut colors remain unchanged and out-of-gamut colors are moved.
+- Compression can begin before the boundary and preserve visual relationships more smoothly.
+
+Tasks:
+
+- Add compression parameters only after target-gamut projection is stable:
+  - compression start threshold;
+  - compression strength;
+  - target gamut.
+- Keep compression as a terminal ramp/export policy first.
+- Avoid using compression for Interpolate-stage surface constraints; surface constraints intentionally seek a boundary.
+
+### Phase 8: Evaluate GPU/codegen needs
+
+Goal:
+
+- Decide whether projection math needs shared TypeScript/GLSL generation.
+
+Entry criteria:
+
+- Explorer display clipping needs real projection, not only classification.
+- Projection supports more than one target gamut.
+- CPU/GPU mismatches become visible or costly.
+
+Recommended order:
+
+1. Centralize GLSL helper modules with `glslify`.
+2. Generate GLSL constants from TypeScript constants if needed.
+3. Add golden-sample comparison tooling.
+4. Only then consider a small math DSL for shared kernels.
+
 ## UI Proposal
 
 In `Interpolate`:
@@ -723,6 +845,11 @@ Projection method
   Project to hue cusp
   Adaptive L 0.5
   Adaptive cusp
+
+Advanced
+  Adaptive alpha 0.05
+  Custom focus L 0.50    (only for future custom-focus method)
+  Neutral fallback Preserve
 ```
 
 Only show `Projection method` when `Surface: projection` is active.
@@ -736,17 +863,25 @@ Curve constraint
   Surface: Oklab chroma
 ```
 
-## Recommended First Step
+## Recommended Next Implementation Order
 
-Implement Phase 1 and Phase 2 first.
+Current state:
 
-Reason:
+- Phase 1 is implemented.
+- Phase 2 is implemented.
+- Phase 3 is implemented in basic form.
 
-- Phase 1 documents and names the current behavior.
-- Phase 2 gives users a genuinely different and useful surface projection without overloading the UI.
-- Phase 3 and Phase 4 can then reuse the same helpers for both curve constraints and final gamut mapping.
+Next order:
 
-Avoid making the terminal `Gamut Map` stage target all gamuts in the same change. That would touch persistence, UI, export semantics, tests, and possibly examples. The safer path is to build projection primitives with clear tests, then migrate gamut mapping onto them.
+1. **Phase 4: parameterize surface projection.** This is the smallest useful increment. It touches the CPU projection core, Svelte UI, persistence, and tests, but keeps target gamut and shader behavior unchanged.
+2. **Extend terminal `Gamut Map` to share the same parameter model.** Once surface projection params are stable, reuse the same `ProjectionParams` shape for final ramp mapping. Keep default output identical.
+3. **Phase 5: generic target-gamut solver.** Add matrix-based line/boundary solving for P3/Rec.2020. Keep sRGB analytic code as a fast path.
+4. **Phase 6: Explorer display-gamut classification.** Start with shader classification only, because it is cheap and answers the main visual question.
+5. **Projected Explorer display mode.** Add only after classification and generic CPU projection are proven.
+6. **Phase 7: gamut compression.** Treat as a separate terminal ramp/export policy, not a surface constraint.
+7. **Phase 8: GPU/codegen evaluation.** Defer until duplicated projection algorithms exist in both TypeScript and GLSL.
+
+Avoid making terminal `Gamut Map` target all gamuts in the same change as projection parameterization. That would touch persistence, UI, export semantics, tests, examples, and possibly renderer expectations. The safer path is: parameterize the current sRGB/Oklab implementation first, then generalize target gamut.
 
 ## Open Questions
 

@@ -46,9 +46,16 @@
 
 	{#if open}
 		<div id="app-privacy-panel" class="app-info-panel" role="dialog" aria-label="Privacy statement">
+			<h2>About</h2>
+			<p>
+				Color Lab is a color science instrument created by
+				<a href="https://ferreyrapons.com" target="_blank" rel="author noopener noreferrer" style="text-decoration: underline; color: var(--txt)">
+					Sebastian Ferreyra Pons
+				</a>.
+			</p>
 			<h2>Open Source</h2>
 			<p>
-				Color Lab is open source under the MIT License. You can inspect the math, submit issues, or contribute on
+				The project is open source under the MIT License. You can inspect the math, submit issues, or contribute on
 				<a href="https://github.com/ushiferreyra/colorlab" target="_blank" rel="noopener noreferrer" style="text-decoration: underline; color: var(--txt)">
 					GitHub
 				</a>.

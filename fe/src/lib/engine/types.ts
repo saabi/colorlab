@@ -134,6 +134,8 @@ export interface ExplorerState {
 		splineConstraint: SplineConstraint;
 		/** Projection-line method used by surface-oklab-project (persisted). */
 		surfaceProjection: SurfaceProjectionMethod;
+		/** Advanced projection-line parameters used by surface-oklab-project (persisted). */
+		surfaceProjectionParams: SurfaceProjectionParams;
 		/** Color space the ramp is interpolated in — any interp space or "world" (persisted). */
 		splineSpace: InterpSpaceChoice;
 		/** Out-of-gamut mapping policy applied to all ramp stops + spline curve (persisted). */
@@ -183,10 +185,10 @@ export interface ExplorerState {
 }
 import type { Vec3 } from '$lib/color/math';
 import type { GamutMapMethod } from '$lib/color/gamut-map';
-import type { SurfaceProjectionMethod } from '$lib/color/boundary-project';
+import type { SurfaceProjectionMethod, SurfaceProjectionParams } from '$lib/color/boundary-project';
 import type { Camera } from './camera';
 
-export const CURRENT_STATE_SCHEMA_VERSION = 9 as const;
+export const CURRENT_STATE_SCHEMA_VERSION = 10 as const;
 export type StateSchemaVersion = typeof CURRENT_STATE_SCHEMA_VERSION;
 
 export type PersistedTheme = Omit<

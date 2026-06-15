@@ -44,6 +44,39 @@ Non-goals: changing how the 3D solid or hover/pick report gamut (viewport concer
 
 ## 3. Proposal
 
+### 3.0 Status and amendment
+
+This plan originally focused on unifying the terminal ramp gamut-map stage and disentangling it from spline geometry constraints. That work has since evolved in `_docs/surface-constraint-gamut-projection-plan.md`, which is now the canonical plan for shared projection algorithms.
+
+Amendments:
+
+- Keep the distinction between **curve constraint** and **terminal gamut mapping**. Surface projection shapes the interpolated path; terminal gamut mapping reconciles final ramp colors for export/display.
+- Treat the method enum as the simple preset layer, not the complete algorithm configuration.
+- Introduce a shared projection parameter shape before adding more target gamuts:
+
+```typescript
+export interface ProjectionParams {
+	method: GamutMapMethod | SurfaceProjectionMethod;
+	alpha: number;      // adaptive methods; default 0.05
+	focusL?: number;    // future custom neutral-axis focus
+	neutral?: 'preserve' | 'radial-fallback' | 'remember-hue';
+}
+```
+
+- Apply this parameter model to **surface projection first**, because it is easier to evaluate visually and does not change export semantics.
+- After the surface UI and tests settle, reuse the same parameter model for terminal `theme.gamutMap`.
+- Keep `sRGB` as the first target gamut. Add P3/Rec.2020 through a matrix-based generic boundary solver later.
+
+Most convenient implementation order:
+
+1. Parameterize the existing Oklab/sRGB projection line code (`alpha` first).
+2. Persist and expose surface projection params under an Advanced disclosure.
+3. Add tests proving default params reproduce current output and alternate alpha values produce distinct results.
+4. Reuse the same params in terminal `Gamut Map`.
+5. Add generic target-gamut solving after parameterized sRGB behavior is stable.
+6. Add Explorer display-gamut classification before any GPU-side projection.
+7. Consider compression and CPU/GPU code generation only after the clipping/projection surface area stabilizes.
+
 ### 3.1 A single gamut-map module
 
 Promote `clip.ts` into the canonical `color/gamut-map.ts` (or keep the filename and widen its API). Single entry point:
