@@ -368,8 +368,8 @@ export class WebGlRenderer {
 
 	private buildCylinderWallOutline(state: ExplorerState, matrices: DerivedMatrices, segs: number[]) {
 		const R = state.cylRad;
-		const thetaSteps = 144;
-		const ySteps = 96;
+		const thetaSteps = Math.min(512, Math.max(144, state.N));
+		const ySteps = Math.min(384, Math.max(96, Math.round(state.N * 0.75)));
 		const yMin = -1.25;
 		const yMax = 1.25;
 		const baseState = { ...state, cylSlice: false };
@@ -466,7 +466,7 @@ export class WebGlRenderer {
 	}
 
 	private buildFacePlaneOutline(state: ExplorerState, matrices: DerivedMatrices, n: Vec3, d: number, segs: number[]) {
-		const N = 112;
+		const N = Math.min(512, Math.max(112, state.N));
 		const sample = (face: number, i: number, j: number) => {
 			const rgb = this.faceRgb(face, i / N, j / N);
 			const world = this.rgbToWorld(rgb, state, matrices);
