@@ -71,7 +71,13 @@
 		{ value: 'cie', label: 'CIE 1931 RGB' }
 	] as const;
 
-	const resolutions = [64, 128, 192, 256, 512] as const;
+	const resolutions = [
+		{ value: 64, label: '64 x 64 / face - mobile' },
+		{ value: 128, label: '128 x 128 / face - balanced' },
+		{ value: 192, label: '192 x 192 / face - detailed' },
+		{ value: 256, label: '256 x 256 / face - desktop' },
+		{ value: 512, label: '512 x 512 / face - high-end' }
+	] as const;
 	const minAverageFpsOptions = [15, 30, 60] as const;
 
 	function setCameraTarget(index: 0 | 1 | 2, value: number) {
@@ -141,10 +147,13 @@
 				<label class="row" for="resolution-select"><span>Tessellation</span></label>
 				<select id="resolution-select" bind:value={explorer.N}>
 					{#each resolutions as resolution}
-						<option value={resolution}>{resolution} x {resolution} / face</option>
+						<option value={resolution.value}>{resolution.label}</option>
 					{/each}
 				</select>
-				<p class="note">{(6 * explorer.N * explorer.N).toLocaleString()} instances - 1 quad in memory. Higher N sharpens the clipped cross-section.</p>
+				<p class="note">
+					{(6 * explorer.N * explorer.N).toLocaleString()} instances - 1 quad in memory. Higher N sharpens clipped
+					cross-sections and outlines, but 512 is intended for high-end GPUs.
+				</p>
 				<ToggleRow label="Surface grid lines" bind:checked={explorer.lines} />
 			</ControlGroup>
 

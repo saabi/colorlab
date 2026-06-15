@@ -7,6 +7,7 @@
 	import { createDocumentSession } from '$lib/documents/session.svelte';
 	import { createHistory } from '$lib/history/history.svelte';
 	import { setHistoryContext } from '$lib/history/context';
+	import { loadAppPreferences, persistAppPreferences } from '$lib/preferences/app.svelte';
 
 	const mobile = browser && isMobileLayout();
 	let appState = $state(createAppState({ mobile }));
@@ -16,10 +17,21 @@
 		onAppliedSnapshot: (snapshot) => history.reset(snapshot)
 	});
 
+	let sessionInitialized = false;
+
 	// Run before child Viewport mounts WebGL so tessellation is capped on mobile.
-	if (browser) {
+	$effect.pre(() => {
+		if (!browser || sessionInitialized) return;
+		sessionInitialized = true;
+		loadAppPreferences(appState.explorer);
 		session.init({ mobile });
-	}
+	});
+
+	$effect(() => {
+		if (!browser) return;
+		const { autoRotate, autoPerformance, minAverageFps } = appState.explorer;
+		persistAppPreferences({ autoRotate, autoPerformance, minAverageFps });
+	});
 
 	onMount(() => {
 		const onBeforeUnload = (event: BeforeUnloadEvent) => {

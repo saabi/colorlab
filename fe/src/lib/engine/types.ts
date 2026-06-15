@@ -108,7 +108,7 @@ export interface ExplorerState {
 	solidAlpha: number;
 	/** Master toggle hiding viewport overlays (surface grid, outlines, shell, ramp markers) without losing each setting. Floor is separate. */
 	hideAids: boolean;
-	/** Slow automatic orbit of the camera (runtime-only; not persisted). */
+	/** Slow automatic orbit of the camera (app preference in localStorage; not saved in documents). */
 	autoRotate: boolean;
 	/** Pin the exported palette as an overlay on the 3D viewport (desktop). */
 	pinPalette: boolean;
@@ -193,7 +193,7 @@ export type PersistedTheme = Omit<
 	ExplorerState['theme'],
 	'arm' | 'stops' | 'selectedPoint' | 'splineCurve' | 'rawStops' | 'grid' | 'curves' | 'rawRows' | 'rows'
 >;
-// autoPerformance/minAverageFps/autoRotate are runtime-only renderer policy — not part of the saved artifact.
+// autoPerformance/minAverageFps/autoRotate are app preferences (localStorage) — not part of saved documents.
 export type PersistedExplorer = Omit<
 	ExplorerState,
 	'hover' | 'theme' | 'autoPerformance' | 'minAverageFps' | 'autoRotate'

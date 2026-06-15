@@ -25,7 +25,7 @@ export const PRELUDE_STEPS: TutorialStep[] = [
 	{
 		title: 'Turn off auto-rotation',
 		concept:
-			'Color Lab opens in a slow-orbit showcase mode. Tutorials need a stable scene while you read and click. Auto-rotate is a sidebar footer preference — it is runtime-only and never saved to documents.',
+			'Color Lab opens in a slow-orbit showcase mode. Tutorials need a stable scene while you read and click. Auto-rotate is a sidebar footer preference — it is saved as an app preference, not in documents.',
 		tryIt: 'Find "Auto-rotate" in the left sidebar footer and turn it off.',
 		successCheck:
 			'The solid stops orbiting on its own. Dragging the viewport now orbits only when you push.',
