@@ -60,6 +60,7 @@
 		{ value: 'adaptive-0.5', label: 'Adaptive L 0.5' },
 		{ value: 'adaptive-cusp', label: 'Adaptive cusp' }
 	];
+	const projectionUsesAlpha = $derived(explorer.theme.surfaceProjection.startsWith('adaptive-'));
 
 	// Global out-of-gamut policy (applies to every theme mode + export).
 	const GAMUT_MAP_OPTIONS: Array<{ value: ExplorerState['theme']['gamutMap']; label: string }> = [
@@ -76,6 +77,11 @@
 		explorer.theme.gamutMap = method;
 		buildRamp(explorer, matrices);
 		track('theme_gamut_map', { method });
+	}
+
+	function setSurfaceProjection(method: ExplorerState['theme']['surfaceProjection']) {
+		explorer.theme.surfaceProjection = method;
+		explorer.theme.surfaceProjectionParams.method = method;
 	}
 
 	const oogBefore = $derived(explorer.theme.rawStops.reduce((n: number, s: { inG: boolean }) => (s.inG ? n : n + 1), 0));
@@ -455,12 +461,26 @@
 	{#if explorer.theme.splineConstraint === 'surface-oklab-project'}
 		<label class="field-row">
 			<span>Projection method</span>
-			<select bind:value={explorer.theme.surfaceProjection}>
+			<select value={explorer.theme.surfaceProjection} onchange={(event) => setSurfaceProjection(event.currentTarget.value as ExplorerState['theme']['surfaceProjection'])}>
 				{#each SURFACE_PROJECTION_OPTIONS as opt}
 					<option value={opt.value}>{opt.label}</option>
 				{/each}
 			</select>
 		</label>
+		{#if projectionUsesAlpha}
+			<details class="advanced">
+				<summary>Advanced projection</summary>
+				<SliderRow
+					label="Adaptive alpha"
+					bind:value={explorer.theme.surfaceProjectionParams.alpha}
+					min={0}
+					max={5}
+					step={0.01}
+					format={(value) => value.toFixed(2)}
+				/>
+				<p class="note">Lower values preserve lightness more strongly; higher values compress more toward the projection focus.</p>
+			</details>
+		{/if}
 	{/if}
 
 	<p class="note">
@@ -634,6 +654,19 @@
 	.field-row select {
 		flex: 1;
 		max-width: 60%;
+	}
+	.advanced {
+		margin: 6px 0;
+		border-top: 1px solid var(--border);
+		padding-top: 6px;
+	}
+	.advanced summary {
+		cursor: pointer;
+		color: var(--muted);
+		font-size: 0.846rem;
+		font-weight: 650;
+		text-transform: uppercase;
+		letter-spacing: 0.08em;
 	}
 	.anchor-label {
 		color: var(--muted);

@@ -29,7 +29,7 @@
 			Sebastian Ferreyra Pons
 		</a>
 		<span style="opacity: 0.3; margin: 0 4px">|</span>
-		<a href="https://github.com/ushiferreyra/colorlab" target="_blank" rel="noopener noreferrer">
+		<a href="https://github.com/saabi/colorlab" target="_blank" rel="noopener noreferrer">
 			GitHub
 		</a>
 	</span>
@@ -56,7 +56,7 @@
 			<h2>Open Source</h2>
 			<p>
 				The project is open source under the MIT License. You can inspect the math, submit issues, or contribute on
-				<a href="https://github.com/ushiferreyra/colorlab" target="_blank" rel="noopener noreferrer" style="text-decoration: underline; color: var(--txt)">
+				<a href="https://github.com/saabi/colorlab" target="_blank" rel="noopener noreferrer" style="text-decoration: underline; color: var(--txt)">
 					GitHub
 				</a>.
 			</p>

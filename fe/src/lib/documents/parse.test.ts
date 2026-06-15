@@ -294,6 +294,35 @@ describe('parseSnapshot', () => {
 		expect(result.snapshot?.schemaVersion).toBe(CURRENT_SNAPSHOT_VERSION);
 		expect(result.snapshot?.explorer.theme.splineConstraint).toBe('surface-radial');
 		expect(result.snapshot?.explorer.theme.surfaceProjection).toBe('adaptive-0.5');
+		expect(result.snapshot?.explorer.theme.surfaceProjectionParams).toMatchObject({
+			method: 'adaptive-0.5',
+			alpha: 0.05,
+			focusL: 0.5,
+			neutral: 'preserve'
+		});
+	});
+
+	it('migrates v9 surface projection defaults to v10 params', () => {
+		const v9 = {
+			schemaVersion: 9,
+			explorer: {
+				...defaults.explorer,
+				theme: {
+					...defaults.explorer.theme,
+					surfaceProjection: 'adaptive-cusp'
+				}
+			},
+			camera: defaults.camera
+		} as unknown;
+		const result = parseSnapshot(v9);
+		expect(result.migrated).toBe(true);
+		expect(result.snapshot?.schemaVersion).toBe(CURRENT_SNAPSHOT_VERSION);
+		expect(result.snapshot?.explorer.theme.surfaceProjectionParams).toMatchObject({
+			method: 'adaptive-cusp',
+			alpha: 0.05,
+			focusL: 0.5,
+			neutral: 'preserve'
+		});
 	});
 
 	it('round-trips new surface projection constraint fields', () => {
@@ -304,13 +333,20 @@ describe('parseSnapshot', () => {
 				theme: {
 					...defaults.explorer.theme,
 					splineConstraint: 'surface-oklab-project',
-					surfaceProjection: 'project-cusp'
+					surfaceProjection: 'adaptive-cusp',
+					surfaceProjectionParams: {
+						method: 'adaptive-cusp',
+						alpha: 0.5,
+						focusL: 0.5,
+						neutral: 'preserve'
+					}
 				}
 			}
 		};
 		const result = parseSnapshot(doc);
 		expect(result.snapshot?.explorer.theme.splineConstraint).toBe('surface-oklab-project');
-		expect(result.snapshot?.explorer.theme.surfaceProjection).toBe('project-cusp');
+		expect(result.snapshot?.explorer.theme.surfaceProjection).toBe('adaptive-cusp');
+		expect(result.snapshot?.explorer.theme.surfaceProjectionParams.alpha).toBe(0.5);
 	});
 
 	it('clamps a persisted activeList to the available lists', () => {

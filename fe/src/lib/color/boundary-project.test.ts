@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
 	inSrgbGamut,
+	oklabProjectionLine,
 	projectOklabMaxChroma,
 	projectOklabToBoundary,
 	type SurfaceProjectionMethod
@@ -40,5 +41,19 @@ describe('Oklab boundary projection', () => {
 			expect(inSrgbGamut(projected, 1e-4), method).toBe(true);
 			expect(boundaryish(projected), method).toBeLessThan(2e-3);
 		}
+	});
+
+	it('keeps current adaptive default while allowing alpha to change the projection line', () => {
+		const sample: Vec3 = [0.92, 0.06, 0.75];
+		const defaultLine = oklabProjectionLine(sample, 'adaptive-0.5');
+		const explicitDefaultLine = oklabProjectionLine(sample, { method: 'adaptive-0.5', alpha: 0.05 });
+		const strongerCompressionLine = oklabProjectionLine(sample, { method: 'adaptive-0.5', alpha: 5 });
+		expect(defaultLine?.L0).toBeCloseTo(explicitDefaultLine?.L0 ?? NaN, 12);
+		expect(Math.abs((defaultLine?.L0 ?? 0) - (strongerCompressionLine?.L0 ?? 0))).toBeGreaterThan(1e-3);
+
+		const projected = projectOklabToBoundary(sample, { method: 'adaptive-0.5', alpha: 0.5 });
+		expect(finite(projected)).toBe(true);
+		expect(inSrgbGamut(projected, 1e-4)).toBe(true);
+		expect(boundaryish(projected)).toBeLessThan(2e-3);
 	});
 });
