@@ -192,7 +192,7 @@ import type { GamutMapMethod, GamutMapParams } from '$lib/color/gamut-map';
 import type { SurfaceProjectionMethod, SurfaceProjectionParams } from '$lib/color/boundary-project';
 import type { Camera } from './camera';
 
-export const CURRENT_STATE_SCHEMA_VERSION = 11 as const;
+export const CURRENT_STATE_SCHEMA_VERSION = 12 as const;
 export type StateSchemaVersion = typeof CURRENT_STATE_SCHEMA_VERSION;
 
 export type PersistedTheme = Omit<

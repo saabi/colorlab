@@ -25,8 +25,10 @@
  *   theme.surfaceProjection = 'adaptive-0.5'.
  * v10: add theme.surfaceProjectionParams with
  *   adaptive alpha/focus/neutral defaults derived from theme.surfaceProjection.
- * v11 (CURRENT_SNAPSHOT_VERSION): add theme.gamutMapParams with adaptive alpha
+ * v11: add theme.gamutMapParams with adaptive alpha
  *   defaults for terminal ramp gamut mapping.
+ * v12 (CURRENT_SNAPSHOT_VERSION): add theme.gamutMapParams.focusL so fixed
+ *   `L 0.5` methods become defaulted focus-lightness methods.
  *
  * When adding v8+, append a line here and implement migrateVNToVN+1 below.
  */
@@ -199,8 +201,25 @@ function migrateV10ToV11(raw: Record<string, unknown>) {
 	const theme = explorer?.theme as Record<string, unknown> | undefined;
 	if (theme && theme.gamutMapParams === undefined) {
 		theme.gamutMapParams = {
-			alpha: 0.05
+			alpha: 0.05,
+			focusL: 0.5
 		};
+	}
+	return raw;
+}
+
+function migrateV11ToV12(raw: Record<string, unknown>) {
+	raw.schemaVersion = 12;
+	const explorer = raw.explorer as Record<string, unknown> | undefined;
+	const theme = explorer?.theme as Record<string, unknown> | undefined;
+	const params = theme?.gamutMapParams as Record<string, unknown> | undefined;
+	if (theme && params === undefined) {
+		theme.gamutMapParams = {
+			alpha: 0.05,
+			focusL: 0.5
+		};
+	} else if (params && params.focusL === undefined) {
+		params.focusL = 0.5;
 	}
 	return raw;
 }
@@ -220,6 +239,7 @@ export function migrateSnapshot(raw: unknown, fromVersion: number): unknown {
 		if (version === 8) current = migrateV8ToV9(current);
 		if (version === 9) current = migrateV9ToV10(current);
 		if (version === 10) current = migrateV10ToV11(current);
+		if (version === 11) current = migrateV11ToV12(current);
 	}
 	return current;
 }

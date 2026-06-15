@@ -325,7 +325,7 @@ describe('parseSnapshot', () => {
 		});
 	});
 
-	it('migrates v10 gamut map defaults to v11 params', () => {
+	it('migrates v10 gamut map defaults to v12 params', () => {
 		const v10 = {
 			schemaVersion: 10,
 			explorer: {
@@ -341,7 +341,32 @@ describe('parseSnapshot', () => {
 		expect(result.migrated).toBe(true);
 		expect(result.snapshot?.schemaVersion).toBe(CURRENT_SNAPSHOT_VERSION);
 		expect(result.snapshot?.explorer.theme.gamutMapParams).toMatchObject({
-			alpha: 0.05
+			alpha: 0.05,
+			focusL: 0.5
+		});
+	});
+
+	it('migrates v11 gamut map params to v12 focus defaults', () => {
+		const v11 = {
+			schemaVersion: 11,
+			explorer: {
+				...defaults.explorer,
+				theme: {
+					...defaults.explorer.theme,
+					gamutMap: 'adaptive-0.5',
+					gamutMapParams: {
+						alpha: 0.5
+					}
+				}
+			},
+			camera: defaults.camera
+		} as unknown;
+		const result = parseSnapshot(v11);
+		expect(result.migrated).toBe(true);
+		expect(result.snapshot?.schemaVersion).toBe(CURRENT_SNAPSHOT_VERSION);
+		expect(result.snapshot?.explorer.theme.gamutMapParams).toMatchObject({
+			alpha: 0.5,
+			focusL: 0.5
 		});
 	});
 
@@ -378,7 +403,8 @@ describe('parseSnapshot', () => {
 					...defaults.explorer.theme,
 					gamutMap: 'adaptive-cusp',
 					gamutMapParams: {
-						alpha: 0.5
+						alpha: 0.5,
+						focusL: 0.35
 					}
 				}
 			}
@@ -386,6 +412,7 @@ describe('parseSnapshot', () => {
 		const result = parseSnapshot(doc);
 		expect(result.snapshot?.explorer.theme.gamutMap).toBe('adaptive-cusp');
 		expect(result.snapshot?.explorer.theme.gamutMapParams.alpha).toBe(0.5);
+		expect(result.snapshot?.explorer.theme.gamutMapParams.focusL).toBe(0.35);
 	});
 
 	it('clamps a persisted activeList to the available lists', () => {

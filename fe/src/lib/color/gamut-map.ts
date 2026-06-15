@@ -27,10 +27,12 @@ export type GamutMapMethod = 'none' | 'clip' | GamutClipMethod;
 
 export interface GamutMapParams {
 	alpha: number;
+	focusL: number;
 }
 
 export const DEFAULT_GAMUT_MAP_PARAMS: GamutMapParams = {
-	alpha: 0.05
+	alpha: 0.05,
+	focusL: 0.5
 };
 
 export const GAMUT_CLIP_METHODS: readonly GamutClipMethod[] = [
@@ -52,8 +54,10 @@ const inGamut = (rgb: Vec3) =>
 
 export function normalizeGamutMapParams(params?: Partial<GamutMapParams>): GamutMapParams {
 	const alpha = params?.alpha;
+	const focusL = params?.focusL;
 	return {
-		alpha: typeof alpha === 'number' && Number.isFinite(alpha) ? Math.max(0, alpha) : DEFAULT_GAMUT_MAP_PARAMS.alpha
+		alpha: typeof alpha === 'number' && Number.isFinite(alpha) ? Math.max(0, alpha) : DEFAULT_GAMUT_MAP_PARAMS.alpha,
+		focusL: typeof focusL === 'number' && Number.isFinite(focusL) ? clamp(focusL, 0, 1) : DEFAULT_GAMUT_MAP_PARAMS.focusL
 	};
 }
 
@@ -75,14 +79,16 @@ function project(rgb: Vec3, pickL0: (L: number, C: number, a_: number, b_: numbe
 
 export const GAMUT_CLIP: Record<GamutClipMethod, (rgb: Vec3, params?: Partial<GamutMapParams>) => Vec3> = {
 	'preserve-chroma': (rgb) => project(rgb, (L) => clamp(L, 0, 1)),
-	'project-0.5': (rgb) => project(rgb, () => 0.5),
+	'project-0.5': (rgb, params) => project(rgb, () => normalizeGamutMapParams(params).focusL),
 	'project-cusp': (rgb) => project(rgb, (_L, _C, a_, b_) => findCusp(a_, b_).L),
 	'adaptive-0.5': (rgb, params) =>
 		project(rgb, (L, C) => {
-			const alpha = normalizeGamutMapParams(params).alpha;
-			const Ld = L - 0.5;
-			const e1 = 0.5 + Math.abs(Ld) + alpha * C;
-			return 0.5 * (1 + sgn(Ld) * (e1 - Math.sqrt(Math.max(0, e1 * e1 - 2 * Math.abs(Ld)))));
+			const { alpha, focusL } = normalizeGamutMapParams(params);
+			const Ld = L - focusL;
+			const k = 2 * (Ld > 0 ? 1 - focusL : focusL);
+			if (k <= 1e-7) return focusL;
+			const e1 = 0.5 * k + Math.abs(Ld) + (alpha * C) / k;
+			return focusL + 0.5 * (sgn(Ld) * (e1 - Math.sqrt(Math.max(0, e1 * e1 - 2 * k * Math.abs(Ld)))));
 		}),
 	'adaptive-cusp': (rgb, params) =>
 		project(rgb, (L, C, a_, b_) => {

@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { APP_VERSION, CHANGELOG_URL, REPO_URL } from '$lib/app-meta';
+
 	let open = $state(false);
 	let root: HTMLDivElement | undefined = $state();
 
@@ -29,8 +31,12 @@
 			Sebastian Ferreyra Pons
 		</a>
 		<span style="opacity: 0.3; margin: 0 4px">|</span>
-		<a href="https://github.com/saabi/colorlab" target="_blank" rel="noopener noreferrer">
+		<a href={REPO_URL} target="_blank" rel="noopener noreferrer">
 			GitHub
+		</a>
+		<span style="opacity: 0.3; margin: 0 4px">|</span>
+		<a href={CHANGELOG_URL} target="_blank" rel="noopener noreferrer" title="View changelog">
+			v{APP_VERSION}
 		</a>
 	</span>
 	<button
@@ -45,7 +51,7 @@
 	</button>
 
 	{#if open}
-		<div id="app-privacy-panel" class="app-info-panel" role="dialog" aria-label="Privacy statement">
+		<div id="app-privacy-panel" class="app-info-panel" role="dialog" aria-label="About Color Lab">
 			<h2>About</h2>
 			<p>
 				Color Lab is a color science instrument created by
@@ -56,9 +62,18 @@
 			<h2>Open Source</h2>
 			<p>
 				The project is open source under the MIT License. You can inspect the math, submit issues, or contribute on
-				<a href="https://github.com/saabi/colorlab" target="_blank" rel="noopener noreferrer" style="text-decoration: underline; color: var(--txt)">
+				<a href={REPO_URL} target="_blank" rel="noopener noreferrer" style="text-decoration: underline; color: var(--txt)">
 					GitHub
-				</a>.
+				</a>
+				(version <a href={CHANGELOG_URL} target="_blank" rel="noopener noreferrer" style="text-decoration: underline; color: var(--txt)">v{APP_VERSION}</a>).
+			</p>
+			<h2>Changelog</h2>
+			<p>
+				Release notes for v{APP_VERSION} and earlier versions are in the
+				<a href={CHANGELOG_URL} target="_blank" rel="noopener noreferrer" style="text-decoration: underline; color: var(--txt)">
+					project changelog
+				</a>
+				on GitHub.
 			</p>
 			<h2>Privacy</h2>
 			<p>

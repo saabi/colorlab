@@ -68,11 +68,11 @@ function adaptiveL0(L: number, C: number, focusL: number, alpha: number) {
 
 function projectionFocusL(params: SurfaceProjectionParams, L: number, C: number, a_: number, b_: number) {
 	if (params.method === 'preserve-chroma') return clamp(L, 0, 1);
-	if (params.method === 'project-0.5') return 0.5;
+	if (params.method === 'project-0.5') return params.focusL;
 	const cusp = params.method === 'project-cusp' || params.method === 'adaptive-cusp' ? findCusp(a_, b_) : null;
 	if (params.method === 'project-cusp') return cusp!.L;
 	if (params.method === 'adaptive-cusp') return adaptiveL0(L, C, cusp!.L, params.alpha);
-	return adaptiveL0(L, C, 0.5, params.alpha);
+	return adaptiveL0(L, C, params.focusL, params.alpha);
 }
 
 export type OklabProjectionLine = {

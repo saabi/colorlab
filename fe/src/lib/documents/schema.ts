@@ -170,7 +170,8 @@ function coerceSurfaceProjectionParams(
 function coerceGamutMapParams(raw: unknown, defaults: GamutMapParams): GamutMapParams {
 	const params = isRecord(raw) ? raw : {};
 	return {
-		alpha: Math.min(5, Math.max(0, finiteNumber(params.alpha, defaults.alpha, 'theme.gamutMapParams.alpha')))
+		alpha: Math.min(5, Math.max(0, finiteNumber(params.alpha, defaults.alpha, 'theme.gamutMapParams.alpha'))),
+		focusL: Math.min(1, Math.max(0, finiteNumber(params.focusL, defaults.focusL, 'theme.gamutMapParams.focusL')))
 	};
 }
 

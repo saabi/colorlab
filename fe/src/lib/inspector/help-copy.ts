@@ -209,7 +209,7 @@ export const PIPELINE_HELP: Record<PipelineHelpId, PanelHelpContent> = {
 		summary: 'Builds the continuous ramp path from the source points. Surface constraints happen here, before stops are placed or gamut-mapped.',
 		stageRows: stageRows(
 			'The ordered source points.',
-			'Path type (linear/spline), interpolation space (incl. World), long-hue direction, curve constraint, projection method, and adaptive alpha. Surface constraints project the path onto the active clipped surface, not the full gamut shell.',
+			'Path type (linear/spline), interpolation space (incl. World), long-hue direction, curve constraint, projection method, focus lightness, and adaptive alpha. Surface constraints project the path onto the active clipped surface, not the full gamut shell.',
 			'A hi-res curve in the chosen space, shaped by any active constraint, before placement and final gamut mapping.',
 			'Stop sampling, final export serialization, or CVD preview. Curve constraints shape the path; the later Gamut Map stage controls exported out-of-gamut stops.'
 		),
@@ -253,7 +253,7 @@ export const PIPELINE_HELP: Record<PipelineHelpId, PanelHelpContent> = {
 		summary: 'Applies the terminal ramp-only policy for generated stops after interpolation, placement, and expansion.',
 		stageRows: stageRows(
 			'Generated ramp or palette stops, possibly outside the current export gamut.',
-			'Clipping or Oklab projection method used to bring those stops into the export gamut. Adaptive methods expose alpha here; this is a terminal correction, not a curve constraint.',
+			'Clipping or Oklab projection method used to bring those stops into the export gamut. Focus-based methods expose focus lightness; adaptive methods also expose alpha. This is a terminal correction, not a curve constraint.',
 			'Final in-gamut ramp colors for preview, palette display, and export.',
 			'The 3D explorer solid, hover readouts, CVD simulation, source anchors, or the upstream curve path.'
 		),

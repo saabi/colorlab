@@ -883,22 +883,58 @@ Current state:
 - Phase 1 is implemented.
 - Phase 2 is implemented.
 - Phase 3 is implemented in basic form.
-- Phase 4 backend/state is implemented in basic form: `surfaceProjectionParams.alpha` exists and defaults preserve current behavior.
+- Phase 4 alpha parameterization is implemented for both Interpolate-stage surface projection and terminal `Gamut Map`:
+  - `surfaceProjectionParams.alpha` controls adaptive surface projection lines.
+  - `gamutMapParams.alpha` controls adaptive terminal gamut mapping.
+  - Both default to `0.05`, preserving previous output.
+  - Pipeline copy/status now separates path shaping from final/export gamut correction.
+
+### Phase 4B: Convert fixed-focus presets into method + params
+
+Goal:
+
+- Keep existing method values for document compatibility, but stop treating names like `project-0.5` and `adaptive-0.5` as the full configuration.
+- Use `focusL` as the neutral-axis focus parameter wherever a "middle lightness" projection is selected.
+
+Compatibility strategy:
+
+- Keep stored method strings:
+  - `project-0.5`
+  - `adaptive-0.5`
+- Interpret them as:
+  - `project-focus` with `focusL = 0.5` by default;
+  - `adaptive-focus` with `focusL = 0.5` by default.
+- Do not rename the persisted enum in this phase. A later schema cleanup may introduce explicit `project-focus` / `adaptive-focus` values once target-gamut generalization is ready.
+
+Implementation order:
+
+1. Add `focusL` to `gamutMapParams` with default `0.5`; bump schema and migrate older documents.
+2. Change terminal `Gamut Map` methods `project-0.5` and `adaptive-0.5` to read `params.focusL`.
+3. Change `Surface: Oklab projection` methods `project-0.5` and `adaptive-0.5` to read `surfaceProjectionParams.focusL` (the field already exists).
+4. Add compact Advanced controls:
+   - `Focus L` slider for `project-0.5` and `adaptive-0.5`;
+   - existing `Adaptive alpha` only for adaptive methods;
+   - keep the controls separate between Interpolate and Gamut Map.
+5. Update user-facing labels from `Project to L 0.5` / `Adaptive L 0.5` to focus-oriented labels while keeping values unchanged.
+6. Add tests:
+   - default focus `0.5` reproduces previous output;
+   - changing focus changes projection lines/output for chromatic out-of-gamut samples;
+   - document migration and round-trip preserve `gamutMapParams.focusL`.
+
+Non-goals:
+
+- Do not introduce new persisted method names yet.
+- Do not generalize target gamut in this change.
+- Do not add compression controls.
 
 Next order:
 
-1. **Surface Projection UI polish.** Add alpha presets/status and clearer path-vs-export copy. This is low risk and makes Phase 4 understandable before adding more math.
-2. **Extend terminal `Gamut Map` to share the same parameter model.** Use a separate `gamutMapParams` object rather than sharing surface projection params. Keep default output identical.
-3. **Gamut Map UI.** Add an `Advanced gamut mapping` disclosure with the same alpha presets/status. Keep it separate from the Interpolate-stage Surface Projection controls.
-4. **Pipeline node/status cleanup.** Update Interpolate and Gamut Map node statuses together:
-   - Interpolate: `Oklab projection / α 0.05`;
-   - Gamut Map: `Adaptive cusp / α 0.05` only when mapping is active.
-   Also update help popups to say whether alpha affects path shape or final exported colors.
-5. **Phase 5: generic target-gamut solver.** Add matrix-based line/boundary solving for P3/Rec.2020. Keep sRGB analytic code as a fast path.
-6. **Phase 6: Explorer display-gamut classification.** Start with shader classification only, because it is cheap and answers the main visual question.
-7. **Projected Explorer display mode.** Add only after classification and generic CPU projection are proven.
-8. **Phase 7: gamut compression.** Treat as a separate terminal ramp/export policy, not a surface constraint.
-9. **Phase 8: GPU/codegen evaluation.** Defer until duplicated projection algorithms exist in both TypeScript and GLSL.
+1. **Phase 4B focus parameterization.** Convert fixed `L 0.5` behavior into defaulted `focusL` params while keeping persisted method strings compatible.
+2. **Phase 5: generic target-gamut solver.** Add matrix-based line/boundary solving for P3/Rec.2020. Keep sRGB analytic code as a fast path.
+3. **Phase 6: Explorer display-gamut classification.** Start with shader classification only, because it is cheap and answers the main visual question.
+4. **Projected Explorer display mode.** Add only after classification and generic CPU projection are proven.
+5. **Phase 7: gamut compression.** Treat as a separate terminal ramp/export policy, not a surface constraint.
+6. **Phase 8: GPU/codegen evaluation.** Defer until duplicated projection algorithms exist in both TypeScript and GLSL.
 
 Avoid making terminal `Gamut Map` target all gamuts in the same change as projection parameterization. That would touch persistence, UI, export semantics, tests, examples, and possibly renderer expectations. The safer path is: parameterize the current sRGB/Oklab implementation first, then generalize target gamut.
 

@@ -36,6 +36,7 @@ export type PipelineNode = {
 };
 
 const oogCount = (stops: ExplorerState['theme']['stops']) => stops.reduce((n, s) => (s.inG ? n : n + 1), 0);
+const usesFocus = (method: string) => method === 'project-0.5' || method === 'adaptive-0.5';
 
 const spaceLabels: Record<ExplorerState['spaceMode'], string> = {
 	0: 'RGB',
@@ -144,6 +145,13 @@ export const PIPELINE_NODES: PipelineNode[] = [
 		status: (state) => {
 			if (!state.theme.interpolateOn) return 'Off';
 			const mode = state.theme.mode === 'spline' ? 'Spline' : 'Linear';
+			if (state.theme.splineConstraint === 'surface-oklab-project') {
+				const focus = usesFocus(state.theme.surfaceProjection) ? ` L ${state.theme.surfaceProjectionParams.focusL.toFixed(2)}` : '';
+				const alpha = state.theme.surfaceProjection.startsWith('adaptive-')
+					? ` α ${state.theme.surfaceProjectionParams.alpha.toFixed(2)}`
+					: '';
+				return `${mode} ${state.theme.splineSpace}${focus}${alpha}`;
+			}
 			const constrained = state.theme.splineConstraint === 'free' ? '' : ' constrained';
 			return `${mode} ${state.theme.splineSpace}${constrained}`;
 		},
@@ -182,9 +190,9 @@ export const PIPELINE_NODES: PipelineNode[] = [
 		affects: 'Export',
 		requiresSource: true,
 		status: (state) =>
-			state.theme.gamutMap.startsWith('adaptive-')
-				? `${state.theme.gamutMap} α ${state.theme.gamutMapParams.alpha.toFixed(2)}`
-				: state.theme.gamutMap,
+			`${state.theme.gamutMap}${usesFocus(state.theme.gamutMap) ? ` L ${state.theme.gamutMapParams.focusL.toFixed(2)}` : ''}${
+				state.theme.gamutMap.startsWith('adaptive-') ? ` α ${state.theme.gamutMapParams.alpha.toFixed(2)}` : ''
+			}`,
 		// Stops still outside sRGB after the policy runs (only when policy is 'none').
 		warn: (state) => {
 			const n = oogCount(state.theme.stops);

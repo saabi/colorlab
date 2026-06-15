@@ -115,7 +115,7 @@ export function cloneAppState(state: AppState): AppState {
 
 export function createAppState(options: { mobile?: boolean } = {}): AppState {
 	const state: AppState = {
-		schemaVersion: 11,
+		schemaVersion: 12,
 		explorer: createExplorerDefaults(),
 		camera: createCamera()
 	};

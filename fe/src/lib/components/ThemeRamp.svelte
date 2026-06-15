@@ -56,12 +56,13 @@
 
 	const SURFACE_PROJECTION_OPTIONS: Array<{ value: ExplorerState['theme']['surfaceProjection']; label: string }> = [
 		{ value: 'preserve-chroma', label: 'Preserve lightness' },
-		{ value: 'project-0.5', label: 'Project to L 0.5' },
+		{ value: 'project-0.5', label: 'Project to focus' },
 		{ value: 'project-cusp', label: 'Project to hue cusp' },
-		{ value: 'adaptive-0.5', label: 'Adaptive L 0.5' },
+		{ value: 'adaptive-0.5', label: 'Adaptive focus' },
 		{ value: 'adaptive-cusp', label: 'Adaptive cusp' }
 	];
 	const SURFACE_ALPHA_PRESETS = [0.05, 0.5, 5] as const;
+	const projectionUsesFocus = $derived(explorer.theme.surfaceProjection === 'project-0.5' || explorer.theme.surfaceProjection === 'adaptive-0.5');
 	const projectionUsesAlpha = $derived(explorer.theme.surfaceProjection.startsWith('adaptive-'));
 	const projectionAlphaStatus = $derived.by(() => {
 		const alpha = explorer.theme.surfaceProjectionParams.alpha;
@@ -70,6 +71,7 @@
 		return 'More compression';
 	});
 	const gamutMapUsesAlpha = $derived(explorer.theme.gamutMap.startsWith('adaptive-'));
+	const gamutMapUsesFocus = $derived(explorer.theme.gamutMap === 'project-0.5' || explorer.theme.gamutMap === 'adaptive-0.5');
 	const gamutMapAlphaStatus = $derived.by(() => {
 		const alpha = explorer.theme.gamutMapParams.alpha;
 		if (alpha <= 0.12) return 'Lightness-preserving';
@@ -94,9 +96,9 @@
 		{ value: 'none', label: 'None (show OOG)' },
 		{ value: 'clip', label: 'Clip (clamp)' },
 		{ value: 'preserve-chroma', label: 'Preserve chroma' },
-		{ value: 'project-0.5', label: 'Project to L 0.5' },
+		{ value: 'project-0.5', label: 'Project to focus' },
 		{ value: 'project-cusp', label: 'Project to cusp' },
-		{ value: 'adaptive-0.5', label: 'Adaptive (0.5)' },
+		{ value: 'adaptive-0.5', label: 'Adaptive focus' },
 		{ value: 'adaptive-cusp', label: 'Adaptive (cusp)' }
 	];
 
@@ -503,30 +505,43 @@
 				{/each}
 			</select>
 		</label>
-		{#if projectionUsesAlpha}
+		{#if projectionUsesAlpha || projectionUsesFocus}
 			<details class="advanced">
 				<summary>Advanced projection</summary>
-				<SliderRow
-					label="Adaptive alpha"
-					bind:value={explorer.theme.surfaceProjectionParams.alpha}
-					min={0}
-					max={5}
-					step={0.01}
-					format={(value) => value.toFixed(2)}
-				/>
-				<div class="preset-row" aria-label="Adaptive alpha presets">
-					{#each SURFACE_ALPHA_PRESETS as alpha}
-						<button
-							type="button"
-							class:preset-active={Math.abs(explorer.theme.surfaceProjectionParams.alpha - alpha) < 0.001}
-							onclick={() => setSurfaceProjectionAlpha(alpha)}
-						>
-							{alpha.toFixed(alpha < 0.1 ? 2 : 1)}
-						</button>
-					{/each}
-					<span>{projectionAlphaStatus}</span>
-				</div>
-				<p class="note">Alpha changes how the path is projected onto the active clipped surface. Lower values preserve lightness more strongly; higher values compress more toward the projection focus.</p>
+				{#if projectionUsesFocus}
+					<SliderRow
+						label="Focus L"
+						bind:value={explorer.theme.surfaceProjectionParams.focusL}
+						min={0}
+						max={1}
+						step={0.01}
+						format={(value) => value.toFixed(2)}
+					/>
+					<p class="note">Focus L is the neutral-axis lightness that this projection pulls toward. The default 0.50 preserves the previous middle-focus behavior.</p>
+				{/if}
+				{#if projectionUsesAlpha}
+					<SliderRow
+						label="Adaptive alpha"
+						bind:value={explorer.theme.surfaceProjectionParams.alpha}
+						min={0}
+						max={5}
+						step={0.01}
+						format={(value) => value.toFixed(2)}
+					/>
+					<div class="preset-row" aria-label="Adaptive alpha presets">
+						{#each SURFACE_ALPHA_PRESETS as alpha}
+							<button
+								type="button"
+								class:preset-active={Math.abs(explorer.theme.surfaceProjectionParams.alpha - alpha) < 0.001}
+								onclick={() => setSurfaceProjectionAlpha(alpha)}
+							>
+								{alpha.toFixed(alpha < 0.1 ? 2 : 1)}
+							</button>
+						{/each}
+						<span>{projectionAlphaStatus}</span>
+					</div>
+					<p class="note">Alpha changes how the path is projected onto the active clipped surface. Lower values preserve lightness more strongly; higher values compress more toward the projection focus.</p>
+				{/if}
 			</details>
 		{/if}
 	{/if}
@@ -652,30 +667,43 @@
 	<p class="note">
 		This terminal ramp policy reconciles generated stops with sRGB export. It does not reshape the 3D solid.
 	</p>
-	{#if gamutMapUsesAlpha}
+	{#if gamutMapUsesAlpha || gamutMapUsesFocus}
 		<details class="advanced">
 			<summary>Advanced gamut mapping</summary>
-			<SliderRow
-				label="Adaptive alpha"
-				bind:value={explorer.theme.gamutMapParams.alpha}
-				min={0}
-				max={5}
-				step={0.01}
-				format={(value) => value.toFixed(2)}
-			/>
-			<div class="preset-row" aria-label="Gamut map adaptive alpha presets">
-				{#each SURFACE_ALPHA_PRESETS as alpha}
-					<button
-						type="button"
-						class:preset-active={Math.abs(explorer.theme.gamutMapParams.alpha - alpha) < 0.001}
-						onclick={() => setGamutMapAlpha(alpha)}
-					>
-						{alpha.toFixed(alpha < 0.1 ? 2 : 1)}
-					</button>
-				{/each}
-				<span>{gamutMapAlphaStatus}</span>
-			</div>
-			<p class="note">Alpha changes how adaptive methods project generated ramp stops into the export gamut. It is independent of the Interpolate curve constraint alpha.</p>
+			{#if gamutMapUsesFocus}
+				<SliderRow
+					label="Focus L"
+					bind:value={explorer.theme.gamutMapParams.focusL}
+					min={0}
+					max={1}
+					step={0.01}
+					format={(value) => value.toFixed(2)}
+				/>
+				<p class="note">Focus L is the neutral-axis lightness that generated colors project toward before intersecting the export gamut.</p>
+			{/if}
+			{#if gamutMapUsesAlpha}
+				<SliderRow
+					label="Adaptive alpha"
+					bind:value={explorer.theme.gamutMapParams.alpha}
+					min={0}
+					max={5}
+					step={0.01}
+					format={(value) => value.toFixed(2)}
+				/>
+				<div class="preset-row" aria-label="Gamut map adaptive alpha presets">
+					{#each SURFACE_ALPHA_PRESETS as alpha}
+						<button
+							type="button"
+							class:preset-active={Math.abs(explorer.theme.gamutMapParams.alpha - alpha) < 0.001}
+							onclick={() => setGamutMapAlpha(alpha)}
+						>
+							{alpha.toFixed(alpha < 0.1 ? 2 : 1)}
+						</button>
+					{/each}
+					<span>{gamutMapAlphaStatus}</span>
+				</div>
+				<p class="note">Alpha changes how adaptive methods project generated ramp stops into the export gamut. It is independent of the Interpolate curve constraint alpha.</p>
+			{/if}
 		</details>
 	{/if}
 	{#if explorer.theme.stops.length}
