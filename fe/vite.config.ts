@@ -1,7 +1,7 @@
 import adapter from '@sveltejs/adapter-node';
 import { sveltekit } from '@sveltejs/kit/vite';
 import { defineConfig } from 'vite';
-import { glslify } from 'vite-plugin-glslify';
+import { glslify } from './vite-glslify';
 
 export default defineConfig({
 	envPrefix: ['VITE_', 'PUBLIC_'],

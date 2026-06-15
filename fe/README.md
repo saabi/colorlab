@@ -10,7 +10,7 @@ SvelteKit 5 + TypeScript frontend for **COLOR LAB — Gamut Explorer**.
 
 - [SvelteKit 2](https://svelte.dev/docs/kit) with Svelte 5 runes
 - [adapter-node](https://svelte.dev/docs/kit/adapter-node) for production SSR
-- WebGL2 renderer with GLSL shaders (`vite-plugin-glslify`)
+- WebGL2 renderer with GLSL shaders (`glslify` via local Vite plugin)
 - Vitest for unit tests
 
 ## Scripts
