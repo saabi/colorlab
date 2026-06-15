@@ -60,7 +60,14 @@
 		{ value: 'adaptive-0.5', label: 'Adaptive L 0.5' },
 		{ value: 'adaptive-cusp', label: 'Adaptive cusp' }
 	];
+	const SURFACE_ALPHA_PRESETS = [0.05, 0.5, 5] as const;
 	const projectionUsesAlpha = $derived(explorer.theme.surfaceProjection.startsWith('adaptive-'));
+	const projectionAlphaStatus = $derived.by(() => {
+		const alpha = explorer.theme.surfaceProjectionParams.alpha;
+		if (alpha <= 0.12) return 'Lightness-preserving';
+		if (alpha < 1.5) return 'Balanced';
+		return 'More compression';
+	});
 
 	// Global out-of-gamut policy (applies to every theme mode + export).
 	const GAMUT_MAP_OPTIONS: Array<{ value: ExplorerState['theme']['gamutMap']; label: string }> = [
@@ -82,6 +89,10 @@
 	function setSurfaceProjection(method: ExplorerState['theme']['surfaceProjection']) {
 		explorer.theme.surfaceProjection = method;
 		explorer.theme.surfaceProjectionParams.method = method;
+	}
+
+	function setSurfaceProjectionAlpha(alpha: number) {
+		explorer.theme.surfaceProjectionParams.alpha = alpha;
 	}
 
 	const oogBefore = $derived(explorer.theme.rawStops.reduce((n: number, s: { inG: boolean }) => (s.inG ? n : n + 1), 0));
@@ -478,13 +489,25 @@
 					step={0.01}
 					format={(value) => value.toFixed(2)}
 				/>
-				<p class="note">Lower values preserve lightness more strongly; higher values compress more toward the projection focus.</p>
+				<div class="preset-row" aria-label="Adaptive alpha presets">
+					{#each SURFACE_ALPHA_PRESETS as alpha}
+						<button
+							type="button"
+							class:preset-active={Math.abs(explorer.theme.surfaceProjectionParams.alpha - alpha) < 0.001}
+							onclick={() => setSurfaceProjectionAlpha(alpha)}
+						>
+							{alpha.toFixed(alpha < 0.1 ? 2 : 1)}
+						</button>
+					{/each}
+					<span>{projectionAlphaStatus}</span>
+				</div>
+				<p class="note">Alpha changes how the path is projected onto the active clipped surface. Lower values preserve lightness more strongly; higher values compress more toward the projection focus.</p>
 			</details>
 		{/if}
 	{/if}
 
 	<p class="note">
-		Builds the ramp path from the source points. A single point yields one seed stop — useful with the spread expander.
+		Builds the ramp path from the source points. Curve constraints shape this path; Gamut Map handles final exported out-of-gamut colors later.
 	</p>
 	<ToggleRow label="Show curve in 3D" bind:checked={explorer.theme.showCurve} />
 	{/if}
@@ -667,6 +690,28 @@
 		font-weight: 650;
 		text-transform: uppercase;
 		letter-spacing: 0.08em;
+	}
+	.preset-row {
+		display: flex;
+		align-items: center;
+		gap: 4px;
+		margin: 4px 0 2px;
+		color: var(--muted);
+		font-size: 0.846rem;
+	}
+	.preset-row button {
+		flex: none;
+		min-width: 40px;
+		padding: 3px 6px;
+		font-size: 0.846rem;
+	}
+	.preset-row .preset-active {
+		border-color: var(--accent, #d7b33f);
+		color: var(--text);
+	}
+	.preset-row span {
+		margin-left: auto;
+		font-weight: 650;
 	}
 	.anchor-label {
 		color: var(--muted);
