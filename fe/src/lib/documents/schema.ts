@@ -26,7 +26,7 @@ import { CURRENT_SNAPSHOT_VERSION, type ParameterSnapshot } from './types';
 
 const SPACE_MODES: readonly SpaceMode[] = [0, 1, 2, 3, 5];
 const GAMUTS: readonly GamutKey[] = ['srgb', 'p3', 'rec2020', 'ntsc', 'ebu', 'smptec', 'cie'];
-const TESS: readonly PersistedExplorer['N'][] = [64, 128, 192, 256];
+const TESS: readonly PersistedExplorer['N'][] = [64, 128, 192, 256, 512];
 const PLANE_MODES: readonly PlaneMode[] = ['L', 'H', 'C'];
 const SHELLS: readonly ShellKey[] = ['none', 'srgb', 'p3', 'rec2020', 'ntsc', 'cie'];
 const CHROMA_OVERLAYS: readonly ChromaticityOverlayKey[] = ['off', 'spectral-locus', 'spectral-surface'];

@@ -71,7 +71,7 @@
 		{ value: 'cie', label: 'CIE 1931 RGB' }
 	] as const;
 
-	const resolutions = [64, 128, 192, 256] as const;
+	const resolutions = [64, 128, 192, 256, 512] as const;
 	const minAverageFpsOptions = [15, 30, 60] as const;
 
 	function setCameraTarget(index: 0 | 1 | 2, value: number) {

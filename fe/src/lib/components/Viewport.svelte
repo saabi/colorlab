@@ -51,7 +51,7 @@
 	let gestureStatus: string | null = $state(null);
 	let keys = { space: false, addPoint: false };
 
-	const RESOLUTIONS = [64, 128, 192, 256] as const;
+	const RESOLUTIONS = [64, 128, 192, 256, 512] as const;
 	const AUTO_ROTATE_RAD_PER_SEC = 0.09;
 	const PERF_SAMPLE_COUNT = 12;
 	const PERF_MARGIN = 1.1;

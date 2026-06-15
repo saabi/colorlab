@@ -83,7 +83,7 @@ export interface HoverHit {
 export interface ExplorerState {
 	spaceMode: SpaceMode;
 	gamut: GamutKey;
-	N: 64 | 128 | 192 | 256;
+	N: 64 | 128 | 192 | 256 | 512;
 	autoPerformance: boolean;
 	minAverageFps: MinAverageFps;
 	slice: boolean;
