@@ -870,6 +870,8 @@
 		explorer.theme.surfaceProjectionParams.focusL;
 		explorer.theme.surfaceProjectionParams.neutral;
 		explorer.theme.splineSpace;
+		explorer.theme.gamutMap;
+		explorer.theme.gamutMapParams.alpha;
 		explorer.theme.activeList;
 		// Track list count and every list's length (add/remove in any list rebuilds).
 		JSON.stringify(explorer.theme.lists.map((list: ThemeAnchor[]) => list.length));

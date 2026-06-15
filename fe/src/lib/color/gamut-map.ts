@@ -25,6 +25,14 @@ export type GamutClipMethod =
 /** Full policy set: identity, naive clamp, plus the projection strategies. */
 export type GamutMapMethod = 'none' | 'clip' | GamutClipMethod;
 
+export interface GamutMapParams {
+	alpha: number;
+}
+
+export const DEFAULT_GAMUT_MAP_PARAMS: GamutMapParams = {
+	alpha: 0.05
+};
+
 export const GAMUT_CLIP_METHODS: readonly GamutClipMethod[] = [
 	'preserve-chroma',
 	'project-0.5',
@@ -35,13 +43,19 @@ export const GAMUT_CLIP_METHODS: readonly GamutClipMethod[] = [
 
 export const GAMUT_MAP_METHODS: readonly GamutMapMethod[] = ['none', 'clip', ...GAMUT_CLIP_METHODS];
 
-const ALPHA = 0.05; // adaptive-L0 strength (ok_color.h default)
 const clamp = (x: number, lo: number, hi: number) => (x < lo ? lo : x > hi ? hi : x);
 const clamp01 = (x: number) => clamp(x, 0, 1);
 const sgn = (x: number) => (0 < x ? 1 : 0) - (x < 0 ? 1 : 0);
 
 const inGamut = (rgb: Vec3) =>
 	rgb[0] < 1 && rgb[1] < 1 && rgb[2] < 1 && rgb[0] > 0 && rgb[1] > 0 && rgb[2] > 0;
+
+export function normalizeGamutMapParams(params?: Partial<GamutMapParams>): GamutMapParams {
+	const alpha = params?.alpha;
+	return {
+		alpha: typeof alpha === 'number' && Number.isFinite(alpha) ? Math.max(0, alpha) : DEFAULT_GAMUT_MAP_PARAMS.alpha
+	};
+}
 
 // Shared projection: choose L0 via `pickL0`, then project to the gamut boundary.
 function project(rgb: Vec3, pickL0: (L: number, C: number, a_: number, b_: number) => number): Vec3 {
@@ -59,22 +73,24 @@ function project(rgb: Vec3, pickL0: (L: number, C: number, a_: number, b_: numbe
 	return oklab2lsrgb([Lc, Cc * a_, Cc * b_]);
 }
 
-export const GAMUT_CLIP: Record<GamutClipMethod, (rgb: Vec3) => Vec3> = {
+export const GAMUT_CLIP: Record<GamutClipMethod, (rgb: Vec3, params?: Partial<GamutMapParams>) => Vec3> = {
 	'preserve-chroma': (rgb) => project(rgb, (L) => clamp(L, 0, 1)),
 	'project-0.5': (rgb) => project(rgb, () => 0.5),
 	'project-cusp': (rgb) => project(rgb, (_L, _C, a_, b_) => findCusp(a_, b_).L),
-	'adaptive-0.5': (rgb) =>
+	'adaptive-0.5': (rgb, params) =>
 		project(rgb, (L, C) => {
+			const alpha = normalizeGamutMapParams(params).alpha;
 			const Ld = L - 0.5;
-			const e1 = 0.5 + Math.abs(Ld) + ALPHA * C;
+			const e1 = 0.5 + Math.abs(Ld) + alpha * C;
 			return 0.5 * (1 + sgn(Ld) * (e1 - Math.sqrt(Math.max(0, e1 * e1 - 2 * Math.abs(Ld)))));
 		}),
-	'adaptive-cusp': (rgb) =>
+	'adaptive-cusp': (rgb, params) =>
 		project(rgb, (L, C, a_, b_) => {
+			const alpha = normalizeGamutMapParams(params).alpha;
 			const cusp = findCusp(a_, b_);
 			const Ld = L - cusp.L;
 			const k = 2 * (Ld > 0 ? 1 - cusp.L : cusp.L);
-			const e1 = 0.5 * k + Math.abs(Ld) + (ALPHA * C) / k;
+			const e1 = 0.5 * k + Math.abs(Ld) + (alpha * C) / k;
 			return cusp.L + 0.5 * (sgn(Ld) * (e1 - Math.sqrt(Math.max(0, e1 * e1 - 2 * k * Math.abs(Ld)))));
 		})
 };
@@ -85,8 +101,8 @@ export const GAMUT_CLIP: Record<GamutClipMethod, (rgb: Vec3) => Vec3> = {
  *  - 'clip'  -> naive per-channel clamp to [0,1]
  *  - others  -> Ottosson boundary projection (in-gamut colors unchanged)
  */
-export function mapToGamut(srgbLin: Vec3, method: GamutMapMethod): Vec3 {
+export function mapToGamut(srgbLin: Vec3, method: GamutMapMethod, params?: Partial<GamutMapParams>): Vec3 {
 	if (method === 'none') return srgbLin;
 	if (method === 'clip') return [clamp01(srgbLin[0]), clamp01(srgbLin[1]), clamp01(srgbLin[2])];
-	return GAMUT_CLIP[method](srgbLin);
+	return GAMUT_CLIP[method](srgbLin, params);
 }

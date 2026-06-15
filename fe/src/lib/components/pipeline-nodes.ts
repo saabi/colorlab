@@ -181,7 +181,10 @@ export const PIPELINE_NODES: PipelineNode[] = [
 		description: 'Terminal ramp-only policy that brings generated stops into the export gamut after the path is built and sampled.',
 		affects: 'Export',
 		requiresSource: true,
-		status: (state) => state.theme.gamutMap,
+		status: (state) =>
+			state.theme.gamutMap.startsWith('adaptive-')
+				? `${state.theme.gamutMap} α ${state.theme.gamutMapParams.alpha.toFixed(2)}`
+				: state.theme.gamutMap,
 		// Stops still outside sRGB after the policy runs (only when policy is 'none').
 		warn: (state) => {
 			const n = oogCount(state.theme.stops);

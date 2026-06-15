@@ -21,7 +21,7 @@ import type {
 } from '$lib/engine/types';
 import { MAX_RAMP_STOPS } from '$lib/engine/types';
 import { INTERP_SPACE_KEYS } from '$lib/color/interp';
-import { GAMUT_CLIP_METHODS, GAMUT_MAP_METHODS, type GamutMapMethod } from '$lib/color/gamut-map';
+import { DEFAULT_GAMUT_MAP_PARAMS, GAMUT_CLIP_METHODS, GAMUT_MAP_METHODS, type GamutMapMethod, type GamutMapParams } from '$lib/color/gamut-map';
 import type { SurfaceProjectionMethod, SurfaceProjectionNeutralFallback, SurfaceProjectionParams } from '$lib/color/boundary-project';
 import { CURRENT_SNAPSHOT_VERSION, type ParameterSnapshot } from './types';
 
@@ -167,6 +167,13 @@ function coerceSurfaceProjectionParams(
 	};
 }
 
+function coerceGamutMapParams(raw: unknown, defaults: GamutMapParams): GamutMapParams {
+	const params = isRecord(raw) ? raw : {};
+	return {
+		alpha: Math.min(5, Math.max(0, finiteNumber(params.alpha, defaults.alpha, 'theme.gamutMapParams.alpha')))
+	};
+}
+
 function coerceTheme(raw: unknown, defaults: PersistedTheme): PersistedTheme {
 	const theme = isRecord(raw) ? raw : {};
 	const lists = coerceLists(theme.lists, 'theme.lists');
@@ -182,6 +189,7 @@ function coerceTheme(raw: unknown, defaults: PersistedTheme): PersistedTheme {
 		surfaceProjectionParams: coerceSurfaceProjectionParams(theme.surfaceProjectionParams, defaults.surfaceProjectionParams, surfaceProjection),
 		splineSpace: enumOf(theme.splineSpace, INTERP_SPACES, defaults.splineSpace, 'theme.splineSpace'),
 		gamutMap: enumOf(theme.gamutMap, GAMUT_MAPS, defaults.gamutMap, 'theme.gamutMap'),
+		gamutMapParams: coerceGamutMapParams(theme.gamutMapParams, defaults.gamutMapParams ?? DEFAULT_GAMUT_MAP_PARAMS),
 		steps: Math.min(MAX_RAMP_STOPS, Math.max(1, Math.round(finiteNumber(theme.steps, defaults.steps, 'theme.steps')))),
 		interpolateOn: typeof theme.interpolateOn === 'boolean' ? theme.interpolateOn : defaults.interpolateOn,
 		placeOn: typeof theme.placeOn === 'boolean' ? theme.placeOn : defaults.placeOn,
@@ -310,6 +318,7 @@ export function coerceSnapshot(raw: unknown): ParameterSnapshot | null {
 				surfaceProjectionParams: factory.explorer.theme.surfaceProjectionParams,
 				splineSpace: factory.explorer.theme.splineSpace,
 				gamutMap: factory.explorer.theme.gamutMap,
+				gamutMapParams: factory.explorer.theme.gamutMapParams,
 				steps: factory.explorer.theme.steps,
 				mode: factory.explorer.theme.mode,
 				arcLong: factory.explorer.theme.arcLong,

@@ -1,6 +1,7 @@
 import { createCamera } from './camera';
 import { MOBILE_STARTUP_TESS } from './mobile';
 import { DEFAULT_SURFACE_PROJECTION_PARAMS } from '$lib/color/boundary-project';
+import { DEFAULT_GAMUT_MAP_PARAMS } from '$lib/color/gamut-map';
 
 import type { AppState, ExplorerState } from './types';
 import type { Camera } from './camera';
@@ -57,6 +58,7 @@ function createExplorerDefaults(): ExplorerState {
 			surfaceProjectionParams: { ...DEFAULT_SURFACE_PROJECTION_PARAMS },
 			splineSpace: 'oklab',
 			gamutMap: 'none',
+			gamutMapParams: { ...DEFAULT_GAMUT_MAP_PARAMS },
 			curves: [],
 			rawRows: [],
 			rows: [],
@@ -113,7 +115,7 @@ export function cloneAppState(state: AppState): AppState {
 
 export function createAppState(options: { mobile?: boolean } = {}): AppState {
 	const state: AppState = {
-		schemaVersion: 10,
+		schemaVersion: 11,
 		explorer: createExplorerDefaults(),
 		camera: createCamera()
 	};

@@ -23,8 +23,10 @@
  * v9: spline surface constraint methods. Old
  *   theme.splineConstraint 'surface' -> 'surface-radial'; add
  *   theme.surfaceProjection = 'adaptive-0.5'.
- * v10 (CURRENT_SNAPSHOT_VERSION): add theme.surfaceProjectionParams with
+ * v10: add theme.surfaceProjectionParams with
  *   adaptive alpha/focus/neutral defaults derived from theme.surfaceProjection.
+ * v11 (CURRENT_SNAPSHOT_VERSION): add theme.gamutMapParams with adaptive alpha
+ *   defaults for terminal ramp gamut mapping.
  *
  * When adding v8+, append a line here and implement migrateVNToVN+1 below.
  */
@@ -191,6 +193,18 @@ function migrateV9ToV10(raw: Record<string, unknown>) {
 	return raw;
 }
 
+function migrateV10ToV11(raw: Record<string, unknown>) {
+	raw.schemaVersion = 11;
+	const explorer = raw.explorer as Record<string, unknown> | undefined;
+	const theme = explorer?.theme as Record<string, unknown> | undefined;
+	if (theme && theme.gamutMapParams === undefined) {
+		theme.gamutMapParams = {
+			alpha: 0.05
+		};
+	}
+	return raw;
+}
+
 export function migrateSnapshot(raw: unknown, fromVersion: number): unknown {
 	if (!raw || typeof raw !== 'object') return raw;
 	let current = { ...(raw as Record<string, unknown>) };
@@ -205,6 +219,7 @@ export function migrateSnapshot(raw: unknown, fromVersion: number): unknown {
 		if (version === 7) current = migrateV7ToV8(current);
 		if (version === 8) current = migrateV8ToV9(current);
 		if (version === 9) current = migrateV9ToV10(current);
+		if (version === 10) current = migrateV10ToV11(current);
 	}
 	return current;
 }

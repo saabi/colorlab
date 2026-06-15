@@ -253,7 +253,7 @@ export const PIPELINE_HELP: Record<PipelineHelpId, PanelHelpContent> = {
 		summary: 'Applies the terminal ramp-only policy for generated stops after interpolation, placement, and expansion.',
 		stageRows: stageRows(
 			'Generated ramp or palette stops, possibly outside the current export gamut.',
-			'Clipping or Oklab projection method used to bring those stops into the export gamut. This is a terminal correction, not a curve constraint.',
+			'Clipping or Oklab projection method used to bring those stops into the export gamut. Adaptive methods expose alpha here; this is a terminal correction, not a curve constraint.',
 			'Final in-gamut ramp colors for preview, palette display, and export.',
 			'The 3D explorer solid, hover readouts, CVD simulation, source anchors, or the upstream curve path.'
 		),

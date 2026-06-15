@@ -325,6 +325,26 @@ describe('parseSnapshot', () => {
 		});
 	});
 
+	it('migrates v10 gamut map defaults to v11 params', () => {
+		const v10 = {
+			schemaVersion: 10,
+			explorer: {
+				...defaults.explorer,
+				theme: {
+					...defaults.explorer.theme,
+					gamutMap: 'adaptive-cusp'
+				}
+			},
+			camera: defaults.camera
+		} as unknown;
+		const result = parseSnapshot(v10);
+		expect(result.migrated).toBe(true);
+		expect(result.snapshot?.schemaVersion).toBe(CURRENT_SNAPSHOT_VERSION);
+		expect(result.snapshot?.explorer.theme.gamutMapParams).toMatchObject({
+			alpha: 0.05
+		});
+	});
+
 	it('round-trips new surface projection constraint fields', () => {
 		const doc = {
 			...defaults,
@@ -347,6 +367,25 @@ describe('parseSnapshot', () => {
 		expect(result.snapshot?.explorer.theme.splineConstraint).toBe('surface-oklab-project');
 		expect(result.snapshot?.explorer.theme.surfaceProjection).toBe('adaptive-cusp');
 		expect(result.snapshot?.explorer.theme.surfaceProjectionParams.alpha).toBe(0.5);
+	});
+
+	it('round-trips gamut map adaptive params', () => {
+		const doc = {
+			...defaults,
+			explorer: {
+				...defaults.explorer,
+				theme: {
+					...defaults.explorer.theme,
+					gamutMap: 'adaptive-cusp',
+					gamutMapParams: {
+						alpha: 0.5
+					}
+				}
+			}
+		};
+		const result = parseSnapshot(doc);
+		expect(result.snapshot?.explorer.theme.gamutMap).toBe('adaptive-cusp');
+		expect(result.snapshot?.explorer.theme.gamutMapParams.alpha).toBe(0.5);
 	});
 
 	it('clamps a persisted activeList to the available lists', () => {

@@ -69,6 +69,13 @@
 		if (alpha < 1.5) return 'Balanced';
 		return 'More compression';
 	});
+	const gamutMapUsesAlpha = $derived(explorer.theme.gamutMap.startsWith('adaptive-'));
+	const gamutMapAlphaStatus = $derived.by(() => {
+		const alpha = explorer.theme.gamutMapParams.alpha;
+		if (alpha <= 0.12) return 'Lightness-preserving';
+		if (alpha < 1.5) return 'Balanced';
+		return 'More compression';
+	});
 	const constraintScopeNote = $derived.by(() => {
 		switch (explorer.theme.splineConstraint) {
 			case 'free':
@@ -106,6 +113,10 @@
 
 	function setSurfaceProjectionAlpha(alpha: number) {
 		explorer.theme.surfaceProjectionParams.alpha = alpha;
+	}
+
+	function setGamutMapAlpha(alpha: number) {
+		explorer.theme.gamutMapParams.alpha = alpha;
 	}
 
 	const oogBefore = $derived(explorer.theme.rawStops.reduce((n: number, s: { inG: boolean }) => (s.inG ? n : n + 1), 0));
@@ -641,6 +652,32 @@
 	<p class="note">
 		This terminal ramp policy reconciles generated stops with sRGB export. It does not reshape the 3D solid.
 	</p>
+	{#if gamutMapUsesAlpha}
+		<details class="advanced">
+			<summary>Advanced gamut mapping</summary>
+			<SliderRow
+				label="Adaptive alpha"
+				bind:value={explorer.theme.gamutMapParams.alpha}
+				min={0}
+				max={5}
+				step={0.01}
+				format={(value) => value.toFixed(2)}
+			/>
+			<div class="preset-row" aria-label="Gamut map adaptive alpha presets">
+				{#each SURFACE_ALPHA_PRESETS as alpha}
+					<button
+						type="button"
+						class:preset-active={Math.abs(explorer.theme.gamutMapParams.alpha - alpha) < 0.001}
+						onclick={() => setGamutMapAlpha(alpha)}
+					>
+						{alpha.toFixed(alpha < 0.1 ? 2 : 1)}
+					</button>
+				{/each}
+				<span>{gamutMapAlphaStatus}</span>
+			</div>
+			<p class="note">Alpha changes how adaptive methods project generated ramp stops into the export gamut. It is independent of the Interpolate curve constraint alpha.</p>
+		</details>
+	{/if}
 	{#if explorer.theme.stops.length}
 		<p class="note" style="margin-top: 0">
 			{oogBefore} out of gamut{explorer.theme.gamutMap === 'none' ? '' : ` → ${oogAfter} after mapping`}

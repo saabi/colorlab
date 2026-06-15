@@ -134,7 +134,7 @@ function buildExpand(state: ExplorerState, matrices: DerivedMatrices) {
 		T.grid = base.length > 1 ? base : [];
 		return;
 	}
-	const mapCell = (lin: Vec3) => (T.gamutMap !== 'none' ? mapToGamut(lin, T.gamutMap) : lin);
+	const mapCell = (lin: Vec3) => (T.gamutMap !== 'none' ? mapToGamut(lin, T.gamutMap, T.gamutMapParams) : lin);
 	const cell = (srgbLin: Vec3, dh: number, dC: number, dL: number) =>
 		stopFromSrgbLin(mapCell(spreadColor(srgbLin, dh, dC, dL)), state, matrices);
 
@@ -476,11 +476,11 @@ export function finalizeRamp(state: ExplorerState, matrices: DerivedMatrices) {
 	if (method === 'none') {
 		T.rows = T.rawRows;
 	} else {
-		T.rows = T.rawRows.map((row) => row.map((s) => stopFromSrgbLin(mapToGamut(s.srgbLin, method), state, matrices)));
+		T.rows = T.rawRows.map((row) => row.map((s) => stopFromSrgbLin(mapToGamut(s.srgbLin, method, T.gamutMapParams), state, matrices)));
 		if (T.mode === 'spline') {
 			T.curves = T.curves.map((curve) =>
 				curve.map((s) => {
-					const mapped = mapToGamut(s.srgbLin, method);
+					const mapped = mapToGamut(s.srgbLin, method, T.gamutMapParams);
 					return { world: jsToWorld(m3.mulV(matrices.toSrgbLin.fromSrgb, mapped), state, matrices), srgbLin: mapped };
 				})
 			);
