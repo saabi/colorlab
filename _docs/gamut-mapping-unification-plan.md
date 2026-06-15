@@ -11,17 +11,17 @@ Out-of-gamut (OOG) colors are produced, detected, and mapped in several disconne
 ### 1.1 Audit of today's pipeline
 
 **Producers** — colors whose linear sRGB falls outside `[0, 1]`:
-- `stopFromWorld` ([`theme.ts`](file:///home/ushif/repos/colorlab/fe/src/lib/engine/theme.ts) ~L49) and `stopFromOklab` (~L267) mint `ThemeStop.srgbLin` that can be OOG (segment/arc/spread ramps that leave sRGB, spline interpolation in OKHSV/OKLCH overshooting the boundary).
+- `stopFromWorld` ([`theme.ts`](fe/src/lib/engine/theme.ts) ~L49) and `stopFromOklab` (~L267) mint `ThemeStop.srgbLin` that can be OOG (segment/arc/spread ramps that leave sRGB, spline interpolation in OKHSV/OKLCH overshooting the boundary).
 - Spline control points placed on a wide-gamut solid.
 
 **Detectors / reporters** (each computes its own notion of "in gamut"):
 - `ThemeStop.inG` — measured against **sRGB** (`srgbLin ∈ [0,1]`), in both `stopFromWorld` and `stopFromOklab`.
 - `HoverHit.inGamut` (`picking.ts` L60) — measured against the **active display gamut** cube. Different reference space from the theme.
-- UI surfaces: ramp-chip dashed outline ([`ThemeRamp.svelte`](file:///home/ushif/repos/colorlab/fe/src/lib/components/ThemeRamp.svelte) L105), "OUT OF GAMUT" badge ([`RightInspector.svelte`](file:///home/ushif/repos/colorlab/fe/src/lib/components/RightInspector.svelte) L151), `OOG` comment in CSS export, `inGamut` field in DTCG export.
+- UI surfaces: ramp-chip dashed outline ([`ThemeRamp.svelte`](fe/src/lib/components/ThemeRamp.svelte) L105), "OUT OF GAMUT" badge ([`RightInspector.svelte`](fe/src/lib/components/RightInspector.svelte) L151), `OOG` comment in CSS export, `inGamut` field in DTCG export.
 
 **Mappers** — three, with different math and scope:
 1. **`fitGamut`** (`theme.ts` L283) — on-demand button ("Fit stops inside sRGB"), per-stop, only OOG stops, constant-`L` chroma **bisection** in Oklab toward sRGB. Functionally equivalent to Ottosson's `preserve-chroma`, reimplemented iteratively.
-2. **`GAMUT_CLIP`** registry ([`clip.ts`](file:///home/ushif/repos/colorlab/fe/src/lib/color/clip.ts)) — 5 analytic Ottosson strategies, applied **during spline generation** via `theme.splineConstraint`.
+2. **`GAMUT_CLIP`** registry ([`clip.ts`](fe/src/lib/color/clip.ts)) — 5 analytic Ottosson strategies, applied **during spline generation** via `theme.splineConstraint`.
 3. **`clamp01`** — implicit hard per-channel clip, used for display encoding (chips, swatches, shader marks), WCAG luminance, and Oklab arc length. Not a gamut map per se, but it silently disagrees with whatever soft mapping was chosen.
 
 ### 1.2 The problems

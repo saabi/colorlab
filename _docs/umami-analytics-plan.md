@@ -42,7 +42,7 @@ Add a public environment variable:
 
 ```text
 PUBLIC_UMAMI_SRC=<umami tracker script URL>
-PUBLIC_UMAMI_WEBSITE_ID=<uuid from umami.infomerx.co>
+PUBLIC_UMAMI_WEBSITE_ID=<uuid from your Umami instance>
 ```
 
 SvelteKit/Vite supports `.env` files. Add a committed example file and keep real ids out of git:

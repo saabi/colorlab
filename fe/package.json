@@ -1,8 +1,10 @@
 {
-	"name": "fe",
+	"name": "colorlab",
 	"private": true,
 	"version": "0.0.1",
 	"type": "module",
+	"license": "MIT",
+	"author": "Sebastian Ferreyra Pons",
 	"scripts": {
 		"dev": "vite dev",
 		"build": "vite build",

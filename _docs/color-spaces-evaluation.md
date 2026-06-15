@@ -2,7 +2,7 @@
 
 Status: Research & Implementation Proposal
 
-This document evaluates the color spaces referenced in [`_docs/references.md`](file:///home/ushif/repos/colorlab/_docs/references.md) alongside modern researched alternatives, with a focus on **perceptually equidistant metrics** (like CIELAB and Oklab) that would be valuable additions to the Gamut Explorer and Theme Designer.
+This document evaluates the color spaces referenced in [`_docs/references.md`](_docs/references.md) alongside modern researched alternatives, with a focus on **perceptually equidistant metrics** (like CIELAB and Oklab) that would be valuable additions to the Gamut Explorer and Theme Designer.
 
 ---
 
@@ -86,10 +86,10 @@ To enrich Colorlab's scientific capabilities and design workflows, we recommend 
 
 1. **JzAzBz** (as Space Mode 6):
    - **Why:** Essential for modern wide-gamut (Rec.2020) and HDR exploration.
-   - **Implementation:** Implement the PQ-curve compression and coordinate mapping in [`fe/src/lib/color/pipeline.ts`](file:///home/ushif/repos/colorlab/fe/src/lib/color/pipeline.ts).
+   - **Implementation:** Implement the PQ-curve compression and coordinate mapping in [`fe/src/lib/color/pipeline.ts`](fe/src/lib/color/pipeline.ts).
 2. **IPT** (as Space Mode 7):
    - **Why:** Solves the problem of hue-shifting theme ramps during saturation sweeps.
    - **Implementation:** Straightforward matrix multiplication and power-law functions.
 3. **OKLrCH** (as a sub-mode or alternative coordinates):
    - **Why:** Solves Svelte/DTCG designers' need for $L^*$ compliance without losing Oklab's hue properties.
-   - **Implementation:** Implement `toe` and `toe_inv` functions in [`fe/src/lib/color/transfer.ts`](file:///home/ushif/repos/colorlab/fe/src/lib/color/transfer.ts).
+   - **Implementation:** Implement `toe` and `toe_inv` functions in [`fe/src/lib/color/transfer.ts`](fe/src/lib/color/transfer.ts).

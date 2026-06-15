@@ -16,7 +16,8 @@ Built with **SvelteKit 5**, **TypeScript**, and **WebGL2**. Parameter sets are s
 |------|-------------|
 | [`fe/`](fe/) | SvelteKit application (active codebase) |
 | [`_docs/`](_docs/) | Design notes, migration plans, and prototype artifacts |
-| [`fe.old/`](fe.old/) | Legacy frontend (historical reference only) |
+
+The legacy Sapper/Rollup prototype (`fe.old/`) was removed from the main branch; it remains in git history before the open-source cleanup.
 
 ## Quick start
 
@@ -35,8 +36,9 @@ For build, deploy, environment variables, and project structure, see [`fe/README
 - [`_docs/design.md`](_docs/design.md) — architecture and color-pipeline design
 - [`_docs/references.md`](_docs/references.md) — external references (CIE/ISO, IEC/ITU/SMPTE, CSS/DTCG, Oklab, CVD, non-Riemannian geometry)
 - [`_docs/svelte-migration.md`](_docs/svelte-migration.md) — SvelteKit migration plan
+- [`CONTRIBUTING.md`](CONTRIBUTING.md) — development setup, tests, and merge request expectations
 - [`fe/src/lib/documents/README.md`](fe/src/lib/documents/README.md) — parameter-set persistence
 
 ## License
 
-Private repository. All rights reserved unless otherwise noted.
+[MIT](LICENSE). See [THIRD_PARTY.md](THIRD_PARTY.md) for attributed third-party code.

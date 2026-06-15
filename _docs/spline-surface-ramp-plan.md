@@ -6,7 +6,7 @@ Status: Proposal and Implementation Plan
 
 ## 1. Overview and Goals
 
-The theme designer currently supports three ramp modes ([`fe/src/lib/engine/theme.ts`](file:///home/ushif/repos/colorlab/fe/src/lib/engine/theme.ts) `buildRamp`):
+The theme designer currently supports three ramp modes ([`fe/src/lib/engine/theme.ts`](fe/src/lib/engine/theme.ts) `buildRamp`):
 - **Segment** (`seg`): straight-line Cartesian interpolation between two anchors ($A$, $B$) in world space.
 - **Hue arc** (`arc`): cylindrical interpolation between $A$ and $B$ sweeping around the neutral axis.
 - **Spread A** (`spread`): builds a ramp from anchor $A$ using delta hue ($\Delta h$) and delta chroma ($\Delta c$).
@@ -20,7 +20,7 @@ Drawing **spline curves on the surface of the 3D solid** offers:
 
 ### Goals
 - Introduce a **Spline** theme mode supporting an arbitrary number of control points.
-- Let the user **choose the color space the curve is interpolated in** — the OK\* family (Oklab, OKLCH, **OKLrCH**, **OKHSV**) plus CIELAB, CIELCh, CIELUV, CIELCh(uv), and linear sRGB — via an extensible registry. OK\* definitions follow Björn Ottosson's reference implementation; see [`_docs/references.md`](file:///home/ushif/repos/colorlab/_docs/references.md).
+- Let the user **choose the color space the curve is interpolated in** — the OK\* family (Oklab, OKLCH, **OKLrCH**, **OKHSV**) plus CIELAB, CIELCh, CIELUV, CIELCh(uv), and linear sRGB — via an extensible registry. OK\* definitions follow Björn Ottosson's reference implementation; see [`_docs/references.md`](_docs/references.md).
 - Support **interactive control point placement and dragging** locked to the 3D gamut surface (or slice plane / cylinder cap).
 - Render the spline in the 3D viewport as a **gradient curve** showing the actual ramp trajectory.
 - Offer **Surface lock** (project intermediate points onto the active boundary) alongside **Free** (interpolate inside the volume).
@@ -28,8 +28,8 @@ Drawing **spline curves on the surface of the 3D solid** offers:
 
 ### Design constraints discovered from the codebase
 These shaped the plan and must be respected:
-- **Persistence is whitelisted, not structural.** `PersistedTheme = Omit<ExplorerState['theme'], 'arm' | 'stops'>` ([`types.ts`](file:///home/ushif/repos/colorlab/fe/src/lib/engine/types.ts)), but `toPersistedExplorer` ([`snapshot.ts`](file:///home/ushif/repos/colorlab/fe/src/lib/documents/snapshot.ts)) and `coerceTheme` ([`schema.ts`](file:///home/ushif/repos/colorlab/fe/src/lib/documents/schema.ts)) are **manual whitelists**. Any new persisted field must be added to *both*, plus the `THEME_MODES` enum and a `parse.test.ts` fixture. See §7 and `.cursor/rules/document-persistence.mdc`.
-- **No mat4 helpers exist.** [`math.ts`](file:///home/ushif/repos/colorlab/fe/src/lib/color/math.ts) has only `m3` (3×3). Projecting world→screen needs a new helper in `camera.ts` (where `persp`/`lookAt`/`camEye` already live).
+- **Persistence is whitelisted, not structural.** `PersistedTheme = Omit<ExplorerState['theme'], 'arm' | 'stops'>` ([`types.ts`](fe/src/lib/engine/types.ts)), but `toPersistedExplorer` ([`snapshot.ts`](fe/src/lib/documents/snapshot.ts)) and `coerceTheme` ([`schema.ts`](fe/src/lib/documents/schema.ts)) are **manual whitelists**. Any new persisted field must be added to *both*, plus the `THEME_MODES` enum and a `parse.test.ts` fixture. See §7 and `.cursor/rules/document-persistence.mdc`.
+- **No mat4 helpers exist.** [`math.ts`](fe/src/lib/color/math.ts) has only `m3` (3×3). Projecting world→screen needs a new helper in `camera.ts` (where `persp`/`lookAt`/`camEye` already live).
 - **CVD is applied per-frame from draw input**, not stored on the renderer (`webgl-renderer.ts` reads `input.state.cvd` each draw). Spline colors must be recolored per-frame the same way, not baked once.
 - **`jsToWorld` has five space-specific mappings** (modes 0/1/2/3/5). Arc length and Oklab conversions must not assume the Oklab mapping.
 - **WebGL2 `lineWidth` is clamped to 1px** on virtually all drivers — a "thick" line needs real geometry.
@@ -40,7 +40,7 @@ These shaped the plan and must be respected:
 
 ### Phase 1: State, types, and the interpolation-space registry
 
-#### 1. Interpolation-space registry — new file [`fe/src/lib/color/interp.ts`](file:///home/ushif/repos/colorlab/fe/src/lib/color/interp.ts)
+#### 1. Interpolation-space registry — new file [`fe/src/lib/color/interp.ts`](fe/src/lib/color/interp.ts)
 
 The space a curve is *interpolated* in is independent of `spaceMode` (which only controls the 3D viewport geometry). We model it as a small registry so adding spaces is a one-line change.
 
@@ -139,9 +139,9 @@ export const INTERP_SPACE_KEYS = Object.keys(INTERP_SPACES) as InterpSpaceKey[];
 - **OKLCH / OKLrCH** reuse the existing `lsrgb2oklab` / `oklab2lsrgb` (`pipeline.ts`, already validated by `selftest.ts`). OKLrCH only adds the `toe`/`toe_inv` lightness remap. The reference white and matrices are unchanged.
 - **OKHSV is gamut-anchored to sRGB.** Its conversion finds the sRGB gamut cusp for each hue, so it is meaningful only against the sRGB boundary — appropriate here because theme anchors are stored as linear sRGB. Hue is undefined for achromatic colors; the registry/`okhsv.ts` must guard `C → 0` (fall back to a stable hue, e.g. 0) so dragging a control point onto the neutral axis does not produce `NaN`.
 
-CIELUV (the `cieluv` / `cielchuv` entries) requires two new functions in [`pipeline.ts`](file:///home/ushif/repos/colorlab/fe/src/lib/color/pipeline.ts) (`xyz2luv` / `luv2xyz`, standard D65-referenced formulas using `GAMUTS.srgb.W` as the reference white). Add round-trip checks to [`selftest.ts`](file:///home/ushif/repos/colorlab/fe/src/lib/color/selftest.ts) for CIELUV **and** for the OK\* round-trips (`srgbLin → space → srgbLin`) alongside the existing Lab/Oklab checks.
+CIELUV (the `cieluv` / `cielchuv` entries) requires two new functions in [`pipeline.ts`](fe/src/lib/color/pipeline.ts) (`xyz2luv` / `luv2xyz`, standard D65-referenced formulas using `GAMUTS.srgb.W` as the reference white). Add round-trip checks to [`selftest.ts`](fe/src/lib/color/selftest.ts) for CIELUV **and** for the OK\* round-trips (`srgbLin → space → srgbLin`) alongside the existing Lab/Oklab checks.
 
-#### 2.1.b OKHSV / Lr helpers — new file [`fe/src/lib/color/okhsv.ts`](file:///home/ushif/repos/colorlab/fe/src/lib/color/okhsv.ts)
+#### 2.1.b OKHSV / Lr helpers — new file [`fe/src/lib/color/okhsv.ts`](fe/src/lib/color/okhsv.ts)
 
 Ported verbatim from [`ok_color.h`](https://bottosson.github.io/misc/ok_color.h), operating in **linear sRGB** (we skip the `srgb_transfer_function` the header applies, since the rest of the app works in linear sRGB). Reuses the existing `lsrgb2oklab` / `oklab2lsrgb` for `oklab_to_linear_srgb` / `linear_srgb_to_oklab`.
 
@@ -230,7 +230,7 @@ export function lsrgbToOkhsv(rgb: Vec3): Vec3 {
 
 `computeMaxSaturation` and `find_gamut_intersection` use sRGB-specific coefficients baked into `ok_color.h`; that is correct here because anchors are linear sRGB. (If gamut-relative OKHSV is ever wanted for P3/Rec.2020, those constants would need regenerating — out of scope.)
 
-#### 2. Type modifications in [`fe/src/lib/engine/types.ts`](file:///home/ushif/repos/colorlab/fe/src/lib/engine/types.ts)
+#### 2. Type modifications in [`fe/src/lib/engine/types.ts`](fe/src/lib/engine/types.ts)
 
 ```typescript
 import type { InterpSpaceKey } from '$lib/color/interp';
@@ -268,7 +268,7 @@ export type PersistedTheme = Omit<ExplorerState['theme'], 'arm' | 'stops' | 'sel
 
 `controlPoints`, `splineConstraint`, and `splineSpace` **are** persisted (they survive the `Omit`). `selectedCp` must be added to the `Omit` so selection does not leak into saved documents or dirty-tracking. `arm` is already reset on load by `applySnapshot`.
 
-#### 3. Default state in [`fe/src/lib/engine/state.svelte.ts`](file:///home/ushif/repos/colorlab/fe/src/lib/engine/state.svelte.ts)
+#### 3. Default state in [`fe/src/lib/engine/state.svelte.ts`](fe/src/lib/engine/state.svelte.ts)
 
 ```typescript
 theme: {
@@ -309,7 +309,7 @@ The interpolation itself runs **componentwise in the chosen interpolation space'
 
 Boundary handling (virtual endpoints) uses reflection in the interpolation coordinates: $P_{-1} = 2P_0 - P_1$ and $P_k = 2P_{k-1} - P_{k-2}$ (applied to the *unwrapped* hue so reflection stays continuous).
 
-#### 2. Theme engine integration in [`fe/src/lib/engine/theme.ts`](file:///home/ushif/repos/colorlab/fe/src/lib/engine/theme.ts)
+#### 2. Theme engine integration in [`fe/src/lib/engine/theme.ts`](fe/src/lib/engine/theme.ts)
 
 `buildRamp` keeps its existing structure for `seg`/`arc`/`spread` (including the early `if (!T.A …) return` guard, which must **not** block spline mode). Add a spline branch:
 
@@ -420,7 +420,7 @@ The **swatch markers** reuse the existing `markProgram` exactly as theme stops a
 
 The **gradient curve** is drawn from the hi-res `splineCurve` (≈200 vertices), **not** from `stops` (which holds only `steps` points and would render as a coarse polyline).
 
-#### 1. Shaders — [`fe/src/lib/renderer/shaders/`](file:///home/ushif/repos/colorlab/fe/src/lib/renderer/shaders)
+#### 1. Shaders — [`fe/src/lib/renderer/shaders/`](fe/src/lib/renderer/shaders)
 
 `spline.vert` / `spline.frag`: a position + per-vertex color pass-through (same `#version 300 es` style as the existing shaders). Wire them through `shaders.ts` exports (`VS_SPLINE`, `FS_SPLINE`) like the other programs.
 
@@ -464,9 +464,9 @@ if (input.state.theme.mode === 'spline' && this.splineVertCount > 1) {
 
 ## 5. Viewport Interaction & Gestures
 
-### Phase 4: Gestures in [`fe/src/lib/components/Viewport.svelte`](file:///home/ushif/repos/colorlab/fe/src/lib/components/Viewport.svelte)
+### Phase 4: Gestures in [`fe/src/lib/components/Viewport.svelte`](fe/src/lib/components/Viewport.svelte)
 
-#### 1. Projecting control points to screen — new helper in [`camera.ts`](file:///home/ushif/repos/colorlab/fe/src/lib/engine/camera.ts)
+#### 1. Projecting control points to screen — new helper in [`camera.ts`](fe/src/lib/engine/camera.ts)
 
 There is **no `m4`** in the codebase. Add a single screen-projection helper next to `persp`/`lookAt` rather than inventing a 4×4 math module:
 
@@ -525,14 +525,14 @@ Surface-locked rebuild is `HIRES × bisection` `solidField` calls (~thousands) p
 
 ## 6. User Interface & Controls
 
-### Phase 5: Panel updates in [`fe/src/lib/components/ThemeRamp.svelte`](file:///home/ushif/repos/colorlab/fe/src/lib/components/ThemeRamp.svelte)
+### Phase 5: Panel updates in [`fe/src/lib/components/ThemeRamp.svelte`](fe/src/lib/components/ThemeRamp.svelte)
 
 1. **Mode control:** add `{ value: 'spline', label: 'Spline' }` to the existing `SegmentedControl` options.
 2. **Interpolation space:** a select/segmented control bound to `theme.splineSpace`, populated from `INTERP_SPACES` (`label` per entry). Visible in spline mode (and a candidate to also expose for `seg`/`arc` later).
 3. **Constraint toggle:** `Free` / `Surface-locked` bound to `theme.splineConstraint`.
 4. **Control-point list:** color chips with hex (reuse the existing stop chip styling), the selected row highlighted, each with a delete button; clicking a row sets `selectedCp`.
 5. **Add toggle:** "Add control point" button that arms `theme.arm = 'spline-add'`.
-6. **Help copy:** instructional text — *"Toggle Add, then click the solid to drop control points. Drag a point on the surface to reshape the curve. Select a point and press Delete to remove it."* Add a panel-help entry in [`inspector/help-copy.ts`](file:///home/ushif/repos/colorlab/fe/src/lib/inspector/help-copy.ts) covering interpolation space, surface lock semantics, and the snapping limitation from §3.3.
+6. **Help copy:** instructional text — *"Toggle Add, then click the solid to drop control points. Drag a point on the surface to reshape the curve. Select a point and press Delete to remove it."* Add a panel-help entry in [`inspector/help-copy.ts`](fe/src/lib/inspector/help-copy.ts) covering interpolation space, surface lock semantics, and the snapping limitation from §3.3.
 
 ```
  +-------------------------------------------------+
@@ -554,18 +554,18 @@ Surface-locked rebuild is `HIRES × bisection` `solidField` calls (~thousands) p
 
 ## 7. Persistence (Playbook A) & Token Export
 
-Adding `controlPoints`, `splineConstraint`, and `splineSpace` are **additive persisted fields with factory defaults** → document-persistence **Playbook A** (no schema-version bump). All four of the following change **together** (see `.cursor/rules/document-persistence.mdc` and [`documents/README.md`](file:///home/ushif/repos/colorlab/fe/src/lib/documents/README.md)):
+Adding `controlPoints`, `splineConstraint`, and `splineSpace` are **additive persisted fields with factory defaults** → document-persistence **Playbook A** (no schema-version bump). All four of the following change **together** (see `.cursor/rules/document-persistence.mdc` and [`documents/README.md`](fe/src/lib/documents/README.md)):
 
-1. **[`engine/types.ts`](file:///home/ushif/repos/colorlab/fe/src/lib/engine/types.ts)** — new fields on `theme`; add `selectedCp` to the `PersistedTheme` `Omit` (it is **not** persisted).
-2. **[`engine/state.svelte.ts`](file:///home/ushif/repos/colorlab/fe/src/lib/engine/state.svelte.ts)** — factory defaults (§2.3).
-3. **[`documents/snapshot.ts`](file:///home/ushif/repos/colorlab/fe/src/lib/documents/snapshot.ts)** — in `toPersistedExplorer`, add `controlPoints` (deep-clone each anchor, like `cloneAnchor`), `splineConstraint`, `splineSpace` to the persisted `theme` block. Every persisted field needs a matching coerce line in step 4.
-4. **[`documents/schema.ts`](file:///home/ushif/repos/colorlab/fe/src/lib/documents/schema.ts)** —
+1. **[`engine/types.ts`](fe/src/lib/engine/types.ts)** — new fields on `theme`; add `selectedCp` to the `PersistedTheme` `Omit` (it is **not** persisted).
+2. **[`engine/state.svelte.ts`](fe/src/lib/engine/state.svelte.ts)** — factory defaults (§2.3).
+3. **[`documents/snapshot.ts`](fe/src/lib/documents/snapshot.ts)** — in `toPersistedExplorer`, add `controlPoints` (deep-clone each anchor, like `cloneAnchor`), `splineConstraint`, `splineSpace` to the persisted `theme` block. Every persisted field needs a matching coerce line in step 4.
+4. **[`documents/schema.ts`](fe/src/lib/documents/schema.ts)** —
    - add `'spline'` to `THEME_MODES` (else saved spline docs are coerced back to the default mode);
    - add `SPLINE_CONSTRAINTS = ['free','surface']` and `INTERP_SPACE_KEYS` enum coercers;
    - in `coerceTheme`: `controlPoints` via a new `coerceAnchorList` (array-guard each element through `coerceAnchor`, dropping invalid entries), `splineConstraint` via `enumOf`, `splineSpace` via `enumOf` against `INTERP_SPACE_KEYS`;
    - add the same three fields to the `defaults` block in `coerceSnapshot`.
 5. **Do NOT bump `CURRENT_SNAPSHOT_VERSION`** (= `CURRENT_STATE_SCHEMA_VERSION`). No migration is needed — legacy saves get the factory defaults via coercion.
-6. **[`documents/parse.test.ts`](file:///home/ushif/repos/colorlab/fe/src/lib/documents/parse.test.ts)** — add fixtures: (a) a legacy save with no spline fields loads with `controlPoints: []`, `splineConstraint: 'surface'`, `splineSpace: 'oklch'`, `mode` unchanged; (b) a save with `mode: 'spline'` and a `controlPoints` array round-trips; (c) garbage `controlPoints` / unknown `splineSpace` coerce to safe defaults.
+6. **[`documents/parse.test.ts`](fe/src/lib/documents/parse.test.ts)** — add fixtures: (a) a legacy save with no spline fields loads with `controlPoints: []`, `splineConstraint: 'surface'`, `splineSpace: 'oklch'`, `mode` unchanged; (b) a save with `mode: 'spline'` and a `controlPoints` array round-trips; (c) garbage `controlPoints` / unknown `splineSpace` coerce to safe defaults.
 
 **`applySnapshot`** already resets `arm`/`stops`/`hover` on load; also reset `selectedCp = null` and clear the runtime `splineCurve` there (neither is persisted).
 

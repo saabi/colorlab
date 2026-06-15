@@ -1,0 +1,36 @@
+name: CI
+
+on:
+  push:
+    branches: [ master, main ]
+  pull_request:
+    branches: [ master, main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Use Node.js 22
+      uses: actions/setup-node@v4
+      with:
+        node-version: 22
+        cache: 'npm'
+        cache-dependency-path: fe/package-lock.json
+
+    - name: Install dependencies
+      run: |
+        cd fe
+        npm ci
+
+    - name: Run Svelte/TS checks
+      run: |
+        cd fe
+        npm run check
+
+    - name: Run tests
+      run: |
+        cd fe
+        npm test

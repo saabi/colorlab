@@ -1,3 +1,17 @@
 .DS_Store
 node_modules
+
+# Frontend build and tooling
 fe/build
+fe/.svelte-kit
+fe/.env
+fe/.env.*
+!fe/.env.example
+
+# Local editor / agent config
+.claude
+.cursor/projects
+
+# Logs
+*.log
+npm-debug.log*

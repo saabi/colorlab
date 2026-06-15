@@ -99,3 +99,7 @@ static/             PWA manifest, icons, robots.txt
 ## Privacy
 
 Saved parameter sets stay in the browser. If Umami analytics are enabled at build time, the app collects anonymous usage events (no document names, color values, or exported tokens). See the in-app Privacy panel.
+
+## License
+
+MIT — see [../LICENSE](../LICENSE).

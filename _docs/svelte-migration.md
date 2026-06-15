@@ -2,7 +2,7 @@
 
 This document translates `_docs/design.md` and the single-file prototype in
 `_docs/index.html` into an implementation-ready SvelteKit plan for `fe/`.
-`fe.old/` is intentionally ignored except as historical reference.
+The legacy Sapper prototype (`fe.old/`) was removed from the main branch; see git history if needed.
 
 ## Current State
 
@@ -84,7 +84,7 @@ fe/src/
       ThemeRamp.svelte
 ```
 
-Keep `fe.old/` out of imports and do not copy its Rollup/Sapper-era structure.
+Do not copy the old Rollup/Sapper-era structure into `fe/`.
 
 ## Module Responsibilities
 
