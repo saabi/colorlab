@@ -206,13 +206,16 @@ export const PIPELINE_HELP: Record<PipelineHelpId, PanelHelpContent> = {
 	},
 	pipelineInterpolate: {
 		title: 'Interpolate',
-		summary: 'Builds the continuous ramp path from the source points (one engine for linear + spline).',
+		summary: 'Builds the continuous ramp path from the source points. Surface constraints happen here, before stops are placed or gamut-mapped.',
 		stageRows: stageRows(
 			'The ordered source points.',
-			'Path type (linear/spline), interpolation space (incl. World), long-hue direction, curve constraint, projection method, adaptive alpha, step count, and spread parameters.',
-			'A hi-res curve in the chosen space, before placement and gamut mapping.',
-			'Final export serialization or CVD preview. Curve constraints shape the path; the later Gamut Map stage controls exported out-of-gamut stops.'
+			'Path type (linear/spline), interpolation space (incl. World), long-hue direction, curve constraint, projection method, and adaptive alpha. Surface constraints project the path onto the active clipped surface, not the full gamut shell.',
+			'A hi-res curve in the chosen space, shaped by any active constraint, before placement and final gamut mapping.',
+			'Stop sampling, final export serialization, or CVD preview. Curve constraints shape the path; the later Gamut Map stage controls exported out-of-gamut stops.'
 		),
+		details: [
+			'Use this stage when the trajectory itself should follow the visible clipped surface. Use Gamut Map when the trajectory is acceptable but the final generated colors need to be reconciled with the export gamut.'
+		],
 		sources: [
 			{ label: 'theme.ts interpolateRamp' },
 			{ label: 'interp.ts interpolation spaces' },
@@ -221,12 +224,12 @@ export const PIPELINE_HELP: Record<PipelineHelpId, PanelHelpContent> = {
 	},
 	pipelineAdjust: {
 		title: 'Place',
-		summary: 'Declarative sampling — where the N stops land on the interpolated curve.',
+		summary: 'Declarative sampling — where the N stops land on the already-built interpolated curve.',
 		stageRows: stageRows(
 			'The hi-res interpolated curve.',
 			'Sampling policy: even ΔE, uniform parameter, lightness tones, or contrast ladder (vs white/black).',
 			'The placed ramp stops, before final gamut mapping.',
-			'Source points, interpolation path, or viewport color solid.'
+			'Source points, interpolation path shape, surface constraints, or viewport color solid.'
 		),
 		sources: [
 			{ label: 'theme.ts placeStops' },
@@ -247,13 +250,16 @@ export const PIPELINE_HELP: Record<PipelineHelpId, PanelHelpContent> = {
 	},
 	pipelineGamutMap: {
 		title: 'Gamut map',
-		summary: 'Applies the terminal ramp-only policy for out-of-gamut generated stops.',
+		summary: 'Applies the terminal ramp-only policy for generated stops after interpolation, placement, and expansion.',
 		stageRows: stageRows(
-			'Adjusted ramp stops, possibly outside sRGB.',
-			'Clipping or Oklab projection method used to bring stops into the export gamut.',
-			'Final in-gamut ramp colors for preview and export.',
-			'The 3D explorer gamut, hover readouts, CVD simulation, or source anchors.'
+			'Generated ramp or palette stops, possibly outside the current export gamut.',
+			'Clipping or Oklab projection method used to bring those stops into the export gamut. This is a terminal correction, not a curve constraint.',
+			'Final in-gamut ramp colors for preview, palette display, and export.',
+			'The 3D explorer solid, hover readouts, CVD simulation, source anchors, or the upstream curve path.'
 		),
+		details: [
+			'This stage is deliberately separate from Interpolate. Surface projection answers “where should the path run?”; Gamut map answers “what should exported/generated colors become if they are outside the target gamut?”'
+		],
 		sources: [
 			{ label: 'gamut-map.ts' },
 			{ label: 'theme.ts finalizeRamp' },

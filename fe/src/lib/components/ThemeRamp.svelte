@@ -69,6 +69,18 @@
 		if (alpha < 1.5) return 'Balanced';
 		return 'More compression';
 	});
+	const constraintScopeNote = $derived.by(() => {
+		switch (explorer.theme.splineConstraint) {
+			case 'free':
+				return 'Path can pass through or outside the visible solid; final output can still be gamut-mapped later.';
+			case 'surface-radial':
+				return 'Constrains the path toward the active clipped surface by radial shell projection.';
+			case 'surface-oklab-chroma':
+				return 'Constrains the path to the active clipped surface by reducing Oklab chroma.';
+			case 'surface-oklab-project':
+				return 'Constrains the path to the active clipped surface using the selected Oklab projection method.';
+		}
+	});
 
 	// Global out-of-gamut policy (applies to every theme mode + export).
 	const GAMUT_MAP_OPTIONS: Array<{ value: ExplorerState['theme']['gamutMap']; label: string }> = [
@@ -470,6 +482,7 @@
 			{/each}
 		</select>
 	</label>
+	<p class="note stage-note">{constraintScopeNote}</p>
 	{#if explorer.theme.splineConstraint === 'surface-oklab-project'}
 		<label class="field-row">
 			<span>Projection method</span>
@@ -508,7 +521,7 @@
 	{/if}
 
 	<p class="note">
-		Builds the ramp path from the source points. Curve constraints shape this path; Gamut Map handles final exported out-of-gamut colors later.
+		Builds the ramp path from the source points. Curve constraints shape this path before stops are placed; Gamut Map handles final generated out-of-gamut colors later.
 	</p>
 	<ToggleRow label="Show curve in 3D" bind:checked={explorer.theme.showCurve} />
 	{/if}
@@ -693,7 +706,8 @@
 		letter-spacing: 0.08em;
 	}
 	.preset-row {
-		display: flex;
+		display: grid;
+		grid-template-columns: repeat(3, minmax(0, 1fr));
 		align-items: center;
 		gap: 4px;
 		margin: 4px 0 2px;
@@ -701,8 +715,8 @@
 		font-size: 0.846rem;
 	}
 	.preset-row button {
-		flex: none;
-		min-width: 40px;
+		width: auto;
+		min-width: 0;
 		padding: 3px 6px;
 		font-size: 0.846rem;
 	}
@@ -711,7 +725,8 @@
 		color: var(--text);
 	}
 	.preset-row span {
-		margin-left: auto;
+		grid-column: 1 / -1;
+		justify-self: end;
 		font-weight: 650;
 	}
 	.anchor-label {

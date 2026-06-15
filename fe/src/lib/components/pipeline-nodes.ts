@@ -138,10 +138,15 @@ export const PIPELINE_NODES: PipelineNode[] = [
 		lane: 'Ramp',
 		label: 'Interpolate',
 		shortLabel: 'Interp',
-		description: 'Builds raw ramp paths from anchors or spline points.',
+		description: 'Builds and optionally constrains the ramp path before any stop placement or output gamut mapping.',
 		affects: 'Ramp',
 		requiresSource: true,
-		status: (state) => (!state.theme.interpolateOn ? 'Off' : `${state.theme.mode === 'spline' ? 'Spline' : 'Linear'} ${state.theme.splineSpace}`),
+		status: (state) => {
+			if (!state.theme.interpolateOn) return 'Off';
+			const mode = state.theme.mode === 'spline' ? 'Spline' : 'Linear';
+			const constrained = state.theme.splineConstraint === 'free' ? '' : ' constrained';
+			return `${mode} ${state.theme.splineSpace}${constrained}`;
+		},
 		// Interpolation can produce out-of-gamut stops; the count is taken before the gamut-map stage.
 		warn: (state) => {
 			const n = oogCount(state.theme.rawStops);
@@ -153,7 +158,7 @@ export const PIPELINE_NODES: PipelineNode[] = [
 		lane: 'Ramp',
 		label: 'Place',
 		shortLabel: 'Place',
-		description: 'Declarative sampling: where the N stops land on the curve (even ΔE, uniform, lightness tones, or contrast ladder).',
+		description: 'Samples the already-built path into N ramp stops; it does not change the path geometry.',
 		affects: 'Ramp',
 		requiresSource: true,
 		status: (state) => (!state.theme.interpolateOn ? '—' : !state.theme.placeOn ? 'Off' : state.theme.place)
@@ -173,7 +178,7 @@ export const PIPELINE_NODES: PipelineNode[] = [
 		lane: 'Ramp',
 		label: 'Gamut map',
 		shortLabel: 'Map',
-		description: 'Terminal ramp-only policy for out-of-gamut generated stops.',
+		description: 'Terminal ramp-only policy that brings generated stops into the export gamut after the path is built and sampled.',
 		affects: 'Export',
 		requiresSource: true,
 		status: (state) => state.theme.gamutMap,
