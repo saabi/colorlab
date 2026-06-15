@@ -53,8 +53,8 @@ Newer architecture direction is defined in `_docs/color-space-role-architecture.
 - **Active gamut** is the working and export-intent gamut.
 - **World space** is the geometric/perceptual coordinate system.
 - **Display gamut** is the physical display capability and local preference.
-- Ramp source colors should be stored in gamut-independent XYZ D65, not in active-gamut RGB.
-- Terminal ramp `Gamut Map` is transitional; long-term ramp construction should prefer stage-local constraints in Interpolate and Extend/Expand.
+- Ramp source colors are already gamut-independent: stored `srgbLin` is a fixed colorimetric anchor (≡ XYZ D65). The explicit XYZ-D65 migration is **deferred** (representational only — see role doc).
+- Terminal ramp `Gamut Map` is **kept** (decision); it targets sRGB for now. Stage-local constraints in Interpolate/Extend may reduce reliance on it over time, but it is not being removed.
 
 Amendments:
 
@@ -73,8 +73,8 @@ export interface ProjectionParams {
 
 - Apply this parameter model to **surface projection first**, because it is easier to evaluate visually and does not change export semantics.
 - After the surface UI and tests settle, reuse the same parameter model for terminal `theme.gamutMap`.
-- The current UI names `sRGB` as the fixed terminal `Gamut Map` target, but that is transitional. Roadmap direction is:
-  - ramp output intent follows the **Active gamut**;
+- The current UI names `sRGB` as the terminal `Gamut Map` target. This stays for now; it is the export target (sRGB hex / `oklch()`). Future direction:
+  - ramp output intent follows the **Active gamut** (once the generic solver lands);
   - display precision/preview uses the **Display gamut**;
   - Explorer display mapping classifies/projects Active gamut colors against Display gamut.
 
@@ -85,7 +85,7 @@ Most convenient implementation order:
 3. Add `Advanced gamut mapping` UI with the same alpha presets/status, shown only when the selected mapping method can use alpha.
 4. Update pipeline node statuses and help copy after both Surface Projection and Gamut Map have params, so the graph reflects both stages consistently.
 5. Replace sRGB-output-target copy with Active gamut / Display gamut terminology as implementation catches up.
-6. Add gamut-independent source storage (`XYZ D65`) so Active gamut switches preserve source colors.
+6. Add white-point chromatic adaptation (Bradford) for non-D65 active/display gamuts. (Source storage stays `srgbLin`; XYZ-D65 migration deferred.)
 7. Move toward per-list pipeline settings and independent Interpolate vs Extend constraints.
 8. Add Explorer display-gamut classification before any GPU-side projection.
 9. Consider compression and CPU/GPU code generation only after the clipping/projection surface area stabilizes.

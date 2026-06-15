@@ -30,7 +30,7 @@ Terminology follows `_docs/color-space-role-architecture.md`:
 - **Active gamut** is the working and export-intent gamut.
 - **World space** is the geometric/perceptual coordinate system used for layout and interpolation.
 - **Display gamut** is the physical display capability used for on-screen classification/projection.
-- Ramp source colors should be stored in a gamut-independent colorimetric space such as XYZ D65.
+- Ramp source colors are stored in a gamut-independent colorimetric space: `srgbLin` (≡ XYZ D65 via a fixed matrix). The explicit XYZ-D65 migration is deferred — see role doc.
 
 References:
 
@@ -713,6 +713,11 @@ Tests:
 
 ### Phase 4: Parameterize Ottosson projection controls
 
+Status: implemented. Adaptive `alpha` and custom focus `L0` are parameters
+(`SurfaceProjectionParams` / `gamutMapParams`), persisted (schema v12) and exposed
+in the `ThemeRamp` UI (commits `047bebc`, `d17c845`, `92902c8`). Remaining is
+minor copy/preset polish only.
+
 Goal:
 
 - Add the configurability missing from the basic implementation while keeping the simple presets usable.
@@ -970,8 +975,8 @@ Non-goals:
 
 Next order:
 
-1. **Gamut-independent source storage.** Store source lists as XYZ D65 (or equivalent) so changing Active gamut preserves colors.
-2. **Per-list pipeline instances.** Give each source list independent interpolation, placement, extension, and constraint settings.
+1. **White point & chromatic adaptation.** Add a standard CAT (Bradford) for non-D65 active/display whites; D65↔D65 stays a no-op; put the matrix in the shared `DerivedMatrices` bundle. Source storage stays `srgbLin` — already the gamut-independent colorimetric anchor (≡ XYZ D65); the XYZ-D65 source migration is **deferred** (representational only).
+2. **Per-list pipeline instances.** Give each source list independent interpolation, placement, extension, and constraint settings (engine already computes per-list rows; settings are still global). Needs a schema bump.
 3. **Independent extension constraints.** Add Extend/Expand constraints separate from main curve constraints.
 4. **Display-gamut classification.** Start with shader classification of Active gamut against Display gamut.
 5. **Generic active/display gamut solver.** Add matrix-based line/boundary solving for P3/Rec.2020/custom display profiles. Keep sRGB analytic code as a fast path where useful.

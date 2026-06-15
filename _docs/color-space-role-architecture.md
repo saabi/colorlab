@@ -66,29 +66,72 @@ allow:
 ## Ramp Source Storage
 
 Ramp source lists must be stored in an active-gamut-independent colorimetric
-space.
+space — and **they already are.**
 
-Recommended canonical document/runtime storage:
+Source anchors are stored as `srgbLin` (linear sRGB). Linear sRGB is a fixed
+colorimetric encoding: it is a bijection with `XYZ D65` (the sRGB primaries +
+D65 white define the matrix). Storing `srgbLin` is therefore *equivalent* to
+storing `XYZ D65` — the two differ only by a fixed 3×3 matrix.
 
-- `XYZ D65`, relative with `Y = 1` for diffuse white.
+Consequences, verified against the code (`anchorWorld` →
+`matrices.toSrgbLin.fromSrgb · srgbLin`, where
+`fromSrgb = xyz2rgb_active · srgb2xyz`):
 
-Rationale:
+- Switching **Active gamut** does **not** mutate or reinterpret a stored source
+  color. The stored `srgbLin` (hence its XYZ) is invariant; only the active-gamut
+  RGB coordinates used to place/render it change, and a color may legitimately
+  read out-of-gamut in a smaller active gamut.
+- Switching **World space** likewise never touches the stored value — world is
+  derived for layout/interpolation only.
+- `srgbLin` represents wide-gamut picks losslessly as out-of-`[0,1]` linear
+  values, so it is not limited to the sRGB cube.
 
-- switching Active gamut should not reinterpret source colors;
-- switching World space should not reinterpret source colors;
-- XYZ is already the app's interchange space between RGB gamuts and perceptual
-  spaces;
-- existing legacy anchors stored as linear sRGB can migrate by interpreting them
-  as linear sRGB D65 and converting once to XYZ D65.
+**Decision: keep `srgbLin` as the canonical source format.** The previously
+proposed migration to an explicit `XYZ D65` field is **deferred**: it is a
+representational relabeling (a fixed matrix away), not a correctness fix, and
+does not justify a breaking schema change on its own. The schema-break budget is
+better spent on user-visible capability (per-list pipelines). Treat `srgbLin`
+**as** the gamut-independent colorimetric anchor. If a future change wants the
+canonical field to be literally `XYZ D65` (e.g. for non-RGB-expressible source
+colors), batch that schema bump with another breaking change.
 
-Derived values may still be cached at runtime:
+Derived values may still be cached at runtime and must never become the
+canonical source:
 
 - active-gamut RGB for solid placement and in-gamut checks;
 - sRGB/display RGB for preview;
 - world coordinates for rendering;
 - Oklab/Oklch for interpolation and UI.
 
-Those derived values must not become the canonical document source.
+## White Point and Chromatic Adaptation
+
+White point must be handled wherever it is needed — for active color spaces and
+for the display gamut — in a practical way.
+
+Current state (to be fixed): there is **no chromatic adaptation** in the
+pipeline. `gamut2srgbLin = xyz2srgb · rgb2xyz_active` composes pure XYZ matrices
+with no white-point bridge. Most built-in gamuts are D65, but `ntsc` uses
+Illuminant C and `cie` uses Illuminant E, so colors involving those gamuts are
+**not** adapted — they shift incorrectly rather than being mapped between whites.
+"`XYZ D65`" as the source reference is therefore only honoured for D65 gamuts
+today.
+
+Requirement:
+
+- Adapt between white points using a standard CAT (Bradford is the practical
+  default) wherever XYZ is converted between spaces with differing whites:
+  - active-gamut conversions when the active white ≠ the source/reference white;
+  - active-gamut ↔ **display gamut** conversions (the Display role may have its
+    own white, e.g. a calibrated panel);
+  - any future custom display / calibration entry that specifies a white point.
+- Keep it practical: D65 ↔ D65 (the common case) is identity and must stay a
+  no-op; only differing whites incur an adaptation matrix.
+- Parity: the CPU pipeline and the GLSL/shader and picking paths must agree, so
+  the adaptation matrix belongs in the shared `DerivedMatrices` bundle
+  (`uniforms.ts`), not duplicated ad hoc.
+
+This is a prerequisite for trustworthy non-D65 active gamuts and for the Display
+role's colorimetric-precision goal.
 
 ## Source Lists as Pipeline Instances
 
@@ -128,18 +171,18 @@ Examples:
 
 ## Ramp Gamut Mapping
 
-The current terminal ramp `Gamut Map` stage is transitional.
+**Decision: keep the terminal ramp `Gamut Map` stage** (shipped: `finalizeRamp`,
+`gamutMap`, `gamutMapParams`). It is not being removed.
 
-Long-term direction:
-
-- ramp source/output intent is the Active gamut;
-- main curve and extension constraints should prevent or repair out-of-active
-  gamut generated colors at the stage where they are produced;
-- terminal mapping may remain as an advanced safety/diagnostic policy, but it
-  should not become the main model for ramp color construction.
-
-If terminal ramp mapping remains visible, it should map to the Active gamut, not
-to the Display gamut.
+- For now it maps to **sRGB** (the Ottosson constants are sRGB-specific and
+  exports are sRGB hex / `oklch()`). This stays the default behaviour.
+- Long-term direction: ramp output intent is the **Active gamut**, and main
+  curve / extension constraints should prevent or repair out-of-active-gamut
+  colors at the stage they are produced. When the generic target-gamut solver
+  (surface-constraint plan Phase 5) lands, terminal mapping should be retargetable
+  to the Active gamut. Until then, keep sRGB and the existing UI.
+- It must never silently target the **Display** gamut — display reconciliation is
+  the Explorer display-mapping role, separate from ramp export.
 
 ## Explorer Display Mapping
 
