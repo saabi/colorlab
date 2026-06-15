@@ -219,14 +219,43 @@ the More-menu regrouping.
 - **No partial shipping:** the feature lands as one complete unit once all Save /
   Share / Import surfaces are done. The working-tree baseline stays uncommitted
   until then.
+- **Validation reuses `coerceSnapshot`** — every ingestion path (file / URL /
+  paste / hash) goes through the existing `parseSnapshot → coerceSnapshot`, the
+  same total, lenient validator that localStorage loads use. **No new validation
+  dependency** for this feature. `coerceSnapshot` is total (any input → a valid
+  snapshot or `null`), salvages partial data, and defaults/drops bad fields — the
+  right behavior for untrusted import. Adopting a runtime schema library
+  (Valibot/Zod) is a **separate persistence-layer refactor**, not part of this
+  feature (see Related separate tasks).
+- **Ingest emits a transient note** ("Loaded from shared link / file") via the
+  existing status affordance; generalizing that into a shared toast system is a
+  separate task (see below).
+- **No File System Access API in v1** — use `<a download>` + `<input type=file>`
+  only (universal support; the API would be Chromium-only extra surface on top of
+  the fallback we need anyway). Revisit if a "save back to the same file"
+  workflow is requested.
+- **`?src=` deep-link deferred** past v1; manual "Import from URL" is enough.
+
+## Security note
+
+`coerceSnapshot` builds a fresh object from a known key allow-list, so
+`JSON.parse` of untrusted import text cannot inject unexpected keys or pollute
+state. The invariant to preserve: **never `Object.assign` raw imported JSON into
+live state** — it must pass through `coerceSnapshot` first.
+
+## Related separate tasks (not part of this feature)
+
+- **Shared toast / notification system** — generalize the component-local
+  `gestureStatus` (Viewport) into a small app-level transient notice usable from
+  the document/ingest paths, with `aria-live`. The accessibility follow-up
+  (`aria-live` for `gestureStatus`) folds into this.
+- **Runtime schema library evaluation** — assess replacing the hand-written
+  `coerceSnapshot` with Valibot/Zod across the whole persistence layer (docs,
+  examples, migration), weighing the declarative-schema + types win against the
+  need to preserve lenient salvage/default behavior and keep the bundle small.
 
 ## Open questions
 
 - Remote URL import: enforce a max response size? Distinct messages per fetch
   failure (network/CORS vs non-JSON vs `newer`/`invalid`), or one generic +
   details?
-- Surface a transient "Loaded from shared link / file" note on ingest, or apply
-  silently?
-- Adopt the File System Access API progressive enhancement in v1, or keep to
-  `<a download>` / `<input type=file>` only?
-- Ship `?src=` deep-linking, or defer past v1? (leaning: defer.)

@@ -161,7 +161,7 @@ Full rationale: [`design-review-unimplemented-features.md`](design-review-unimpl
 
 ### Accessibility — follow-ups
 
-Baseline shipped. Remaining: manual visual review; `aria-live` for viewport `gestureStatus` toasts. **Handoff:** [`accessibility-controls-handoff.md`](accessibility-controls-handoff.md).
+Baseline shipped. Remaining: manual visual review; a shared app-level toast/notice (generalize the component-local `gestureStatus` with `aria-live`, reusable by the document/ingest paths — see [`state-sharing-ingestion-plan.md`](state-sharing-ingestion-plan.md) Related separate tasks). **Handoff:** [`accessibility-controls-handoff.md`](accessibility-controls-handoff.md).
 
 ---
 
