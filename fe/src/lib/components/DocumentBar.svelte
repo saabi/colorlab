@@ -1,10 +1,14 @@
 <script lang="ts">
 	import ConfirmDialog from './ConfirmDialog.svelte';
 	import NamePromptDialog from './NamePromptDialog.svelte';
+	import ShareDialog from './ShareDialog.svelte';
+	import ImportDialog from './ImportDialog.svelte';
 	import AppInfo from './AppInfo.svelte';
 	import A11yPanel from '$lib/a11y/A11yPanel.svelte';
+	import { track } from '$lib/analytics/umami';
 	import { getGuideNoteContext } from '$lib/guide-note/context';
 	import { UNTITLED_SELECT_ID } from '$lib/documents/session.svelte';
+	import { snapshotToJsonString } from '$lib/documents/share';
 
 	import type { DocumentSession } from '$lib/documents/session.svelte';
 	import type { HistoryController } from '$lib/history/history.svelte';
@@ -12,8 +16,14 @@
 	let {
 		session,
 		history,
+		notify,
 		onTutorialClick
-	} = $props<{ session: DocumentSession; history: HistoryController; onTutorialClick?: () => void }>();
+	} = $props<{
+		session: DocumentSession;
+		history: HistoryController;
+		notify?: (text: string) => void;
+		onTutorialClick?: () => void;
+	}>();
 
 	let selectValue = $state(UNTITLED_SELECT_ID);
 	let moreOpen = $state(false);
@@ -25,6 +35,8 @@
 	let namePromptMode = $state<'save' | 'saveAs' | 'rename'>('save');
 
 	let deleteConfirmOpen = $state(false);
+	let shareOpen = $state(false);
+	let importOpen = $state(false);
 
 	const guideNote = getGuideNoteContext();
 
@@ -82,6 +94,24 @@
 
 	async function onNew() {
 		await session.newDocument();
+	}
+
+	function onSaveToFile() {
+		const json = snapshotToJsonString(session.currentSnapshot());
+		const blob = new Blob([json], { type: 'application/json' });
+		const url = URL.createObjectURL(blob);
+		const safe =
+			session.activeName.trim().replace(/[^\w.-]+/g, '-').replace(/^-+|-+$/g, '') || 'document';
+		const a = document.createElement('a');
+		a.href = url;
+		a.download = `colorlab-${safe}.json`;
+		document.body.appendChild(a);
+		a.click();
+		a.remove();
+		URL.revokeObjectURL(url);
+		track('document_save', { mode: 'file' });
+		notify?.('Saved to file');
+		closeMore();
 	}
 </script>
 
@@ -157,6 +187,7 @@
 							closeMore();
 						}}
 					>
+						<span class="document-more-icon" aria-hidden="true">✚</span>
 						New
 					</button>
 					<button
@@ -169,8 +200,56 @@
 							closeMore();
 						}}
 					>
+						<span class="document-more-icon" aria-hidden="true">❏</span>
 						Save
 					</button>
+					<button
+						type="button"
+						role="menuitem"
+						class="document-more-item"
+						disabled={!session.canSaveAs}
+						onclick={() => {
+							openNamePrompt('saveAs', 'Save parameter set as');
+						}}
+					>
+						<span class="document-more-icon" aria-hidden="true">⧉</span>
+						Save As…
+					</button>
+					<button
+						type="button"
+						role="menuitem"
+						class="document-more-item"
+						onclick={onSaveToFile}
+					>
+						<span class="document-more-icon" aria-hidden="true">↧</span>
+						Save to file…
+					</button>
+					<div class="document-more-sep" role="separator"></div>
+					<button
+						type="button"
+						role="menuitem"
+						class="document-more-item"
+						onclick={() => {
+							shareOpen = true;
+							closeMore();
+						}}
+					>
+						<span class="document-more-icon" aria-hidden="true">↗</span>
+						Share…
+					</button>
+					<button
+						type="button"
+						role="menuitem"
+						class="document-more-item"
+						onclick={() => {
+							importOpen = true;
+							closeMore();
+						}}
+					>
+						<span class="document-more-icon" aria-hidden="true">↥</span>
+						Import…
+					</button>
+					<div class="document-more-sep" role="separator"></div>
 					<button
 						type="button"
 						role="menuitem"
@@ -187,22 +266,12 @@
 						type="button"
 						role="menuitem"
 						class="document-more-item"
-						disabled={!session.canSaveAs}
-						onclick={() => {
-							openNamePrompt('saveAs', 'Save parameter set as');
-						}}
-					>
-						Save As…
-					</button>
-					<button
-						type="button"
-						role="menuitem"
-						class="document-more-item"
 						disabled={!session.canRename}
 						onclick={() => {
 							openNamePrompt('rename', 'Rename parameter set', session.activeName);
 						}}
 					>
+						<span class="document-more-icon" aria-hidden="true">✐</span>
 						Rename…
 					</button>
 					<button
@@ -215,6 +284,7 @@
 							closeMore();
 						}}
 					>
+						<span class="document-more-icon" aria-hidden="true">✕</span>
 						Delete…
 					</button>
 					{#if onTutorialClick}
@@ -227,6 +297,7 @@
 								closeMore();
 							}}
 						>
+							<span class="document-more-icon" aria-hidden="true">▷</span>
 							Tutorial
 						</button>
 					{/if}
@@ -272,5 +343,23 @@
 	}}
 	onCancel={() => {
 		namePromptOpen = false;
+	}}
+/>
+
+<ShareDialog
+	open={shareOpen}
+	{notify}
+	getSnapshot={() => session.currentSnapshot()}
+	onClose={() => {
+		shareOpen = false;
+	}}
+/>
+
+<ImportDialog
+	open={importOpen}
+	{session}
+	{notify}
+	onClose={() => {
+		importOpen = false;
 	}}
 />

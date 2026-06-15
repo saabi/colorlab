@@ -369,6 +369,12 @@ input[type="checkbox"] {
 	color: #f0a0a0;
 }
 
+.document-more-sep {
+	height: 1px;
+	margin: 4px 6px;
+	background: var(--line, #2a2a30);
+}
+
 .document-more-icon {
 	margin-right: 6px;
 	opacity: 0.85;
@@ -1075,6 +1081,35 @@ input[type="checkbox"] {
 	font-family: "IBM Plex Mono", ui-monospace, monospace;
 	font-size: 0.769rem;
 	font-weight: 500;
+}
+
+.app-notice {
+	position: fixed;
+	z-index: 1100;
+	left: 50%;
+	bottom: 24px;
+	transform: translateX(-50%);
+	max-width: calc(100vw - 32px);
+	border: 1px solid var(--line, #2a2a30);
+	border-radius: 8px;
+	background: rgba(18, 18, 20, 0.94);
+	color: var(--fg, #e6e6ea);
+	padding: 8px 14px;
+	font-size: 0.846rem;
+	box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+	pointer-events: none;
+	animation: app-notice-in 140ms ease-out;
+}
+
+@keyframes app-notice-in {
+	from {
+		opacity: 0;
+		transform: translate(-50%, 6px);
+	}
+	to {
+		opacity: 1;
+		transform: translate(-50%, 0);
+	}
 }
 
 .gesture-status {

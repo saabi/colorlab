@@ -10,6 +10,8 @@ The canonical version string is `fe/package.json` → `"version"`. Update this f
 
 ### Added
 
+- Document sharing & ingestion v1 — Save to file, Share (copy link · copy JSON), Import (file · URL · paste · `#s=…` hash); all paths use `parseSnapshot`.
+
 - `CHANGELOG.md` and in-app version link (`vX.Y.Z`) next to GitHub in the header and Info panel.
 - Adaptive alpha controls for terminal gamut mapping (`gamutMapParams`).
 - Focus lightness (`focusL`) for `project-0.5` / `adaptive-0.5` on surface projection and gamut map (document schema v12).

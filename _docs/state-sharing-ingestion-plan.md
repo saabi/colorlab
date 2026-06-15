@@ -187,27 +187,32 @@ product decision); there is no partial release.
 6. **(Optional, deferred) `?src=` deep link** — on-load remote ingestion, only if
    accepted later; not part of v1.
 
-## Current implementation (baseline, uncommitted)
+## Current implementation (v1 complete; uncommitted)
 
-A first pass exists and is intentionally minimal; it will be revised to match
-this plan:
+All v1 surfaces are implemented in the working tree and pass `npm run check`,
+`npm test`, and `npm run build`:
 
 - `fe/src/lib/documents/share.ts` — `snapshotToJsonString`,
   `snapshotFromJsonString`, `encodeSnapshotParam` / `decodeSnapshotParam`
-  (gzip + base64url), `buildShareUrl`, `readShareParam`.
-- `fe/src/lib/documents/share.test.ts` — round-trip + rejection tests.
+  (gzip + base64url), `buildShareUrl`, `readShareParam`, plus
+  `shareParamFromUrl`, `looksLikeShareLink`, `resolveSnapshotFromUrl`
+  (share-link-or-fetch, injectable `fetch`, `MAX_IMPORT_BYTES` cap).
+- `fe/src/lib/documents/share.test.ts` — 17 tests: JSON/URL round-trips,
+  rejection, URL-parsing helpers, and `resolveSnapshotFromUrl` branches.
 - `documents/session.svelte.ts` — `importSnapshot` (discard-if-dirty, installs as
   Untitled) and `currentSnapshot`.
-- `routes/+page.svelte` — applies a `#s=…` link on load, then strips the hash.
-- `components/ShareDialog.svelte` — copy link + download file, long-link warning.
-- `components/DocumentBar.svelte` — "Share…" and "Import file…" menu items.
+- `components/AppShell.svelte` — applies a `#s=…` link on load (with a notice),
+  strips the hash; owns the minimal `notify` transient + `.app-notice` region.
+- `components/ShareDialog.svelte` — Share-only: Copy link + **Copy JSON**.
+- `components/ImportDialog.svelte` — segmented **From file / From URL / Paste
+  JSON**, inline errors, closes before handing off so the discard-confirm never
+  stacks.
+- `components/DocumentBar.svelte` — **Save to file…** (Save group), **Share…** /
+  **Import…** (Transfer group), regrouped menu with separators.
 
-Covered so far: share URL (export + import), local file (export + import).
-**To be revised for the decided UI:** the baseline `ShareDialog` bundles link +
-download; split it so the dialog is Share-only (Copy link + Copy JSON) and move
-download to a **Save to file** action under the Save group.
-**Not yet built:** Copy JSON, paste JSON, remote JSON URL, the Import dialog, and
-the More-menu regrouping.
+Covered: Save→file, Share→link, Share→JSON, Import←{share URL, file, remote JSON
+URL, paste}. Validation reuses `coerceSnapshot`; no new dependency. Moves to the
+Roadmap's **Recently shipped** on commit.
 
 ## Decisions
 

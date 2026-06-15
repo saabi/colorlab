@@ -11,6 +11,9 @@
 	import { rebuildMatrices } from '$lib/renderer/uniforms';
 	import { createTutorialState } from '$lib/engine/tutorial.svelte';
 	import { toSnapshot } from '$lib/documents/snapshot';
+	import { decodeSnapshotParam, readShareParam } from '$lib/documents/share';
+	import { onMount } from 'svelte';
+	import { browser } from '$app/environment';
 
 	import type { AppState } from '$lib/engine/types';
 	import type { DocumentSession } from '$lib/documents/session.svelte';
@@ -29,6 +32,34 @@
 	let touchTool: TouchTool = $state('auto');
 	const tutorial = createTutorialState(() => explorer);
 	let lanePickerOpen = $state(false);
+
+	// Minimal transient notice. NOTE: intentionally small — the deferred
+	// shared-toast task generalizes this together with Viewport's `gestureStatus`.
+	let notice = $state<{ text: string; id: number } | null>(null);
+	let noticeTimer: ReturnType<typeof setTimeout> | undefined;
+	function notify(text: string) {
+		notice = { text, id: Date.now() };
+		clearTimeout(noticeTimer);
+		noticeTimer = setTimeout(() => (notice = null), 2500);
+	}
+
+	// A `#s=...` hash carries a shared snapshot. Apply it over whatever the
+	// session restored, then strip the token so reloads/saves start clean.
+	onMount(() => {
+		if (!browser) return;
+		const param = readShareParam(window.location.hash);
+		if (!param) return;
+		void (async () => {
+			const { snapshot } = await decodeSnapshotParam(param);
+			if (snapshot) {
+				await session.importSnapshot(snapshot, { source: 'url', confirm: false });
+				notify('Loaded from shared link');
+			} else {
+				console.warn('[share] Ignoring an invalid or newer shared document in the URL.');
+			}
+			window.history.replaceState(null, '', window.location.pathname + window.location.search);
+		})();
+	});
 
 	const TUTORIAL_WELCOMED_KEY = 'colorlab:tutorial-welcomed';
 	$effect(() => {
@@ -102,7 +133,7 @@
 				<h1>COLOR LAB</h1>
 			</div>
 			<span class="sub">Gamut Explorer &amp; Ramp Generator</span>
-			<DocumentBar {session} {history} onTutorialClick={() => (lanePickerOpen = true)} />
+			<DocumentBar {session} {history} {notify} onTutorialClick={() => (lanePickerOpen = true)} />
 			<A11yPanel />
 			<AppInfo />
 			<span class="badge">WebGL2</span>
@@ -121,6 +152,12 @@
 		<RightInspector state={explorer} />
 	</div>
 </GuideNoteEditorHost>
+
+{#if notice}
+	{#key notice.id}
+		<div class="app-notice" role="status" aria-live="polite">{notice.text}</div>
+	{/key}
+{/if}
 
 {#if lanePickerOpen}
 	<LanePicker {tutorial} onClose={() => (lanePickerOpen = false)} />

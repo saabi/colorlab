@@ -97,6 +97,31 @@ export function createDocumentSession(
 		writeSession({ lastDocumentId: null });
 	}
 
+	// Apply a snapshot received out-of-band (shared URL or imported file) as an
+	// unsaved, untitled document. The snapshot must already have passed through
+	// `parseSnapshot`; this only clones and installs it.
+	async function importSnapshot(
+		snapshot: ParameterSnapshot,
+		opts: { source?: string; confirm?: boolean } = {}
+	) {
+		const confirm = opts.confirm ?? true;
+		if (confirm) {
+			const ok = await confirmDiscardIfDirty('Discard unsaved changes and open the shared document?');
+			if (!ok) return false;
+		}
+		const snap = cloneSnapshot(snapshot);
+		if (useMobileDefaults) snap.explorer.N = MOBILE_STARTUP_TESS;
+		applySnapshot(getAppState(), snap);
+		setBaseline(snap);
+		options.onAppliedSnapshot?.(snap);
+		activeId = null;
+		activeName = 'Untitled';
+		activeSource = 'user';
+		writeSession({ lastDocumentId: null });
+		track('document_import', { source: opts.source ?? 'file' });
+		return true;
+	}
+
 	function init(options: { mobile?: boolean } = {}) {
 		useMobileDefaults = options.mobile ?? false;
 		refreshUserDocuments();
@@ -261,9 +286,11 @@ export function createDocumentSession(
 		get confirmMessage() {
 			return confirmMessage;
 		},
+		currentSnapshot: () => toSnapshot(getAppState()),
 		init,
 		loadDocument,
 		newDocument,
+		importSnapshot,
 		save,
 		saveAs,
 		rename,

@@ -33,6 +33,7 @@
 		persistAppPreferences({ autoRotate, autoPerformance, minAverageFps });
 	});
 
+	// Shared-link (`#s=`) ingestion happens in AppShell so it can surface a notice.
 	onMount(() => {
 		const onBeforeUnload = (event: BeforeUnloadEvent) => {
 			if (session.isDirty) event.preventDefault();
