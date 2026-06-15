@@ -4,6 +4,8 @@ SvelteKit 5 + TypeScript frontend for **COLOR LAB — Gamut Explorer**.
 
 **Live site:** [colorlab.ferreyrapons.com](https://colorlab.ferreyrapons.com)
 
+![COLOR LAB — 3D gamut explorer with pipeline controls and inspector panels](../_docs/pipeline-ui-layout-1.png)
+
 ## Stack
 
 - [SvelteKit 2](https://svelte.dev/docs/kit) with Svelte 5 runes

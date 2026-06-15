@@ -8,6 +8,8 @@ Built with **SvelteKit 5**, **TypeScript**, and **WebGL2**. Parameter sets are s
 
 **Live site:** [colorlab.ferreyrapons.com](https://colorlab.ferreyrapons.com)
 
+![COLOR LAB — 3D gamut explorer with pipeline controls and inspector panels](_docs/pipeline-ui-layout-1.png)
+
 **Author:** [Sebastian Ferreyra Pons](https://ferreyrapons.com)
 
 ## Repository layout
