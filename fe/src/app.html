@@ -10,6 +10,12 @@
 		<script>
 			(() => {
 				try {
+					const root = document.documentElement;
+					const prefsRaw = localStorage.getItem('colorlab:preferences');
+					if (prefsRaw) {
+						const prefs = JSON.parse(prefsRaw);
+						if (prefs.theme === 'light') root.dataset.theme = 'light';
+					}
 					const raw = localStorage.getItem('colorlab:a11y');
 					if (!raw) return;
 					const prefs = JSON.parse(raw);
@@ -19,7 +25,6 @@
 					const fontScale = fontScales.includes(prefs.fontScale) ? prefs.fontScale : 100;
 					const lineHeight = lineHeights.includes(prefs.lineHeight) ? prefs.lineHeight : 145;
 					const contrast = contrasts.includes(prefs.secondaryContrast) ? prefs.secondaryContrast : 'normal';
-					const root = document.documentElement;
 					root.style.fontSize = `calc(13px * ${fontScale / 100})`;
 					root.style.setProperty('--ui-line-height', `${lineHeight / 100}`);
 					root.dataset.a11ySecondary = contrast;

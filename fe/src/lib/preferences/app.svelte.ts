@@ -1,13 +1,23 @@
 import type { ExplorerState, MinAverageFps } from '$lib/engine/types';
 
-export type AppPreferences = Pick<ExplorerState, 'autoRotate' | 'autoPerformance' | 'minAverageFps' | 'observerModel' | 'chromaticityDiagram'>;
+export type UiTheme = 'dark' | 'light';
+
+export const UI_THEME_OPTIONS: UiTheme[] = ['dark', 'light'];
+
+export type AppPreferences = Pick<
+	ExplorerState,
+	'autoRotate' | 'autoPerformance' | 'minAverageFps' | 'observerModel' | 'chromaticityDiagram'
+> & {
+	theme: UiTheme;
+};
 
 export const DEFAULT_APP_PREFERENCES: AppPreferences = {
 	autoRotate: true,
 	autoPerformance: true,
 	minAverageFps: 30,
 	observerModel: 'stockman-sharpe-2deg',
-	chromaticityDiagram: 'cie1931-xy'
+	chromaticityDiagram: 'cie1931-xy',
+	theme: 'dark'
 };
 
 const STORAGE_KEY = 'colorlab:preferences';
@@ -15,6 +25,17 @@ const MIN_FPS_OPTIONS: MinAverageFps[] = [15, 30, 60];
 
 function includesMinFps(value: unknown): value is MinAverageFps {
 	return MIN_FPS_OPTIONS.includes(value as MinAverageFps);
+}
+
+function includesUiTheme(value: unknown): value is UiTheme {
+	return UI_THEME_OPTIONS.includes(value as UiTheme);
+}
+
+export function applyUiTheme(theme: UiTheme) {
+	if (typeof document === 'undefined') return;
+	const root = document.documentElement;
+	if (theme === 'light') root.dataset.theme = 'light';
+	else delete root.dataset.theme;
 }
 
 export function sanitizeAppPreferences(raw: unknown): AppPreferences {
@@ -32,7 +53,10 @@ export function sanitizeAppPreferences(raw: unknown): AppPreferences {
 		observerModel:
 			typeof prefs.observerModel === 'string' ? prefs.observerModel : DEFAULT_APP_PREFERENCES.observerModel,
 		chromaticityDiagram:
-			typeof prefs.chromaticityDiagram === 'string' ? prefs.chromaticityDiagram : DEFAULT_APP_PREFERENCES.chromaticityDiagram
+			typeof prefs.chromaticityDiagram === 'string'
+				? prefs.chromaticityDiagram
+				: DEFAULT_APP_PREFERENCES.chromaticityDiagram,
+		theme: includesUiTheme(prefs.theme) ? prefs.theme : DEFAULT_APP_PREFERENCES.theme
 	};
 }
 
@@ -56,10 +80,19 @@ export function readAppPreferences(): AppPreferences {
 }
 
 export function loadAppPreferences(explorer: ExplorerState) {
-	applyAppPreferences(explorer, readAppPreferences());
+	const prefs = readAppPreferences();
+	applyAppPreferences(explorer, prefs);
+	applyUiTheme(prefs.theme);
 }
 
-export function persistAppPreferences(explorer: AppPreferences) {
+export function persistAppPreferences(prefs: Partial<AppPreferences>) {
 	if (typeof localStorage === 'undefined') return;
-	localStorage.setItem(STORAGE_KEY, JSON.stringify(explorer));
+	const merged = sanitizeAppPreferences({ ...readAppPreferences(), ...prefs });
+	localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
+}
+
+export function setUiTheme(theme: UiTheme) {
+	applyUiTheme(theme);
+	const prefs = readAppPreferences();
+	persistAppPreferences({ ...prefs, theme });
 }

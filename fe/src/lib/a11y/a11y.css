@@ -12,3 +12,13 @@ html[data-a11y-secondary="maximum"] {
 	--dim: #d0d1d6;
 	--faint: #a8a9af;
 }
+
+html[data-theme='light'][data-a11y-secondary="high"] {
+	--dim: #2f2f36;
+	--faint: #43434b;
+}
+
+html[data-theme='light'][data-a11y-secondary="maximum"] {
+	--dim: #1c1c21;
+	--faint: #2f2f36;
+}

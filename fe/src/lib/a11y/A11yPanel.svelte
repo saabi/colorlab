@@ -9,9 +9,11 @@
 		setA11yPreference,
 		type SecondaryContrast
 	} from './preferences.svelte';
+	import { readAppPreferences, setUiTheme, type UiTheme } from '$lib/preferences/app.svelte';
 
 	let open = $state(false);
 	let root: HTMLDivElement;
+	let theme = $state<UiTheme>('dark');
 
 	const contrastLabel: Record<SecondaryContrast, string> = {
 		normal: 'Normal',
@@ -21,6 +23,7 @@
 
 	$effect(() => {
 		loadA11yPreferences();
+		theme = readAppPreferences().theme;
 	});
 
 	function onDocumentPointerDown(event: PointerEvent) {
@@ -54,6 +57,28 @@
 				<h2>Readability</h2>
 				<button type="button" class="a11y-reset" onclick={resetA11yPreferences}>Reset</button>
 			</div>
+
+			<fieldset>
+				<legend>Appearance</legend>
+				<div class="a11y-options">
+					<button
+						type="button"
+						class:active={theme === 'dark'}
+						aria-pressed={theme === 'dark'}
+						onclick={() => {
+							theme = 'dark';
+							setUiTheme('dark');
+						}}>Dark</button>
+					<button
+						type="button"
+						class:active={theme === 'light'}
+						aria-pressed={theme === 'light'}
+						onclick={() => {
+							theme = 'light';
+							setUiTheme('light');
+						}}>Light</button>
+				</div>
+			</fieldset>
 
 			<fieldset>
 				<legend>Font scale</legend>
@@ -116,7 +141,7 @@
 		font-size: max(12px, 0.923rem);
 		font-weight: 600;
 		white-space: nowrap;
-		box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.03);
+		box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--txt) 6%, transparent);
 	}
 
 	.a11y-trigger:hover,
@@ -137,8 +162,8 @@
 		padding: 14px;
 		border: 1px solid var(--line);
 		border-radius: 8px;
-		background: rgba(18, 18, 20, 0.98);
-		box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+		background: color-mix(in srgb, var(--panel) 98%, transparent);
+		box-shadow: 0 12px 32px color-mix(in srgb, var(--txt) 14%, transparent);
 		color: var(--txt);
 		font-size: max(14px, 1rem);
 		line-height: var(--ui-line-height);
@@ -199,7 +224,7 @@
 	.a11y-options button.active,
 	.a11y-options button[aria-pressed="true"] {
 		border-color: var(--accent);
-		background: #d6a93a18;
+		background: color-mix(in srgb, var(--accent) 12%, var(--panel2));
 		color: var(--accent);
 	}
 

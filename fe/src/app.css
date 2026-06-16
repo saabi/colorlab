@@ -33,6 +33,20 @@
 	background: var(--bg);
 }
 
+:root[data-theme='light'] {
+	--bg: #a6a8b2;
+	--panel: #b6b8c2;
+	--panel2: #9698a4;
+	--line: #7c7e8a;
+	--txt: #141418;
+	--dim: #43434b;
+	--faint: #5c5d65;
+	--cool: #0e7490;
+	--warn: #b45309;
+	--scrollbar-thumb: color-mix(in srgb, var(--line) 65%, var(--faint) 35%);
+	--scrollbar-thumb-hover: color-mix(in srgb, var(--faint) 50%, var(--dim) 50%);
+}
+
 * {
 	box-sizing: border-box;
 	scrollbar-width: thin;

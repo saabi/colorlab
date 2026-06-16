@@ -24,6 +24,7 @@ The canonical version string is `fe/package.json` → `"version"`. Update this f
 - Multi-list ramp management — add (clones the active pipeline), duplicate, "Apply pipeline to all," and a per-chip mode cue with a divergence note.
 - Pipeline rail — read-only navigation map + live status dashboard over the Explorer/Ramp steps; click opens and scrolls a step's controls; arrow-key roving.
 - Named undo/redo transaction labels — point, ramp/list, gamut, and world-space edits record specific labels (e.g. "Undo Add point") via a one-shot `history.hintLabel`.
+- Light UI theme — dark/light appearance toggle in the Accessibility panel, persisted in `colorlab:preferences`, with flash-free `data-theme` bootstrap in `app.html`.
 
 - `CHANGELOG.md` and in-app version link (`vX.Y.Z`) next to GitHub in the header and Info panel.
 - Adaptive alpha controls for terminal gamut mapping (`gamutMapParams`).
@@ -44,6 +45,7 @@ The canonical version string is `fe/package.json` → `"version"`. Update this f
 - Pipeline and help copy clarifying path-shape surface projection vs terminal export gamut mapping.
 - Gamut Map UI, help, and tutorial copy now explicitly identify the current output target as sRGB.
 - Canonical backlog in `_docs/Roadmap.md` with maintenance rules.
+- Light-theme secondary contrast (Normal / High / Maximum) darkens `--dim` and `--faint` instead of reusing dark-mode lightening rules.
 
 ## [0.0.1] - 2026-06-09
 
