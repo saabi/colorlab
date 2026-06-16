@@ -11,6 +11,8 @@ Rules:
 - Every committed dataset must have provenance, license, source URL, checksum,
   wavelength range, sampling interval, normalization, and generation notes
   documented in `_docs/spectral-dataset-catalog.md`.
+- Verified download URLs and a comparison with files in this directory live in
+  `_docs/spectral-dataset-sources.md`.
 
 This directory is intended for observer datasets, LMS fundamentals, CMFs, XYZ
 spaces, spectral locus tables/curves/surfaces, chromaticity diagrams, luminous
