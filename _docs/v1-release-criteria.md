@@ -79,7 +79,7 @@ These were listed as pre-beta gaps in an earlier review; they are **done** on `m
 | **A4** | **Schema confidence** — fixtures for v12→v13 and representative real saves in `parse.test.ts` | Claude | ✅ | **Done** (`c026b32`). v12→v13 fixture + lossless round-trips for every bundled example, the default (idempotent), and a divergent multi-list save. |
 | **A5** | **Beta limitations** section — README and/or in-app Info panel | — | ✅ | README table + Info panel list (`6f4d5ec`, polished `A5`). WebGL2, gamut-map scope, non-D65 CAT, display assumption. |
 | **A6** | **Manual smoke QA** — desktop + mobile critical paths | Claude | 🟡 | Automated Playwright/WebKit smoke pass done (2026-06-16): load, A1 non-D65 render, orbit, pick, slice, cylinder, gamut switch, light/dark + a11y controls, mobile layout — **0 console errors**. Remaining items need human/real-browser sign-off (see checklist + note). |
-| **A7** | **Cut `1.0.0-beta.1`** — bump `fe/package.json`, move `[Unreleased]` → dated beta section in CHANGELOG, tag, push, deploy | Claude | 🟡 | **2026-06-16:** version → `1.0.0-beta.1`, CHANGELOG dated, **tag `v1.0.0-beta.1` pushed to github + gitlab** (commit `a7cbd1b`). **PM2 production deploy intentionally held** pending the human cross-browser/interaction smoke pass. Optional subtle “Beta” near version link in header. |
+| **A7** | **Cut `1.0.0-beta.1`** — bump `fe/package.json`, move `[Unreleased]` → dated beta section in CHANGELOG, tag, push, deploy | Claude | ✅ | **2026-06-16:** version → `1.0.0-beta.1`, CHANGELOG dated, **tag `v1.0.0-beta.1` pushed to github + gitlab** (commit `a7cbd1b`), **deployed to production**. Optional subtle “Beta” near version link in header. |
 
 ### A6 — Smoke QA checklist
 
@@ -96,13 +96,13 @@ Legend: ✅ verified by automated pass · 🟡 partially verified · ⬜ needs h
 
 **Spot-check — A1 non-D65 fix (key correctness gate):** switched the active gamut to **NTSC 1953 (Illuminant C)** and **CIE 1931 RGB (Illuminant E)**; in both the solid's white vertex renders **neutral (no tint)** while the xy-chromaticity triangle changes per gamut — confirming the Bradford CAT adapts each white to the D65 interchange point. ✅
 
-**Automated pass details:** Playwright 1.56.0 driving the cached WebKit engine against `vite dev`; 0 console/page errors across load, gamut switching, theme toggle, orbit/pick/slice/cylinder, and mobile resize. `npm run check` 0 errors, `npm test` 145 passed. Cross-browser (Chrome/Firefox) and the interaction-heavy paths above remain for a human smoke pass before the beta is published.
+**Automated pass details:** Playwright 1.56.0 driving the cached WebKit engine against `vite dev`; 0 console/page errors across load, gamut switching, theme toggle, orbit/pick/slice/cylinder, and mobile resize. `npm run check` 0 errors, `npm test` 145 passed. Cross-browser (Chrome/Firefox) and the interaction-heavy paths above remain for a human smoke pass — now tracked as a **Phase B** item (the beta shipped 2026-06-16 to gather exactly this feedback).
 
 ### Phase A gate
 
 - [x] **A1 or A1-alt** complete *(A1 — Bradford CAT)*  
-- [ ] **A2–A7** complete  
-- [ ] Tag **`v1.0.0-beta.1`** → notify → push → deploy
+- [x] **A2–A7** complete *(A6 🟡 — automated smoke done; human cross-browser/interaction pass folds into the beta period, Phase B)*  
+- [x] Tag **`v1.0.0-beta.1`** → notify → push → deploy *(2026-06-16; pushed github + gitlab; deployed to production)*
 
 ---
 
