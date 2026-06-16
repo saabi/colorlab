@@ -1152,7 +1152,7 @@ export const ciexy64_1nm: SpectralDataset = {
 			0.00044,
 			0.00025,
 			0.00011,
-			3.00000e-05,
+			3e-05,
 			0,
 			0,
 			0,

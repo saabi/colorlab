@@ -204,17 +204,13 @@ def main():
         # Format arrays cleanly
         channel_str_parts = []
         for ch, vals in channels.items():
-            # Format numbers cleanly: scientific notation for small/large values, regular decimals for others
             val_strs = []
             for v in vals:
                 if v == 0.0:
                     val_strs.append("0")
-                elif abs(v) < 1e-4 or abs(v) > 1e4:
-                    val_strs.append(f"{v:.5e}")
                 else:
-                    # Strip trailing zeros to save space
-                    s = f"{v:.6f}".rstrip("0").rstrip(".")
-                    val_strs.append(s if s else "0")
+                    # Use general format with 12 significant digits to preserve full precision
+                    val_strs.append(f"{v:.12g}")
             
             val_list_str = ",\n\t\t\t".join(val_strs)
             channel_str_parts.append(f"'{ch}': [\n\t\t\t{val_list_str}\n\t\t]")
