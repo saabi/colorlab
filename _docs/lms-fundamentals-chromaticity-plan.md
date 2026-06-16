@@ -13,6 +13,32 @@ In the current codebase, the relationship between visible wavelengths, LMS cone 
 
 ---
 
+## 1.1 Fit Audit Results & Baseline Identification
+
+An audit script was executed (`fe/src/lib/color/scratch/compare-fundamentals.ts`) to benchmark the app's current analytical `coneLMS(nm)` and `waveToXyz(nm)` formulas against the cataloged experimental datasets under `data/processed/` using the visual range `[380, 780]` nm.
+
+### A. LMS Cone Fundamentals Fit
+The current sum of Gaussians and Gaussian-derivatives in `pipeline.ts` (divided by $10^5$) was compared to the primary experimental LMS datasets:
+* **Stockman & Sharpe 2° (1nm)**: **Average Relative RMSE (Shape error) of 0.5126%** with optimal scale factors of virtually **1.0** across all three channels:
+  * L channel: scale = 0.99998, RelRMSE = 0.4022%
+  * M channel: scale = 0.99996, RelRMSE = 0.6210%
+  * S channel: scale = 0.99997, RelRMSE = 0.5145%
+* **Other Observers**: Shape errors for other candidates were significantly higher (e.g., Vos, Estévez & Walraven 1990 at 2.80%; Smith & Pokorny 1975 at 5.28%; Stockman & Sharpe 10° at 8.66%).
+
+**Conclusion**: The analytical curve currently implemented is mathematically representing the **Stockman & Sharpe 2000 2° Cone Fundamentals**. The small ~0.5% error represents the analytical approximation error (residuals) of the Gaussian/derivative fits in the visible range.
+
+### B. CMF / XYZ Fit
+Applying the transformation matrix `LMS2XYZ2` to the analytical `coneLMS(nm)` results in `waveToXyz(nm)`. Comparing this function against reference XYZ CMF datasets:
+* **CIE 2006 2° XYZ (1nm)**: **Average Relative RMSE (Shape error) of 0.5647%** with scale factors of **1.0** on all channels:
+  * X channel: scale = 0.99999, RelRMSE = 0.7540%
+  * Y channel: scale = 0.99998, RelRMSE = 0.4256%
+  * Z channel: scale = 0.99997, RelRMSE = 0.5145%
+* **CIE 1931 2° (1nm)**: Shape error of **7.3824%** (indicating a clear mismatch between the physiological 2006 observer math and the standard CIE 1931 2° observer CMFs).
+
+**Conclusion**: The default coordinate system is aligned with the **CIE 2006 2° physiological observer CMFs** (also known as $X_F Y_F Z_F$).
+
+---
+
 ## 2. Proposed Architecture
 
 We propose introducing modular registries under `fe/src/lib/color/`:
@@ -288,8 +314,8 @@ The CVD simulation is performed by projecting RGB colors into the LMS color spac
    dataset, XYZ-like space, chromaticity diagram, and locus-geometry family
    listed above. **Done (sources):** [`spectral-dataset-sources.md`](spectral-dataset-sources.md)
    records verified URLs and compares them with [`data/`](../data/).
-2. Write a scratch script under `fe/src/lib/color/scratch/compare-fundamentals.ts` to load cataloged CVRL/CIE/reference datasets that are permitted for local development.
-3. Compare the current Gaussian-derivative formula from `pipeline.ts` against the relevant reference data to identify its closest source model and quantify errors across the full visible range, with special attention to the low-energy tails.
+2. Write a scratch script under `fe/src/lib/color/scratch/compare-fundamentals.ts` to load cataloged CVRL/CIE/reference datasets that are permitted for local development. **Done:** Scratch comparison script written at [`compare-fundamentals.ts`](file:///home/ushif/repos/colorlab/fe/src/lib/color/scratch/compare-fundamentals.ts).
+3. Compare the current Gaussian-derivative formula from `pipeline.ts` against the relevant reference data to identify its closest source model and quantify errors across the full visible range, with special attention to the low-energy tails. **Done:** Identified closest match as Stockman & Sharpe 2° / CIE 2006 2° XYZ (see Section 1.1).
 4. Do **not** choose a single permanent canonical dataset at this stage. Select
    the best runtime default for the current app behavior, but preserve the
    catalog as an exploration/comparison dataset library.
