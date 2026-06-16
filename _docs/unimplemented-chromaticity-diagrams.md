@@ -6,7 +6,7 @@
 |---------|----------------|
 | CIE 2006 / physiological xy (xF, yF) | **Shipped** — observer-aware label on the CIE 1931 xy mode when Stockman-Sharpe 2°/10° is selected |
 | Oklab (a, b) | **Shipped** as fixed-lightness opponent-plane view (`oklab-ab`), not a chromaticity diagram |
-| MacLeod-Boynton (l, s) | **Shipped** — table-backed 2° locus + calibrated source-basis projection (`macleod-boynton`) |
+| MacLeod-Boynton (l, s) | **Shipped** — table-backed 2° locus + calibrated SS 2° source-basis projection (`macleod-boynton`); fixed basis, not tied to Observer selector |
 | CIE 1964 10° (x10, y10) | **Shipped** — observer-aware label on CIE 1931 xy when CIE 1964 10° observer is selected |
 
 This document catalog-details the major chromaticity representation spaces and diagrams that are **not yet** implemented in COLOR LAB, outlining their mathematical formulas, use cases, and integration paths.
@@ -92,6 +92,22 @@ Developed in 2017 by SAFRAN, JzAzBz is a perceptually uniform color space optimi
 *   **Why Include It**:
     Useful for comparing small-field (2°) vs. large-field (10°) industrial matching criteria.
 *   **Implementation Key**: `'cie1964-x10y10'`
+
+---
+
+## Future: MacLeod-Boynton variants and active-observer LMS ratios
+
+**Shipped today:** `macleod-boynton` — CIE 2° table + Stockman-Sharpe 2° LMS basis only. Independent of the Observer model selector.
+
+**Not planned without source tables or explicit normalization policy:**
+
+| Proposed mode | Notes |
+|---------------|-------|
+| MacLeod-Boynton 10° | Needs a published 10° MB chromaticity table and fitted `kL`/`kS` for a 10° LMS basis |
+| MacLeod-Boynton for another 2° fundamental | Constants must be fitted per table; do not reuse the 2° SS constants blindly |
+| Active LMS chromaticity | LMS ratio view using the **active** observer's fundamentals — useful comparison tool but must not be called MacLeod-Boynton |
+
+See [`cone-fundamentals-chromaticity-math-audit.md`](cone-fundamentals-chromaticity-math-audit.md) §Future Work: MacLeod-Boynton Variants.
 
 ---
 

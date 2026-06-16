@@ -366,3 +366,39 @@ the nonlinear-plane labeling issues.
 
 Add table-comparison tests before relying on these diagram modes in tutorials or
 user-facing diagnostics.
+
+## Future Work: MacLeod-Boynton Variants
+
+**Decision (2026-06-16):** keep the shipped MacLeod-Boynton mode fixed to the
+bundled CIE 2° table (`smb_cc_2deg_1nm`) and Stockman-Sharpe 2° LMS basis with
+fitted constants `kL = 1.9806536312072827`, `kS = 0.10668241929719655`. The UI
+now states explicitly that this diagram is **independent of the Observer model
+selector**.
+
+### Why other fundamentals are not automatic
+
+MacLeod-Boynton coordinates are not generic LMS ratios. Each valid MB diagram
+requires:
+
+1. An LMS source basis.
+2. A denominator convention (scaled L + M).
+3. Per-cone scale constants `kL` and `kS`.
+4. A white/reference normalization or a fit target.
+
+Reusing the current 2° constants on another fundamentals dataset may look
+plausible but is not necessarily a valid MacLeod-Boynton diagram for that
+observer.
+
+### What would be required to add more MB modes
+
+| Mode | Requirement |
+|------|-------------|
+| MacLeod-Boynton 10° | Published 10° MB chromaticity table + fitted constants for a 10° LMS basis |
+| MacLeod-Boynton for another 2° fundamental | Source-backed MB table or a documented fit policy — not blind constant reuse |
+| Active-observer LMS ratio view | Separate derived mode (e.g. **Active LMS chromaticity**); must **not** be labeled MacLeod-Boynton |
+
+### Priority
+
+**Not prioritized now.** Add later only as named, source-backed registry
+entries in `diagrams.ts`, or as clearly labeled derived LMS-ratio views. See
+also [`unimplemented-chromaticity-diagrams.md`](unimplemented-chromaticity-diagrams.md).

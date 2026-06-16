@@ -90,6 +90,7 @@ Aligned with the **recommended next order** in [`surface-constraint-gamut-projec
 23. Spectral/chromaticity intensity volume — depends on the observer/fundamentals registry (**registry shipped**; volume overlay still open)
 24. GPU/codegen evaluation (surface plan Phase 8; criteria-gated)
 25. WebGPU, HDR, EDID defaults, Color Accumulator, in-scene text — see design review
+26. **Additional MacLeod-Boynton / LMS-ratio diagram modes** — only with source-backed tables or explicit normalization policy per fundamentals dataset; an active-observer LMS ratio view would be a separate, honestly labeled mode (not “MacLeod-Boynton”). **Audit:** [`cone-fundamentals-chromaticity-math-audit.md`](cone-fundamentals-chromaticity-math-audit.md) §Future Work.
 
 ---
 
