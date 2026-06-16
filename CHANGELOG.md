@@ -17,6 +17,7 @@ The canonical version string is `fe/package.json` → `"version"`. Update this f
 
 - Light theme — header and floating-surface backgrounds (app header, sidebar footer, viewport toolbar, help/tutorial/lane-picker popovers, pipeline tooltip, ramp substep cards) no longer reuse dark-theme fills with dark text; surfaces use theme-aware tokens (`--header-bg`, `--popover-bg`, `--surface-toolbar`, etc.) with lighter values under `data-theme='light'`.
 - Aliased `--border`, `--muted`, and `--text` to the canonical palette tokens so component-scoped styles resolve consistently in both themes.
+- Tutorial and help copy corrected for beta.1 behavior — the multi-list tutorial no longer claims lists "share interpolation settings" (each list owns its pipeline since schema v13); gamut-map/export/palette copy says "active colorspace (sRGB by default)" instead of "sRGB"; `pipelineExpand` help describes the two-axis Spread (rows = related ramps, columns = per-stop variants); `pipelineGamut` help documents the Bradford CAT for non-D65 gamuts.
 
 ## [1.0.0-beta.1] - 2026-06-16
 

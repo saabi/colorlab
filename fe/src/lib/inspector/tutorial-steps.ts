@@ -257,9 +257,9 @@ export const B_QUICK_STEPS: TutorialStep[] = [
 		title: 'Read the palette',
 		concept:
 			'The right inspector\'s Palette tab shows the final generated colors exactly as they will be exported — post gamut-map, with WCAG contrast ratios. This is the authoritative ramp preview; the 3D viewport markers are orientation aids, not pixel-accurate swatches.',
-		tryIt: 'Open the Palette tab on the right. Hover each swatch to read its hex and Oklch values. Check whether any OOG indicators appear on stops that exceed sRGB.',
+		tryIt: 'Open the Palette tab on the right. Hover each swatch to read its hex and Oklch values. Check whether any OOG indicators appear on stops that exceed the active colorspace (the export target).',
 		successCheck:
-			'You can read the hex value of each stop and confirm the lightness progression matches your intent. If any stops venture outside sRGB, an OOG indicator appears.',
+			'You can read the hex value of each stop and confirm the lightness progression matches your intent. If any stops venture outside the active colorspace, an OOG indicator appears.',
 		commonMistake:
 			'Treating 3D viewport stop markers as final colors. They are accurate colorimetrically but rendered through your monitor profile; the Palette tab reads the computed values directly.',
 		zone: 'inspector-adjacent',
@@ -268,12 +268,12 @@ export const B_QUICK_STEPS: TutorialStep[] = [
 	{
 		title: 'Export the ramp',
 		concept:
-			'Export serializes the final stops to CSS oklch() custom properties or DTCG JSON. Token values are post-gamut-map. By default the Gamut map policy is "None (show OOG)" — out-of-gamut stops export as-is. Switch to "Clip (clamp)" or "Preserve chroma" to bring stops into sRGB before export.',
+			'Export serializes the final stops to CSS oklch() custom properties or DTCG JSON. Token values are post-gamut-map. By default the Gamut map policy is "None (show OOG)" — out-of-gamut stops export as-is. Switch to "Clip (clamp)" or "Preserve chroma" to bring stops into the active colorspace (sRGB by default) before export.',
 		tryIt: 'Open the Export step and copy the CSS output. Paste it into a text editor. Check that the oklch() L values increase or decrease monotonically as expected.',
 		successCheck:
 			'You have CSS (or DTCG JSON) on your clipboard that you could paste into a real stylesheet. The lightness values reflect the dark-to-light order of your anchors.',
 		commonMistake:
-			'Expecting stops to be auto-clipped to sRGB on export. The default Gamut map policy is "None" — OOG stops export unchanged. Switch to "Clip (clamp)" or "Preserve chroma" to keep values in gamut.',
+			'Expecting stops to be auto-clipped to the active colorspace on export. The default Gamut map policy is "None" — OOG stops export unchanged. Switch to "Clip (clamp)" or "Preserve chroma" to keep values in gamut.',
 		zone: 'sidebar-inline',
 		target: '[data-tutorial="node-export"]'
 	},
@@ -299,7 +299,7 @@ export const B_PIPELINE_STEPS: TutorialStep[] = [
 	{
 		title: 'Sources — lists, anchors, picking',
 		concept:
-			'Sources is the top of the ramp pipeline. One source list is one ordered set of anchors that feeds one independent ramp. Multiple lists produce parallel ramps — each runs through the full pipeline independently. Only the active list (highlighted chip) is editable; switch by clicking a chip.',
+			'Sources is the top of the ramp pipeline. One source list is one ordered set of anchors that feeds one independent ramp. Multiple lists produce parallel ramps — each list carries its own pipeline settings (interpolate, place, expand, constraints) and runs independently; the terminal Gamut map is shared. Adding a list clones the active list\'s pipeline. Only the active list (highlighted chip) is editable; switch by clicking a chip.',
 		tryIt: 'Add a second list using the + chip. Add two anchors with colors clearly different from list 1. Switch back to list 1 — the viewport now shows two distinct curves.',
 		successCheck:
 			'The Sources status chip reads "2 lists · N pts." Two separate curves appear in the 3D viewport.',
@@ -336,7 +336,7 @@ export const B_PIPELINE_STEPS: TutorialStep[] = [
 	{
 		title: 'Expand — 1-D ramp to 2-D grid',
 		concept:
-			'Expand is a per-stop generator that turns the 1-D ramp into a 2-D palette by adding Oklch offsets per axis. Direction modes: ramp (0 → delta), sym (−delta → +delta), edges (delta at both ends, 0 at center). Row count is independent of Place step count.',
+			'Expand (Spread) turns the 1-D ramp into a 2-D palette along two axes: rows make related ramps, columns expand each stop into variants. Each axis offsets hue, chroma, and/or lightness by a delta. Direction modes: ramp (0 → delta), sym (−delta → +delta), edges (delta at both ends, 0 at center). Row and column counts are independent of Place step count.',
 		tryIt: 'Load "Tonal grid (Expand)" via the button above for a pre-built 3-row blue grid. Or start fresh: enable Expand, set row count to 3, lightness axis to "sym," delta 0.15. The Palette tab shows a 3-row grid. Try "ramp" direction instead.',
 		successCheck:
 			'The Palette tab displays a 2-D grid. The Expand status chip reads "R×C" (e.g. "3×9").',
@@ -349,12 +349,12 @@ export const B_PIPELINE_STEPS: TutorialStep[] = [
 	{
 		title: 'Gamut map — ramp-only OOG policy',
 		concept:
-			'Gamut map is the terminal ramp stage: it brings out-of-gamut stops into the sRGB output target before export. "Clip (clamp)" hard-clips each RGB channel. "Preserve chroma" reduces chroma in Oklch (keeps hue and lightness). "None" passes OOG stops through unchanged. This target is separate from the Explorer Gamut setting, the spline surface constraint, and CVD.',
-		tryIt: 'Load "P3 OOG stops" via the button above — a ramp with a P3-exclusive vivid green anchor that sits beyond the sRGB target boundary. The OOG badge on the Gamut map node shows how many stops exceed sRGB. Switch between "Clip (clamp)" and "Preserve chroma" and watch the affected stops shift in the Palette tab.',
+			'Gamut map is the terminal ramp stage: it brings out-of-gamut stops into the active colorspace output target (sRGB by default) before export. "Clip (clamp)" hard-clips each RGB channel. "Preserve chroma" reduces chroma in Oklch (keeps hue and lightness). "None" passes OOG stops through unchanged. This target is separate from the Explorer Gamut setting, the spline surface constraint, and CVD.',
+		tryIt: 'Load "P3 OOG stops" via the button above — a ramp with a P3-exclusive vivid green anchor that sits beyond the active colorspace target boundary. The OOG badge on the Gamut map node shows how many stops exceed the target (sRGB by default). Switch between "Clip (clamp)" and "Preserve chroma" and watch the affected stops shift in the Palette tab.',
 		successCheck:
 			'With "Preserve chroma," OOG stops shift inward in chroma while keeping hue angle. With "Clip (clamp)," they may shift hue because channels clamp independently.',
 		commonMistake:
-			'Thinking the Explorer Gamut setting controls ramp export clipping. The Explorer Gamut defines what the solid represents; the Ramp Gamut map currently targets sRGB output independently.',
+			'Thinking the Explorer Gamut setting controls ramp export clipping. The Explorer Gamut defines what the solid represents; the Ramp Gamut map targets the active colorspace (sRGB by default; the analytic mapper is sRGB-only today).',
 		zone: 'sidebar-inline',
 		target: '[data-tutorial="node-gamut-map"]',
 		suggestedExample: 'example:p3-oog-ramp'
@@ -374,8 +374,8 @@ export const B_PIPELINE_STEPS: TutorialStep[] = [
 	{
 		title: 'Multi-list ramps — parallel pipelines',
 		concept:
-			'With more than one source list, each list runs independently through Interpolate → Place → Gamut map and produces its own output. Lists share interpolation settings but have separate anchors — useful for parallel color families (warm + cool, signal + neutral). When Expand is off, the palette shows all lists\' ramps as parallel rows. More tutorials are available — click the Tutorial button again to explore the Explorer lanes or the Quick Ramp overview.',
-		tryIt: 'Verify you still have two source lists from step 3 (or rebuild: + chip in Sources, two contrasting anchors in each list). Enable Interpolate in Oklch, 9 stops, even Place. The Palette tab shows two parallel 9-stop rows. Enable Expand with 2 rows — observe 4 rows total (2 lists × 2).',
+			'With more than one source list, each list carries its own pipeline — interpolation, placement, expand, and constraint settings are per-list, not shared. Each list runs independently through its Interpolate → Place → Expand stages; the terminal Gamut map is a single shared step applied to every list. Adding a list clones the active list\'s pipeline; "Apply pipeline to all" copies the active list\'s settings onto the others, and a divergence cue marks lists whose settings differ. When Expand is off, the palette shows all lists\' ramps as parallel rows. More tutorials are available — click the Tutorial button again to explore the Explorer lanes or the Quick Ramp overview.',
+		tryIt: 'Verify you still have two source lists from step 3 (or rebuild: + chip in Sources, two contrasting anchors in each list). On the active list, set Interpolate to Oklch, 9 stops, even Place — then switch lists and give the second a different setting to see the divergence cue. The Palette tab shows two parallel 9-stop rows. Enable Expand with 2 rows — observe 4 rows total (2 lists × 2).',
 		successCheck:
 			'Two distinct parallel ramps appear in the Palette tab when Expand is off. Enabling Expand multiplies rows correctly.',
 		commonMistake:

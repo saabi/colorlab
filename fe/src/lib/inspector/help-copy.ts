@@ -124,8 +124,12 @@ export const PIPELINE_HELP: Record<PipelineHelpId, PanelHelpContent> = {
 			'Linear RGB and XYZ basis for downstream world-space conversion.',
 			'Ramp-only gamut mapping, CVD preview severity, camera, or display-aid visibility.'
 		),
+		details: [
+			'Non-D65 gamuts (NTSC = Illuminant C, CIE 1931 RGB = Illuminant E) are adapted to the D65 interchange white with a Bradford chromatic adaptation before any Lab/Oklab world-space layout, so their neutral axis stays achromatic. D65 gamuts (sRGB, P3, Rec.2020, …) pass through unchanged. CPU, WebGL, and picking share the adapted matrices.'
+		],
 		sources: [
 			{ label: 'pipeline.ts gamut registry' },
+			{ label: 'adapt.ts Bradford adaptation' },
 			{ label: 'transfer.ts transfer curves' },
 			{ label: 'Single-source pipeline design (design.md)' }
 		]
@@ -257,11 +261,12 @@ export const PIPELINE_HELP: Record<PipelineHelpId, PanelHelpContent> = {
 	},
 	pipelineExpand: {
 		title: 'Expand',
-		summary: 'Per-stop generator that turns the 1-D ramp into a 2-D palette.',
+		summary:
+			'Spread generator that turns the 1-D ramp into a 2-D palette along two axes — related ramps (rows) and per-stop variants (columns).',
 		stageRows: stageRows(
 			'The placed 1-D ramp stops.',
-			'Generator (e.g. tints & shades, walking Oklab lightness around each stop) and column count.',
-			'A 2-D palette: one row per base stop, exported as a CSS grid or nested DTCG groups.',
+			'Two axes — rows (related ramps) and columns (per-stop variants) — each offsetting hue, chroma, and/or lightness by a delta with a direction mode (ramp, sym, edges). Row and column counts are set per axis.',
+			'A 2-D palette (rows × columns), exported as a CSS grid or nested DTCG groups.',
 			'Interpolation path, placement policy, or the viewport color solid.'
 		),
 		sources: [{ label: 'theme.ts buildExpand' }, { label: 'ramp-pipeline-plan.md (Stage 3)' }]
