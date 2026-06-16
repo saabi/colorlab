@@ -46,6 +46,7 @@ The canonical version string is `fe/package.json` → `"version"`. Update this f
 - Pipeline and help copy clarifying path-shape surface projection vs terminal export gamut mapping.
 - Gamut Map UI, help, and tutorial copy now explicitly identify the current output target as sRGB.
 - Canonical backlog in `_docs/Roadmap.md` with maintenance rules.
+- v1 release track in `_docs/v1-release-criteria.md` — Beta → RC → 1.0.0 gates, task checklist, and notify+push workflow.
 - Light-theme secondary contrast (Normal / High / Maximum) darkens `--dim` and `--faint` instead of reusing dark-mode lightening rules.
 - Sidebar Viewport preferences footer — View aids and Performance in side-by-side columns; View aids in a 2×2 grid (floor grid, hide aids, auto-rotate, neutral backdrop); Performance stacked vertically (auto-reduce, min FPS).
 

@@ -6,6 +6,8 @@ For the full feature catalog (including lower-priority ideas), see [`design-revi
 
 For the current color-space role model, see [`color-space-role-architecture.md`](color-space-role-architecture.md). It defines **Active gamut**, **World space**, **Display gamut**, gamut-independent source storage, and per-list pipeline direction.
 
+**Release track:** [`v1-release-criteria.md`](v1-release-criteria.md) — Beta → RC → **1.0.0** gates and task checklist (notify + push after each gate).
+
 ## Maintaining this document
 
 **This file is the canonical backlog.** Keep it current so contributors and agents do not rely on stale lists elsewhere.
@@ -49,6 +51,8 @@ Update `_docs/Roadmap.md` when you:
 ---
 
 ## Priority summary
+
+**v1 release track (active):** Phase A pre-beta work is prioritized over new feature backlog. Task IDs and gates: [`v1-release-criteria.md`](v1-release-criteria.md). Next engineering focus: **A1 Bradford CAT** (or A1-alt guard), **A2** copy, **A3** OOG preview → **`1.0.0-beta.1`**.
 
 Aligned with the **recommended next order** in [`surface-constraint-gamut-projection-plan.md`](surface-constraint-gamut-projection-plan.md) and [`gamut-mapping-unification-plan.md`](gamut-mapping-unification-plan.md). Projection math and target-gamut generalization: surface-constraint plan is canonical; gamut-unification plan covers terminal-stage policy and UI.
 

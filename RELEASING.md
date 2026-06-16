@@ -14,6 +14,21 @@ The canonical version string is **`fe/package.json`** → `"version"`. Git tags 
 
 While the version is `0.x.y`, treat MINOR as potentially breaking; prefer PATCH for fixes only. Ship **1.0.0** when the public surface and document format are stable.
 
+See [`_docs/v1-release-criteria.md`](_docs/v1-release-criteria.md) for the active **Beta → RC → 1.0.0** task track and gate checklist.
+
+## Pre-releases
+
+Use [semver pre-release identifiers](https://semver.org/#spec-item-9) on tags:
+
+| Tag pattern | When |
+|-------------|------|
+| `v1.0.0-beta.N` | Public beta; features largely complete; known limitations documented |
+| `v1.0.0-rc.N` | Release candidate; scope frozen; fixes only |
+
+Pre-releases follow the same checklist below. GitHub/GitLab release notes should state **beta** or **RC** prominently and link to beta limitations in the README or [`v1-release-criteria.md`](_docs/v1-release-criteria.md).
+
+After each beta/RC/1.0 gate: push `main` and tags to **both** remotes (`github`, `gitlab`) and deploy production when applicable.
+
 ## Not the app version
 
 These are separate from semver releases:

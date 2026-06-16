@@ -58,6 +58,7 @@ App releases use semver; see [RELEASING.md](RELEASING.md). Do not bump `fe/packa
 
 For deeper design decisions, research, and workflows, consult the following files:
 - [_docs/Roadmap.md](_docs/Roadmap.md) — Canonical backlog; update when shipping features or changing priorities (see **Maintaining this document**).
+- [_docs/v1-release-criteria.md](_docs/v1-release-criteria.md) — Beta → RC → 1.0.0 release gates; check off tasks and follow notify+push workflow when completing a gate.
 - [README.md](README.md) — Overall project introduction and quick start guide.
 - [CONTRIBUTING.md](CONTRIBUTING.md) — Setup guidelines, testing commands, and Pull Request expectations.
 - [RELEASING.md](RELEASING.md) — Semantic versioning and release checklist.
