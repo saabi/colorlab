@@ -85,7 +85,7 @@ Understand what the 3D solid represents, navigate and inspect it, compare two ga
 
 #### Step 7: Slice at fixed lightness
 
-- **Concept:** Enabling the slice plane cuts the solid with a flat cross-section. With plane mode set to L (lightness), you see all colors at one Oklab lightness level — a 2D chromaticity diagram filtered to one brightness. Moving the offset slides the plane through the solid.
+- **Concept:** Enabling the slice plane cuts the solid with a flat cross-section. With plane mode set to L (lightness), you see all colors at one Oklab lightness level — an opponent-plane cross-section, not a chromaticity diagram. Moving the offset slides the plane through the solid.
 - **Try it:** Enable slice in the Clip / cut step, set plane mode to L, and drag the offset to about 0.55. Orbit to see the cross-section face-on. The perimeter is the gamut boundary at that lightness; everything inside is achievable.
 - **Success check:** A flat cross-section appears. Moving the offset makes it travel through the solid from dark (near 0) to light (near 1).
 - **Common mistake:** Thinking the slice boundary shows sRGB vs wide-gamut limits. The perimeter is the gamut boundary at that L value — not a comparison to a different gamut. Use the shell for comparisons.
@@ -93,9 +93,9 @@ Understand what the 3D solid represents, navigate and inspect it, compare two ga
 
 #### Step 8: Inspector panels — what each adds
 
-- **Concept:** The right inspector has five tabs. **Values** (used above) is the full numeric chain. **Transfer** plots the selected gamut's encoding curve — why sRGB stored values differ from linear light. **Cones** shows LMS cone excitations for the hovered stimulus. **xy** plots the CIE 1931 chromaticity diagram with the gamut triangle. All update from the same hover hit.
-- **Try it:** Hover a vivid green color and click through Transfer, Cones, and xy. Notice that all three panels show the same stimulus from different angles; none of them require a separate click.
-- **Success check:** All inspector panels update when the cursor moves over the solid. You can correlate the L/M/S bar heights with the xy position of the same color.
+- **Concept:** The right inspector has five tabs. **Values** (used above) is the full numeric chain. **Transfer** plots the selected gamut's encoding curve — why sRGB stored values differ from linear light. **Cones** shows LMS cone excitations for the hovered stimulus. The chromaticity tab plots the selected observer-aware diagram or fixed-lightness opponent-plane view. All update from the same hover hit.
+- **Try it:** Hover a vivid green color and click through Transfer, Cones, and the chromaticity tab. Notice that all three panels show the same stimulus from different angles; none of them require a separate click.
+- **Success check:** All inspector panels update when the cursor moves over the solid. You can correlate the L/M/S bar heights with the chromaticity or opponent-plane position of the same color.
 - **Common mistake:** Treating the Transfer panel as the export encoding curve. Transfer shows the gamut's decoding assumption (encoded → linear); it has no direct relation to what ramp tokens are exported.
 
 ### Capstone

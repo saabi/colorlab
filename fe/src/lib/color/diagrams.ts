@@ -15,6 +15,62 @@ export interface ChromaticityDiagram {
 	kind?: 'chromaticity' | 'opponent-plane' | 'experimental';
 }
 
+function observerCoordinateLabel(observerKey: string): string {
+	if (observerKey.includes('stockman-sharpe-10deg') || observerKey.includes('ss10deg')) return 'CIE 2006 10° xF yF';
+	if (observerKey.includes('stockman-sharpe-2deg') || observerKey.includes('ss2deg')) return 'CIE 2006 2° xF yF';
+	if (observerKey.includes('ciexyz64') || observerKey.includes('1964')) return 'CIE 1964 10° x10 y10';
+	if (observerKey.includes('ciexyzjv')) return 'Judd-Vos 1978 2° xy';
+	if (observerKey.includes('ciexyzj')) return 'Judd 1951 2° xy';
+	return 'CIE 1931 2° xy';
+}
+
+function observerName(observerKey: string): string {
+	if (observerKey.includes('stockman-sharpe-10deg') || observerKey.includes('ss10deg')) return 'CIE 2006 10° observer';
+	if (observerKey.includes('stockman-sharpe-2deg') || observerKey.includes('ss2deg')) return 'CIE 2006 2° observer';
+	if (observerKey.includes('ciexyz64') || observerKey.includes('1964')) return 'CIE 1964 10° observer';
+	if (observerKey.includes('ciexyzjv')) return 'Judd-Vos 1978 2° observer';
+	if (observerKey.includes('ciexyzj')) return 'Judd 1951 2° observer';
+	return 'CIE 1931 2° observer';
+}
+
+export function diagramDisplayLabel(diagramKey: string, observerKey: string): string {
+	switch (diagramKey) {
+		case 'cie1931-xy':
+			return observerCoordinateLabel(observerKey);
+		case 'cie1976-upvp':
+			return `CIE 1976 UCS u'v' - ${observerName(observerKey)}`;
+		case 'cie1960-uv':
+			return `CIE 1960 UCS uv - ${observerName(observerKey)}`;
+		case 'macleod-boynton':
+			return 'MacLeod-Boynton locus (experimental stimulus projection)';
+		case 'oklab-ab':
+			return 'Oklab a/b plane (L fixed)';
+		case 'cielab-ab':
+			return 'CIELAB a*/b* plane (L* fixed)';
+		default:
+			return DIAGRAMS[diagramKey]?.label ?? 'Chromaticity';
+	}
+}
+
+export function diagramShortLabel(diagramKey: string): string {
+	switch (diagramKey) {
+		case 'cie1931-xy':
+			return 'xy';
+		case 'cie1976-upvp':
+			return "u'v'";
+		case 'cie1960-uv':
+			return 'uv';
+		case 'macleod-boynton':
+			return 'l s';
+		case 'oklab-ab':
+			return 'a b';
+		case 'cielab-ab':
+			return 'a*b*';
+		default:
+			return 'xy';
+	}
+}
+
 const SRGB_XYZ = rgbToXyzM(GAMUTS.srgb.P, GAMUTS.srgb.W);
 const XYZ2SRGB = m3.inv(SRGB_XYZ);
 

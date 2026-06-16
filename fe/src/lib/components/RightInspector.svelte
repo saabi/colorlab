@@ -7,7 +7,7 @@
 	import { drawConesPanel } from '$lib/panels/cones-panel';
 	import { drawTransferPanel } from '$lib/panels/transfer-panel';
 	import { drawXyPanel } from '$lib/panels/xy-panel';
-	import { DIAGRAMS } from '$lib/color/diagrams';
+	import { diagramDisplayLabel, diagramShortLabel } from '$lib/color/diagrams';
 
 	import type { ExplorerState } from '$lib/engine/types';
 	import type { Vec3 } from '$lib/color/math';
@@ -20,16 +20,8 @@
 	let activeTab = $state<'transfer' | 'cones' | 'xy' | 'values' | 'palette'>('transfer');
 	let openHelp = $state<string | null>(null);
 
-	const xyLabel = $derived(DIAGRAMS[explorer.chromaticityDiagram]?.label || 'Chromaticity');
-	const xyTabLabel = $derived(
-		explorer.chromaticityDiagram === 'cie1931-xy'
-			? 'xy'
-			: explorer.chromaticityDiagram === 'cie1976-upvp'
-				? "u'v'"
-				: explorer.chromaticityDiagram === 'cie1960-uv'
-					? 'uv'
-					: 'l s'
-	);
+	const xyLabel = $derived(diagramDisplayLabel(explorer.chromaticityDiagram, explorer.observerModel));
+	const xyTabLabel = $derived(diagramShortLabel(explorer.chromaticityDiagram));
 
 	// The exported palette (2-D grid when present — Expand or multiple lists — else
 	// the 1-D active ramp as one row).
@@ -182,7 +174,7 @@
 		<canvas bind:this={xyCanvas} class="panel-canvas tall" aria-label="Chromaticity and opponent-plane panel"></canvas>
 
 		<p class="note">
-			Excitations are integrals: a general color is three magnitudes, not points on wavelength curves.
+			General colors are tristimulus excitations, not points on the spectral locus. The label reflects the active observer.
 		</p>
 	</section>
 

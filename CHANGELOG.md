@@ -34,6 +34,7 @@ The canonical version string is `fe/package.json` → `"version"`. Update this f
 - Document schema bumped to v13 — older saves migrate automatically (the former global ramp pipeline fields are lifted into each source list).
 - App-wide themed scrollbars (`--scrollbar-*` tokens; Firefox `scrollbar-color` + WebKit `::-webkit-scrollbar`).
 - Chromaticity instrument copy now distinguishes true CIE chromaticity diagrams from Oklab/CIELAB opponent-plane views.
+- Chromaticity panel and selector labels now reflect the active observer model instead of always implying CIE 1931 coordinates.
 - Spectral locus generation now uses the observer dataset wavelength range and avoids out-of-range zero endpoints.
 - Pipeline and help copy clarifying path-shape surface projection vs terminal export gamut mapping.
 - Gamut Map UI, help, and tutorial copy now explicitly identify the current output target as sRGB.

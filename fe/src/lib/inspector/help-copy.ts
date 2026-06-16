@@ -86,12 +86,12 @@ export const INSPECTOR_HELP: Record<InspectorPanelId, PanelHelpContent> = {
 		]
 	},
 	xy: {
-		title: 'CIE xy chromaticity',
+		title: 'Chromaticity / plane view',
 		summary:
-			'CIE 1931 xy chromaticity diagram. Spectral locus and gamut triangle come from the same cone fits as the LMS panel. Marker shows the hovered stimulus; sRGB fill is a display preview.',
+			'Observer-aware chromaticity or fixed-lightness opponent-plane view. CIE modes use the selected observer label; Oklab and CIELAB show sampled fixed-lightness gamut cross-sections. Marker shows the hovered stimulus; sRGB fill is a display preview where an inverse is defined.',
 		sources: [
-			{ label: 'CIE 1931 colorimetry' },
-			{ label: 'Spectral locus via waveToXyz / coneLMS in pipeline.ts' },
+			{ label: 'CIE colorimetry and selected observer dataset' },
+			{ label: 'Spectral locus from the active observer model' },
 			{ label: 'Composite colors are off-locus excitations, not spectral points' }
 		]
 	},

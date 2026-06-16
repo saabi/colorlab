@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { interpolateDataset, DEFAULT_OBSERVERS } from './fundamentals';
-import { DIAGRAMS } from './diagrams';
+import { DIAGRAMS, diagramDisplayLabel, diagramShortLabel } from './diagrams';
 import { generateSpectralLocus } from './locus';
 import { generateOpponentPlaneGamutBoundary, isXyzInsideGamut, opponentPlaneToXyz } from './diagram-boundary';
 import type { SpectralDataset } from './types';
@@ -153,5 +153,15 @@ describe('fundamentals & registries', () => {
 			const maxRadius = Math.max(...boundary.map(([x, y]) => Math.hypot(x, y)));
 			expect(maxRadius).toBeGreaterThan(diagramKey === 'oklab-ab' ? 0.08 : 40);
 		}
+	});
+
+	it('should label chromaticity diagrams according to the selected observer', () => {
+		expect(diagramDisplayLabel('cie1931-xy', 'ciexyz31-2deg')).toBe('CIE 1931 2° xy');
+		expect(diagramDisplayLabel('cie1931-xy', 'stockman-sharpe-2deg')).toBe('CIE 2006 2° xF yF');
+		expect(diagramDisplayLabel('cie1931-xy', 'stockman-sharpe-10deg')).toBe('CIE 2006 10° xF yF');
+		expect(diagramDisplayLabel('cie1931-xy', 'ciexyz64-10deg')).toBe('CIE 1964 10° x10 y10');
+		expect(diagramDisplayLabel('cie1976-upvp', 'stockman-sharpe-2deg')).toContain('CIE 2006 2° observer');
+		expect(diagramShortLabel('oklab-ab')).toBe('a b');
+		expect(diagramShortLabel('cielab-ab')).toBe('a*b*');
 	});
 });

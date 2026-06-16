@@ -8,6 +8,7 @@ Implementation status:
   - table-backed MacLeod-Boynton spectral locus coordinates;
   - fixed-lightness Oklab and CIELAB opponent-plane projections and labels;
   - sampled fixed-lightness gamut boundaries for Oklab/CIELAB opponent planes;
+  - observer-aware labels for CIE xy/uv/u'v' panel modes;
   - observer-range-safe spectral locus generation;
   - table-comparison regression tests for CIE xy, CIE 2006 xF/yF, and
     MacLeod-Boynton locus data;
@@ -260,7 +261,7 @@ Recommended fix:
 - Only allow explicit ranges after intersecting them with the dataset range.
 - Do not include zero-valued out-of-range points in purple-line endpoints.
 
-### 5. CIE 1931 / 1960 / 1976 Projections Are Valid But Need Observer Labels
+### 5. CIE 1931 / 1960 / 1976 Projections Are Valid And Now Observer-Labeled
 
 The projection formulas are correct:
 
@@ -268,12 +269,17 @@ The projection formulas are correct:
 - CIE 1960 UCS: `u = 4X/(X+15Y+3Z)`, `v = 6Y/(X+15Y+3Z)`.
 - CIE 1976 UCS: `u' = 4X/(X+15Y+3Z)`, `v' = 9Y/(X+15Y+3Z)`.
 
-But when the active observer is CIE 2006 / Stockman-Sharpe-derived, the label
-`CIE 1931 (x, y)` is no longer precise. It should become observer-aware:
+When the active observer is CIE 2006 / Stockman-Sharpe-derived, the label
+`CIE 1931 (x, y)` is no longer precise. The UI now labels the selected diagram
+with the active observer basis:
 
 - `CIE 1931 xy` when using CIE 1931 XYZ.
 - `CIE 2006 x_F y_F` when using the CIE 2006 physiological XYZ_F observer.
 - Equivalent explicit labels for CIE 1964 10° and Judd/Judd-Vos variants.
+
+For CIE 1960 UCS and CIE 1976 UCS, the coordinate-system name remains CIE
+1960/1976, while the suffix identifies the selected observer whose XYZ-like
+coordinates are being projected.
 
 ### 6. Gamut Background Fill Is Only Exact For Projective Diagrams
 

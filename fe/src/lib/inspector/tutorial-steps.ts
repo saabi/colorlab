@@ -107,7 +107,7 @@ export const A_QUICK_STEPS: TutorialStep[] = [
 	{
 		title: 'Slice at fixed lightness',
 		concept:
-			'Enabling the slice plane cuts the solid with a flat cross-section. With plane mode L, you see all colors at one Oklab lightness level — a 2D chromaticity diagram at one brightness. Moving the offset slides the plane through the solid.',
+			'Enabling the slice plane cuts the solid with a flat cross-section. With plane mode L, you see all colors at one Oklab lightness level — an opponent-plane cross-section, not a chromaticity diagram. Moving the offset slides the plane through the solid.',
 		tryIt: 'Open the Clip / cut step in the sidebar (click its header to expand). Enable slice, set plane mode to L, and drag the offset to about 0.55. Orbit to see the cross-section face-on.',
 		successCheck:
 			'A flat cross-section appears. Moving the offset travels from dark (near 0) to light (near 1) through the solid.',
@@ -120,10 +120,10 @@ export const A_QUICK_STEPS: TutorialStep[] = [
 	{
 		title: 'Inspector panels — what each adds',
 		concept:
-			'The right inspector has five tabs. Values is the full numeric chain (used above). Transfer plots the gamut\'s encoding curve. Cones shows LMS excitations. xy plots CIE 1931 chromaticity. All update from the same hover hit — they are views of the same calculation, not independent lookups. More tutorials are available — click the Tutorial button again to explore the Ramp lanes.',
-		tryIt: 'Hover a vivid green and click through Transfer, Cones, and xy. Notice all three panels respond to the same cursor movement without any extra click.',
+			'The right inspector has five tabs. Values is the full numeric chain (used above). Transfer plots the gamut\'s encoding curve. Cones shows LMS excitations. The chromaticity tab plots the selected observer-aware diagram or fixed-lightness opponent-plane view. All update from the same hover hit — they are views of the same calculation, not independent lookups. More tutorials are available — click the Tutorial button again to explore the Ramp lanes.',
+		tryIt: 'Hover a vivid green and click through Transfer, Cones, and the chromaticity tab. Notice all three panels respond to the same cursor movement without any extra click.',
 		successCheck:
-			'All tabs update when the cursor moves over the solid. You can correlate LMS bar heights with the xy position of the same color.',
+			'All tabs update when the cursor moves over the solid. You can correlate LMS bar heights with the chromaticity or opponent-plane position of the same color.',
 		commonMistake:
 			'Treating Transfer as the export encoding curve. Transfer shows the gamut\'s decoding assumption (encoded → linear); it has no direct relation to ramp token output.',
 		zone: 'inspector-adjacent',

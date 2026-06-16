@@ -14,6 +14,7 @@
 	import { getPipelineNode, isNodeEnabled, type PipelineNodeId } from './pipeline-nodes';
 	import { activePipeline } from '$lib/engine/theme';
 	import { getObserverModel } from '$lib/color/fundamentals';
+	import { diagramDisplayLabel } from '$lib/color/diagrams';
 
 	import type { ExplorerState } from '$lib/engine/types';
 	import type { Camera } from '$lib/engine/camera';
@@ -175,14 +176,16 @@
 				<div class="separator">
 					<label class="row" for="chroma-diagram-select"><span>Chromaticity / plane view</span></label>
 					<select id="chroma-diagram-select" bind:value={explorer.chromaticityDiagram}>
-						<option value="cie1931-xy">CIE 1931 (x, y) / CIE 2006 (xF, yF)</option>
-						<option value="cie1976-upvp">CIE 1976 UCS (u', v')</option>
-						<option value="cie1960-uv">CIE 1960 UCS (u, v)</option>
-						<option value="macleod-boynton">MacLeod-Boynton locus (experimental)</option>
-						<option value="oklab-ab">Oklab a/b plane (L fixed)</option>
-						<option value="cielab-ab">CIELAB a*/b* plane (L* fixed)</option>
+						<option value="cie1931-xy">{diagramDisplayLabel('cie1931-xy', explorer.observerModel)}</option>
+						<option value="cie1976-upvp">{diagramDisplayLabel('cie1976-upvp', explorer.observerModel)}</option>
+						<option value="cie1960-uv">{diagramDisplayLabel('cie1960-uv', explorer.observerModel)}</option>
+						<option value="macleod-boynton">{diagramDisplayLabel('macleod-boynton', explorer.observerModel)}</option>
+						<option value="oklab-ab">{diagramDisplayLabel('oklab-ab', explorer.observerModel)}</option>
+						<option value="cielab-ab">{diagramDisplayLabel('cielab-ab', explorer.observerModel)}</option>
 					</select>
-					<p class="note">CIE modes are chromaticity diagrams; Oklab and CIELAB are fixed-lightness opponent-plane views.</p>
+					<p class="note">
+						Chromaticity labels follow the selected observer. Oklab and CIELAB are fixed-lightness opponent-plane views.
+					</p>
 				</div>
 				<div class="separator">
 					<SliderRow label="Solid opacity" bind:value={explorer.solidAlpha} min={0.05} max={1} step={0.05} format={(value) => value.toFixed(2)} />
