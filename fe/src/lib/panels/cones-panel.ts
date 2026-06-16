@@ -72,14 +72,12 @@ export function drawConesPanel(canvas: HTMLCanvasElement, ch: TransformChain | n
 	const y0 = h - 8;
 	const pw = w - 78;
 	const ph = h - 16;
-	const nmA = CONE_PANEL_NM_MIN;
-	const nmB = CONE_PANEL_NM_MAX;
+	const observer = DEFAULT_OBSERVERS[state.observerModel] || DEFAULT_OBSERVERS['stockman-sharpe-2deg'];
+	const [nmA, nmB] = observer.dataset.wavelengthRange;
 	drawSpectrumBackground(ctx, x0, y0 - ph, pw, ph, nmA, nmB, state);
 	const cols = ['#e0533d', '#39c46f', '#5b8def'];
 	let mx = 0;
 	const samp: Array<[number, number, number]> = [];
-
-	const observer = DEFAULT_OBSERVERS[state.observerModel] || DEFAULT_OBSERVERS['stockman-sharpe-2deg'];
 
 	for (let i = 0; i <= pw; i += 1) {
 		const nm = nmA + ((nmB - nmA) * i) / pw;
