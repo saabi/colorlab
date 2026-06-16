@@ -1,12 +1,41 @@
 #!/usr/bin/env python3
+"""Download spectral/observer datasets into data/raw/. See _docs/spectral-dataset-sources.md."""
 import os
-import urllib.request
 import urllib.parse
+import urllib.request
+
+CVRL = "http://www.cvrl.org/"
+CIE = "https://files.cie.co.at/"
+
+# Source selection policy (see data/reports/source-verification.md):
+# - CIE GET for official CMFs / V(lambda) where sampling matches CVRL (1 nm).
+# - CVRL POST for Stockman & Sharpe LMS: CIE_lms_cf_* is 5 nm only (89 rows);
+#   CVRL conerequest_ss* at Cone_steps=1 is true 1 nm (441 rows).
+# - CVRL POST for historical/corrected CMFs and log-energy cone tables.
+# - CVRL fine (0.1 nm) for SS LMS, CIE 2006 XYZ_F/chromaticity, physiological V(λ).
+# - CIE mesopic: Vmes example at m=0.8 + Km,max vs m; other m via CIE 018:2019 Eq. (2).
+
 
 def make_dirs():
     os.makedirs("data/raw", exist_ok=True)
+    os.makedirs("data/raw/sb_individual", exist_ok=True)
     os.makedirs("data/processed", exist_ok=True)
     os.makedirs("data/reports", exist_ok=True)
+
+
+def get_download(url, output_path):
+    print(f"Downloading {url} -> {output_path} ...")
+    try:
+        with urllib.request.urlopen(url) as response:
+            content = response.read()
+            if len(content) < 100:
+                print(f"  Warning: small response ({len(content)} bytes) for {output_path}")
+            with open(output_path, "wb") as f:
+                f.write(content)
+        print("  Done.")
+    except Exception as e:
+        print(f"  Error downloading {output_path}: {e}")
+
 
 def post_download(url, data_dict, output_path):
     print(f"Downloading {url} -> {output_path} ...")
@@ -15,247 +44,138 @@ def post_download(url, data_dict, output_path):
     try:
         with urllib.request.urlopen(req) as response:
             content = response.read()
-            # If the response indicates an error page, notify
             if b"404 Not Found" in content or len(content) < 100:
-                print(f"  Warning: Received small or error response for {output_path}")
+                print(f"  Warning: small or error response ({len(content)} bytes) for {output_path}")
             with open(output_path, "wb") as f:
                 f.write(content)
         print("  Done.")
     except Exception as e:
         print(f"  Error downloading {output_path}: {e}")
 
-# Stiles & Burch 1955 2° and 1959 10° average CMFs (5nm steps)
-# Sourced from the verified colour-science package database
-SBRGB_2DEG_DATA = {
-    390: (1.83970e-003, -4.53930e-004, 1.21520e-002),
-    395: (4.61530e-003, -1.04640e-003, 3.11100e-002),
-    400: (9.62640e-003, -2.16890e-003, 6.23710e-002),
-    405: (1.89790e-002, -4.43040e-003, 1.31610e-001),
-    410: (3.08030e-002, -7.20480e-003, 2.27500e-001),
-    415: (4.24590e-002, -1.25790e-002, 3.58970e-001),
-    420: (5.16620e-002, -1.66510e-002, 5.23960e-001),
-    425: (5.28370e-002, -2.12400e-002, 6.85860e-001),
-    430: (4.42870e-002, -1.99360e-002, 7.96040e-001),
-    435: (3.22200e-002, -1.60970e-002, 8.94590e-001),
-    440: (1.47630e-002, -7.34570e-003, 9.63950e-001),
-    445: (-2.33920e-003, 1.36900e-003, 9.98140e-001),
-    450: (-2.91300e-002, 1.96100e-002, 9.18750e-001),
-    455: (-6.06770e-002, 4.34640e-002, 8.24870e-001),
-    460: (-9.62240e-002, 7.09540e-002, 7.85540e-001),
-    465: (-1.37590e-001, 1.10220e-001, 6.67230e-001),
-    470: (-1.74860e-001, 1.50880e-001, 6.10980e-001),
-    475: (-2.12600e-001, 1.97940e-001, 4.88290e-001),
-    480: (-2.37800e-001, 2.40420e-001, 3.61950e-001),
-    485: (-2.56740e-001, 2.79930e-001, 2.66340e-001),
-    490: (-2.77270e-001, 3.33530e-001, 1.95930e-001),
-    495: (-2.91250e-001, 4.05210e-001, 1.47300e-001),
-    500: (-2.95000e-001, 4.90600e-001, 1.07490e-001),
-    505: (-2.97060e-001, 5.96730e-001, 7.67140e-002),
-    510: (-2.67590e-001, 7.01840e-001, 5.02480e-002),
-    515: (-2.17250e-001, 8.08520e-001, 2.87810e-002),
-    520: (-1.47680e-001, 9.10760e-001, 1.33090e-002),
-    525: (-3.51840e-002, 9.84820e-001, 2.11700e-003),
-    530: (1.06140e-001, 1.03390e000, -4.15740e-003),
-    535: (2.59810e-001, 1.05380e000, -8.30320e-003),
-    540: (4.19760e-001, 1.05120e000, -1.21910e-002),
-    545: (5.92590e-001, 1.04980e000, -1.40390e-002),
-    550: (7.90040e-001, 1.03680e000, -1.46810e-002),
-    555: (1.00780e000, 9.98260e-001, -1.49470e-002),
-    560: (1.22830e000, 9.37830e-001, -1.46130e-002),
-    565: (1.47270e000, 8.80390e-001, -1.37820e-002),
-    570: (1.74760e000, 8.28350e-001, -1.26500e-002),
-    575: (2.02140e000, 7.46860e-001, -1.13560e-002),
-    580: (2.27240e000, 6.49300e-001, -9.93170e-003),
-    585: (2.48960e000, 5.63170e-001, -8.41480e-003),
-    590: (2.67250e000, 4.76750e-001, -7.02100e-003),
-    595: (2.80930e000, 3.84840e-001, -5.74370e-003),
-    600: (2.87170e000, 3.00690e-001, -4.27430e-003),
-    605: (2.85250e000, 2.28530e-001, -2.91320e-003),
-    610: (2.76010e000, 1.65750e-001, -2.26930e-003),
-    615: (2.59890e000, 1.13730e-001, -1.99660e-003),
-    620: (2.37430e000, 7.46820e-002, -1.50690e-003),
-    625: (2.10540e000, 4.65040e-002, -9.38220e-004),
-    630: (1.81450e000, 2.63330e-002, -5.53160e-004),
-    635: (1.52470e000, 1.27240e-002, -3.16680e-004),
-    640: (1.25430e000, 4.50330e-003, -1.43190e-004),
-    645: (1.00760e000, 9.66110e-005, -4.08310e-006),
-    650: (7.86420e-001, -1.96450e-003, 1.10810e-004),
-    655: (5.96590e-001, -2.63270e-003, 1.91750e-004),
-    660: (4.43200e-001, -2.62620e-003, 2.26560e-004),
-    665: (3.24100e-001, -2.30270e-003, 2.15200e-004),
-    670: (2.34550e-001, -1.87000e-003, 1.63610e-004),
-    675: (1.68840e-001, -1.44240e-003, 9.71640e-005),
-    680: (1.20860e-001, -1.07550e-003, 5.10330e-005),
-    685: (8.58110e-002, -7.90040e-004, 3.52710e-005),
-    690: (6.02600e-002, -5.67650e-004, 3.12110e-005),
-    695: (4.14800e-002, -3.92740e-004, 2.45080e-005),
-    700: (2.81140e-002, -2.62310e-004, 1.65210e-005),
-    705: (1.91170e-002, -1.75120e-004, 1.11240e-005),
-    710: (1.33050e-002, -1.21400e-004, 8.69650e-006),
-    715: (9.40920e-003, -8.57600e-005, 7.43510e-006),
-    720: (6.51770e-003, -5.76770e-005, 6.10570e-006),
-    725: (4.53770e-003, -3.90030e-005, 5.02770e-006),
-    730: (3.17420e-003, -2.65110e-005, 4.12510e-006)
-}
-
-SBRGB_10DEG_DATA = {
-    390: (1.5000e-03, -4.0000e-04, 6.2000e-03),
-    395: (3.8000e-03, -1.0000e-03, 1.6100e-02),
-    400: (8.9000e-03, -2.5000e-03, 4.0000e-02),
-    405: (1.8800e-02, -5.9000e-03, 9.0600e-02),
-    410: (3.5000e-02, -1.1900e-02, 1.8020e-01),
-    415: (5.3100e-02, -2.0100e-02, 3.0880e-01),
-    420: (7.0200e-02, -2.8900e-02, 4.6700e-01),
-    425: (7.6300e-02, -3.3800e-02, 6.1520e-01),
-    430: (7.4500e-02, -3.4900e-02, 7.6380e-01),
-    435: (5.6100e-02, -2.7600e-02, 8.7780e-01),
-    440: (3.2300e-02, -1.6900e-02, 9.7550e-01),
-    445: (-4.4000e-03, 2.4000e-03, 1.0019e00),
-    450: (-4.7800e-02, 2.8300e-02, 9.9960e-01),
-    455: (-9.7000e-02, 6.3600e-02, 9.1390e-01),
-    460: (-1.5860e-01, 1.0820e-01, 8.2970e-01),
-    465: (-2.2350e-01, 1.6170e-01, 7.4170e-01),
-    470: (-2.8480e-01, 2.2010e-01, 6.1340e-01),
-    475: (-3.3460e-01, 2.7960e-01, 4.7200e-01),
-    480: (-3.7760e-01, 3.4280e-01, 3.4950e-01),
-    485: (-4.1360e-01, 4.0860e-01, 2.5640e-01),
-    490: (-4.3170e-01, 4.7160e-01, 1.8190e-01),
-    495: (-4.4520e-01, 5.4910e-01, 1.3070e-01),
-    500: (-4.3500e-01, 6.2600e-01, 9.1000e-02),
-    505: (-4.1400e-01, 7.0970e-01, 5.8000e-02),
-    510: (-3.6730e-01, 7.9350e-01, 3.5700e-02),
-    515: (-2.8450e-01, 8.7150e-01, 2.0000e-02),
-    520: (-1.8550e-01, 9.4770e-01, 9.5000e-03),
-    525: (-4.3500e-02, 9.9450e-01, 7.0000e-04),
-    530: (1.2700e-01, 1.0203e00, -4.3000e-03),
-    535: (3.1290e-01, 1.0375e00, -6.4000e-03),
-    540: (5.3620e-01, 1.0517e00, -8.2000e-03),
-    545: (7.7220e-01, 1.0390e00, -9.4000e-03),
-    550: (1.0059e00, 1.0029e00, -9.7000e-03),
-    555: (1.2710e00, 9.6980e-01, -9.7000e-03),
-    560: (1.5574e00, 9.1620e-01, -9.3000e-03),
-    565: (1.8465e00, 8.5710e-01, -8.7000e-03),
-    570: (2.1511e00, 7.8230e-01, -8.0000e-03),
-    575: (2.4250e00, 6.9530e-01, -7.3000e-03),
-    580: (2.6574e00, 5.9660e-01, -6.3000e-03),
-    585: (2.9151e00, 5.0630e-01, -5.3700e-03),
-    590: (3.0779e00, 4.2030e-01, -4.4500e-03),
-    595: (3.1613e00, 3.3600e-01, -3.5700e-03),
-    600: (3.1673e00, 2.5910e-01, -2.7700e-03),
-    605: (3.1048e00, 1.9170e-01, -2.0800e-03),
-    610: (2.9462e00, 1.3670e-01, -1.5000e-03),
-    615: (2.7194e00, 9.3800e-02, -1.0300e-03),
-    620: (2.4526e00, 6.1100e-02, -6.8000e-04),
-    625: (2.1700e00, 3.7100e-02, -4.4200e-04),
-    630: (1.8358e00, 2.1500e-02, -2.7200e-04),
-    635: (1.5179e00, 1.1200e-02, -1.4100e-04),
-    640: (1.2428e00, 4.4000e-03, -5.4900e-05),
-    645: (1.0070e00, 7.8000e-05, -2.2000e-06),
-    650: (7.8270e-01, -1.3680e-03, 2.3700e-05),
-    655: (5.9340e-01, -1.9880e-03, 2.8600e-05),
-    660: (4.4420e-01, -2.1680e-03, 2.6100e-05),
-    665: (3.2830e-01, -2.0060e-03, 2.2500e-05),
-    670: (2.3940e-01, -1.6420e-03, 1.8200e-05),
-    675: (1.7220e-01, -1.2720e-03, 1.3900e-05),
-    680: (1.2210e-01, -9.4700e-04, 1.0300e-05),
-    685: (8.5300e-02, -6.8300e-04, 7.3800e-06),
-    690: (5.8600e-02, -4.7800e-04, 5.2200e-06),
-    695: (4.0800e-02, -3.3700e-04, 3.6700e-06),
-    700: (2.8400e-02, -2.3500e-04, 2.5600e-06),
-    705: (1.9700e-02, -1.6300e-04, 1.7600e-06),
-    710: (1.3500e-02, -1.1100e-04, 1.2000e-06),
-    715: (9.2400e-03, -7.4800e-05, 8.1700e-07),
-    720: (6.3800e-03, -5.0800e-05, 5.5500e-07),
-    725: (4.4100e-03, -3.4400e-05, 3.7500e-07),
-    730: (3.0700e-03, -2.3400e-05, 2.5400e-07),
-}
-
-def save_stiles_burch():
-    print("Writing Stiles & Burch CMFs to data/raw ...")
-    with open("data/raw/sbrgb2deg_5nm.csv", "w") as f:
-        f.write("Wavelength,r,g,b\n")
-        for nm in sorted(SBRGB_2DEG_DATA.keys()):
-            r, g, b = SBRGB_2DEG_DATA[nm]
-            f.write(f"{nm},{r:.5e},{g:.5e},{b:.5e}\n")
-            
-    with open("data/raw/sbrgb10deg_5nm.csv", "w") as f:
-        f.write("Wavelength,r,g,b\n")
-        for nm in sorted(SBRGB_10DEG_DATA.keys()):
-            r, g, b = SBRGB_10DEG_DATA[nm]
-            f.write(f"{nm},{r:.5e},{g:.5e},{b:.5e}\n")
-    print("  Done.")
 
 def main():
     make_dirs()
-    
-    # CVRL database forms URL
-    CVRL_BASE = "http://www.cvrl.org/"
-    
-    # 1. Stockman & Sharpe 2-deg cone fundamentals (1nm)
+
+    # --- CIE open data (GET) ---
+    cie_files = [
+        ("CIE_xyz_1964_10deg.csv", "ciexyz64_1nm.csv"),
+        ("CIE_cc_1931_2deg.csv", "ciexy31_1nm.csv"),
+        ("CIE_cc_1964_10deg.csv", "ciexy64_1nm.csv"),
+        ("CIE_cfb_stv_2deg.csv", "ciexyz2006_2deg_1nm.csv"),
+        ("CIE_cfb_stv_10deg.csv", "ciexyz2006_10deg_1nm.csv"),
+        ("CIE_sle_photopic.csv", "vl1924e_1nm.csv"),
+        ("CIE_sle_scotopic.csv", "scvle_1nm.csv"),
+        ("CIE_sle_10deg.csv", "vl10deg_1nm.csv"),
+        ("CIE_cfb_sle_2deg.csv", "cfb_vl_2deg_1nm.csv"),
+        ("CIE_cfb_sle_10deg.csv", "cfb_vl_10deg_1nm.csv"),
+        ("CIE_smb_cc_2deg.csv", "smb_cc_2deg_1nm.csv"),
+        ("CIE_sle_mesopic_m_0.8.csv", "vl_mesopic_m08_1nm.csv"),
+        ("CIE_max_sle_mesopic.csv", "vl_mesopic_max_efficacy.csv"),
+    ]
+    # CIE 1931 XYZ — CVRL matches committed formatting; CIE open file is numerically
+    # identical but uses different decimal representation.
     post_download(
-        CVRL_BASE + "conerequest_ss2.php",
-        {"Cone_units": "energy", "Cone_steps": "1", "Cone_format": "csv"},
-        "data/raw/ss2deg_1nm.csv"
-    )
-    
-    # 2. Stockman & Sharpe 10-deg cone fundamentals (1nm)
-    post_download(
-        CVRL_BASE + "conerequest_ss10.php",
-        {"Cone_units": "energy", "Cone_steps": "1", "Cone_format": "csv"},
-        "data/raw/ss10deg_1nm.csv"
-    )
-    
-    # 3. CIE 1931 XYZ 2-deg CMFs (1nm)
-    post_download(
-        CVRL_BASE + "offercsvcmfs.php",
+        CVRL + "offercsvcmfs.php",
         {"whichfile": "ciexyz31_1.csv"},
-        "data/raw/ciexyz31_1nm.csv"
+        "data/raw/ciexyz31_1nm.csv",
     )
-    
-    # 4. CIE 1964 XYZ 10-deg CMFs (1nm)
-    post_download(
-        CVRL_BASE + "offercsvcmfs.php",
-        {"whichfile": "ciexyz64_1.csv"},
-        "data/raw/ciexyz64_1nm.csv"
-    )
-    
-    # 5. CIE 1924 photopic V(lambda) luminous efficiency (1nm)
-    post_download(
-        CVRL_BASE + "offercsvlum.php",
-        {"whichfile": "vl1924e_1.csv"},
-        "data/raw/vl1924e_1nm.csv"
-    )
-    
-    # 6. CIE 1951 scotopic V'(lambda) luminous efficiency (1nm)
-    post_download(
-        CVRL_BASE + "offercsvlum.php",
-        {"whichfile": "scvle_1.csv"},
-        "data/raw/scvle_1nm.csv"
-    )
-    
-    # 7. Macular pigment density spectrum (1nm)
-    post_download(
-        CVRL_BASE + "macrequest.php",
-        {"mac_steps": "1", "mac_format": "csv"},
-        "data/raw/macular_pigment_1nm.csv"
-    )
-    
-    # 8. Lens density spectrum (1nm)
-    post_download(
-        CVRL_BASE + "lensrequest.php",
-        {"lens_steps": "1", "lens_format": "csv"},
-        "data/raw/lens_density_1nm.csv"
-    )
-    
-    # 9. Photopigment absorbance templates (1nm)
-    post_download(
-        CVRL_BASE + "pigrequest.php",
-        {"pig_steps": "1", "pig_format": "csv"},
-        "data/raw/photopigment_absorbance_1nm.csv"
-    )
-    
-    # 10. Stiles & Burch 1955 2° and 1959 10° average CMFs
-    save_stiles_burch()
+
+    for remote, local in cie_files:
+        get_download(CIE + remote, f"data/raw/{local}")
+
+    # Stockman & Sharpe LMS — CVRL 1 nm (CIE file is 5 nm only)
+    for endpoint, local in [
+        ("conerequest_ss2.php", "ss2deg_1nm.csv"),
+        ("conerequest_ss10.php", "ss10deg_1nm.csv"),
+    ]:
+        post_download(
+            CVRL + endpoint,
+            {"Cone_units": "energy", "Cone_steps": "1", "Cone_format": "csv"},
+            f"data/raw/{local}",
+        )
+
+    # Stockman & Sharpe LMS — CVRL 0.1 nm fine (supplementary high-resolution tables)
+    for endpoint, local in [
+        ("conerequest_ss2.php", "ss2deg_01nm.csv"),
+        ("conerequest_ss10.php", "ss10deg_01nm.csv"),
+    ]:
+        post_download(
+            CVRL + endpoint,
+            {"Cone_units": "energy", "Cone_steps": "fine", "Cone_format": "csv"},
+            f"data/raw/{local}",
+        )
+
+    # --- CVRL CMFs ---
+    for whichfile, local in [
+        ("ciexyzj.csv", "ciexyzj_5nm.csv"),
+        ("ciexyzjv.csv", "ciexyzjv_5nm.csv"),
+        ("sbrgb2.csv", "sbrgb2deg_5nm.csv"),
+        ("sbrgb10w.csv", "sbrgb10deg_5nm.csv"),
+    ]:
+        post_download(CVRL + "offercsvcmfs.php", {"whichfile": whichfile}, f"data/raw/{local}")
+
+    # --- CVRL CIE 2006 physiological chromaticity (1 nm) ---
+    for endpoint, local in [
+        ("xyzccrequest_2.php", "ciexy2006_2deg_1nm.csv"),
+        ("xyzccrequest_10.php", "ciexy2006_10deg_1nm.csv"),
+    ]:
+        post_download(
+            CVRL + endpoint,
+            {"xyzcc_steps": "1", "xyzcc_format": "csv"},
+            f"data/raw/{local}",
+        )
+
+    # CIE 2006 physiological XYZ_F and chromaticity — CVRL 0.1 nm fine
+    for endpoint, local, params in [
+        ("xyzcmfrequest_2.php", "ciexyz2006_2deg_01nm.csv", {"xyz_steps": "fine", "xyz_format": "csv"}),
+        ("xyzcmfrequest_10.php", "ciexyz2006_10deg_01nm.csv", {"xyz_steps": "fine", "xyz_format": "csv"}),
+        ("xyzccrequest_2.php", "ciexy2006_2deg_01nm.csv", {"xyzcc_steps": "fine", "xyzcc_format": "csv"}),
+        ("xyzccrequest_10.php", "ciexy2006_10deg_01nm.csv", {"xyzcc_steps": "fine", "xyzcc_format": "csv"}),
+    ]:
+        post_download(CVRL + endpoint, params, f"data/raw/{local}")
+
+    # Physiological luminous efficiency (cone-fundamental-based) — CVRL 0.1 nm fine
+    for endpoint, local in [
+        ("lumrequest_2.php", "cfb_vl_2deg_01nm.csv"),
+        ("lumrequest_10.php", "cfb_vl_10deg_01nm.csv"),
+    ]:
+        post_download(
+            CVRL + endpoint,
+            {"Lum_units": "energy", "Lum_steps": "fine", "Lum_format": "csv"},
+            f"data/raw/{local}",
+        )
+
+    # --- CVRL cone fundamentals (log energy unless noted) ---
+    for whichfile, local in [
+        ("sp.csv", "sp_loge.csv"),
+        ("smj2.csv", "smj2_loge.csv"),
+        ("smj2_10.csv", "smj2_10_loge.csv"),
+        ("smj10.csv", "smj10_loge.csv"),
+        ("vw.csv", "vw_loge.csv"),
+        ("vew.csv", "vew_loge.csv"),
+        ("dpse_1.csv", "dpse_1nm.csv"),
+    ]:
+        post_download(CVRL + "offercsvcones.php", {"whichfile": whichfile}, f"data/raw/{local}")
+
+    # --- CVRL luminous efficiency ---
+    for whichfile, local in [
+        ("vlje.csv", "vlje_5nm.csv"),
+        ("vme_1.csv", "vme_1nm.csv"),
+    ]:
+        post_download(CVRL + "offercsvlum.php", {"whichfile": whichfile}, f"data/raw/{local}")
+
+    # --- CVRL prereceptoral / photopigment (1 nm) ---
+    post_download(CVRL + "macrequest.php", {"mac_steps": "1", "mac_format": "csv"}, "data/raw/macular_pigment_1nm.csv")
+    post_download(CVRL + "lensrequest.php", {"lens_steps": "1", "lens_format": "csv"}, "data/raw/lens_density_1nm.csv")
+    post_download(CVRL + "pigrequest.php", {"pig_steps": "1", "pig_format": "csv"}, "data/raw/photopigment_absorbance_1nm.csv")
+
+    # --- Individual Stiles & Burch observer spreadsheets ---
+    for remote, local in [
+        ("database/data/sb_individual/SB2_individual_CMF.xls", "sb_individual/SB2_individual_CMF.xls"),
+        ("database/data/sb_individual/SB10_corrected_indiv_CMFs.xls", "sb_individual/SB10_corrected_indiv_CMFs.xls"),
+    ]:
+        get_download(CVRL + remote, f"data/raw/{local}")
+
 
 if __name__ == "__main__":
     main()

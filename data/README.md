@@ -2,6 +2,17 @@
 
 Downloaded and generated color-science datasets live here.
 
+Run `python3 data/download_datasets.py` then `python3 data/process_datasets.py` from the
+repo root to refresh sources (42 CSV + 2 Excel in `data/raw/`).
+
+Verify against committed baseline and alternate hosts:
+
+```bash
+python3 data/verify_sources.py
+```
+
+See `data/reports/source-verification.md` for the latest audit.
+
 Rules:
 
 - Keep raw downloaded source files under `data/raw/`.
