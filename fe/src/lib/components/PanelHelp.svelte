@@ -153,10 +153,10 @@
 		gap: 6px;
 		max-height: min(70dvh, 480px);
 		overflow-y: auto;
-		border: 1px solid #35363b;
+		border: 1px solid var(--popover-border);
 		border-radius: 8px;
-		background: #111216;
-		box-shadow: 0 16px 44px #000b;
+		background: var(--popover-bg);
+		box-shadow: var(--shadow-float);
 		padding: 10px;
 		color: var(--txt);
 		text-transform: none;
@@ -179,7 +179,7 @@
 	}
 
 	.panel-help-sources-label {
-		border-top: 1px solid rgba(255, 255, 255, 0.08);
+		border-top: 1px solid var(--divider-on-surface);
 		color: var(--faint);
 		margin-top: 2px;
 		padding-top: 7px;

@@ -976,7 +976,7 @@
 		margin: 0 0 6px;
 		border: 1px solid var(--border);
 		border-radius: 6px;
-		background: color-mix(in srgb, var(--panel2) 70%, transparent);
+		background: var(--surface-inset);
 		padding: 5px 7px;
 		color: var(--muted);
 		font-size: 0.846rem;

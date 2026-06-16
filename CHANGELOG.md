@@ -13,6 +13,11 @@ The canonical version string is `fe/package.json` → `"version"`. Update this f
 - Dark/light theme switch moved out of the "Text" (Readability) panel into a dedicated sun/moon toggle in the header (desktop + mobile More menu); the Readability panel now covers font scale, secondary contrast, and line height only.
 - Header GitHub link now shows the GitHub mark (logo) instead of the word "GitHub"; the in-panel Info links stay as text.
 
+### Fixed
+
+- Light theme — header and floating-surface backgrounds (app header, sidebar footer, viewport toolbar, help/tutorial/lane-picker popovers, pipeline tooltip, ramp substep cards) no longer reuse dark-theme fills with dark text; surfaces use theme-aware tokens (`--header-bg`, `--popover-bg`, `--surface-toolbar`, etc.) with lighter values under `data-theme='light'`.
+- Aliased `--border`, `--muted`, and `--text` to the canonical palette tokens so component-scoped styles resolve consistently in both themes.
+
 ## [1.0.0-beta.1] - 2026-06-16
 
 First public beta of the v1 release track. Feature-complete enough for real use;

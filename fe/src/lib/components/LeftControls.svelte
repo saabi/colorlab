@@ -488,7 +488,7 @@
 	.ramp-substep {
 		border: 1px solid var(--border);
 		border-radius: 6px;
-		background: color-mix(in srgb, var(--panel2) 62%, transparent);
+		background: var(--surface-inset);
 	}
 	.ramp-substep.disabled {
 		opacity: 0.58;

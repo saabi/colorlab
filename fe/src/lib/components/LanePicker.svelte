@@ -159,10 +159,10 @@
 		max-height: min(90dvh, 600px);
 		overflow-y: auto;
 		padding: 18px;
-		border: 1px solid #35363b;
+		border: 1px solid var(--popover-border);
 		border-radius: 10px;
-		background: #111216;
-		box-shadow: 0 24px 64px #000e;
+		background: var(--popover-bg);
+		box-shadow: var(--shadow-float);
 		color: var(--txt);
 	}
 

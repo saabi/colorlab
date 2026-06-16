@@ -102,10 +102,10 @@
 		visibility: hidden;
 		opacity: 0;
 		pointer-events: none;
-		border: 1px solid #35363b;
+		border: 1px solid var(--popover-border);
 		border-radius: 8px;
-		background: #111216;
-		box-shadow: 0 16px 44px #000b;
+		background: var(--popover-bg);
+		box-shadow: var(--shadow-float);
 		padding: 10px;
 		color: var(--txt);
 		text-transform: none;
@@ -149,7 +149,7 @@
 
 	.pipeline-step.disabled {
 		border-style: dashed;
-		background: #15161a;
+		background: var(--surface-muted);
 		opacity: 0.58;
 	}
 

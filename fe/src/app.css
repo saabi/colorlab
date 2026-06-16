@@ -21,6 +21,25 @@
 	--ui-line-height-note: calc(var(--ui-line-height) * 0.966);
 	--ui-line-height-relaxed: calc(var(--ui-line-height) * 1.034);
 	--ui-line-height-loose: calc(var(--ui-line-height) * 1.103);
+	--border: var(--line);
+	--muted: var(--dim);
+	--text: var(--txt);
+	--header-bg: rgba(10, 10, 11, 0.9);
+	--surface-footer: color-mix(in srgb, var(--panel) 94%, black);
+	--popover-bg: #111216;
+	--popover-border: #35363b;
+	--surface-floating: rgba(18, 18, 20, 0.96);
+	--surface-toolbar: rgba(18, 18, 20, 0.86);
+	--surface-chip: rgba(10, 10, 11, 0.72);
+	--surface-muted: #15161a;
+	--kbd-bg: #0d0e10;
+	--kbd-border: #35363b;
+	--divider-on-surface: rgba(255, 255, 255, 0.08);
+	--hover-on-surface: rgba(255, 255, 255, 0.06);
+	--badge-border-subtle: rgba(255, 255, 255, 0.1);
+	--notice-bg: rgba(18, 18, 20, 0.94);
+	--shadow-float: 0 12px 32px rgba(0, 0, 0, 0.45);
+	--surface-inset: color-mix(in srgb, var(--panel2) 62%, transparent);
 	font-family:
 		"IBM Plex Sans",
 		Inter,
@@ -45,6 +64,22 @@
 	--warn: #b45309;
 	--scrollbar-thumb: color-mix(in srgb, var(--line) 65%, var(--faint) 35%);
 	--scrollbar-thumb-hover: color-mix(in srgb, var(--faint) 50%, var(--dim) 50%);
+	--header-bg: #d4d7e0;
+	--surface-footer: #c4c7d2;
+	--popover-bg: #d0d3dc;
+	--popover-border: var(--line);
+	--surface-floating: color-mix(in srgb, #d8dbe4 92%, white);
+	--surface-toolbar: color-mix(in srgb, #ced1db 90%, white);
+	--surface-chip: color-mix(in srgb, var(--panel) 70%, #e8eaef);
+	--surface-muted: color-mix(in srgb, var(--panel2) 55%, #e4e6ec);
+	--kbd-bg: #e2e4ea;
+	--kbd-border: var(--line);
+	--divider-on-surface: color-mix(in srgb, var(--line) 50%, transparent);
+	--hover-on-surface: color-mix(in srgb, var(--line) 22%, transparent);
+	--badge-border-subtle: color-mix(in srgb, var(--line) 65%, transparent);
+	--notice-bg: color-mix(in srgb, #d6d9e2 94%, white);
+	--shadow-float: 0 12px 32px color-mix(in srgb, var(--txt) 18%, transparent);
+	--surface-inset: color-mix(in srgb, var(--panel) 72%, #e8eaef);
 }
 
 * {
@@ -184,7 +219,7 @@ input[type="checkbox"] {
 	gap: 12px;
 	padding: 0 16px;
 	border-bottom: 1px solid var(--line);
-	background: rgba(10, 10, 11, 0.9);
+	background: var(--header-bg);
 }
 
 .app-header h1 {
@@ -284,8 +319,8 @@ input[type="checkbox"] {
 	padding: 12px;
 	border: 1px solid var(--line);
 	border-radius: 8px;
-	background: rgba(18, 18, 20, 0.98);
-	box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+	background: var(--surface-floating);
+	box-shadow: var(--shadow-float);
 	white-space: normal;
 	backdrop-filter: blur(10px);
 }
@@ -680,7 +715,7 @@ input[type="checkbox"] {
 }
 
 .guide-note-icon-btn:hover {
-	background: rgba(255, 255, 255, 0.06);
+	background: var(--hover-on-surface);
 	color: var(--txt);
 }
 
@@ -710,7 +745,7 @@ input[type="checkbox"] {
 .guide-restore-edit {
 	border: 1px solid var(--line);
 	border-radius: 999px;
-	background: rgba(10, 10, 11, 0.72);
+	background: var(--surface-chip);
 }
 
 .guide-note-body {
@@ -730,7 +765,7 @@ input[type="checkbox"] {
 	padding: 4px 10px;
 	border: 1px solid var(--line);
 	border-radius: 999px;
-	background: rgba(10, 10, 11, 0.72);
+	background: var(--surface-chip);
 	color: var(--dim);
 	font-size: 0.846rem;
 	cursor: pointer;
@@ -880,8 +915,8 @@ input[type="checkbox"] {
 	flex-shrink: 0;
 	padding: 9px 12px 11px;
 	border-top: 1px solid var(--line);
-	background: color-mix(in srgb, var(--panel) 94%, black);
-	box-shadow: 0 -6px 12px rgba(0, 0, 0, 0.22);
+	background: var(--surface-footer);
+	box-shadow: 0 -6px 12px color-mix(in srgb, var(--txt) 10%, transparent);
 }
 
 .sidebar-footer-columns {
@@ -1037,8 +1072,8 @@ input[type="checkbox"] {
 	max-width: calc(100% - 24px);
 	padding: 6px;
 	border-radius: 6px;
-	background: rgba(10, 10, 11, 0.72);
-	box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
+	background: var(--surface-chip);
+	box-shadow: 0 2px 10px color-mix(in srgb, var(--txt) 16%, transparent);
 	overflow: auto;
 	z-index: 4;
 }
@@ -1122,8 +1157,8 @@ input[type="checkbox"] {
 	padding: 10px;
 	border: 1px solid var(--line);
 	border-radius: 8px;
-	background: rgba(18, 18, 20, 0.96);
-	box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+	background: var(--surface-floating);
+	box-shadow: var(--shadow-float);
 	text-align: left;
 	backdrop-filter: blur(10px);
 }
@@ -1151,7 +1186,7 @@ input[type="checkbox"] {
 .gesture-reference-tabs button {
 	padding: 4px 6px;
 	border-radius: 5px;
-	background: #0d0e10;
+	background: var(--kbd-bg);
 	color: var(--dim);
 	font-size: 0.808rem;
 }
@@ -1174,9 +1209,9 @@ input[type="checkbox"] {
 }
 
 .gesture-reference-row kbd {
-	border: 1px solid #35363b;
+	border: 1px solid var(--kbd-border);
 	border-radius: 4px;
-	background: #0d0e10;
+	background: var(--kbd-bg);
 	color: var(--txt);
 	padding: 1px 5px;
 	font-family: "IBM Plex Mono", ui-monospace, monospace;
@@ -1193,8 +1228,8 @@ input[type="checkbox"] {
 	max-width: calc(100vw - 32px);
 	border: 1px solid var(--line, #2a2a30);
 	border-radius: 8px;
-	background: rgba(18, 18, 20, 0.94);
-	color: var(--fg, #e6e6ea);
+	background: var(--notice-bg);
+	color: var(--txt);
 	padding: 8px 14px;
 	font-size: 0.846rem;
 	box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
@@ -1221,7 +1256,7 @@ input[type="checkbox"] {
 	max-width: calc(100% - 24px);
 	border: 1px solid rgba(214, 169, 58, 0.38);
 	border-radius: 6px;
-	background: rgba(18, 18, 20, 0.88);
+	background: var(--surface-floating);
 	color: var(--accent);
 	padding: 4px 8px;
 	font-family: "IBM Plex Mono", ui-monospace, monospace;
@@ -1245,10 +1280,10 @@ input[type="checkbox"] {
 	gap: 8px;
 	max-width: calc(100% - 20px);
 	padding: 8px;
-	border: 1px solid rgba(255, 255, 255, 0.09);
+	border: 1px solid var(--line);
 	border-radius: 8px;
-	background: rgba(18, 18, 20, 0.86);
-	box-shadow: 0 10px 24px rgba(0, 0, 0, 0.28);
+	background: var(--surface-toolbar);
+	box-shadow: var(--shadow-float);
 	backdrop-filter: blur(10px);
 }
 
@@ -1391,7 +1426,7 @@ input[type="checkbox"] {
 
 .group-affects {
 	flex: none;
-	border: 1px solid rgba(255, 255, 255, 0.1);
+	border: 1px solid var(--badge-border-subtle);
 	border-radius: 999px;
 	color: var(--dim);
 	padding: 1px 5px;
@@ -1955,7 +1990,7 @@ input[type="checkbox"] {
 		gap: 6px;
 		padding: 6px;
 		border-radius: 7px;
-		background: rgba(18, 18, 20, 0.8);
+		background: var(--surface-toolbar);
 	}
 
 	.viewport-toolbar label {

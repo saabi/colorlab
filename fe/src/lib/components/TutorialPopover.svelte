@@ -211,10 +211,10 @@
 		max-height: calc(100dvh - 20px);
 		overflow-x: hidden;
 		overflow-y: auto;
-		border: 1px solid #35363b;
+		border: 1px solid var(--popover-border);
 		border-radius: 8px;
-		background: #111216;
-		box-shadow: 0 20px 56px #000d;
+		background: var(--popover-bg);
+		box-shadow: var(--shadow-float);
 		padding: 10px;
 		color: var(--txt);
 	}
@@ -226,7 +226,7 @@
 		left: -7px;
 		top: 18px;
 		border: 7px solid transparent;
-		border-right-color: #35363b;
+		border-right-color: var(--popover-border);
 	}
 
 	.tutorial-card.arrow-left::after {
@@ -235,7 +235,7 @@
 		left: -5px;
 		top: 19px;
 		border: 6px solid transparent;
-		border-right-color: #111216;
+		border-right-color: var(--popover-bg);
 	}
 
 	.tutorial-card.arrow-right::before {
@@ -244,7 +244,7 @@
 		right: -7px;
 		top: 18px;
 		border: 7px solid transparent;
-		border-left-color: #35363b;
+		border-left-color: var(--popover-border);
 	}
 
 	.tutorial-card.arrow-right::after {
@@ -253,7 +253,7 @@
 		right: -5px;
 		top: 19px;
 		border: 6px solid transparent;
-		border-left-color: #111216;
+		border-left-color: var(--popover-bg);
 	}
 
 	.tutorial-card.arrow-up::before {
@@ -262,7 +262,7 @@
 		top: -7px;
 		left: 18px;
 		border: 7px solid transparent;
-		border-bottom-color: #35363b;
+		border-bottom-color: var(--popover-border);
 	}
 
 	.tutorial-card.arrow-up::after {
@@ -271,7 +271,7 @@
 		top: -5px;
 		left: 19px;
 		border: 6px solid transparent;
-		border-bottom-color: #111216;
+		border-bottom-color: var(--popover-bg);
 	}
 
 	.tutorial-card-header {
@@ -322,7 +322,7 @@
 		display: grid;
 		gap: 6px;
 		padding: 4px 0;
-		border-top: 1px solid rgba(255, 255, 255, 0.06);
+		border-top: 1px solid var(--divider-on-surface);
 	}
 
 	.tutorial-example-note {
@@ -368,7 +368,7 @@
 		justify-content: space-between;
 		gap: 6px;
 		padding-top: 4px;
-		border-top: 1px solid rgba(255, 255, 255, 0.06);
+		border-top: 1px solid var(--divider-on-surface);
 	}
 
 	.tutorial-nav-btn {
