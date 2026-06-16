@@ -173,16 +173,16 @@
 					<p class="note">Spectral locus at XYZ chromaticity (X+Y+Z=1). Surface sweeps from black to the rim by stimulus magnitude.</p>
 				</div>
 				<div class="separator">
-					<label class="row" for="chroma-diagram-select"><span>Chromaticity diagram</span></label>
+					<label class="row" for="chroma-diagram-select"><span>Chromaticity / plane view</span></label>
 					<select id="chroma-diagram-select" bind:value={explorer.chromaticityDiagram}>
 						<option value="cie1931-xy">CIE 1931 (x, y) / CIE 2006 (xF, yF)</option>
 						<option value="cie1976-upvp">CIE 1976 UCS (u', v')</option>
 						<option value="cie1960-uv">CIE 1960 UCS (u, v)</option>
-						<option value="macleod-boynton">MacLeod-Boynton (l, s)</option>
-						<option value="oklab-ab">Oklab (a, b)</option>
-						<option value="cielab-ab">CIELAB (a*, b*)</option>
+						<option value="macleod-boynton">MacLeod-Boynton locus (experimental)</option>
+						<option value="oklab-ab">Oklab a/b plane (L fixed)</option>
+						<option value="cielab-ab">CIELAB a*/b* plane (L* fixed)</option>
 					</select>
-					<p class="note">Projection space used by the chromaticity instrument panel.</p>
+					<p class="note">CIE modes are chromaticity diagrams; Oklab and CIELAB are fixed-lightness opponent-plane views.</p>
 				</div>
 				<div class="separator">
 					<SliderRow label="Solid opacity" bind:value={explorer.solidAlpha} min={0.05} max={1} step={0.05} format={(value) => value.toFixed(2)} />

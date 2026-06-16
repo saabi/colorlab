@@ -14,7 +14,8 @@ The canonical version string is `fe/package.json` → `"version"`. Update this f
 - Eagerly loaded physiological (Stockman & Sharpe 2°/10°) and standard CMF (CIE 1931/1964) datasets, compiled at `12g` precision for exact assertions.
 - Dynamic observer matrix generator that calculates custom `rgb2lms` / `lms2rgb` conversion matrices at runtime for WebGL rendering, CVD simulation, and color inspector picking.
 - Dynamic locus range and autofit bounding box calculations in 2D chromaticity panels.
-- New Oklab (a, b) and CIELAB (a*, b*) chromaticity diagram projections with coordinate unprojection and interactive inspection.
+- Oklab a/b and CIELAB a*/b* fixed-lightness opponent-plane views with coordinate unprojection, sampled gamut-boundary cross-sections, and interactive inspection.
+- Table-backed MacLeod-Boynton spectral locus coordinates, with arbitrary stimulus projection still marked experimental until normalization is verified.
 - Observer model and chromaticity diagram selections stored in local app preferences and fully validated/persisted in localStorage snapshots.
 - Document sharing & ingestion v1 — Save to file, Share (copy link · copy JSON), Import (file · URL · paste · `#s=…` hash); all paths use `parseSnapshot`.
 - Per-list ramp pipelines (document schema v13) — each source ramp owns its interpolation, placement, expand, and constraint settings; independent main-curve vs extension constraints. The terminal gamut map stays a single shared step targeting the active colorspace.
@@ -32,6 +33,8 @@ The canonical version string is `fe/package.json` → `"version"`. Update this f
 
 - Document schema bumped to v13 — older saves migrate automatically (the former global ramp pipeline fields are lifted into each source list).
 - App-wide themed scrollbars (`--scrollbar-*` tokens; Firefox `scrollbar-color` + WebKit `::-webkit-scrollbar`).
+- Chromaticity instrument copy now distinguishes true CIE chromaticity diagrams from Oklab/CIELAB opponent-plane views.
+- Spectral locus generation now uses the observer dataset wavelength range and avoids out-of-range zero endpoints.
 - Pipeline and help copy clarifying path-shape surface projection vs terminal export gamut mapping.
 - Gamut Map UI, help, and tutorial copy now explicitly identify the current output target as sRGB.
 - Canonical backlog in `_docs/Roadmap.md` with maintenance rules.

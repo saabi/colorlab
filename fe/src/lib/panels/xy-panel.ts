@@ -1,16 +1,28 @@
 import { m3, type Vec3 } from '$lib/color/math';
-import { GAMUTS, rgbToXyzM, oklab2lsrgb, lab2xyz } from '$lib/color/pipeline';
+import { GAMUTS, rgbToXyzM } from '$lib/color/pipeline';
 import { TRC } from '$lib/color/transfer';
 import { fitCanvas } from './canvas';
 import { SPECTRUM_NM_MAX, SPECTRUM_NM_MIN } from './spectrum-panel';
 import { DEFAULT_OBSERVERS } from '$lib/color/fundamentals';
 import { DIAGRAMS } from '$lib/color/diagrams';
+import {
+	createGamutInclusionTest,
+	generateOpponentPlaneGamutBoundary,
+	isOpponentPlaneDiagram,
+	opponentPlaneToXyz
+} from '$lib/color/diagram-boundary';
 
 import type { ExplorerState, TransformChain } from '$lib/engine/types';
 
 interface CachedLocus {
 	observerKey: string;
 	diagramKey: string;
+	points: Array<[number, number]>;
+}
+
+interface CachedBoundary {
+	diagramKey: string;
+	gamutKey: string;
 	points: Array<[number, number]>;
 }
 
@@ -24,6 +36,8 @@ interface CachedFill {
 }
 
 let locusCache: CachedLocus | null = null;
+let srgbBoundaryCache: CachedBoundary | null = null;
+let activeBoundaryCache: CachedBoundary | null = null;
 let srgbFill: CachedFill | null = null;
 
 // Standard sRGB CMF inverse matrix to check sRGB gamut inclusion
@@ -33,11 +47,11 @@ const XYZ2SRGB = m3.inv(rgbToXyzM(GAMUTS.srgb.P, GAMUTS.srgb.W));
  * Unprojects 2D chromaticity coordinates back to XYZ (with Y = 1.0)
  */
 function unproject2d(x: number, y: number, diagramKey: string): Vec3 | null {
-	if (diagramKey === 'cie1931-xy' || diagramKey === 'macleod-boynton') {
-		// MacLeod-Boynton background is approximated with xy-like mapping for simplicity
+	if (diagramKey === 'cie1931-xy') {
 		if (y <= 1e-4) return null;
 		return [x / y, 1.0, (1.0 - x - y) / y];
 	}
+	if (diagramKey === 'macleod-boynton') return null;
 	if (diagramKey === 'cie1976-upvp' || diagramKey === 'cie1960-uv') {
 		let u = x;
 		let v = y;
@@ -49,17 +63,34 @@ function unproject2d(x: number, y: number, diagramKey: string): Vec3 | null {
 		// X = 9u' / 4v', Y = 1.0, Z = (12 - 3u' - 20v') / 4v'
 		return [(9 * u) / (4 * v), 1.0, (12 - 3 * u - 20 * v) / (4 * v)];
 	}
-	if (diagramKey === 'oklab-ab') {
-		const oklab: Vec3 = [0.5, x, y];
-		const srgbLin = oklab2lsrgb(oklab);
-		const srgbMat = rgbToXyzM(GAMUTS.srgb.P, GAMUTS.srgb.W);
-		return m3.mulV(srgbMat, srgbLin);
-	}
-	if (diagramKey === 'cielab-ab') {
-		const lab: Vec3 = [50.0, x, y];
-		return lab2xyz(lab);
-	}
+	const opponentXyz = opponentPlaneToXyz(diagramKey, x, y);
+	if (opponentXyz) return opponentXyz;
 	return null;
+}
+
+function includeBounds(points: Array<[number, number]>, bounds: { xMin: number; xMax: number; yMin: number; yMax: number }) {
+	points.forEach(([x, y]) => {
+		if (x < bounds.xMin) bounds.xMin = x;
+		if (x > bounds.xMax) bounds.xMax = x;
+		if (y < bounds.yMin) bounds.yMin = y;
+		if (y > bounds.yMax) bounds.yMax = y;
+	});
+}
+
+function drawClosedPath(
+	ctx: CanvasRenderingContext2D,
+	points: Array<[number, number]>,
+	sx: (x: number) => number,
+	sy: (y: number) => number
+) {
+	if (!points.length) return;
+	ctx.beginPath();
+	points.forEach((p, i) => {
+		if (i) ctx.lineTo(sx(p[0]), sy(p[1]));
+		else ctx.moveTo(sx(p[0]), sy(p[1]));
+	});
+	ctx.closePath();
+	ctx.stroke();
 }
 
 export function drawXyPanel(canvas: HTMLCanvasElement, ch: TransformChain | null, state: ExplorerState) {
@@ -78,7 +109,7 @@ export function drawXyPanel(canvas: HTMLCanvasElement, ch: TransformChain | null
 		for (let nm = SPECTRUM_NM_MIN; nm <= SPECTRUM_NM_MAX; nm += 2) {
 			const lms = observer.evaluateLms(nm);
 			const xyz = observer.evaluateXyz(nm);
-			const pt = diagram.project(xyz, lms);
+			const pt = diagram.projectWavelength?.(nm) ?? diagram.project(xyz, lms);
 			points.push(pt);
 		}
 		locusCache = { observerKey: obsKey, diagramKey: diagKey, points };
@@ -104,23 +135,40 @@ export function drawXyPanel(canvas: HTMLCanvasElement, ch: TransformChain | null
 	const ag2d = diagram.project(agXyz, m3.mulV(observer.toLmsMatrix, agXyz));
 	const ab2d = diagram.project(abXyz, m3.mulV(observer.toLmsMatrix, abXyz));
 
+	const useOpponentBoundary = isOpponentPlaneDiagram(diagKey);
+	if (
+		useOpponentBoundary &&
+		(!srgbBoundaryCache || srgbBoundaryCache.diagramKey !== diagKey || srgbBoundaryCache.gamutKey !== 'srgb')
+	) {
+		srgbBoundaryCache = {
+			diagramKey: diagKey,
+			gamutKey: 'srgb',
+			points: generateOpponentPlaneGamutBoundary(diagKey, 'srgb')
+		};
+	}
+	if (
+		useOpponentBoundary &&
+		(!activeBoundaryCache || activeBoundaryCache.diagramKey !== diagKey || activeBoundaryCache.gamutKey !== state.gamut)
+	) {
+		activeBoundaryCache = {
+			diagramKey: diagKey,
+			gamutKey: state.gamut,
+			points: generateOpponentPlaneGamutBoundary(diagKey, state.gamut)
+		};
+	}
+
 	// 3. Calculate bounds dynamically (autofit)
-	let xMin = Infinity, xMax = -Infinity;
-	let yMin = Infinity, yMax = -Infinity;
+	const bounds = { xMin: Infinity, xMax: -Infinity, yMin: Infinity, yMax: -Infinity };
 
-	locusCache.points.forEach(([x, y]) => {
-		if (x < xMin) xMin = x;
-		if (x > xMax) xMax = x;
-		if (y < yMin) yMin = y;
-		if (y > yMax) yMax = y;
-	});
+	includeBounds(locusCache.points, bounds);
+	if (useOpponentBoundary) {
+		includeBounds(srgbBoundaryCache?.points ?? [], bounds);
+		includeBounds(activeBoundaryCache?.points ?? [], bounds);
+	} else {
+		includeBounds([r2d, g2d, b2d, ar2d, ag2d, ab2d], bounds);
+	}
 
-	[r2d, g2d, b2d, ar2d, ag2d, ab2d].forEach(([x, y]) => {
-		if (x < xMin) xMin = x;
-		if (x > xMax) xMax = x;
-		if (y < yMin) yMin = y;
-		if (y > yMax) yMax = y;
-	});
+	let { xMin, xMax, yMin, yMax } = bounds;
 
 	// Add 5% padding
 	const padX = (xMax - xMin) * 0.05 || 0.05;
@@ -140,6 +188,7 @@ export function drawXyPanel(canvas: HTMLCanvasElement, ch: TransformChain | null
 
 	const sx = (x: number) => x0 + ((x - xMin) / xRange) * pw;
 	const sy = (y: number) => y0 - ((y - yMin) / yRange) * ph;
+	const isInsideSrgb = createGamutInclusionTest('srgb');
 
 	// 4. Rebuild sRGB Gamut Background Fill if needed
 	if (!srgbFill || srgbFill.w !== w || srgbFill.h !== h || srgbFill.observerKey !== obsKey || srgbFill.diagramKey !== diagKey || srgbFill.gamutKey !== state.gamut) {
@@ -158,14 +207,17 @@ export function drawXyPanel(canvas: HTMLCanvasElement, ch: TransformChain | null
 					const x = xMin + ((i - x0) * xRange) / pw;
 					const y = yMin + ((y0 - j) * yRange) / ph;
 
-					// Check if pixel is inside the projected sRGB triangle
-					const l1 = ((g2d[1] - b2d[1]) * (x - b2d[0]) + (b2d[0] - g2d[0]) * (y - b2d[1])) / det;
-					const l2 = ((b2d[1] - r2d[1]) * (x - b2d[0]) + (r2d[0] - b2d[0]) * (y - b2d[1])) / det;
-					if (l1 < 0 || l2 < 0 || l1 + l2 > 1.001) continue;
-
 					// Unproject 2D diagram coordinate back to standard sRGB linear
 					const xyzVal = unproject2d(x, y, diagKey);
 					if (!xyzVal) continue;
+					if (useOpponentBoundary) {
+						if (!isInsideSrgb(xyzVal)) continue;
+					} else {
+						// Check if pixel is inside the projected sRGB triangle
+						const l1 = ((g2d[1] - b2d[1]) * (x - b2d[0]) + (b2d[0] - g2d[0]) * (y - b2d[1])) / det;
+						const l2 = ((b2d[1] - r2d[1]) * (x - b2d[0]) + (r2d[0] - b2d[0]) * (y - b2d[1])) / det;
+						if (l1 < 0 || l2 < 0 || l1 + l2 > 1.001) continue;
+					}
 
 					let rgb = m3.mulV(XYZ2SRGB, xyzVal).map((v) => Math.max(v, 0));
 					const mx = Math.max(...rgb, 1e-6);
@@ -200,23 +252,31 @@ export function drawXyPanel(canvas: HTMLCanvasElement, ch: TransformChain | null
 	// Draw sRGB Gamut Boundary
 	ctx.strokeStyle = '#9a9ba1';
 	ctx.lineWidth = 1;
-	ctx.beginPath();
-	ctx.moveTo(sx(r2d[0]), sy(r2d[1]));
-	ctx.lineTo(sx(g2d[0]), sy(g2d[1]));
-	ctx.lineTo(sx(b2d[0]), sy(b2d[1]));
-	ctx.closePath();
-	ctx.stroke();
+	if (useOpponentBoundary) {
+		drawClosedPath(ctx, srgbBoundaryCache?.points ?? [], sx, sy);
+	} else {
+		ctx.beginPath();
+		ctx.moveTo(sx(r2d[0]), sy(r2d[1]));
+		ctx.lineTo(sx(g2d[0]), sy(g2d[1]));
+		ctx.lineTo(sx(b2d[0]), sy(b2d[1]));
+		ctx.closePath();
+		ctx.stroke();
+	}
 
 	// Draw Active Gamut Boundary
 	ctx.strokeStyle = '#d6a93a';
 	ctx.lineWidth = 1.3;
 	if (state.gamut === 'srgb') ctx.setLineDash([4, 3]);
-	ctx.beginPath();
-	ctx.moveTo(sx(ar2d[0]), sy(ar2d[1]));
-	ctx.lineTo(sx(ag2d[0]), sy(ag2d[1]));
-	ctx.lineTo(sx(ab2d[0]), sy(ab2d[1]));
-	ctx.closePath();
-	ctx.stroke();
+	if (useOpponentBoundary) {
+		drawClosedPath(ctx, activeBoundaryCache?.points ?? [], sx, sy);
+	} else {
+		ctx.beginPath();
+		ctx.moveTo(sx(ar2d[0]), sy(ar2d[1]));
+		ctx.lineTo(sx(ag2d[0]), sy(ag2d[1]));
+		ctx.lineTo(sx(ab2d[0]), sy(ab2d[1]));
+		ctx.closePath();
+		ctx.stroke();
+	}
 	ctx.setLineDash([]);
 
 	// Draw Hovered stimulus marker

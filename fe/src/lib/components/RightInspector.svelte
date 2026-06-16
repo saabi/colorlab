@@ -179,7 +179,7 @@
 
 	<section class:active={activeTab === 'xy'} class="inspector-tab-panel">
 		<PanelHeader label={xyLabel} panelId="xy" bind:openHelp />
-		<canvas bind:this={xyCanvas} class="panel-canvas tall" aria-label="CIE xy chromaticity panel"></canvas>
+		<canvas bind:this={xyCanvas} class="panel-canvas tall" aria-label="Chromaticity and opponent-plane panel"></canvas>
 
 		<p class="note">
 			Excitations are integrals: a general color is three magnitudes, not points on wavelength curves.

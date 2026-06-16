@@ -11,31 +11,47 @@ export interface LocusPoint {
 
 export interface SpectralLocus {
 	points: LocusPoint[];
-	purpleLine: [[number, number], [number, number]]; // [start (380nm), end (780nm)]
+	purpleLine: [[number, number], [number, number]]; // [short-wave endpoint, long-wave endpoint]
 }
 
 /**
  * Generates the spectral locus curve and purple line boundary.
- * Clamped direct dataset values ensure the locus closes cleanly without tail loops.
+ * The generated range is intersected with the observer's tabulated range so
+ * out-of-range zero samples cannot become artificial purple-line endpoints.
  */
 export function generateSpectralLocus(
 	observer: ObserverModel,
 	diagram: ChromaticityDiagram,
-	startWavelength = 380,
-	endWavelength = 780,
+	startWavelength?: number,
+	endWavelength?: number,
 	step = 1
 ): SpectralLocus {
+	const [dataMin, dataMax] = observer.dataset.wavelengthRange;
+	const start = Math.max(startWavelength ?? dataMin, dataMin);
+	const end = Math.min(endWavelength ?? dataMax, dataMax);
+	const safeStep = Math.max(step, 1e-6);
 	const points: LocusPoint[] = [];
-	for (let w = startWavelength; w <= endWavelength; w += step) {
+
+	for (let w = start; w <= end + safeStep * 1e-6; w += safeStep) {
 		const lms = observer.evaluateLms(w);
 		const xyz = observer.evaluateXyz(w);
-		const chromaticity = diagram.project(xyz, lms);
+		const chromaticity = diagram.projectWavelength?.(w) ?? diagram.project(xyz, lms);
 		points.push({
 			wavelength: w,
 			xyz,
 			lms,
 			chromaticity
 		});
+	}
+
+	if (!points.length) {
+		return {
+			points,
+			purpleLine: [
+				[0, 0],
+				[0, 0]
+			]
+		};
 	}
 
 	const startPt = points[0].chromaticity;

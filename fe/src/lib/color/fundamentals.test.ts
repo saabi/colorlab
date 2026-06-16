@@ -2,6 +2,19 @@ import { describe, it, expect } from 'vitest';
 import { interpolateDataset, DEFAULT_OBSERVERS } from './fundamentals';
 import { DIAGRAMS } from './diagrams';
 import { generateSpectralLocus } from './locus';
+import { generateOpponentPlaneGamutBoundary, isXyzInsideGamut, opponentPlaneToXyz } from './diagram-boundary';
+import type { SpectralDataset } from './types';
+import { ciexy2006_2deg_1nm } from './data/ciexy2006_2deg_1nm';
+import { ciexy31_1nm } from './data/ciexy31_1nm';
+import { ciexyz2006_2deg_1nm } from './data/ciexyz2006_2deg_1nm';
+import { ciexyz31_1nm } from './data/ciexyz31_1nm';
+import { smb_cc_2deg_1nm } from './data/smb_cc_2deg_1nm';
+
+function sample(dataset: SpectralDataset, nm: number, channel: string): number {
+	const [minW] = dataset.wavelengthRange;
+	const idx = Math.round((nm - minW) / dataset.step);
+	return dataset.channels[channel][idx];
+}
 
 describe('fundamentals & registries', () => {
 	it('should interpolate dataset values linearly', () => {
@@ -68,5 +81,77 @@ describe('fundamentals & registries', () => {
 		const redPt = locus.purpleLine[1];
 		expect(redPt[0]).toBeGreaterThan(0.6); // x > 0.6 for red
 		expect(redPt[1]).toBeLessThan(0.4);    // y < 0.4
+	});
+
+	it('should constrain spectral loci to the observer dataset range', () => {
+		const obs = DEFAULT_OBSERVERS['stockman-sharpe-2deg'];
+		const diag = DIAGRAMS['cie1931-xy'];
+
+		const defaultLocus = generateSpectralLocus(obs, diag);
+		expect(defaultLocus.points[0].wavelength).toBe(390);
+		expect(defaultLocus.points.at(-1)?.wavelength).toBe(830);
+
+		const clampedLocus = generateSpectralLocus(obs, diag, 380, 780, 5);
+		expect(clampedLocus.points[0].wavelength).toBe(390);
+		expect(clampedLocus.purpleLine[0]).not.toEqual([0, 0]);
+	});
+
+	it('should match CIE 1931 xy table from the CIE 1931 XYZ table', () => {
+		const diag = DIAGRAMS['cie1931-xy'];
+		let maxError = 0;
+		for (let nm = 360; nm <= 830; nm += 1) {
+			const xyz = [
+				sample(ciexyz31_1nm, nm, 'X'),
+				sample(ciexyz31_1nm, nm, 'Y'),
+				sample(ciexyz31_1nm, nm, 'Z')
+			] as [number, number, number];
+			const xy = diag.project(xyz, [0, 0, 0]);
+			const expected = [sample(ciexy31_1nm, nm, 'x'), sample(ciexy31_1nm, nm, 'y')];
+			maxError = Math.max(maxError, Math.hypot(xy[0] - expected[0], xy[1] - expected[1]));
+		}
+		expect(maxError).toBeLessThan(2e-5);
+	});
+
+	it('should match CIE 2006 xF yF table from the physiological XYZF table', () => {
+		const diag = DIAGRAMS['cie1931-xy'];
+		let maxError = 0;
+		for (let nm = 390; nm <= 830; nm += 1) {
+			const xyz = [
+				sample(ciexyz2006_2deg_1nm, nm, 'X'),
+				sample(ciexyz2006_2deg_1nm, nm, 'Y'),
+				sample(ciexyz2006_2deg_1nm, nm, 'Z')
+			] as [number, number, number];
+			const xy = diag.project(xyz, [0, 0, 0]);
+			const expected = [sample(ciexy2006_2deg_1nm, nm, 'x'), sample(ciexy2006_2deg_1nm, nm, 'y')];
+			maxError = Math.max(maxError, Math.hypot(xy[0] - expected[0], xy[1] - expected[1]));
+		}
+		expect(maxError).toBeLessThan(8e-6);
+	});
+
+	it('should use the bundled MacLeod-Boynton table for spectral locus coordinates', () => {
+		const obs = DEFAULT_OBSERVERS['stockman-sharpe-2deg'];
+		const diag = DIAGRAMS['macleod-boynton'];
+		const locus = generateSpectralLocus(obs, diag, 390, 830, 5);
+
+		for (const point of locus.points) {
+			const l = sample(smb_cc_2deg_1nm, point.wavelength, 'Mb1');
+			const s = sample(smb_cc_2deg_1nm, point.wavelength, 'Mb3');
+			expect(point.chromaticity[0]).toBeCloseTo(l, 8);
+			expect(point.chromaticity[1]).toBeCloseTo(s, 8);
+		}
+	});
+
+	it('should generate fixed-lightness opponent-plane gamut boundaries inside the target gamut', () => {
+		for (const diagramKey of ['oklab-ab', 'cielab-ab']) {
+			const boundary = generateOpponentPlaneGamutBoundary(diagramKey, 'srgb', 48);
+			expect(boundary.length).toBe(48);
+			for (const [x, y] of boundary) {
+				const xyz = opponentPlaneToXyz(diagramKey, x, y);
+				expect(xyz).not.toBeNull();
+				expect(isXyzInsideGamut(xyz!, 'srgb')).toBe(true);
+			}
+			const maxRadius = Math.max(...boundary.map(([x, y]) => Math.hypot(x, y)));
+			expect(maxRadius).toBeGreaterThan(diagramKey === 'oklab-ab' ? 0.08 : 40);
+		}
 	});
 });
