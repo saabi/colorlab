@@ -1,4 +1,8 @@
 import { activePipeline } from '$lib/engine/theme';
+import {
+	formatRampBuilderStatus,
+	formatSourcesStatus
+} from '$lib/engine/ramp-list-ui';
 
 import type { ExplorerState } from '$lib/engine/types';
 
@@ -130,12 +134,7 @@ export const PIPELINE_NODES: PipelineNode[] = [
 		shortLabel: 'Builder',
 		description: 'Active source-list pipeline: source colors, interpolation, placement, and expansion settings owned by the selected list.',
 		affects: 'Ramp',
-		status: (state) => {
-			const lists = state.theme.lists;
-			const active = Math.min(Math.max(state.theme.activeList, 0), Math.max(0, lists.length - 1));
-			const pts = lists[active]?.anchors.length ?? 0;
-			return `List ${active + 1}/${lists.length} · ${pts} pt${pts === 1 ? '' : 's'}`;
-		}
+		status: (state) => formatRampBuilderStatus(state.theme)
 	},
 	{
 		id: 'sources',
@@ -144,12 +143,7 @@ export const PIPELINE_NODES: PipelineNode[] = [
 		shortLabel: 'Sources',
 		description: 'Pick, list, and edit the ordered source colors the ramps are built from (one or more source lists).',
 		affects: 'Ramp',
-		status: (state) => {
-			const lists = state.theme.lists;
-			const n = lists.reduce((sum, list) => sum + list.anchors.length, 0);
-			const pts = `${n} pt${n === 1 ? '' : 's'}`;
-			return lists.length > 1 ? `${lists.length} lists · ${pts}` : pts;
-		}
+		status: (state) => formatSourcesStatus(state.theme)
 	},
 	{
 		id: 'interpolate',

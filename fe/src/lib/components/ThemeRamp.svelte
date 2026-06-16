@@ -8,6 +8,11 @@
 	import { simulateCvdSrgb } from '$lib/color/cvd';
 	import { INTERP_SPACES, INTERP_SPACE_KEYS } from '$lib/color/interp';
 	import { activePipeline, buildRamp, exportDTCG, exportDTCGGrid, exportTokens, exportTokensGrid, srgbHex } from '$lib/engine/theme';
+	import {
+		formatListChipLabel,
+		formatListsSummary,
+		pipelinesDiffer as themePipelinesDiffer
+	} from '$lib/engine/ramp-list-ui';
 
 	import type { AxisSpreadConfig, ExplorerState, ListPipeline, PlacePolicy, RampList, SpreadDir, SplineConstraint, ThemeAnchor } from '$lib/engine/types';
 	import type { SurfaceProjectionMethod } from '$lib/color/boundary-project';
@@ -30,11 +35,8 @@
 	// All point edits/selection target the active source list and its pipeline.
 	const points = $derived(explorer.theme.lists[explorer.theme.activeList]?.anchors ?? []) as ThemeAnchor[];
 	const P = $derived(activePipeline(explorer.theme));
-	const activePipelineJson = $derived(JSON.stringify(P));
-	const pipelinesDiffer = $derived(
-		explorer.theme.lists.length > 1 &&
-			explorer.theme.lists.some((list: RampList, i: number) => i !== explorer.theme.activeList && JSON.stringify(list.pipeline) !== activePipelineJson)
-	);
+	const pipelinesDiffer = $derived(themePipelinesDiffer(explorer.theme));
+	const listsSummary = $derived(formatListsSummary(explorer.theme));
 	function setPoints(next: ThemeAnchor[]) {
 		explorer.theme.lists[explorer.theme.activeList].anchors = next;
 	}
@@ -423,7 +425,7 @@
 				title={`List ${i + 1} — ${list.anchors.length} pt${list.anchors.length === 1 ? '' : 's'} · ${list.pipeline.mode}`}
 				onclick={() => selectList(i)}
 			>
-				{i + 1}
+				{formatListChipLabel(list, i)}
 			</button>
 		{/each}
 		<button type="button" class="list-chip list-add" title="Add a new source list" onclick={addList}>+</button>
@@ -432,6 +434,9 @@
 			<button type="button" class="list-chip list-del" title="Remove the active list" onclick={removeActiveList}>×</button>
 		{/if}
 	</div>
+	{#if listsSummary}
+		<p class="list-summary">{listsSummary}</p>
+	{/if}
 	{#if explorer.theme.lists.length > 1}
 		<div class="list-meta">
 			<p class="note">Each list is its own ramp. Picking, dragging, and the rows below edit list {explorer.theme.activeList + 1}.</p>
@@ -446,9 +451,7 @@
 {/if}
 
 {#if showSources}
-	<div class="panel-label" style="margin-top: 8px">
-		Points{explorer.theme.lists.length > 1 ? ` — list ${explorer.theme.activeList + 1}` : ''}
-	</div>
+	<div class="panel-label" style="margin-top: 8px">Points</div>
 	{#if points.length}
 		<div class="cp-list">
 			{#each points as cp, i}
@@ -968,12 +971,19 @@
 	}
 	.list-chip {
 		flex: none;
-		width: 28px;
-		padding: 3px 0;
-		font-size: 0.846rem;
+		min-width: 28px;
+		width: auto;
+		padding: 3px 6px;
+		font-size: 0.769rem;
 		font-variant-numeric: tabular-nums;
 		border: 1px solid transparent;
 		border-radius: 4px;
+	}
+	.list-summary {
+		margin: 0 0 6px;
+		color: var(--dim);
+		font-size: 0.769rem;
+		font-variant-numeric: tabular-nums;
 	}
 	.list-chip.active {
 		border-color: var(--accent, #5ab);
