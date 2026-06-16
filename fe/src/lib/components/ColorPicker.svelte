@@ -167,6 +167,25 @@
 		setAxisFromUnit(axis, coordToUnit(coords[axis], axis) + delta);
 	}
 
+	// Per-channel sliders for the active space (e.g. Okhsl H/S/L, Okhsv H/S/V):
+	// direct numeric control over each coordinate, committing back to linear sRGB.
+	function channelStep(axis: number) {
+		const channel = space.channels[axis];
+		return channel.max - channel.min > 10 ? 1 : 0.005;
+	}
+
+	function formatChannel(axis: number, raw: number) {
+		const channel = space.channels[axis];
+		return channel.max - channel.min > 10 ? raw.toFixed(0) : raw.toFixed(3);
+	}
+
+	function setAxisValue(axis: number, raw: number) {
+		const channel = space.channels[axis];
+		const next = tuple(coords);
+		next[axis] = clamp(raw, channel.min, channel.max);
+		commit(next);
+	}
+
 	function onPlaneKeydown(event: KeyboardEvent) {
 		const step = keyStep(event);
 		if (event.key === 'ArrowLeft') nudgeAxis(xAxis, -step);
@@ -270,6 +289,23 @@
 			<span class="bar-marker" style={`top: ${barMarkerTop}`}></span>
 		</div>
 	</div>
+	<div class="channels">
+		{#each space.channels as channel, axis (channel.name)}
+			<label class="channel-row">
+				<span class="channel-name">{channel.name}</span>
+				<input
+					type="range"
+					min={channel.min}
+					max={channel.max}
+					step={channelStep(axis)}
+					value={coords[axis]}
+					aria-label={`${space.label} ${channel.name}`}
+					oninput={(event) => setAxisValue(axis, Number((event.currentTarget as HTMLInputElement).value))}
+				/>
+				<span class="channel-value">{formatChannel(axis, coords[axis])}</span>
+			</label>
+		{/each}
+	</div>
 	<div class="hex-row">
 		<span class="swatch" style={`background: ${srgbHex(value)}`}></span>
 		<input
@@ -367,6 +403,28 @@
 		background: white;
 		box-shadow: 0 0 0 1px black;
 		transform: translate(-50%, -50%);
+	}
+	.channels {
+		display: grid;
+		gap: 4px;
+	}
+	.channel-row {
+		display: grid;
+		grid-template-columns: 16px minmax(0, 1fr) 46px;
+		align-items: center;
+		gap: 6px;
+		margin: 0;
+		color: var(--muted);
+		font-size: 0.769rem;
+		text-transform: none;
+		letter-spacing: 0;
+	}
+	.channel-row input {
+		width: 100%;
+	}
+	.channel-value {
+		text-align: right;
+		font-variant-numeric: tabular-nums;
 	}
 	.hex-row {
 		display: grid;
