@@ -29,6 +29,7 @@ Update `_docs/Roadmap.md` when you:
 
 ## Recently shipped
 
+- **`1.0.0-beta.2`** (2026-06-16) — dedicated theme toggle, light-theme surface contrast fixes, header declutter (GitHub mark, About panel, Aa readability icon), mobile More-menu layout, and tutorial/help corrections for beta.1 behavior.
 - **Observer, XYZ, locus & chromaticity registries** — catalog of 32 observer datasets with lazy-loaders and linear interpolation. Dynamic observer conversion matrix generation at runtime for WebGL shaders, CVD simulation, and inspector picking. Dynamic locus range, autofit bounding boxes, CIE xy/uv/u′v′ diagrams with observer-aware labels, Oklab/CIELAB fixed-lightness opponent-plane views, and calibrated MacLeod-Boynton 2° (table-backed locus + fixed source-basis projection/fill). LMS panel names the active observer. **Plans:** [`lms-fundamentals-chromaticity-plan.md`](lms-fundamentals-chromaticity-plan.md), **audit:** [`cone-fundamentals-chromaticity-math-audit.md`](cone-fundamentals-chromaticity-math-audit.md).
 - **3D explorer** — color space morphing (400 ms blend), spectral locus chromaticity overlay, cylindrical saturation/chroma cutaway (`cylSlice` / `cylRad`), true cylinder clipping outline, tessellation up to 512 with scaled outlines
 - **Theme ramp pipeline** — declarative stage chain, `PlacePolicy` recompute stages, terminal `gamutMap` via `finalizeRamp`, surface constraint Phases 1–4 backend (`boundary-project.ts`, `SurfaceProjectionParams`)

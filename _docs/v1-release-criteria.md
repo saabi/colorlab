@@ -112,7 +112,7 @@ Legend: ✅ verified by automated pass · 🟡 partially verified · ⬜ needs h
 
 | ID | Task | Owner | Status | Notes |
 |----|------|-------|--------|-------|
-| **B1** | Triage beta feedback; ship `1.0.0-beta.2+` as needed | — | ⬜ | Patch-level fixes only; avoid new persisted fields unless critical. |
+| **B1** | Triage beta feedback; ship `1.0.0-beta.2+` as needed | — | 🟡 | **`1.0.0-beta.2` shipped 2026-06-16** — theme toggle, light-theme contrast, header/mobile UI polish, tutorial/help corrections. Further beta.N as needed. |
 | **B2** | **Manual accessibility audit** — 100%/150% scale, High/Maximum contrast, dark + light; keyboard through sidebar, dialogs, color picker | — | ⬜ | [accessibility-controls-handoff.md](accessibility-controls-handoff.md) |
 | **B3** | **Shared toast / `aria-live`** for import/share errors (generalize `gestureStatus` pattern) | — | ⬜ | Roadmap § Accessibility follow-ups |
 | **B4** | Renderer/picker parity regression fixes from beta reports | — | ⬜ | Any hover/pick vs draw disagreement |
