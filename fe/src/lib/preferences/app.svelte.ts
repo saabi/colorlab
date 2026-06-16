@@ -4,11 +4,27 @@ export type UiTheme = 'dark' | 'light';
 
 export const UI_THEME_OPTIONS: UiTheme[] = ['dark', 'light'];
 
+/**
+ * Display gamut = what the user's monitor can show (device preference, not document
+ * intent). Phase 1 references a curated subset of the built-in gamuts; this widens to a
+ * tagged union for custom profiles later (see color-context-display-gamut-plan.md).
+ */
+export type DisplayGamutId = 'srgb' | 'p3' | 'rec2020';
+
+export const DISPLAY_GAMUT_OPTIONS: DisplayGamutId[] = ['srgb', 'p3', 'rec2020'];
+
+export const DISPLAY_GAMUT_LABELS: Record<DisplayGamutId, string> = {
+	srgb: 'sRGB',
+	p3: 'Display P3',
+	rec2020: 'Rec.2020'
+};
+
 export type AppPreferences = Pick<
 	ExplorerState,
 	'autoRotate' | 'autoPerformance' | 'minAverageFps' | 'observerModel' | 'chromaticityDiagram' | 'neutralBackdrop'
 > & {
 	theme: UiTheme;
+	displayGamut: DisplayGamutId;
 };
 
 export const DEFAULT_APP_PREFERENCES: AppPreferences = {
@@ -18,7 +34,8 @@ export const DEFAULT_APP_PREFERENCES: AppPreferences = {
 	observerModel: 'stockman-sharpe-2deg',
 	chromaticityDiagram: 'cie1931-xy',
 	neutralBackdrop: false,
-	theme: 'dark'
+	theme: 'dark',
+	displayGamut: 'srgb'
 };
 
 const STORAGE_KEY = 'colorlab:preferences';
@@ -30,6 +47,10 @@ function includesMinFps(value: unknown): value is MinAverageFps {
 
 function includesUiTheme(value: unknown): value is UiTheme {
 	return UI_THEME_OPTIONS.includes(value as UiTheme);
+}
+
+function includesDisplayGamut(value: unknown): value is DisplayGamutId {
+	return DISPLAY_GAMUT_OPTIONS.includes(value as DisplayGamutId);
 }
 
 export function applyUiTheme(theme: UiTheme) {
@@ -61,7 +82,10 @@ export function sanitizeAppPreferences(raw: unknown): AppPreferences {
 			typeof prefs.neutralBackdrop === 'boolean'
 				? prefs.neutralBackdrop
 				: DEFAULT_APP_PREFERENCES.neutralBackdrop,
-		theme: includesUiTheme(prefs.theme) ? prefs.theme : DEFAULT_APP_PREFERENCES.theme
+		theme: includesUiTheme(prefs.theme) ? prefs.theme : DEFAULT_APP_PREFERENCES.theme,
+		displayGamut: includesDisplayGamut(prefs.displayGamut)
+			? prefs.displayGamut
+			: DEFAULT_APP_PREFERENCES.displayGamut
 	};
 }
 
@@ -107,4 +131,8 @@ export function toggleUiTheme(): UiTheme {
 	const next: UiTheme = readAppPreferences().theme === 'dark' ? 'light' : 'dark';
 	setUiTheme(next);
 	return next;
+}
+
+export function setDisplayGamut(displayGamut: DisplayGamutId) {
+	persistAppPreferences({ ...readAppPreferences(), displayGamut });
 }

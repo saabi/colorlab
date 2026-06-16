@@ -16,7 +16,8 @@ describe('app preferences', () => {
 				autoPerformance: false,
 				minAverageFps: 15,
 				neutralBackdrop: true,
-				theme: 'light'
+				theme: 'light',
+				displayGamut: 'p3'
 			})
 		).toEqual({
 			autoRotate: false,
@@ -25,11 +26,18 @@ describe('app preferences', () => {
 			observerModel: 'stockman-sharpe-2deg',
 			chromaticityDiagram: 'cie1931-xy',
 			neutralBackdrop: true,
-			theme: 'light'
+			theme: 'light',
+			displayGamut: 'p3'
 		});
 	});
 
 	it('defaults invalid theme values to dark', () => {
 		expect(sanitizeAppPreferences({ theme: 'sepia' }).theme).toBe('dark');
+	});
+
+	it('defaults displayGamut to sRGB and rejects unknown values', () => {
+		expect(sanitizeAppPreferences({}).displayGamut).toBe('srgb');
+		expect(sanitizeAppPreferences({ displayGamut: 'prophoto' }).displayGamut).toBe('srgb');
+		expect(sanitizeAppPreferences({ displayGamut: 'rec2020' }).displayGamut).toBe('rec2020');
 	});
 });
