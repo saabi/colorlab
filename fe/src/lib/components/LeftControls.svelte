@@ -7,6 +7,7 @@
 	import ToggleRow from './ToggleRow.svelte';
 	import PanelHelp from './PanelHelp.svelte';
 	import PipelineRail from './PipelineRail.svelte';
+	import ColorContext from './ColorContext.svelte';
 	import { tick } from 'svelte';
 	import { track } from '$lib/analytics/umami';
 	import { getHistoryContext } from '$lib/history/context';
@@ -122,6 +123,7 @@
 
 <aside class="side-panel left-panel" aria-label="Controls" data-tutorial="sidebar">
 	<div class="left-panel-scroll">
+	<ColorContext bind:explorer {history} />
 	<PipelineRail {explorer} openIds={explorer.openSteps} onSelect={selectNode} />
 	<!-- EXPLORER lane: data -> geometry -> view -> eye -->
 	<section class="lane-band" aria-label="Explorer pipeline">

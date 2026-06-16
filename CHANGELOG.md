@@ -8,6 +8,10 @@ The canonical version string is `fe/package.json` → `"version"`. Update this f
 
 ## [Unreleased]
 
+### Added
+
+- Color Context (sidebar) — a pinned section with an **Active gamut** selector (working/export intent) and a **Display gamut** preference (what your monitor can show; sRGB / P3 / Rec.2020, stored locally, default sRGB), plus a warning when the active gamut has colors the display can't show. Display gamut does not change exported colors.
+
 ## [1.0.0-beta.2] - 2026-06-16
 
 First public beta follow-up — header/theme UI polish, light-theme contrast

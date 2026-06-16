@@ -50,6 +50,21 @@ Display profiles reuse the `GAMUTS` registry primaries/white (`color/pipeline.ts
 P3, Rec.2020 are all D65; that keeps Phase 1's adaptation a no-op (good — ship the data and
 UI before the shader math).
 
+## Progress
+
+- ✅ **Phase 1 data** (`c6347a9`) — `displayGamut` preference + sanitizer + setter + tests.
+- ✅ **Phase 2** — `ColorContext.svelte` pinned at the top of the left sidebar (per the chosen
+  placement): Active gamut selector (**mirrors** `explorer.gamut`; the Explorer Gamut step's
+  selector is intentionally kept for now per the doc's "mirror, then move"), Display gamut
+  selector (delivers Phase 1's deferred control), and a chromaticity-containment over-gamut
+  warning. Verified in WebKit (warning toggles correctly, display pref persists, 0 errors).
+- ⬜ **Phase 2b follow-up** — once validated, remove the duplicate gamut select from the
+  Explorer Gamut step and retarget the A-pipeline "Gamut — primaries and transfer" tutorial
+  to `[data-tutorial="color-context"]`; rescope the Explorer Gamut step to shell/overlays/opacity.
+- ⬜ **Phase 3** — active↔display Bradford CAT in `DerivedMatrices` + shader classification.
+  Note: the Phase 2 warning is **chromaticity-only** (primary containment in xy); Phase 3 adds
+  the luminance/white-aware shader classification.
+
 ## Phases (each independently shippable)
 
 ### Phase 1 — Display-gamut preference: data + minimal control
