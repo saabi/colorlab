@@ -117,7 +117,7 @@ export const INSPECTOR_HELP: Record<InspectorPanelId, PanelHelpContent> = {
 export const PIPELINE_HELP: Record<PipelineHelpId, PanelHelpContent> = {
 	pipelineGamut: {
 		title: 'Gamut / encoding',
-		summary: "Selects the RGB primary set and transfer assumptions used to decode the cube's encoded RGB values into linear-light RGB.",
+		summary: "The active gamut's RGB primary set and transfer assumptions decode the cube's encoded RGB values into linear-light RGB. (Choose the active gamut in Color Context, at the top of the sidebar.)",
 		stageRows: stageRows(
 			'Encoded RGB cube coordinates.',
 			'RGB primaries, RGB-to-XYZ matrices, and the transfer curve summary used by the explorer pipeline.',

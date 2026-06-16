@@ -152,7 +152,7 @@ export const A_PIPELINE_STEPS: TutorialStep[] = [
 		title: 'Gamut — primaries and transfer',
 		concept:
 			'The Gamut stage decides which physical device the RGB cube represents: its primary chromaticities and transfer curve. The same (R, G, B) triple encodes a different spectral stimulus in sRGB vs Rec. 2020 because the primaries sit at different colorimetric positions. Non-D65 gamuts (NTSC = Illuminant C, CIE 1931 RGB = Illuminant E) are Bradford-adapted to the D65 interchange white before the perceptual layout, so their neutral axis stays achromatic.',
-		tryIt: 'Switch gamuts while hovering the same screen position. Watch the XYZ values in the inspector change even though the cursor did not move. Set active gamut to Display P3 and enable the sRGB shell overlay to see P3-exclusive colors. Try NTSC 1953 or CIE 1931 RGB — the white vertex stays neutral, not tinted.',
+		tryIt: 'Switch the Active gamut in Color Context (top of the sidebar) while hovering the same screen position. Watch the XYZ values in the inspector change even though the cursor did not move. Set Active gamut to Display P3 and enable the sRGB shell overlay here to see P3-exclusive colors. Try NTSC 1953 or CIE 1931 RGB — the white vertex stays neutral, not tinted.',
 		successCheck:
 			'You can explain why (R=1, G=0, B=0) encodes a different stimulus in sRGB vs Rec. 2020 — and see that difference as a geometric shift in the solid.',
 		commonMistake:

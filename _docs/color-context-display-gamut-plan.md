@@ -58,9 +58,11 @@ UI before the shader math).
   selector is intentionally kept for now per the doc's "mirror, then move"), Display gamut
   selector (delivers Phase 1's deferred control), and a chromaticity-containment over-gamut
   warning. Verified in WebKit (warning toggles correctly, display pref persists, 0 errors).
-- ⬜ **Phase 2b follow-up** — once validated, remove the duplicate gamut select from the
-  Explorer Gamut step and retarget the A-pipeline "Gamut — primaries and transfer" tutorial
-  to `[data-tutorial="color-context"]`; rescope the Explorer Gamut step to shell/overlays/opacity.
+- ✅ **Phase 2b** — removed the duplicate gamut select from the Explorer Gamut step (now a
+  pointer note to Color Context); `pipelineGamut` help no longer says "Selects"; the
+  A-pipeline "Gamut" tutorial directs the gamut switch to Color Context. Observer/shell/
+  overlays/opacity left in place (fundamentals agent's lane). Verified: single selector,
+  0 console errors. The Explorer Gamut step keeps its `node-gamut` anchor + shell controls.
 - ⬜ **Phase 3** — active↔display Bradford CAT in `DerivedMatrices` + shader classification.
   Note: the Phase 2 warning is **chromaticity-only** (primary containment in xy); Phase 3 adds
   the luminance/white-aware shader classification.

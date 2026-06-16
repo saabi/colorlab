@@ -95,16 +95,6 @@
 		{ value: 5, label: 'Luminance romboid' }
 	] as const;
 
-	const gamuts = [
-		{ value: 'srgb', label: 'sRGB / Rec.709' },
-		{ value: 'p3', label: 'DCI-P3 D65' },
-		{ value: 'rec2020', label: 'Rec.2020' },
-		{ value: 'ntsc', label: 'NTSC 1953' },
-		{ value: 'ebu', label: 'EBU (Rec.601-625)' },
-		{ value: 'smptec', label: 'SMPTE-C' },
-		{ value: 'cie', label: 'CIE 1931 RGB' }
-	] as const;
-
 	const resolutions = [
 		{ value: 64, label: '64 x 64 / face - mobile' },
 		{ value: 128, label: '128 x 128 / face - balanced' },
@@ -133,14 +123,9 @@
 		</div>
 		<div class="lane-steps">
 			<ControlGroup index={1} title={m.gamut.label} helpId="pipelineGamut" status={m.gamut.status} affects={m.gamut.affects} open={isOpen('gamut')} onToggle={() => toggleStep('gamut')} bind:openHelp tutorialId="node-gamut">
-				<label class="row" for="gamut-select"><span>Gamut (cube primaries)</span></label>
-				<select id="gamut-select" bind:value={explorer.gamut} onchange={() => history?.hintLabel('Change gamut')}>
-					{#each gamuts as gamut}
-						<option value={gamut.value}>{gamut.label}</option>
-					{/each}
-				</select>
 				<p class="note">
-					Changing primaries reshapes the solid through the same <PipelinePopover cvd={explorer.cvd} cvdSev={explorer.cvdSev} />.
+					Active gamut is set in <strong>Color Context</strong> (top of the sidebar). Changing
+					primaries reshapes the solid through the same <PipelinePopover cvd={explorer.cvd} cvdSev={explorer.cvdSev} />.
 				</p>
 				<div class="separator" data-tutorial="observer-model">
 					<label class="row" for="observer-select"><span>Observer model</span></label>
