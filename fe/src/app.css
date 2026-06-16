@@ -847,22 +847,28 @@ input[type="checkbox"] {
 /* Renderer settings footer (policies/preferences, not pipeline stages) */
 .sidebar-footer {
 	flex-shrink: 0;
-	display: grid;
-	gap: 8px;
 	padding: 9px 12px 11px;
 	border-top: 1px solid var(--line);
 	background: color-mix(in srgb, var(--panel) 94%, black);
 	box-shadow: 0 -6px 12px rgba(0, 0, 0, 0.22);
 }
 
+.sidebar-footer-columns {
+	display: grid;
+	grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr);
+	gap: 10px 12px;
+	align-items: start;
+}
+
 .sidebar-footer-group {
 	display: grid;
 	gap: 5px;
+	min-width: 0;
 }
 
 .sidebar-footer-group + .sidebar-footer-group {
-	padding-top: 8px;
-	border-top: 1px solid color-mix(in srgb, var(--line), transparent 40%);
+	padding-left: 12px;
+	border-left: 1px solid color-mix(in srgb, var(--line), transparent 40%);
 }
 
 .sidebar-footer-title {
@@ -877,15 +883,21 @@ input[type="checkbox"] {
 .sidebar-footer-grid {
 	display: grid;
 	align-items: center;
-	gap: 6px 10px;
+	gap: 6px 8px;
 }
 
 .sidebar-footer-grid-aids {
-	grid-template-columns: repeat(3, minmax(0, 1fr));
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.sidebar-footer-grid-aids .sidebar-footer-check span {
+	white-space: normal;
+	overflow: visible;
+	text-overflow: unset;
 }
 
 .sidebar-footer-grid-performance {
-	grid-template-columns: minmax(0, 1fr) auto;
+	grid-template-columns: minmax(0, 1fr);
 }
 
 .sidebar-footer-check,
@@ -918,7 +930,7 @@ input[type="checkbox"] {
 }
 
 .sidebar-footer-fps {
-	justify-content: flex-end;
+	justify-content: space-between;
 }
 
 .sidebar-footer-fps select {

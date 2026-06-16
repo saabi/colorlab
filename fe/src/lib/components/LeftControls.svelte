@@ -424,48 +424,54 @@
 
 	<!-- Renderer settings: policies/preferences, not pipeline stages -->
 	<footer class="sidebar-footer" aria-label="Viewport preferences">
-		<section class="sidebar-footer-group" aria-label="View aids">
-			<div class="sidebar-footer-title">View aids</div>
-			<div class="sidebar-footer-grid sidebar-footer-grid-aids">
-				<label class="sidebar-footer-check" data-tutorial="floor-grid">
-					<input type="checkbox" bind:checked={explorer.floor} />
-					<span>Floor grid</span>
-				</label>
-				<label class="sidebar-footer-check" data-tutorial="hide-aids">
-					<input type="checkbox" bind:checked={explorer.hideAids} />
-					<span>Hide aids</span>
-				</label>
-				<label class="sidebar-footer-check" data-tutorial="auto-rotate">
-					<input type="checkbox" bind:checked={explorer.autoRotate} />
-					<span>Auto-rotate</span>
-				</label>
-				<label class="sidebar-footer-check" data-tutorial="neutral-backdrop" title="Oklab L = 0.5 neutral surround for the 3D viewport">
-					<input type="checkbox" bind:checked={explorer.neutralBackdrop} />
-					<span>Neutral backdrop</span>
-				</label>
-			</div>
-		</section>
-		<section class="sidebar-footer-group" aria-label="Performance">
-			<div class="sidebar-footer-title">Performance</div>
-			<div class="sidebar-footer-grid sidebar-footer-grid-performance">
-				<label class="sidebar-footer-check">
-					<input type="checkbox" bind:checked={explorer.autoPerformance} />
-					<span>Auto-reduce</span>
-				</label>
-				<label class="sidebar-footer-fps" for="min-average-fps-select">
-					<span>Min FPS</span>
-					<select
-						id="min-average-fps-select"
-						bind:value={explorer.minAverageFps}
-						disabled={!explorer.autoPerformance}
+		<div class="sidebar-footer-columns">
+			<section class="sidebar-footer-group" aria-label="View aids">
+				<div class="sidebar-footer-title">View aids</div>
+				<div class="sidebar-footer-grid sidebar-footer-grid-aids">
+					<label class="sidebar-footer-check" data-tutorial="floor-grid">
+						<input type="checkbox" bind:checked={explorer.floor} />
+						<span>Floor grid</span>
+					</label>
+					<label class="sidebar-footer-check" data-tutorial="hide-aids">
+						<input type="checkbox" bind:checked={explorer.hideAids} />
+						<span>Hide aids</span>
+					</label>
+					<label class="sidebar-footer-check" data-tutorial="auto-rotate">
+						<input type="checkbox" bind:checked={explorer.autoRotate} />
+						<span>Auto-rotate</span>
+					</label>
+					<label
+						class="sidebar-footer-check"
+						data-tutorial="neutral-backdrop"
+						title="Oklab L = 0.5 neutral surround for the 3D viewport"
 					>
-						{#each minAverageFpsOptions as fps}
-							<option value={fps}>{fps}</option>
-						{/each}
-					</select>
-				</label>
-			</div>
-		</section>
+						<input type="checkbox" bind:checked={explorer.neutralBackdrop} />
+						<span>Neutral backdrop</span>
+					</label>
+				</div>
+			</section>
+			<section class="sidebar-footer-group" aria-label="Performance">
+				<div class="sidebar-footer-title">Performance</div>
+				<div class="sidebar-footer-grid sidebar-footer-grid-performance">
+					<label class="sidebar-footer-check">
+						<input type="checkbox" bind:checked={explorer.autoPerformance} />
+						<span>Auto-reduce</span>
+					</label>
+					<label class="sidebar-footer-fps" for="min-average-fps-select">
+						<span>Min FPS</span>
+						<select
+							id="min-average-fps-select"
+							bind:value={explorer.minAverageFps}
+							disabled={!explorer.autoPerformance}
+						>
+							{#each minAverageFpsOptions as fps}
+								<option value={fps}>{fps}</option>
+							{/each}
+						</select>
+					</label>
+				</div>
+			</section>
+		</div>
 	</footer>
 </aside>
 
