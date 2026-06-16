@@ -1,9 +1,8 @@
 # State Sharing & Ingestion Plan
 
-Status: design proposal. A partial baseline exists in the working tree (see
-**Current implementation** below); the rest of this document is the agreed
-direction for the full feature and supersedes the ad-hoc baseline where they
-disagree.
+Status: **v1 shipped** (2026-06-15). Save to file, Share (copy link · copy JSON), and Import (file · URL · paste · `#s=…` hash) are live. Deferred past v1: `?src=` deep-link, shared toast system, File System Access API.
+
+The sections below record the design direction and implementation notes. Where they disagree with the shipped code, the code wins.
 
 ## Goal
 
@@ -187,7 +186,7 @@ product decision); there is no partial release.
 6. **(Optional, deferred) `?src=` deep link** — on-load remote ingestion, only if
    accepted later; not part of v1.
 
-## Current implementation (v1 complete; uncommitted)
+## Current implementation (v1 shipped)
 
 All v1 surfaces are implemented in the working tree and pass `npm run check`,
 `npm test`, and `npm run build`:
@@ -211,8 +210,8 @@ All v1 surfaces are implemented in the working tree and pass `npm run check`,
   **Import…** (Transfer group), regrouped menu with separators.
 
 Covered: Save→file, Share→link, Share→JSON, Import←{share URL, file, remote JSON
-URL, paste}. Validation reuses `coerceSnapshot`; no new dependency. Moves to the
-Roadmap's **Recently shipped** on commit.
+URL, paste}. Validation reuses `coerceSnapshot`; no new dependency. Listed in
+Roadmap **Recently shipped**.
 
 ## Decisions
 

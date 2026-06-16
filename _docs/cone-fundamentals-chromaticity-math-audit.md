@@ -13,6 +13,7 @@ Implementation status:
   - fixed-lightness Oklab and CIELAB opponent-plane projections and labels;
   - sampled fixed-lightness gamut boundaries for Oklab/CIELAB opponent planes;
   - observer-aware labels for CIE xy/uv/u'v' panel modes;
+  - compact observer short label on the LMS fundamentals panel header;
   - observer-range-safe spectral locus generation;
   - table-comparison regression tests for CIE xy, CIE 2006 xF/yF, and
     MacLeod-Boynton locus, source-basis projection, and inverse data;

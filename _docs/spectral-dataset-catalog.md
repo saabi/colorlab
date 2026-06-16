@@ -1,6 +1,6 @@
 # Spectral, Locus, and XYZ Dataset Catalog
 
-Status: seed catalog for exploration/comparison work.
+Status: seed catalog for exploration/comparison work. **Runtime registries shipped** — see [`lms-fundamentals-chromaticity-plan.md`](lms-fundamentals-chromaticity-plan.md) and [`spectral-dataset-sources.md`](spectral-dataset-sources.md).
 
 This catalog supports the LMS fundamentals, chromaticity, locus, and XYZ-space
 roadmap. COLOR LAB should treat observer datasets, XYZ-like spaces, locus

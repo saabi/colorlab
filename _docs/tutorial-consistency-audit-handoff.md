@@ -1,6 +1,6 @@
 # Tutorial consistency audit — handoff to Claude
 
-**Status:** open  
+**Status:** largely resolved (2026-06-16). Remaining gaps tracked below; tutorial system is shipped.  
 **Audience:** Claude (author of `tutorial-teaching-points.md`, `tutorial-ui-spec.md`, `tutorial-teaching-points-brief.md`, and `fe/src/lib/inspector/tutorial-steps.ts`)  
 **Reporter:** full-lane audit (user + assistant), June 2026  
 **Related:** `_docs/tutorial-spline-linear-fix-handoff.md` (spline/linear issue — **fixed locally, not yet committed**)

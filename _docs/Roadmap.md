@@ -27,7 +27,7 @@ Update `_docs/Roadmap.md` when you:
 
 ## Recently shipped
 
-- **Observer, XYZ, locus & chromaticity registries** — catalog of 32 observer datasets with lazy-loaders and linear interpolation. Dynamic observer conversion matrix generation at runtime for WebGL shaders, CVD simulation, and inspector picking. Dynamic locus range, autofit bounding boxes, and Oklab ($a, b$) / CIELAB ($a^*, b^*$) projective diagrams in 2D chromaticity panels. 3D spectral locus overlay reactively updates. **Plan:** [`lms-fundamentals-chromaticity-plan.md`](lms-fundamentals-chromaticity-plan.md).
+- **Observer, XYZ, locus & chromaticity registries** — catalog of 32 observer datasets with lazy-loaders and linear interpolation. Dynamic observer conversion matrix generation at runtime for WebGL shaders, CVD simulation, and inspector picking. Dynamic locus range, autofit bounding boxes, CIE xy/uv/u′v′ diagrams with observer-aware labels, Oklab/CIELAB fixed-lightness opponent-plane views, and calibrated MacLeod-Boynton 2° (table-backed locus + fixed source-basis projection/fill). LMS panel names the active observer. **Plans:** [`lms-fundamentals-chromaticity-plan.md`](lms-fundamentals-chromaticity-plan.md), **audit:** [`cone-fundamentals-chromaticity-math-audit.md`](cone-fundamentals-chromaticity-math-audit.md).
 - **3D explorer** — color space morphing (400 ms blend), spectral locus chromaticity overlay, cylindrical saturation/chroma cutaway (`cylSlice` / `cylRad`), true cylinder clipping outline, tessellation up to 512 with scaled outlines
 - **Theme ramp pipeline** — declarative stage chain, `PlacePolicy` recompute stages, terminal `gamutMap` via `finalizeRamp`, surface constraint Phases 1–4 backend (`boundary-project.ts`, `SurfaceProjectionParams`)
 - **Undo/redo v1** — debounced `ParameterSnapshot` history
@@ -40,6 +40,7 @@ Update `_docs/Roadmap.md` when you:
 - **Per-list ramp pipelines** (schema v13) — each source list owns its interpolation / placement / expand / constraint settings; independent **main-curve and extension constraints** (#3 + #4); shared terminal `gamutMap` targets the active colorspace. Multi-list UX: add-clones-active, duplicate, "apply to all," divergence cue. **Plan:** [`per-list-pipeline-plan.md`](per-list-pipeline-plan.md)
 - **Pipeline rail (node UI Phase 1)** — read-only `PipelineRail` map + status dashboard over the `PIPELINE_NODES` registry; click a step to open + scroll its sidebar controls; arrow-key roving. **Plan:** [`pipeline-node-ui-proposal.md`](pipeline-node-ui-proposal.md)
 - **Named undo/redo transaction labels** — one-shot `history.hintLabel` so point/list/ramp edits and gamut/world-space changes show specific labels (e.g. "Undo Add point"). **Design:** [`undo-redo-state-design.md`](undo-redo-state-design.md)
+- **Ramp Builder polish** — status hierarchy (parent = list context, Sources = active-list points), per-substep enable toggles in sidebar headers. **Plan:** [`ramp-builder-status-hierarchy-plan.md`](ramp-builder-status-hierarchy-plan.md)
 
 ---
 
@@ -51,7 +52,7 @@ Aligned with the **recommended next order** in [`surface-constraint-gamut-projec
 
 1. **Color-space role cleanup** — reflect the three-role model in UI/docs: Active gamut = working/export intent, World space = layout/interpolation coordinate system, Display gamut = physical display capability. Includes a planned **global Color Context** surface: move Active gamut and Display gamut/profile selection out of the Explorer pipeline when chromatic adaptation / display-gamut work gives that surface real behavior. The Explorer lane keeps reference shell and future Explorer display-gamut clipping/mapping controls. Also documents that `srgbLin` already **is** the gamut-independent colorimetric anchor (linear sRGB ↔ XYZ D65 is a fixed bijection); the proposed XYZ-D65 source-storage migration is **deferred** (representational relabeling, not a correctness fix — not worth a schema break). See [`color-space-role-architecture.md`](color-space-role-architecture.md).
 2. **White point & chromatic adaptation** — add a standard CAT (Bradford) wherever whites differ, for active color spaces and the display gamut; D65↔D65 stays a no-op. Today there is **no** adaptation, so non-D65 gamuts (NTSC = Illuminant C, CIE = Illuminant E) and any calibrated display white render wrong. Put the adaptation matrix in the shared `DerivedMatrices` bundle for CPU/GPU/picking parity.
-3. ✅ **Observer, XYZ, locus & chromaticity dataset registry** — **shipped**. Registry of 32 observer datasets with dynamic matrix generation for WebGL rendering, CVD simulation, and picking. Dynamic locus range, autofit bounding boxes, and Oklab/CIELAB diagrams in 2D chromaticity panels. Plans: [`lms-fundamentals-chromaticity-plan.md`](lms-fundamentals-chromaticity-plan.md).
+3. ✅ **Observer, XYZ, locus & chromaticity dataset registry** — **shipped**. Registry of 32 observer datasets with dynamic matrix generation for WebGL rendering, CVD simulation, and picking. Dynamic locus range, autofit bounding boxes, observer-aware CIE xy/uv/u′v′ labels, Oklab/CIELAB opponent-plane views, and calibrated MacLeod-Boynton 2°. Plans: [`lms-fundamentals-chromaticity-plan.md`](lms-fundamentals-chromaticity-plan.md), audit: [`cone-fundamentals-chromaticity-math-audit.md`](cone-fundamentals-chromaticity-math-audit.md).
 4. ✅ **Per-list ramp pipeline instances** — **shipped** (schema v13). Each source list owns its interpolation / placement / expand / constraint settings; shared terminal `gamutMap`. **Plan:** [`per-list-pipeline-plan.md`](per-list-pipeline-plan.md).
 5. ✅ **Separate main-curve and extension constraints** — **shipped** with #4: `pipeline.main` and `pipeline.extension` are independent (engine + UI).
 6. **Display gamut preferences + Color Context UI** — store display profiles/calibration in `localStorage`; users may have multiple displays. Initial default remains sRGB. Depends on #2 for correct white handling and should share the global Color Context surface with future observer/fundamentals settings from #3. This is the preferred moment to move Display gamut out of the Explorer pipeline.
@@ -70,7 +71,7 @@ Aligned with the **recommended next order** in [`surface-constraint-gamut-projec
 10. **Light UI color scheme** — add a **light** theme alongside today's dark (`:root` CSS variables in `app.css`). Persist in `colorlab:preferences` (same pattern as auto-rotate / auto-reduce). Panels, chrome, and instruments should stay readable; WebGL viewport may keep a separate backdrop policy (see #11).
 11. **Neutral explorer backdrop** — colorimetrically neutral surround for the 3D viewport: **Oklab L = 0.5** (a\* = b\* = 0) for WebGL clear color and/or the letterbox around the canvas, so the solid is judged without UI chroma bias. **Placement:** either a third UI scheme or — leaner — a toggle in the sidebar footer **Viewport preferences** panel (`LeftControls`, beside View aids / Performance), persisted in app preferences (not the document). Does not change the color solid itself.
 12. ✅ **Pipeline node UI (Phase 1)** — **shipped**: `PipelineRail.svelte` (read-only map + status dashboard) over the `PIPELINE_NODES` registry; clicking a step opens + scrolls its sidebar controls; arrow-key roving on the rail. Sidebar already renders node-ordered sections with status/affects/enablement. See [`pipeline-node-ui-proposal.md`](pipeline-node-ui-proposal.md).
-13. **OOG badges + raw/final preview** — OOG badges on Interpolate/Gamut Map; before/after stop preview on Gamut Map/Export or its successor diagnostic.
+13. **OOG badges + raw/final preview** — OOG count badges on Interpolate/Gamut Map pipeline nodes **shipped**; before/after stop swatch diff preview on Gamut Map/Export remains open.
 14. **Okhsl/Okhsv picker coordinates** — H/S/L or H/S/V sliders for the selected ramp stop (`okhsv.ts` exists).
 15. **Direct xy chromaticity picking** — click/drag in the xy panel; define which Y/L is held constant and which chromaticity diagram/observer is active. Depends on the diagram registry in #3.
 16. **Gamut boundary snap tools** — stop-level UX on top of existing Oklab boundary projection.
@@ -86,7 +87,7 @@ Aligned with the **recommended next order** in [`surface-constraint-gamut-projec
 
 21. Gamut compression — display/ramp policy after Active/Display gamut model stabilizes
 22. Projected Explorer display overlay vs geometry replacement (open question)
-23. Spectral/chromaticity intensity volume — depends on the observer/fundamentals registry
+23. Spectral/chromaticity intensity volume — depends on the observer/fundamentals registry (**registry shipped**; volume overlay still open)
 24. GPU/codegen evaluation (surface plan Phase 8; criteria-gated)
 25. WebGPU, HDR, EDID defaults, Color Accumulator, in-scene text — see design review
 
@@ -125,7 +126,7 @@ Key points:
 
 - source lists stay in `srgbLin`, documented as the canonical gamut-independent colorimetric anchor (≡ XYZ D65); the XYZ-D65 migration is **deferred** (representational only);
 - add chromatic adaptation (Bradford) for non-D65 active/display whites — currently absent;
-- catalog known/sourceable observer datasets, XYZ-like spaces, locus curves/surfaces, and chromaticity diagrams; audit/correct the current LMS/spectral evaluator against them; then add registries before relying on advanced spectral/chromaticity diagnostics;
+- catalog known/sourceable observer datasets, XYZ-like spaces, locus curves/surfaces, and chromaticity diagrams; audit/correct the current LMS/spectral evaluator against them; then add registries before relying on advanced spectral/chromaticity diagnostics — **registries shipped**; see [`lms-fundamentals-chromaticity-plan.md`](lms-fundamentals-chromaticity-plan.md) and [`cone-fundamentals-chromaticity-math-audit.md`](cone-fundamentals-chromaticity-math-audit.md);
 - Display gamut profiles live in `localStorage`, not shared document state;
 - Active gamut and Display gamut should become global Color Context controls, not Explorer pipeline controls; Explorer keeps reference shell and display-mapping/clipping controls;
 - each source list owns independent pipeline settings (per-list pipelines) — **shipped** in schema v13 (see [`per-list-pipeline-plan.md`](per-list-pipeline-plan.md));
@@ -134,7 +135,7 @@ Key points:
 ### Pipeline-driven parameter UI
 
 **Plan:** [`pipeline-node-ui-proposal.md`](pipeline-node-ui-proposal.md)  
-**Status:** Phase 1 (read-only rail + node-ordered sidebar sections with status/affects/enablement) **shipped**; OOG badges + raw/final preview also shipped. Phases 2–4 (node-scoped panels, full pipeline-driven layout, mobile) remain.
+**Status:** Phase 1 (read-only rail + node-ordered sidebar sections with status/affects/enablement) **shipped**; OOG count badges on Interpolate/Gamut Map **shipped**. Phases 2–4 (node-scoped panels, full pipeline-driven layout, mobile) and raw/final swatch preview remain.
 
 Key decisions: control vs informational nodes; canonical node set; `affects` badges (not lane/scope combos); ramp nodes disabled until sources exist; `selectedNode` in session only; destination-gamut warnings.
 
@@ -169,7 +170,7 @@ Open question: should neutral backdrop apply only inside the WebGL canvas letter
 | Custom Display Gamut | Wizard UX design before implementation |
 | Gradient designer improvements | Builds on existing ramp model |
 | Okhsl/Okhsv picker coordinates | Sliders for selected stop only |
-| ✅ Observer fundamentals + chromaticity diagrams | **Shipped**. Registries, dataset catalog, reference-validated evaluation, Oklab/CIELAB 2D projections, dynamic WebGL shaders/picking support. |
+| ✅ Observer fundamentals + chromaticity diagrams | **Shipped**. Registries, dataset catalog, reference-validated evaluation, observer-aware CIE xy/uv/u′v′, Oklab/CIELAB opponent-plane views, MacLeod-Boynton 2°, dynamic WebGL shaders/picking support. Audit: [`cone-fundamentals-chromaticity-math-audit.md`](cone-fundamentals-chromaticity-math-audit.md). |
 | Direct xy chromaticity picking | Needs luminance hold policy and active diagram/observer semantics |
 | Gamut boundary snap tools | Stop-level UX on top of boundary projection |
 | Spectral/chromaticity intensity volume | Optional reference layer; depends on reference-validated observer/fundamentals registry |
@@ -194,4 +195,10 @@ Baseline shipped. Remaining: manual visual review; a shared app-level toast/noti
 | [`sources-panel-layout-plan.md`](sources-panel-layout-plan.md) | Sources panel |
 | [`tutorial-consistency-audit-handoff.md`](tutorial-consistency-audit-handoff.md) | Tutorial copy |
 | [`gamut-mapping-unification-plan.md`](gamut-mapping-unification-plan.md) | Core terminal-stage unification shipped; plan amended for `ProjectionParams` / `gamutMapParams` follow-up |
+| [`3d-space-morphing-plan.md`](3d-space-morphing-plan.md) | Color space morphing (400 ms blend) |
+| [`ramp-builder-status-hierarchy-plan.md`](ramp-builder-status-hierarchy-plan.md) | Ramp Builder status hierarchy + substep toggles |
+| [`saved-state-consolidation-plan.md`](saved-state-consolidation-plan.md) | Document persistence (`ParameterSnapshot`, registry) |
+| [`agent-instructions-centralization-plan.md`](agent-instructions-centralization-plan.md) | Centralized `AGENTS.md` |
 | [`state-sharing-ingestion-plan.md`](state-sharing-ingestion-plan.md) | Document Save / Share / Import v1 |
+| [`cone-fundamentals-chromaticity-math-audit.md`](cone-fundamentals-chromaticity-math-audit.md) | Diagram math verification (MacLeod-Boynton, opponent-plane views, observer labels) |
+| [`lms-fundamentals-chromaticity-plan.md`](lms-fundamentals-chromaticity-plan.md) | Observer/diagram registries (Phases 1–4 shipped) |

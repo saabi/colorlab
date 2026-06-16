@@ -17,6 +17,7 @@ The canonical version string is `fe/package.json` → `"version"`. Update this f
 - Oklab a/b and CIELAB a*/b* fixed-lightness opponent-plane views with coordinate unprojection, sampled gamut-boundary cross-sections, and interactive inspection.
 - Table-backed MacLeod-Boynton spectral locus coordinates plus calibrated source-basis projection matching the bundled 2° source table, independent of the active observer selection.
 - Restored MacLeod-Boynton diagram fill using a calibrated inverse from `(l, s)` back to its fixed 2° source XYZ direction.
+- Ramp substep enable toggles in Ramp Builder sidebar headers (Interpolate, Place, Expand, Gamut map).
 - Observer model and chromaticity diagram selections stored in local app preferences and fully validated/persisted in localStorage snapshots.
 - Document sharing & ingestion v1 — Save to file, Share (copy link · copy JSON), Import (file · URL · paste · `#s=…` hash); all paths use `parseSnapshot`.
 - Per-list ramp pipelines (document schema v13) — each source ramp owns its interpolation, placement, expand, and constraint settings; independent main-curve vs extension constraints. The terminal gamut map stays a single shared step targeting the active colorspace.
@@ -36,7 +37,9 @@ The canonical version string is `fe/package.json` → `"version"`. Update this f
 - App-wide themed scrollbars (`--scrollbar-*` tokens; Firefox `scrollbar-color` + WebKit `::-webkit-scrollbar`).
 - Chromaticity instrument copy now distinguishes true CIE chromaticity diagrams from Oklab/CIELAB opponent-plane views.
 - Chromaticity panel and selector labels now reflect the active observer model instead of always implying CIE 1931 coordinates.
+- LMS fundamentals panel header names the active observer dataset (compact label).
 - Spectral locus generation now uses the observer dataset wavelength range and avoids out-of-range zero endpoints.
+- Ramp Builder status hierarchy — parent step shows selected list context; Source colors substep shows active-list point count.
 - Pipeline and help copy clarifying path-shape surface projection vs terminal export gamut mapping.
 - Gamut Map UI, help, and tutorial copy now explicitly identify the current output target as sRGB.
 - Canonical backlog in `_docs/Roadmap.md` with maintenance rules.

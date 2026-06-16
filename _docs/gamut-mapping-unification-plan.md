@@ -1,6 +1,6 @@
 # Plan: Unify Gamut Mapping into a Single Policy
 
-Status: Proposal and Implementation Plan
+Status: **core shipped** — terminal `gamutMap` via `finalizeRamp`, `gamutMapParams`, and shared terminal step. Remaining work: generic active/display gamut solver (see [`surface-constraint-gamut-projection-plan.md`](surface-constraint-gamut-projection-plan.md)).
 
 ---
 

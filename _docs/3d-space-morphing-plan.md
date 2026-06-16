@@ -1,6 +1,6 @@
 # 3D Space Morphing Plan
 
-Status: proposal for implementation.
+Status: **implemented** — 400 ms solid morph on world-space change. See Roadmap **Recently shipped** (3D explorer).
 
 ## Goal
 

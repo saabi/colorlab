@@ -1,6 +1,6 @@
 # Pipeline-Driven Parameter UI Proposal
 
-Status: design proposal, ready for implementation planning.
+Status: **Phase 1 shipped** (read-only `PipelineRail`, node-ordered sidebar, OOG count badges on Interpolate/Gamut Map). Phases 2–4 remain design targets — see [`Roadmap.md`](Roadmap.md).
 
 ## Design Review Revisions (authoritative — supersede conflicting text below)
 

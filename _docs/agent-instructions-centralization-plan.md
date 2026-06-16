@@ -1,6 +1,6 @@
 # Plan for Centralizing Agent Instructions
 
-Status: Proposal & Implementation Plan
+Status: **implemented** — `AGENTS.md` is the canonical agent guide; per-tool stubs (`CLAUDE.md`, `.cursorrules`, etc.) link to it.
 
 ---
 

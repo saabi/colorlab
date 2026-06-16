@@ -1,6 +1,6 @@
 # Saved State Consolidation Plan
 
-Status: design/specification, ready for implementation
+Status: **implemented** — document persistence via `ParameterSnapshot`, `parseSnapshot`, and the `colorlab:documents:v1` registry. See [`fe/src/lib/documents/README.md`](../fe/src/lib/documents/README.md).
 
 ## Problem
 

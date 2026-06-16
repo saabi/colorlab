@@ -1,12 +1,16 @@
 # Specification & Plan: Modular LMS Cone Fundamentals & Chromaticity Diagrams
 
+**Status:** Phases 1–4 **shipped** (2026-06-16). Dataset catalog, registries (`fundamentals.ts`, `diagrams.ts`, `locus.ts`, `xyz-spaces.ts`), dynamic WebGL/CVD matrices, observer and diagram selectors, instrument panels, and app-preference persistence are live. Diagram math verified in [`cone-fundamentals-chromaticity-math-audit.md`](cone-fundamentals-chromaticity-math-audit.md). Phase 5 (document-level observer persistence) remains open — observer/diagram choices are app preferences today.
+
 This specification outlines the modularization of **LMS Cone Fundamentals**, **XYZ-like spaces**, **spectral locus geometry**, and **Multiple Chromaticity Diagrams** in COLOR LAB. It benchmarks the current analytical wavelength fits against a full sourceable dataset catalog, maps the user's custom curve to its experimental origins, and details the impact on active and planned color pipelines.
 
 ---
 
 ## 1. Current State & Problem Analysis
 
-In the current codebase, the relationship between visible wavelengths, LMS cone sensitivities, and CIE XYZ coordinates is tightly coupled and rigid:
+> **Update (2026-06-16):** The tail-instability and single-observer limitations below drove the registry work. Runtime evaluation now uses tabulated observer datasets with range-safe interpolation; instrument panels expose observer and diagram selectors; MacLeod-Boynton, Oklab, and CIELAB modes follow the semantics documented in the math audit. Legacy analytical `coneLMS` helpers in `pipeline.ts` remain for compatibility but are no longer the primary evaluator path.
+
+In the pre-registry codebase, the relationship between visible wavelengths, LMS cone sensitivities, and CIE XYZ coordinates was tightly coupled and rigid:
 - **Tails Instability**: [`pipeline.ts`](file:///home/ushif/repos/colorlab/fe/src/lib/color/pipeline.ts#L154-L181) implements the L, M, and S cone sensitivities using a custom sum of Gaussians and Gaussian-derivatives. While this fit matches the Stockman & Sharpe (2000) experimental data well in the core visible spectrum, the polynomial derivative terms cause the curve to oscillate or diverge outside the `[402, 682]` nm range.
 - **Locus Artifacts**: Because the locus curve in [`xy-panel.ts`](file:///home/ushif/repos/colorlab/fe/src/lib/panels/xy-panel.ts#L23-L27) is drawn by sampling `waveToXyz(nm)` at the edges of the spectrum, the unstable tails of the fits produce looping, curling, or diverging artifacts on the canvas.
 - **Single Observer Space**: The app assumes a single observer model (Stockman & Sharpe 2000) projected via a constant matrix (`LMS2XYZ2`) into the standard **CIE 1931 2°** chromaticity diagram. For scientific analysis, mixing the 1931 observer diagram coordinates with 2006 physiological LMS curves introduces a geometric mismatch.
@@ -308,7 +312,7 @@ The CVD simulation is performed by projecting RGB colors into the LMS color spac
 
 ## 6. Detailed Implementation Plan
 
-### Phase 1: Dataset Catalog & Fit Audit
+### Phase 1: Dataset Catalog & Fit Audit — **Done**
 1. Expand [`spectral-dataset-catalog.md`](spectral-dataset-catalog.md) with a
    source/license/provenance inventory for every known/sourceable observer
    dataset, XYZ-like space, chromaticity diagram, and locus-geometry family
@@ -326,7 +330,7 @@ The CVD simulation is performed by projecting RGB colors into the LMS color spac
 6. Implement the default evaluator from the strategy with the best documented accuracy/behavior tradeoff. Reject interpolation or analytical methods that overshoot, go negative, oscillate, diverge, or distort spectral-locus extremes.
 7. Keep this phase UI-free and persistence-free: it changes the numeric evaluator for the same observer identity, not the saved document shape.
 
-### Phase 2: Registry & Mathematical Foundation
+### Phase 2: Registry & Mathematical Foundation — **Done**
 1. Implement `fe/src/lib/color/fundamentals.ts` containing:
    - Reference-validated evaluators for all bundled/sourceable observer
      datasets, not just the current default.
@@ -340,13 +344,13 @@ The CVD simulation is performed by projecting RGB colors into the LMS color spac
    parity are ready, but preserve only evaluator segments that meet the
    documented reference-data error and tail-behavior criteria.
 
-### Phase 3: WebGL & CVD Updates
+### Phase 3: WebGL & CVD Updates — **Done**
 1. Modify `rebuildMatrices` in `fe/src/lib/renderer/uniforms.ts` to compute `RGB2LMS` and `LMS2RGB` dynamically using the active LMS model.
 2. Update [`cvd.ts`](file:///home/ushif/repos/colorlab/fe/src/lib/color/cvd.ts) to calculate/fetch CVD matrices corresponding to the active observer.
 3. Ensure the same observer path feeds viewport CVD, inspector panels, and ramp
    previews before exposing the selector.
 
-### Phase 4: Instrument Panels & UI Integration
+### Phase 4: Instrument Panels & UI Integration — **Done**
 1. Update [`cones-panel.ts`](file:///home/ushif/repos/colorlab/fe/src/lib/panels/cones-panel.ts) to render the active fundamental.
 2. Update [`xy-panel.ts`](file:///home/ushif/repos/colorlab/fe/src/lib/panels/xy-panel.ts) to draw the active diagram coordinates and locus line dynamically.
 3. Add chromaticity-diagram selection to the Explorer Reference / instrument
@@ -355,7 +359,10 @@ The CVD simulation is performed by projecting RGB colors into the LMS color spac
    once it is colorimetrically consistent across CVD, panels, overlays, and
    picking.
 
-### Phase 5: Persistence & Testing
+### Phase 5: Persistence & Testing — **Partial**
+
+Observer and chromaticity diagram choices persist in **app preferences** (`colorlab:preferences`) and are validated on load. Document-level persistence (schema bump + migration) remains open if observer choice becomes semantic for saved analysis.
+
 1. If observer model becomes document-level, update `types.ts`,
    `state.svelte.ts`, `snapshot.ts`, and `schema.ts` together and add the
    required migration/tests.

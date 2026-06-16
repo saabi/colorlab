@@ -1,14 +1,23 @@
 # Unimplemented Chromaticity Diagrams for Future Integration
 
-This document catalog-details the major chromaticity representation spaces and diagrams that are currently not implemented in COLOR LAB, outlining their mathematical formulas, use cases, and integration paths.
+**Status (2026-06-16):** Several spaces below are now **implemented** under different semantics — see [`cone-fundamentals-chromaticity-math-audit.md`](cone-fundamentals-chromaticity-math-audit.md).
+
+| Diagram | Status in app |
+|---------|----------------|
+| CIE 2006 / physiological xy (xF, yF) | **Shipped** — observer-aware label on the CIE 1931 xy mode when Stockman-Sharpe 2°/10° is selected |
+| Oklab (a, b) | **Shipped** as fixed-lightness opponent-plane view (`oklab-ab`), not a chromaticity diagram |
+| MacLeod-Boynton (l, s) | **Shipped** — table-backed 2° locus + calibrated source-basis projection (`macleod-boynton`) |
+| CIE 1964 10° (x10, y10) | **Shipped** — observer-aware label on CIE 1931 xy when CIE 1964 10° observer is selected |
+
+This document catalog-details the major chromaticity representation spaces and diagrams that are **not yet** implemented in COLOR LAB, outlining their mathematical formulas, use cases, and integration paths.
 
 ---
 
-## 1. Physiological CIE 2006/2015 Chromaticity ($x_F, y_F$)
+## 1. Physiological CIE 2006/2015 Chromaticity ($x_F, y_F$) — **Implemented (observer-aware xy)**
 
-Although COLOR LAB supports the **CIE 2006 / Stockman & Sharpe Physiological Observer** datasets, it does not currently define a dedicated physiological chromaticity projection. Instead, it overlays physiological data onto standard CIE 1931 xy coordinates.
+> **Shipped:** When the active observer is Stockman-Sharpe 2°/10°, the chromaticity panel labels and projects physiological XYZ_F coordinates onto xy using the standard chromaticity formula. There is no separate diagram key — the observer selection drives the basis.
 
-*   **Mathematical Formulation**:
+*Historical note — original gap:*
     $$x_F = \frac{X_F}{X_F + Y_F + Z_F}, \quad y_F = \frac{Y_F}{X_F + Y_F + Z_F}$$
     Where $X_F, Y_F, Z_F$ are the tristimulus coordinates computed by weighting a spectrum against the CIE 2006 2° or 10° physiological Color Matching Functions (derived from Stockman & Sharpe cone fundamentals).
 *   **Why Include It**:
@@ -17,9 +26,11 @@ Although COLOR LAB supports the **CIE 2006 / Stockman & Sharpe Physiological Obs
 
 ---
 
-## 2. Oklab Perceptual Chromaticity Plane ($a, b$)
+## 2. Oklab Perceptual Chromaticity Plane ($a, b$) — **Implemented (opponent-plane view)**
 
-COLOR LAB currently utilizes Oklab as a 3D world geometry, but does not expose it as a 2D instrument diagram projection on the chromaticity panel.
+> **Shipped** as `oklab-ab` — fixed Oklab L = 0.5 opponent-plane cross-section with sampled gamut boundaries, not a chromaticity diagram.
+
+*Historical note — original gap:*
 
 *   **Mathematical Formulation**:
     Given the Oklab coordinates $L, a, b$ (computed via the non-linear LMS mapping from CIE XYZ):
@@ -71,7 +82,9 @@ Developed in 2017 by SAFRAN, JzAzBz is a perceptually uniform color space optimi
 
 ---
 
-## 6. Historical CIE 1964 10° $(x_{10}, y_{10})$
+## 6. Historical CIE 1964 10° $(x_{10}, y_{10})$ — **Implemented (observer-aware xy)**
+
+> **Shipped:** When CIE 1964 10° is the active observer, the chromaticity panel label reads `CIE 1964 10° x10 y10` and projects that observer's XYZ coordinates.
 
 *   **Mathematical Formulation**:
     $$x_{10} = \frac{X_{10}}{X_{10} + Y_{10} + Z_{10}}, \quad y_{10} = \frac{Y_{10}}{X_{10} + Y_{10} + Z_{10}}$$
