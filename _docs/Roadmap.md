@@ -38,7 +38,8 @@ Update `_docs/Roadmap.md` when you:
 - **Document sharing & ingestion v1** — Save to file, Share (copy link · copy JSON), Import (file · URL · paste · `#s=…` hash); client-side only via `parseSnapshot`
 - **Themed scrollbars** — app-wide dark-UI scrollbar tokens (`scrollbar-color` + `::-webkit-scrollbar`) in `app.css`
 - **Per-list ramp pipelines** (schema v13) — each source list owns its interpolation / placement / expand / constraint settings; independent **main-curve and extension constraints** (#3 + #4); shared terminal `gamutMap` targets the active colorspace. Multi-list UX: add-clones-active, duplicate, "apply to all," divergence cue. **Plan:** [`per-list-pipeline-plan.md`](per-list-pipeline-plan.md)
-- **Pipeline rail (node UI Phase 1)** — read-only `PipelineRail` map + status dashboard over the `PIPELINE_NODES` registry; click a step to open + scroll its sidebar controls. **Plan:** [`pipeline-node-ui-proposal.md`](pipeline-node-ui-proposal.md)
+- **Pipeline rail (node UI Phase 1)** — read-only `PipelineRail` map + status dashboard over the `PIPELINE_NODES` registry; click a step to open + scroll its sidebar controls; arrow-key roving. **Plan:** [`pipeline-node-ui-proposal.md`](pipeline-node-ui-proposal.md)
+- **Named undo/redo transaction labels** — one-shot `history.hintLabel` so point/list/ramp edits and gamut/world-space changes show specific labels (e.g. "Undo Add point"). **Design:** [`undo-redo-state-design.md`](undo-redo-state-design.md)
 
 ---
 
@@ -133,15 +134,15 @@ Key points:
 ### Pipeline-driven parameter UI
 
 **Plan:** [`pipeline-node-ui-proposal.md`](pipeline-node-ui-proposal.md)  
-**Status:** Design proposal with authoritative review revisions; ready for implementation planning.
+**Status:** Phase 1 (read-only rail + node-ordered sidebar sections with status/affects/enablement) **shipped**; OOG badges + raw/final preview also shipped. Phases 2–4 (node-scoped panels, full pipeline-driven layout, mobile) remain.
 
-Key decisions: control vs informational nodes; canonical node set; `affects` badges (not lane/scope combos); ramp nodes disabled until sources exist; `selectedNode` in session only; destination-gamut warnings; near-term OOG badges and raw/final preview.
+Key decisions: control vs informational nodes; canonical node set; `affects` badges (not lane/scope combos); ramp nodes disabled until sources exist; `selectedNode` in session only; destination-gamut warnings.
 
-First implementation target: read-only navigation rail with 12 initial nodes (Gamut, World, Clip, CVD, Display, Pick, Interpolate, Adjust, Gamut Map, Export, View, Performance).
+Phase 2 note: the Gamut/Color-Context panel split is blocked on the colorimetry work and documented in [`gamut-step-organization-observations.md`](gamut-step-organization-observations.md) — extract World/Clip/Vision/Display panels first; leave Gamut/Color Context for last.
 
-### Undo/redo — transaction labels
+### Undo/redo — transaction labels ✅ shipped
 
-v1 shipped; production still uses generic `'Edit parameters'` for debounced captures. **Plan:** [`undo-redo-state-design.md`](undo-redo-state-design.md).
+v1 plus transaction labels are done: a one-shot `history.hintLabel` lets discrete actions (point/list/ramp edits, gamut and world-space changes) record specific labels, which the debounced observer prefers over its generic `'Edit parameters'`. **Design:** [`undo-redo-state-design.md`](undo-redo-state-design.md).
 
 ### Document sharing & ingestion
 
