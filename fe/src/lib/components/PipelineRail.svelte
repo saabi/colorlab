@@ -15,6 +15,31 @@
 	const HIDDEN: readonly PipelineNodeId[] = ['all', 'ramp-builder'];
 	const laneNodes = (lane: PipelineLane) =>
 		PIPELINE_NODES.filter((n) => n.lane === lane && !HIDDEN.includes(n.id));
+
+	// Roving-tabindex keyboard navigation across all (enabled) rail chips.
+	const enabledIds = $derived(
+		LANES.flatMap(laneNodes)
+			.filter((n) => isNodeEnabled(n, explorer))
+			.map((n) => n.id)
+	);
+	let activeId = $state<PipelineNodeId | null>(null);
+	const tabId = $derived(activeId && enabledIds.includes(activeId) ? activeId : (enabledIds[0] ?? null));
+	const btns: Partial<Record<PipelineNodeId, HTMLButtonElement>> = {};
+
+	function onKeydown(event: KeyboardEvent, id: PipelineNodeId) {
+		const idx = enabledIds.indexOf(id);
+		if (idx < 0 || !enabledIds.length) return;
+		let next = idx;
+		if (event.key === 'ArrowRight' || event.key === 'ArrowDown') next = (idx + 1) % enabledIds.length;
+		else if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') next = (idx - 1 + enabledIds.length) % enabledIds.length;
+		else if (event.key === 'Home') next = 0;
+		else if (event.key === 'End') next = enabledIds.length - 1;
+		else return;
+		event.preventDefault();
+		const nid = enabledIds[next];
+		activeId = nid;
+		btns[nid]?.focus();
+	}
 </script>
 
 <!-- Read-only pipeline map + status dashboard. Clicking a step opens and scrolls
@@ -33,8 +58,12 @@
 						class="rail-node"
 						class:open={openIds.includes(node.id)}
 						{disabled}
+						tabindex={node.id === tabId ? 0 : -1}
+						bind:this={btns[node.id]}
 						title={`${node.label} — ${status} · affects ${node.affects}`}
 						aria-label={`${node.label}: ${status}`}
+						onfocus={() => (activeId = node.id)}
+						onkeydown={(event) => onKeydown(event, node.id)}
 						onclick={() => onSelect(node.id)}
 					>
 						<span class="rail-node-label">{node.shortLabel}</span>

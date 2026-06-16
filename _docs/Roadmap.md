@@ -67,7 +67,7 @@ Aligned with the **recommended next order** in [`surface-constraint-gamut-projec
 
 10. **Light UI color scheme** — add a **light** theme alongside today's dark (`:root` CSS variables in `app.css`). Persist in `colorlab:preferences` (same pattern as auto-rotate / auto-reduce). Panels, chrome, and instruments should stay readable; WebGL viewport may keep a separate backdrop policy (see #11).
 11. **Neutral explorer backdrop** — colorimetrically neutral surround for the 3D viewport: **Oklab L = 0.5** (a\* = b\* = 0) for WebGL clear color and/or the letterbox around the canvas, so the solid is judged without UI chroma bias. **Placement:** either a third UI scheme or — leaner — a toggle in the sidebar footer **Viewport preferences** panel (`LeftControls`, beside View aids / Performance), persisted in app preferences (not the document). Does not change the color solid itself.
-12. ✅ **Pipeline node UI (Phase 1)** — **shipped**: `PipelineRail.svelte` (read-only map + status dashboard) over the `PIPELINE_NODES` registry; clicking a step opens + scrolls its sidebar controls. Sidebar already renders node-ordered sections with status/affects/enablement. Follow-up: arrow-key roving on the rail. See [`pipeline-node-ui-proposal.md`](pipeline-node-ui-proposal.md).
+12. ✅ **Pipeline node UI (Phase 1)** — **shipped**: `PipelineRail.svelte` (read-only map + status dashboard) over the `PIPELINE_NODES` registry; clicking a step opens + scrolls its sidebar controls; arrow-key roving on the rail. Sidebar already renders node-ordered sections with status/affects/enablement. See [`pipeline-node-ui-proposal.md`](pipeline-node-ui-proposal.md).
 13. **OOG badges + raw/final preview** — OOG badges on Interpolate/Gamut Map; before/after stop preview on Gamut Map/Export or its successor diagnostic.
 14. **Okhsl/Okhsv picker coordinates** — H/S/L or H/S/V sliders for the selected ramp stop (`okhsv.ts` exists).
 15. **Direct xy chromaticity picking** — click/drag in the xy panel; define which Y/L is held constant and which chromaticity diagram/observer is active. Depends on the diagram registry in #3.
@@ -78,7 +78,7 @@ Aligned with the **recommended next order** in [`surface-constraint-gamut-projec
 17. **Generic active/display gamut solver** — matrix-based boundary solver for Active gamut and Display gamut relationships; keep sRGB analytic fast path where useful.
 18. **Custom Display Gamut** — calibration wizard UX before implementation.
 19. **Gradient designer improvements** — editable stops, per-stop OKLCh/Okhsl, CSS gradient preview.
-20. **Pipeline node UI (Phases 2–4)** — node-scoped parameter panel, full pipeline-driven layout, mobile optimization.
+20. **Pipeline node UI (Phases 2–4)** — node-scoped parameter panel, full pipeline-driven layout, mobile optimization. **Note:** the Gamut/Color-Context split is blocked on the colorimetry work and documented in [`gamut-step-organization-observations.md`](gamut-step-organization-observations.md) — extract World/Clip/Vision/Display panels first; leave Gamut/Color Context for last.
 
 ### Research / deferred
 
