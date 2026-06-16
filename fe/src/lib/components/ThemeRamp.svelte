@@ -530,7 +530,6 @@
 {/if}
 
 {#if showInterpolate}
-	<ToggleRow label="Enable interpolation" bind:checked={P.interpolateOn} />
 	{#if !P.interpolateOn}
 		<p class="note">Off: the picked source colors pass through as the stops (no curve).</p>
 	{:else}
@@ -644,7 +643,6 @@
 			<p class="note" style="margin-top: 0">Requires interpolation — the picked colors pass through unchanged.</p>
 		{:else}
 		<p class="note" style="margin-top: 0">Where the stops land on the interpolated curve. Runs after interpolation, before gamut mapping.</p>
-		<ToggleRow label="Enable placement" bind:checked={P.placeOn} />
 		{#if P.placeOn}
 		<label class="field-row">
 			<span>Sampling</span>
@@ -678,7 +676,6 @@
 		<p class="note" style="margin-top: 0">
 			One generalized Spread: rows make related ramps; columns expand each stop into variants. Presets just set the parameters.
 		</p>
-		<ToggleRow label="Enable expand" bind:checked={P.expandOn} />
 		{#if P.expandOn}
 			<ToggleRow label="Show palette in 3D" bind:checked={explorer.theme.showPalette} />
 			<label class="field-row">

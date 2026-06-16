@@ -11,6 +11,7 @@
 	import { track } from '$lib/analytics/umami';
 	import { MAX_CAMERA_DIST, MAX_CAMERA_FOV, MAX_CAMERA_PITCH, MIN_CAMERA_DIST, MIN_CAMERA_FOV, resetCamera } from '$lib/engine/camera';
 	import { getPipelineNode, isNodeEnabled, type PipelineNodeId } from './pipeline-nodes';
+	import { activePipeline } from '$lib/engine/theme';
 
 	import type { ExplorerState } from '$lib/engine/types';
 	import type { Camera } from '$lib/engine/camera';
@@ -72,6 +73,8 @@
 		gamutMap: meta('gamut-map'),
 		exportStep: meta('export')
 	});
+
+	const P = $derived(activePipeline(explorer.theme));
 
 	const spaces = [
 		{ value: 3, label: 'Oklab' },
@@ -269,6 +272,7 @@
 					<section class="ramp-substep" class:disabled={m.sources.disabled}>
 						<div class="ramp-substep-header">
 							<span class="ramp-substep-index">1.1</span>
+							<span class="ramp-substep-enable-spacer" aria-hidden="true"></span>
 							<button type="button" class="ramp-substep-toggle" aria-expanded={isOpen('sources')} onclick={() => toggleStep('sources')}>
 								<span>{m.sources.label}</span>
 								<span class="ramp-substep-meta">
@@ -286,9 +290,17 @@
 							</div>
 						{/if}
 					</section>
-					<section class="ramp-substep" class:disabled={m.interpolate.disabled}>
+					<section class="ramp-substep" class:disabled={m.interpolate.disabled} class:step-off={!P.interpolateOn}>
 						<div class="ramp-substep-header">
 							<span class="ramp-substep-index">1.2</span>
+							<label class="ramp-substep-enable">
+								<input
+									type="checkbox"
+									bind:checked={P.interpolateOn}
+									disabled={m.interpolate.disabled}
+									aria-label="Enable interpolation"
+								/>
+							</label>
 							<button type="button" class="ramp-substep-toggle" aria-expanded={isOpen('interpolate')} onclick={() => toggleStep('interpolate')}>
 								<span>{m.interpolate.label}</span>
 								<span class="ramp-substep-meta">
@@ -306,9 +318,17 @@
 							</div>
 						{/if}
 					</section>
-					<section class="ramp-substep" class:disabled={m.adjust.disabled}>
+					<section class="ramp-substep" class:disabled={m.adjust.disabled} class:step-off={!P.interpolateOn || !P.placeOn}>
 						<div class="ramp-substep-header">
 							<span class="ramp-substep-index">1.3</span>
+							<label class="ramp-substep-enable">
+								<input
+									type="checkbox"
+									bind:checked={P.placeOn}
+									disabled={m.adjust.disabled || !P.interpolateOn}
+									aria-label="Enable placement"
+								/>
+							</label>
 							<button type="button" class="ramp-substep-toggle" aria-expanded={isOpen('adjust')} onclick={() => toggleStep('adjust')}>
 								<span>{m.adjust.label}</span>
 								<span class="ramp-substep-meta">
@@ -326,9 +346,17 @@
 							</div>
 						{/if}
 					</section>
-					<section class="ramp-substep" class:disabled={m.expand.disabled}>
+					<section class="ramp-substep" class:disabled={m.expand.disabled} class:step-off={!P.expandOn}>
 						<div class="ramp-substep-header">
 							<span class="ramp-substep-index">1.4</span>
+							<label class="ramp-substep-enable">
+								<input
+									type="checkbox"
+									bind:checked={P.expandOn}
+									disabled={m.expand.disabled}
+									aria-label="Enable expand"
+								/>
+							</label>
 							<button type="button" class="ramp-substep-toggle" aria-expanded={isOpen('expand')} onclick={() => toggleStep('expand')}>
 								<span>{m.expand.label}</span>
 								<span class="ramp-substep-meta">
@@ -423,10 +451,25 @@
 	}
 	.ramp-substep-header {
 		display: grid;
-		grid-template-columns: auto minmax(0, 1fr) auto;
+		grid-template-columns: auto auto minmax(0, 1fr) auto;
 		align-items: center;
 		gap: 6px;
 		padding: 4px 5px;
+	}
+	.ramp-substep-enable {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+	.ramp-substep-enable input {
+		margin: 0;
+		cursor: pointer;
+	}
+	.ramp-substep-enable-spacer {
+		width: 13px;
+	}
+	.ramp-substep.step-off .ramp-substep-body {
+		opacity: 0.72;
 	}
 	.ramp-substep-index {
 		color: var(--accent, #d7b33f);
