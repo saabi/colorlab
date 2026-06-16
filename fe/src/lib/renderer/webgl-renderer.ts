@@ -2,6 +2,7 @@ import { cross3, dot3, m3, m3gl, norm3, type Mat3, type Vec3 } from '$lib/color/
 import { CVD, simulateCvdSrgb } from '$lib/color/cvd';
 import { CUBE_ROT, CUBE_ROTi, LMS2RGB, RGB2LMS, REC709_Y, lsrgb2oklab, waveToXyz, xyz2lab } from '$lib/color/pipeline';
 import { TRC } from '$lib/color/transfer';
+import { DEFAULT_OBSERVERS } from '$lib/color/fundamentals';
 import { planeND } from '$lib/engine/plane';
 import { camEye, lookAt, persp, type Camera } from '$lib/engine/camera';
 import { solidField } from '$lib/engine/picking';
@@ -621,9 +622,10 @@ export class WebGlRenderer {
 		// Precompute per-wavelength chromaticity XYZ and display (sRGB gamma) color.
 		const chromaXyzArr: Vec3[] = [];
 		const displayGammaArr: Vec3[] = [];
+		const observer = DEFAULT_OBSERVERS[state.observerModel] || DEFAULT_OBSERVERS['stockman-sharpe-2deg'];
 		for (let i = 0; i < NW; i++) {
 			const nm = NM_MIN + i * NM_STEP;
-			const xyz = waveToXyz(nm) as Vec3;
+			const xyz = observer.evaluateXyz(nm) as Vec3;
 			const S = xyz[0] + xyz[1] + xyz[2];
 			const cx: Vec3 = S > 1e-7 ? [xyz[0] / S, xyz[1] / S, xyz[2] / S] : [0, 0, 0];
 			chromaXyzArr.push(cx);

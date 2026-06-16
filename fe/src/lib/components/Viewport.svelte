@@ -774,8 +774,10 @@
 	});
 
 	$effect(() => {
-		const currentMode = explorer.spaceMode;
 		explorer.gamut;
+		explorer.observerModel;
+		explorer.observerLoadedTrigger;
+		const currentMode = explorer.spaceMode;
 		untrack(() => {
 			const from = prevSpaceMode;
 			prevSpaceMode = currentMode;
