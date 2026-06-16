@@ -1,7 +1,9 @@
 # Undo/redo state design
 
-**Status:** implemented v1; transaction-label refinement remains future work
+**Status:** implemented v1 + transaction labels.
 **Date:** June 12, 2026
+
+**Transaction labels (shipped):** discrete actions call a one-shot `history.hintLabel(label)` just before mutating state; the debounced `scheduleCapture` observer prefers the hint over its generic `'Edit parameters'` label and consumes it on capture. Labeled sites: point add/remove/move/duplicate/edit and list add/remove/duplicate/apply-to-all (ThemeRamp), point add/remove/move (Viewport), gamut + world-space changes (LeftControls).
 
 **Implementation note:** v1 uses the recommended `ParameterSnapshot` boundary plus a debounced snapshot observer in `AppShell`. This gives broad coverage for persisted app-state edits and groups slider/drag streams without manually annotating every binding. Explicit labels can still be added to high-value actions later.
 

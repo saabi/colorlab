@@ -11,6 +11,10 @@ The canonical version string is `fe/package.json` → `"version"`. Update this f
 ### Added
 
 - Document sharing & ingestion v1 — Save to file, Share (copy link · copy JSON), Import (file · URL · paste · `#s=…` hash); all paths use `parseSnapshot`.
+- Per-list ramp pipelines (document schema v13) — each source ramp owns its interpolation, placement, expand, and constraint settings; independent main-curve vs extension constraints. The terminal gamut map stays a single shared step targeting the active colorspace.
+- Multi-list ramp management — add (clones the active pipeline), duplicate, "Apply pipeline to all," and a per-chip mode cue with a divergence note.
+- Pipeline rail — read-only navigation map + live status dashboard over the Explorer/Ramp steps; click opens and scrolls a step's controls; arrow-key roving.
+- Named undo/redo transaction labels — point, ramp/list, gamut, and world-space edits record specific labels (e.g. "Undo Add point") via a one-shot `history.hintLabel`.
 
 - `CHANGELOG.md` and in-app version link (`vX.Y.Z`) next to GitHub in the header and Info panel.
 - Adaptive alpha controls for terminal gamut mapping (`gamutMapParams`).
@@ -20,6 +24,7 @@ The canonical version string is `fe/package.json` → `"version"`. Update this f
 
 ### Changed
 
+- Document schema bumped to v13 — older saves migrate automatically (the former global ramp pipeline fields are lifted into each source list).
 - App-wide themed scrollbars (`--scrollbar-*` tokens; Firefox `scrollbar-color` + WebKit `::-webkit-scrollbar`).
 - Pipeline and help copy clarifying path-shape surface projection vs terminal export gamut mapping.
 - Gamut Map UI, help, and tutorial copy now explicitly identify the current output target as sRGB.

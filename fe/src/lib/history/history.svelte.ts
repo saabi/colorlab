@@ -27,6 +27,10 @@ export function createHistory(getAppState: () => AppState, options: HistoryOptio
 	let pendingTimer: ReturnType<typeof setTimeout> | null = null;
 	let pendingLabel: string | null = null;
 	let hasPending = $state(false);
+	// One-shot label for the next captured change. Discrete actions set this just
+	// before mutating state, so the debounced observer's generic label does not
+	// clobber the specific one. Consumed on capture.
+	let nextLabel: string | null = null;
 
 	const canUndo = $derived(past.length > 0 || hasPending);
 	const canRedo = $derived(future.length > 0);
@@ -50,6 +54,7 @@ export function createHistory(getAppState: () => AppState, options: HistoryOptio
 		transactionLabel = null;
 		pendingTimer = null;
 		pendingLabel = null;
+		nextLabel = null;
 		hasPending = false;
 	}
 
@@ -57,6 +62,7 @@ export function createHistory(getAppState: () => AppState, options: HistoryOptio
 		if (pendingTimer) clearTimeout(pendingTimer);
 		pendingTimer = null;
 		pendingLabel = null;
+		nextLabel = null;
 		hasPending = false;
 		const next = toSnapshot(getAppState());
 		if (snapshotsEqual(next, current)) return;
@@ -71,9 +77,14 @@ export function createHistory(getAppState: () => AppState, options: HistoryOptio
 		return snapshotsEqual(snapshot, current);
 	}
 
+	/** Label the next captured change (one-shot; overrides the observer's generic label). */
+	function hintLabel(label: string) {
+		nextLabel = label;
+	}
+
 	function scheduleCapture(label = 'Edit parameters', delayMs = 350) {
 		if (matchesCurrent()) return;
-		pendingLabel = label;
+		pendingLabel = nextLabel ?? label;
 		hasPending = true;
 		if (pendingTimer) clearTimeout(pendingTimer);
 		pendingTimer = setTimeout(() => capture(pendingLabel ?? label), delayMs);
@@ -154,6 +165,7 @@ export function createHistory(getAppState: () => AppState, options: HistoryOptio
 		},
 		capture,
 		scheduleCapture,
+		hintLabel,
 		flushPending,
 		matchesCurrent,
 		begin,

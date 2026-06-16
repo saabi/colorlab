@@ -51,6 +51,27 @@ describe('history', () => {
 		vi.useRealTimers();
 	});
 
+	it('hintLabel overrides the generic scheduleCapture label, and is one-shot', () => {
+		vi.useFakeTimers();
+		const state = createAppState();
+		const history = createHistory(() => state);
+
+		// A discrete action hints its label before mutating; the generic observer
+		// then schedules with its default — the hint must win.
+		history.hintLabel('Add point');
+		state.explorer.off = 0.7;
+		history.scheduleCapture('Edit parameters', 500);
+		vi.advanceTimersByTime(500);
+		expect(history.undoLabel).toBe('Add point');
+
+		// The hint is consumed: the next generic change keeps the generic label.
+		state.explorer.off = 0.8;
+		history.scheduleCapture('Edit parameters', 500);
+		vi.advanceTimersByTime(500);
+		expect(history.undoLabel).toBe('Edit parameters');
+		vi.useRealTimers();
+	});
+
 	it('resets stacks at document boundaries', () => {
 		const state = createAppState();
 		const history = createHistory(() => state);

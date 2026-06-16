@@ -61,7 +61,7 @@ Aligned with the **recommended next order** in [`surface-constraint-gamut-projec
 
 ### Small scope, polish
 
-9. **Undo transaction labels** — named `scheduleCapture` / `capture` at high-value call sites. See [`undo-redo-state-design.md`](undo-redo-state-design.md).
+9. ✅ **Undo transaction labels** — **shipped**: one-shot `history.hintLabel(label)` that the debounced observer prefers; labeled point/list/ramp edits (ThemeRamp + Viewport) and gamut/world-space changes. See [`undo-redo-state-design.md`](undo-redo-state-design.md).
 
 ### Medium scope
 

@@ -5,6 +5,7 @@
 	import PaletteStrip from './PaletteStrip.svelte';
 	import ColorPicker from './ColorPicker.svelte';
 	import { track } from '$lib/analytics/umami';
+	import { getHistoryContext } from '$lib/history/context';
 	import { simulateCvdSrgb } from '$lib/color/cvd';
 	import { INTERP_SPACES, INTERP_SPACE_KEYS } from '$lib/color/interp';
 	import { activePipeline, buildRamp, exportDTCG, exportDTCGGrid, exportTokens, exportTokensGrid, srgbHex } from '$lib/engine/theme';
@@ -31,6 +32,7 @@
 	let exportText = $state('');
 	let pickerOpen = $state(false);
 	let stagedPickerColor = $state<[number, number, number]>([0.5, 0.5, 0.5]);
+	const history = getHistoryContext();
 
 	// All point edits/selection target the active source list and its pipeline.
 	const points = $derived(explorer.theme.lists[explorer.theme.activeList]?.anchors ?? []) as ThemeAnchor[];
@@ -134,6 +136,7 @@
 	];
 
 	function setGamutMap(method: ExplorerState['theme']['gamutMap']) {
+		history?.hintLabel('Gamut map');
 		explorer.theme.gamutMap = method;
 		buildRamp(explorer, matrices);
 		track('theme_gamut_map', { method });
@@ -214,6 +217,7 @@
 	];
 
 	function setSpread(rows: AxisSpreadConfig | null, cols: AxisSpreadConfig | null) {
+		history?.hintLabel('Expand preset');
 		P.expandOn = true;
 		P.expandRows = rows ?? { count: 1, hue: off(), chroma: off(), light: off() };
 		P.expandCols = cols ?? { count: 1, hue: off(), chroma: off(), light: off() };
@@ -221,6 +225,7 @@
 	}
 
 	function setThemeMode(mode: typeof P.mode) {
+		history?.hintLabel('Ramp mode');
 		P.mode = mode;
 		track('theme_mode_change', { mode });
 	}
@@ -270,6 +275,7 @@
 	}
 
 	function addList() {
+		history?.hintLabel('Add ramp');
 		// New lists inherit the active list's pipeline (deep-cloned).
 		const pipeline = clonePipeline(P);
 		explorer.theme.lists = [...explorer.theme.lists, { anchors: [], pipeline }];
@@ -280,6 +286,7 @@
 	}
 
 	function applyActivePipelineToAll() {
+		history?.hintLabel('Apply pipeline to all');
 		const pipeline = clonePipeline(P);
 		explorer.theme.lists = explorer.theme.lists.map((list: RampList) => ({
 			anchors: list.anchors,
@@ -290,6 +297,7 @@
 	}
 
 	function duplicateActiveList() {
+		history?.hintLabel('Duplicate ramp');
 		const src = explorer.theme.lists[explorer.theme.activeList];
 		if (!src) return;
 		const copy: RampList = {
@@ -310,6 +318,7 @@
 
 	function removeActiveList() {
 		if (explorer.theme.lists.length <= 1) return;
+		history?.hintLabel('Remove ramp');
 		const index = explorer.theme.activeList;
 		explorer.theme.lists = explorer.theme.lists.filter((_: RampList, i: number) => i !== index);
 		explorer.theme.activeList = Math.min(index, explorer.theme.lists.length - 1);
@@ -319,6 +328,7 @@
 	}
 
 	function removeControlPoint(index: number) {
+		history?.hintLabel('Remove point');
 		const next = points.filter((_: ThemeAnchor, i: number) => i !== index);
 		setPoints(next);
 		if (explorer.theme.selectedPoint !== null) {
@@ -342,6 +352,7 @@
 		const srgbLin = clampColor(color);
 		const index = explorer.theme.selectedPoint;
 		if (index !== null && points[index]) {
+			history?.hintLabel('Edit point');
 			setPoints(points.map((point: ThemeAnchor, i: number) => (i === index ? { srgbLin } : point)));
 			buildRamp(explorer, matrices);
 		} else {
@@ -362,6 +373,7 @@
 	}
 
 	function addStagedPickerPoint() {
+		history?.hintLabel('Add point');
 		const next = [...points, { srgbLin: stagedPickerColor }];
 		setPoints(next);
 		explorer.theme.selectedPoint = next.length - 1;
@@ -373,6 +385,7 @@
 	function duplicateControlPoint(index: number) {
 		const cp = points[index];
 		if (!cp) return;
+		history?.hintLabel('Duplicate point');
 		const next = [...points];
 		next.splice(index + 1, 0, { srgbLin: [...cp.srgbLin] as [number, number, number] });
 		setPoints(next);
@@ -384,6 +397,7 @@
 	function moveControlPoint(index: number, direction: -1 | 1) {
 		const target = index + direction;
 		if (target < 0 || target >= points.length) return;
+		history?.hintLabel('Reorder point');
 		const next = [...points];
 		[next[index], next[target]] = [next[target], next[index]];
 		setPoints(next);

@@ -9,6 +9,7 @@
 	import PipelineRail from './PipelineRail.svelte';
 	import { tick } from 'svelte';
 	import { track } from '$lib/analytics/umami';
+	import { getHistoryContext } from '$lib/history/context';
 	import { MAX_CAMERA_DIST, MAX_CAMERA_FOV, MAX_CAMERA_PITCH, MIN_CAMERA_DIST, MIN_CAMERA_FOV, resetCamera } from '$lib/engine/camera';
 	import { getPipelineNode, isNodeEnabled, type PipelineNodeId } from './pipeline-nodes';
 	import { activePipeline } from '$lib/engine/theme';
@@ -26,6 +27,7 @@
 		touchTool = $bindable('auto')
 	} = $props<{ explorer: ExplorerState; matrices: DerivedMatrices; camera: Camera; touchTool: TouchTool }>();
 	let openHelp = $state<string | null>(null);
+	const history = getHistoryContext();
 
 	// Expanded steps are persisted UI state on the explorer (one source of truth).
 	const isOpen = (id: string) => explorer.openSteps.includes(id);
@@ -129,7 +131,7 @@
 		<div class="lane-steps">
 			<ControlGroup index={1} title={m.gamut.label} helpId="pipelineGamut" status={m.gamut.status} affects={m.gamut.affects} open={isOpen('gamut')} onToggle={() => toggleStep('gamut')} bind:openHelp tutorialId="node-gamut">
 				<label class="row" for="gamut-select"><span>Gamut (cube primaries)</span></label>
-				<select id="gamut-select" bind:value={explorer.gamut}>
+				<select id="gamut-select" bind:value={explorer.gamut} onchange={() => history?.hintLabel('Change gamut')}>
 					{#each gamuts as gamut}
 						<option value={gamut.value}>{gamut.label}</option>
 					{/each}
@@ -190,7 +192,7 @@
 
 			<ControlGroup index={2} title={m.world.label} helpId="pipelineWorld" status={m.world.status} affects={m.world.affects} open={isOpen('world')} onToggle={() => toggleStep('world')} bind:openHelp tutorialId="node-world">
 				<label class="row" for="space-select"><span>World space</span></label>
-				<select id="space-select" bind:value={explorer.spaceMode}>
+				<select id="space-select" bind:value={explorer.spaceMode} onchange={() => history?.hintLabel('Change world space')}>
 					{#each spaces as space}
 						<option value={space.value}>{space.label}</option>
 					{/each}

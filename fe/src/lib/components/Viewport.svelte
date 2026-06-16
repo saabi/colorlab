@@ -3,6 +3,7 @@
 	import { selftest } from '$lib/color/selftest';
 	import { m3 } from '$lib/color/math';
 	import { track } from '$lib/analytics/umami';
+	import { getHistoryContext } from '$lib/history/context';
 	import { WebGlRenderer } from '$lib/renderer/webgl-renderer';
 	import { rebuildMatrices, rebuildShell } from '$lib/renderer/uniforms';
 	import { chain, pick } from '$lib/engine/picking';
@@ -79,6 +80,7 @@
 	let prevSpaceMode: SpaceMode = explorer.spaceMode;
 	const MORPH_DURATION_MS = 400;
 
+	const history = getHistoryContext();
 	const matrices = $derived(rebuildMatrices(explorer.gamut, explorer.observerModel, explorer.observerLoadedTrigger));
 	const shellMatrices = $derived(explorer.hideAids ? null : rebuildShell(explorer.shell, explorer.observerModel, explorer.observerLoadedTrigger));
 
@@ -436,6 +438,7 @@
 		const hit = pick(clientX - rect.left, clientY - rect.top, rect.width, rect.height, explorer, matrices, effectiveCamera());
 		if (!hit) return false;
 		const srgbLin = m3.mulV(matrices.toSrgbLin.toSrgb, hit.rgbLin) as [number, number, number];
+		history?.hintLabel('Add point');
 		const next = [...themePoints, { srgbLin }];
 		setThemePoints(next);
 		explorer.theme.selectedPoint = next.length - 1;
@@ -447,6 +450,7 @@
 	}
 
 	function removeControlPoint(index: number) {
+		history?.hintLabel('Remove point');
 		const next = themePoints.filter((_: unknown, i: number) => i !== index);
 		setThemePoints(next);
 		explorer.theme.selectedPoint = next.length ? Math.min(index, next.length - 1) : null;
@@ -470,6 +474,7 @@
 		const hit = pick(screen[0] + dx, screen[1] + dy, rect.width, rect.height, explorer, matrices, effectiveCamera());
 		if (!hit) return false;
 
+		history?.hintLabel('Move point');
 		themePoints[index] = {
 			srgbLin: m3.mulV(matrices.toSrgbLin.toSrgb, hit.rgbLin) as [number, number, number]
 		};
