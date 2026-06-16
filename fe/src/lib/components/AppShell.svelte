@@ -144,10 +144,12 @@
 				onOpenReadability={() => (readabilityOpen = true)}
 				onOpenAbout={() => (aboutOpen = true)}
 			/>
-			<A11yPanel bind:open={readabilityOpen} />
-			<ThemeToggle />
-			<AppInfo bind:open={aboutOpen} />
-			<span class="badge">WebGL2</span>
+			<div class="app-header-trail">
+				<A11yPanel bind:open={readabilityOpen} />
+				<ThemeToggle />
+				<AppInfo bind:open={aboutOpen} />
+				<span class="badge">WebGL2</span>
+			</div>
 		</header>
 
 		<button

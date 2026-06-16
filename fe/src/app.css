@@ -40,6 +40,7 @@
 	--notice-bg: rgba(18, 18, 20, 0.94);
 	--shadow-float: 0 12px 32px rgba(0, 0, 0, 0.45);
 	--surface-inset: color-mix(in srgb, var(--panel2) 62%, transparent);
+	--header-control-height: 28px;
 	font-family:
 		"IBM Plex Sans",
 		Inter,
@@ -220,6 +221,39 @@ input[type="checkbox"] {
 	padding: 0 16px;
 	border-bottom: 1px solid var(--line);
 	background: var(--header-bg);
+	min-height: 48px;
+}
+
+.app-header-trail {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex-shrink: 0;
+}
+
+.app-header .a11y-wrap {
+	display: flex;
+	align-items: center;
+}
+
+.app-header :is(.document-btn, .a11y-trigger, .theme-toggle) {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	box-sizing: border-box;
+	height: var(--header-control-height);
+	min-height: var(--header-control-height);
+	line-height: 1;
+}
+
+.app-header .document-switcher {
+	height: var(--header-control-height);
+	padding-block: 0;
+}
+
+.app-header .document-btn-icon {
+	height: var(--header-control-height);
+	min-height: var(--header-control-height);
 }
 
 .app-header h1 {
@@ -247,27 +281,56 @@ input[type="checkbox"] {
 .app-header .sub {
 	color: var(--dim);
 	font-size: 0.846rem;
+	line-height: 1;
+	align-self: center;
 }
 
 .app-header .badge {
-	margin-left: auto;
 	border: 1px solid #3a2f12;
 	border-radius: 99px;
 	background: #d6a93a14;
 	color: var(--accent);
-	padding: 2px 8px;
+	padding: 0 8px;
 	font-size: 0.769rem;
+	line-height: 1;
+	height: 22px;
+	display: inline-flex;
+	align-items: center;
 }
 
 .app-info {
 	position: relative;
-	display: flex;
+	display: inline-flex;
 	align-items: center;
 	gap: 8px;
 	flex: 0 0 auto;
 	color: var(--dim);
 	font-size: 0.846rem;
+	line-height: 1;
 	white-space: nowrap;
+}
+
+.app-info-author {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	line-height: 1;
+}
+
+.app-info-by {
+	line-height: 1;
+}
+
+.app-info-sep {
+	opacity: 0.3;
+	line-height: 1;
+	user-select: none;
+}
+
+.app-info-author a {
+	display: inline-flex;
+	align-items: center;
+	line-height: 1;
 }
 
 .app-info a {
@@ -299,6 +362,11 @@ input[type="checkbox"] {
 	color: var(--dim);
 	padding: 0;
 	font-size: 0.846rem;
+	line-height: 1;
+	height: auto;
+	min-height: 0;
+	display: inline-flex;
+	align-items: center;
 }
 
 .app-info-about:hover,
@@ -1859,7 +1927,8 @@ input[type="checkbox"] {
 
 	.app-header > .a11y-wrap,
 	.app-header > .app-info,
-	.app-header .theme-toggle {
+	.app-header .theme-toggle,
+	.app-header-trail {
 		display: none;
 	}
 

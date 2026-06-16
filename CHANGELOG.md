@@ -24,6 +24,7 @@ The canonical version string is `fe/package.json` → `"version"`. Update this f
 - Aliased `--border`, `--muted`, and `--text` to the canonical palette tokens so component-scoped styles resolve consistently in both themes.
 - Tutorial and help copy corrected for beta.1 behavior — the multi-list tutorial no longer claims lists "share interpolation settings" (each list owns its pipeline since schema v13); gamut-map/export/palette copy says "active colorspace (sRGB by default)" instead of "sRGB"; `pipelineExpand` help describes the two-axis Spread (rows = related ramps, columns = per-stop variants); `pipelineGamut` help documents the Bradford CAT for non-D65 gamuts.
 - Mobile overflow menu — Readability, theme, and About are normal menu rows (icon + label) instead of embedded header widgets with mismatched pill styles.
+- Desktop header — author line, GitHub mark, version link, About, Text/theme controls, document buttons, and WebGL2 badge share a common control height and `app-header-trail` flex alignment so the right-side cluster no longer sits on mixed baselines.
 
 ## [1.0.0-beta.1] - 2026-06-16
 
