@@ -72,8 +72,8 @@ These were listed as pre-beta gaps in an earlier review; they are **done** on `m
 
 | ID | Task | Owner | Status | Notes |
 |----|------|-------|--------|-------|
-| **A1** | **Bradford chromatic adaptation** in shared `DerivedMatrices` (CPU, WebGL, picking parity) | — | ⬜ | **Correctness blocker.** Non-D65 gamuts (NTSC Illuminant C, CIE E, etc.) are wrong today. Plan: [color-space-role-architecture.md](color-space-role-architecture.md), Roadmap #2. |
-| **A1-alt** | *If A1 slips:* UI guard on non-D65 active gamuts (disable or prominent warning; no silent wrong solids) | — | ⬜ | Mutually exclusive with claiming A1 done; pick one before beta tag. |
+| **A1** | **Bradford chromatic adaptation** in shared `DerivedMatrices` (CPU, WebGL, picking parity) | Claude | ✅ | **Done.** `color/adapt.ts` Bradford CAT; `rebuildMatrices` adapts `rgb2xyz` (active white → D65), interchange `white` = D65. D65 gamuts identity. Parity automatic (all consume `DerivedMatrices`; no shader change). Tests in `color/adapt.test.ts`. |
+| **A1-alt** | *If A1 slips:* UI guard on non-D65 active gamuts | — | n/a | Not needed — A1 shipped. |
 | **A2** | **Gamut-map / Active-gamut copy cleanup** — UI and help match roadmap (terminal map targets active colorspace; sRGB is default, not eternal truth) | — | ⬜ | Roadmap #7. Cosmetic but currently misleading. |
 | **A3** | **OOG before/after swatch preview** on Gamut Map node | — | ⬜ | Roadmap #13 remainder; low effort, high clarity. |
 | **A4** | **Schema confidence** — fixtures for v12→v13 and representative real saves in `parse.test.ts` | — | ⬜ | Beta may still migrate; tests must prove it. |
@@ -94,7 +94,7 @@ These were listed as pre-beta gaps in an earlier review; they are **done** on `m
 
 ### Phase A gate
 
-- [ ] **A1 or A1-alt** complete  
+- [x] **A1 or A1-alt** complete *(A1 — Bradford CAT)*  
 - [ ] **A2–A7** complete  
 - [ ] Tag **`v1.0.0-beta.1`** → notify → push → deploy
 

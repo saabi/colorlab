@@ -50,6 +50,10 @@ The canonical version string is `fe/package.json` → `"version"`. Update this f
 - Light-theme secondary contrast (Normal / High / Maximum) darkens `--dim` and `--faint` instead of reusing dark-mode lightening rules.
 - Sidebar Viewport preferences footer — View aids and Performance in side-by-side columns; View aids in a 2×2 grid (floor grid, hide aids, auto-rotate, neutral backdrop); Performance stacked vertically (auto-reduce, min FPS).
 
+### Fixed
+
+- Bradford chromatic adaptation for non-D65 gamuts — NTSC (Illuminant C) and CIE 1931 RGB (Illuminant E) were rendered against the D65-referenced sRGB/Lab/Oklab math without adaptation, so their white appeared tinted and perceptual geometry was skewed. `rebuildMatrices` now adapts each gamut's XYZ to the D65 interchange white (D65 gamuts unchanged); CPU, WebGL, and picking share the corrected matrices.
+
 ## [0.0.1] - 2026-06-09
 
 First public open-source release of the SvelteKit / WebGL2 gamut explorer.
