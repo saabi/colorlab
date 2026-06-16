@@ -255,7 +255,7 @@ export class WebGlRenderer {
 			gl.uniformMatrix4fv(this.U(this.markProgram, 'uView'), false, view);
 			gl.uniform1f(this.U(this.markProgram, 'uSize'), size);
 			for (const s of swatches) {
-				const sim = simulateCvdSrgb(s.srgbLin, input.state.cvd, input.state.cvdSev);
+				const sim = simulateCvdSrgb(s.srgbLin, input.state.cvd, input.state.cvdSev, input.matrices.rgb2lms, input.matrices.lms2rgb);
 				const c = sim.map((v) => TRC.srgb.enc(Math.min(Math.max(v, 0), 1)));
 				const y = 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
 				const border = 1 - smoothstep(0.42, 0.72, y);
@@ -288,7 +288,7 @@ export class WebGlRenderer {
 				if (row.length < 2) continue;
 				const data = new Float32Array(row.length * 6);
 				for (let i = 0; i < row.length; i += 1) {
-					const sim = simulateCvdSrgb(row[i].srgbLin, input.state.cvd, input.state.cvdSev);
+					const sim = simulateCvdSrgb(row[i].srgbLin, input.state.cvd, input.state.cvdSev, input.matrices.rgb2lms, input.matrices.lms2rgb);
 					const o = i * 6;
 					data[o] = row[i].world[0];
 					data[o + 1] = row[i].world[1];
@@ -523,7 +523,7 @@ export class WebGlRenderer {
 				const data = new Float32Array(curve.length * 6);
 				for (let i = 0; i < curve.length; i += 1) {
 					const s = curve[i];
-					const sim = simulateCvdSrgb(s.srgbLin, input.state.cvd, input.state.cvdSev);
+					const sim = simulateCvdSrgb(s.srgbLin, input.state.cvd, input.state.cvdSev, input.matrices.rgb2lms, input.matrices.lms2rgb);
 					const o = i * 6;
 					data[o] = s.world[0];
 					data[o + 1] = s.world[1];
@@ -548,7 +548,7 @@ export class WebGlRenderer {
 				const cps = list.anchors;
 				for (let i = 0; i < cps.length; i += 1) {
 					const world = this.worldForSrgbMorph(cps[i].srgbLin, input.state, input.matrices, input.morph);
-					const sim = simulateCvdSrgb(cps[i].srgbLin, input.state.cvd, input.state.cvdSev);
+					const sim = simulateCvdSrgb(cps[i].srgbLin, input.state.cvd, input.state.cvdSev, input.matrices.rgb2lms, input.matrices.lms2rgb);
 					const c = sim.map((v) => TRC.srgb.enc(Math.min(Math.max(v, 0), 1)));
 					// Selection ring only applies inside the active list.
 					const selected = li === t.activeList && i === t.selectedPoint;
@@ -631,7 +631,8 @@ export class WebGlRenderer {
 			const srgbLin = m3.mulV(matrices.toSrgbLin.toSrgb, m3.mulV(matrices.xyz2rgb, cx));
 			const cvd = simulateCvdSrgb(
 				[Math.max(0, srgbLin[0]), Math.max(0, srgbLin[1]), Math.max(0, srgbLin[2])],
-				state.cvd, state.cvdSev
+				state.cvd, state.cvdSev,
+				matrices.rgb2lms, matrices.lms2rgb
 			);
 			displayGammaArr.push([
 				TRC.srgb.enc(Math.min(cvd[0], 1)),
@@ -914,7 +915,7 @@ export class WebGlRenderer {
 		gl.uniform1f(this.U(p, 'uAlpha'), 1);
 		gl.uniform1f(this.U(p, 'uCvdSev'), CVD[state.cvd] ? state.cvdSev : 0);
 		this.uploadMat3(p, 'uCvd', CVD[state.cvd] || [1, 0, 0, 0, 1, 0, 0, 0, 1]);
-		this.uploadMat3(p, 'uRgb2Lms', RGB2LMS);
-		this.uploadMat3(p, 'uLms2Rgb', LMS2RGB);
+		this.uploadMat3(p, 'uRgb2Lms', M.rgb2lms);
+		this.uploadMat3(p, 'uLms2Rgb', M.lms2rgb);
 	}
 }

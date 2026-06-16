@@ -21,7 +21,13 @@ export function applyCVD(lms: Vec3, type: CvdMode, severity: number): Vec3 {
 	];
 }
 
-export function simulateCvdSrgb(srgbLin: Vec3, type: CvdMode, severity: number): Vec3 {
+export function simulateCvdSrgb(
+	srgbLin: Vec3,
+	type: CvdMode,
+	severity: number,
+	rgb2lms: Mat3 = RGB2LMS,
+	lms2rgb: Mat3 = LMS2RGB
+): Vec3 {
 	if (!CVD[type] || severity <= 0.001) return srgbLin;
-	return m3.mulV(LMS2RGB, applyCVD(m3.mulV(RGB2LMS, srgbLin), type, severity));
+	return m3.mulV(lms2rgb, applyCVD(m3.mulV(rgb2lms, srgbLin), type, severity));
 }
