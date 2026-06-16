@@ -15,6 +15,7 @@ describe('app preferences', () => {
 				autoRotate: false,
 				autoPerformance: false,
 				minAverageFps: 15,
+				neutralBackdrop: true,
 				theme: 'light'
 			})
 		).toEqual({
@@ -23,6 +24,7 @@ describe('app preferences', () => {
 			minAverageFps: 15,
 			observerModel: 'stockman-sharpe-2deg',
 			chromaticityDiagram: 'cie1931-xy',
+			neutralBackdrop: true,
 			theme: 'light'
 		});
 	});

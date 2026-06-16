@@ -7,6 +7,7 @@ import { planeND } from '$lib/engine/plane';
 import { camEye, lookAt, persp, type Camera } from '$lib/engine/camera';
 import { solidField } from '$lib/engine/picking';
 import { FS_FLOOR, FS_LINE, FS_MARK, FS_SOLID, FS_SPLINE, VS_FLOOR, VS_LINE, VS_MARK, VS_SOLID, VS_SPLINE } from './shaders';
+import { viewportClearSrgb } from './viewport-backdrop';
 
 import type { ExplorerState, SpaceMode } from '$lib/engine/types';
 import type { DerivedMatrices } from './uniforms';
@@ -96,7 +97,8 @@ export class WebGlRenderer {
 		const { gl } = this;
 		this.resize();
 		gl.viewport(0, 0, this.canvas.width, this.canvas.height);
-		gl.clearColor(0.039, 0.039, 0.043, 1);
+		const clear = viewportClearSrgb(input.state.neutralBackdrop);
+		gl.clearColor(clear[0], clear[1], clear[2], 1);
 		gl.enable(gl.DEPTH_TEST);
 		gl.disable(gl.CULL_FACE);
 		gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
@@ -189,6 +191,7 @@ export class WebGlRenderer {
 			gl.uniformMatrix4fv(this.U(this.floorProgram, 'uProj'), false, proj);
 			gl.uniformMatrix4fv(this.U(this.floorProgram, 'uView'), false, view);
 			gl.uniform1f(this.U(this.floorProgram, 'uY'), -0.502);
+			gl.uniform3f(this.U(this.floorProgram, 'uClearColor'), clear[0], clear[1], clear[2]);
 			gl.depthMask(false);
 			gl.enable(gl.CULL_FACE);
 

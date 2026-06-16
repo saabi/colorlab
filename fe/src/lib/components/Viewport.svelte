@@ -14,6 +14,7 @@
 	import ViewportToolbar from './ViewportToolbar.svelte';
 	import PaletteStrip from './PaletteStrip.svelte';
 	import TeachingNote from './TeachingNote.svelte';
+	import { viewportClearCss } from '$lib/renderer/viewport-backdrop';
 
 	import type { ExplorerState, RampList, SpaceMode, ThemeAnchor } from '$lib/engine/types';
 	import type { Camera } from '$lib/engine/camera';
@@ -116,6 +117,7 @@
 	let pendingRampRebuild = false;
 	let pendingHoverClear = false;
 	const cursorMode = $derived(hoverPoint !== null ? 'point' : hoverSolid ? 'inspect' : gesture.kind);
+	const viewportSurround = $derived(viewportClearCss(explorer.neutralBackdrop));
 
 	function resetPerformanceSamples() {
 		drawSubmitSamples = [];
@@ -911,7 +913,13 @@
 	});
 </script>
 
-<main id="main-viewport" class="viewport" tabindex="-1">
+<main
+	id="main-viewport"
+	class="viewport"
+	class:neutral-backdrop={explorer.neutralBackdrop}
+	style:--viewport-clear={viewportSurround}
+	tabindex="-1"
+>
 	<ViewportToolbar bind:state={explorer} bind:touchTool />
 	<canvas
 		bind:this={canvas}

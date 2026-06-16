@@ -808,6 +808,14 @@ input[type="checkbox"] {
 	background-size: 36px 36px;
 }
 
+.viewport.neutral-backdrop {
+	background:
+		linear-gradient(rgba(0, 0, 0, 0.07) 1px, transparent 1px),
+		linear-gradient(90deg, rgba(0, 0, 0, 0.07) 1px, transparent 1px),
+		var(--viewport-clear);
+	background-size: 36px 36px;
+}
+
 /* Pipeline lanes in the left sidebar */
 .lane-band {
 	margin-bottom: 18px;

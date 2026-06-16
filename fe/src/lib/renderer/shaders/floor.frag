@@ -2,6 +2,7 @@
 precision highp float;
 in vec3 vW;
 uniform float uFromBelow;
+uniform vec3 uClearColor;
 out vec4 frag;
 
 void main() {
@@ -20,8 +21,7 @@ void main() {
 
 	if (uFromBelow > 0.5) {
 		// Underside: grid lines darker than the clear color (halfway to black).
-		const vec3 bg = vec3(0.039, 0.039, 0.043);
-		vec3 dark = mix(bg, vec3(0.0), 0.5);
+		vec3 dark = mix(uClearColor, vec3(0.0), 0.5);
 		float alpha = clamp(v * 0.9, 0.0, 1.0);
 		frag = vec4(dark, alpha);
 		return;

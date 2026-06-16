@@ -6,7 +6,7 @@ export const UI_THEME_OPTIONS: UiTheme[] = ['dark', 'light'];
 
 export type AppPreferences = Pick<
 	ExplorerState,
-	'autoRotate' | 'autoPerformance' | 'minAverageFps' | 'observerModel' | 'chromaticityDiagram'
+	'autoRotate' | 'autoPerformance' | 'minAverageFps' | 'observerModel' | 'chromaticityDiagram' | 'neutralBackdrop'
 > & {
 	theme: UiTheme;
 };
@@ -17,6 +17,7 @@ export const DEFAULT_APP_PREFERENCES: AppPreferences = {
 	minAverageFps: 30,
 	observerModel: 'stockman-sharpe-2deg',
 	chromaticityDiagram: 'cie1931-xy',
+	neutralBackdrop: false,
 	theme: 'dark'
 };
 
@@ -56,6 +57,10 @@ export function sanitizeAppPreferences(raw: unknown): AppPreferences {
 			typeof prefs.chromaticityDiagram === 'string'
 				? prefs.chromaticityDiagram
 				: DEFAULT_APP_PREFERENCES.chromaticityDiagram,
+		neutralBackdrop:
+			typeof prefs.neutralBackdrop === 'boolean'
+				? prefs.neutralBackdrop
+				: DEFAULT_APP_PREFERENCES.neutralBackdrop,
 		theme: includesUiTheme(prefs.theme) ? prefs.theme : DEFAULT_APP_PREFERENCES.theme
 	};
 }
@@ -66,6 +71,7 @@ export function applyAppPreferences(explorer: ExplorerState, prefs: AppPreferenc
 	explorer.minAverageFps = prefs.minAverageFps;
 	explorer.observerModel = prefs.observerModel;
 	explorer.chromaticityDiagram = prefs.chromaticityDiagram;
+	explorer.neutralBackdrop = prefs.neutralBackdrop;
 }
 
 export function readAppPreferences(): AppPreferences {

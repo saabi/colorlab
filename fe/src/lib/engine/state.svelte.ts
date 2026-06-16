@@ -106,6 +106,7 @@ function createExplorerDefaults(): ExplorerState {
 		solidAlpha: 1,
 		hideAids: true,
 		autoRotate: true,
+		neutralBackdrop: false,
 		pinPalette: true,
 		openSteps: ['gamut', 'ramp-builder', 'sources'],
 		guideNote: null,

@@ -439,6 +439,10 @@
 					<input type="checkbox" bind:checked={explorer.autoRotate} />
 					<span>Auto-rotate</span>
 				</label>
+				<label class="sidebar-footer-check" data-tutorial="neutral-backdrop" title="Oklab L = 0.5 neutral surround for the 3D viewport">
+					<input type="checkbox" bind:checked={explorer.neutralBackdrop} />
+					<span>Neutral backdrop</span>
+				</label>
 			</div>
 		</section>
 		<section class="sidebar-footer-group" aria-label="Performance">

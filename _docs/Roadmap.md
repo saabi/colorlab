@@ -42,7 +42,8 @@ Update `_docs/Roadmap.md` when you:
 - **Named undo/redo transaction labels** — one-shot `history.hintLabel` so point/list/ramp edits and gamut/world-space changes show specific labels (e.g. "Undo Add point"). **Design:** [`undo-redo-state-design.md`](undo-redo-state-design.md)
 - **Color picker per-channel sliders** — direct H/S/L · H/S/V (and any space) sliders for the selected ramp stop in `ColorPicker.svelte`, alongside the existing plane/bar.
 - **Ramp Builder polish** — status hierarchy (parent = list context, Sources = active-list points), per-substep enable toggles in sidebar headers. **Plan:** [`ramp-builder-status-hierarchy-plan.md`](ramp-builder-status-hierarchy-plan.md)
-- **Light UI theme** — dark/light appearance toggle in Accessibility panel; `:root[data-theme='light']` token set in `app.css`; persisted in `colorlab:preferences`; light-theme secondary contrast overrides in `a11y.css`. WebGL viewport backdrop unchanged (see #11).
+- **Light UI theme** — dark/light appearance toggle in Accessibility panel; `:root[data-theme='light']` token set in `app.css`; persisted in `colorlab:preferences`; light-theme secondary contrast overrides in `a11y.css`. WebGL viewport backdrop is independent (see neutral backdrop).
+- **Neutral explorer backdrop** — Oklab L = 0.5 surround toggle in Viewport preferences; WebGL clear color + viewport letterbox; persisted in `colorlab:preferences`.
 
 ---
 
@@ -70,8 +71,8 @@ Aligned with the **recommended next order** in [`surface-constraint-gamut-projec
 
 ### Medium scope
 
-10. ✅ **Light UI color scheme** — **shipped**: dark/light toggle in Accessibility panel; `:root[data-theme='light']` tokens in `app.css`; persisted in `colorlab:preferences` with flash-free bootstrap in `app.html`; light-theme secondary contrast overrides in `a11y.css`. WebGL viewport keeps the dark clear color (see #11).
-11. **Neutral explorer backdrop** — colorimetrically neutral surround for the 3D viewport: **Oklab L = 0.5** (a\* = b\* = 0) for WebGL clear color and/or the letterbox around the canvas, so the solid is judged without UI chroma bias. **Placement:** either a third UI scheme or — leaner — a toggle in the sidebar footer **Viewport preferences** panel (`LeftControls`, beside View aids / Performance), persisted in app preferences (not the document). Does not change the color solid itself.
+10. ✅ **Light UI color scheme** — **shipped**: dark/light toggle in Accessibility panel; `:root[data-theme='light']` tokens in `app.css`; persisted in `colorlab:preferences` with flash-free bootstrap in `app.html`; light-theme secondary contrast overrides in `a11y.css`. WebGL viewport backdrop is independent (see #11).
+11. ✅ **Neutral explorer backdrop** — **shipped**: Oklab L = 0.5 surround toggle in sidebar footer Viewport preferences; WebGL clear color, floor-grid underside, and viewport letterbox; persisted in `colorlab:preferences` (not documents). Does not change the color solid.
 12. ✅ **Pipeline node UI (Phase 1)** — **shipped**: `PipelineRail.svelte` (read-only map + status dashboard) over the `PIPELINE_NODES` registry; clicking a step opens + scrolls its sidebar controls; arrow-key roving on the rail. Sidebar already renders node-ordered sections with status/affects/enablement. See [`pipeline-node-ui-proposal.md`](pipeline-node-ui-proposal.md).
 13. **OOG badges + raw/final preview** — OOG count badges on Interpolate/Gamut Map pipeline nodes **shipped**; before/after stop swatch diff preview on Gamut Map/Export remains open.
 14. ✅ **Okhsl/Okhsv picker coordinates** — **shipped**: the picker already supported Okhsl/Okhsv via plane+bar; added direct per-channel sliders (H/S/L · H/S/V, and every space) for the selected stop in `ColorPicker.svelte`.
@@ -155,21 +156,19 @@ v1 plus transaction labels are done: a one-shot `history.hintLabel` lets discret
 
 ### UI & appearance
 
-**Status:** Dark (default) and light UI schemes (`:root` / `:root[data-theme='light']` tokens in `app.css`; toggle in Accessibility panel, persisted in `colorlab:preferences`). WebGL `clearColor` ≈ `#0a0a0b` in both schemes. Scrollbars themed via `--scrollbar-*` tokens.
+**Status:** Dark (default) and light UI schemes (`:root` / `:root[data-theme='light']` tokens in `app.css`; toggle in Accessibility panel, persisted in `colorlab:preferences`). Viewport surround defaults to dark UI clear color; optional **neutral backdrop** (Oklab L = 0.5) in Viewport preferences. Scrollbars themed via `--scrollbar-*` tokens.
 
 | Item | Notes |
 |------|-------|
 | ✅ Light color scheme | **Shipped** — second token set + `colorlab:preferences` persistence; light secondary-contrast overrides |
-| Neutral explorer backdrop | Oklab L 0.5 surround; prefer sidebar-footer **Viewport preferences** toggle over a full third scheme unless light/dark both need it |
-
-Open question: should neutral backdrop apply only inside the WebGL canvas letterbox, or also replace the dark UI chrome when enabled?
+| ✅ Neutral explorer backdrop | **Shipped** — Oklab L = 0.5 WebGL clear + viewport letterbox; Viewport preferences toggle |
 
 ### Feature backlog
 
 | Feature | Notes |
 |---------|-------|
 | ✅ Light UI theme | **Shipped** — dark/light toggle; muted gray light scheme; secondary contrast overrides |
-| Neutral explorer backdrop | Oklab L 0.5 viewport surround; policies-panel option |
+| ✅ Neutral explorer backdrop | **Shipped** — Oklab L = 0.5 viewport surround toggle in Viewport preferences |
 | Custom Display Gamut | Wizard UX design before implementation |
 | Gradient designer improvements | Builds on existing ramp model |
 | ✅ Okhsl/Okhsv picker coordinates | **Shipped** — per-channel H/S/L · H/S/V sliders for the selected stop in `ColorPicker.svelte`. |

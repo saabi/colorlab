@@ -550,11 +550,18 @@ describe('parseSnapshot', () => {
 	it('does not persist runtime-only auto-reduce fields', () => {
 		const doc = {
 			...defaults,
-			explorer: { ...defaults.explorer, autoPerformance: false, minAverageFps: 15, autoRotate: false }
+			explorer: {
+				...defaults.explorer,
+				autoPerformance: false,
+				minAverageFps: 15,
+				autoRotate: false,
+				neutralBackdrop: true
+			}
 		} as unknown;
 		const snap = parseSnapshot(doc).snapshot;
 		expect('autoPerformance' in (snap?.explorer ?? {})).toBe(false);
 		expect('minAverageFps' in (snap?.explorer ?? {})).toBe(false);
 		expect('autoRotate' in (snap?.explorer ?? {})).toBe(false);
+		expect('neutralBackdrop' in (snap?.explorer ?? {})).toBe(false);
 	});
 });

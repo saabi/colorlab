@@ -148,6 +148,8 @@ export interface ExplorerState {
 	hideAids: boolean;
 	/** Slow automatic orbit of the camera (app preference in localStorage; not saved in documents). */
 	autoRotate: boolean;
+	/** Oklab L = 0.5 neutral surround for the WebGL viewport (app preference; not saved in documents). */
+	neutralBackdrop: boolean;
 	/** Pin the exported palette as an overlay on the 3D viewport (desktop). */
 	pinPalette: boolean;
 	/** Pipeline step ids currently expanded in the left sidebar (persisted UI state). */
@@ -212,10 +214,16 @@ export type PersistedTheme = Omit<
 	ExplorerState['theme'],
 	'arm' | 'stops' | 'selectedPoint' | 'splineCurve' | 'rawStops' | 'grid' | 'curves' | 'rawRows' | 'rows'
 >;
-// autoPerformance/minAverageFps/autoRotate are app preferences (localStorage) — not part of saved documents.
+// autoPerformance/minAverageFps/autoRotate/neutralBackdrop are app preferences (localStorage) — not part of saved documents.
 export type PersistedExplorer = Omit<
 	ExplorerState,
-	'hover' | 'theme' | 'autoPerformance' | 'minAverageFps' | 'autoRotate' | 'observerLoadedTrigger'
+	| 'hover'
+	| 'theme'
+	| 'autoPerformance'
+	| 'minAverageFps'
+	| 'autoRotate'
+	| 'neutralBackdrop'
+	| 'observerLoadedTrigger'
 > & {
 	theme: PersistedTheme;
 };
