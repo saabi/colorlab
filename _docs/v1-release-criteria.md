@@ -77,7 +77,7 @@ These were listed as pre-beta gaps in an earlier review; they are **done** on `m
 | **A2** | **Gamut-map / Active-gamut copy cleanup** — UI and help match roadmap (terminal map targets active colorspace; sRGB is default, not eternal truth) | — | ⬜ | Roadmap #7. Cosmetic but currently misleading. |
 | **A3** | **OOG before/after swatch preview** on Gamut Map node | Lane 3 | ✅ | Per-stop before/after chips + active-colorspace copy in `ThemeRamp.svelte` (`6c7bce7`). |
 | **A4** | **Schema confidence** — fixtures for v12→v13 and representative real saves in `parse.test.ts` | — | ⬜ | Beta may still migrate; tests must prove it. |
-| **A5** | **Beta limitations** section — README and/or in-app Info panel | — | ⬜ | Must include: non-D65 status (per A1/A1-alt), sRGB gamut-map scope, WebGL requirement. |
+| **A5** | **Beta limitations** section — README and/or in-app Info panel | — | ✅ | README table + Info panel list (`6f4d5ec`, polished `A5`). WebGL2, gamut-map scope, non-D65 CAT, display assumption. |
 | **A6** | **Manual smoke QA** — desktop + mobile critical paths | — | ⬜ | Checklist below. |
 | **A7** | **Cut `1.0.0-beta.1`** — bump `fe/package.json`, move `[Unreleased]` → dated beta section in CHANGELOG, tag, push, deploy | — | ⬜ | Optional subtle “Beta” near version link in header. |
 

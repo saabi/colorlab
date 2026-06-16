@@ -294,6 +294,27 @@ input[type="checkbox"] {
 	line-height: var(--ui-line-height);
 }
 
+.app-info-panel ul {
+	margin: 0 0 12px;
+	padding-left: 1.2em;
+	color: var(--dim);
+	font-size: 0.885rem;
+	line-height: var(--ui-line-height);
+}
+
+.app-info-panel li + li {
+	margin-top: 6px;
+}
+
+.app-info-panel li strong {
+	color: var(--txt);
+	font-weight: 600;
+}
+
+.app-info-panel h2:not(:first-child) {
+	margin-top: 12px;
+}
+
 .app-info-panel p:last-child {
 	margin-bottom: 0;
 }

@@ -26,6 +26,7 @@ The canonical version string is `fe/package.json` → `"version"`. Update this f
 - Named undo/redo transaction labels — point, ramp/list, gamut, and world-space edits record specific labels (e.g. "Undo Add point") via a one-shot `history.hintLabel`.
 - Light UI theme — dark/light appearance toggle in the Accessibility panel, persisted in `colorlab:preferences`, with flash-free `data-theme` bootstrap in `app.html`.
 - Neutral explorer backdrop — Oklab L = 0.5 viewport surround toggle in Viewport preferences; updates WebGL clear color, floor-grid underside, and viewport letterbox; persisted in `colorlab:preferences`.
+- Beta limitations — documented in README and the in-app Info panel (WebGL2, gamut-map scope, non-D65 CAT, display assumption).
 
 - `CHANGELOG.md` and in-app version link (`vX.Y.Z`) next to GitHub in the header and Info panel.
 - Adaptive alpha controls for terminal gamut mapping (`gamutMapParams`).

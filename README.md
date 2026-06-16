@@ -35,13 +35,13 @@ For build, deploy, environment variables, and project structure, see [`fe/README
 
 ## Beta limitations
 
-Color Lab is in early beta (`1.0.0-beta`). The core workflows are stable, but note the following:
+Color Lab is **pre-release beta** software (see [`_docs/v1-release-criteria.md`](_docs/v1-release-criteria.md)). The core workflows are usable, but note:
 
 | Area | Status |
 |------|--------|
 | **WebGL2** | Required — no canvas/CPU fallback. Unsupported browsers will not render the 3D solid. |
 | **Ramp gamut map** | The terminal gamut-map step targets the **active colorspace** (sRGB by default). The analytic mapper is sRGB-specific; mapping to other active gamuts is planned but not yet implemented. |
-| **Non-D65 gamuts** | Bradford chromatic adaptation is applied in this release — NTSC (Illuminant C) and CIE 1931 RGB (Illuminant E) now render correctly. Earlier releases were silently wrong for these gamuts. |
+| **Non-D65 gamuts** | Bradford chromatic adaptation to the D65 interchange white (NTSC / Illuminant C, CIE 1931 RGB / Illuminant E). D65 gamuts unchanged. |
 | **Display gamut** | Assumed to be an sRGB-compliant monitor. Custom display primaries and calibration are planned for a future release. |
 
 ## Documentation

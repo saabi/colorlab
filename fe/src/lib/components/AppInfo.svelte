@@ -77,7 +77,8 @@
 			</p>
 			<h2>Beta limitations</h2>
 			<p>
-				Color Lab is in early beta. A few things to know:
+				Color Lab is pre-release beta software. A few things to know before you rely on it for
+				production work:
 			</p>
 			<ul>
 				<li>
@@ -85,14 +86,18 @@
 					does not support WebGL2, the 3D solid will not render.
 				</li>
 				<li>
-					<strong>Ramp gamut map targets sRGB by default.</strong> The terminal gamut-map step
-					maps generated stops to the active colorspace. Today the analytic mapper is
-					sRGB-specific, so other gamuts are not yet supported as output targets.
+					<strong>Ramp gamut map targets the active colorspace.</strong> sRGB is the default.
+					The analytic mapper is sRGB-specific today — other active gamuts as output targets await
+					the generic solver.
 				</li>
 				<li>
-					<strong>Non-D65 gamuts now use chromatic adaptation.</strong> Bradford CAT was added
-					in this release — NTSC (Illuminant C) and CIE 1931 RGB (Illuminant E) were silently
-					incorrect in earlier versions and now render correctly.
+					<strong>Non-D65 gamuts use Bradford chromatic adaptation.</strong> NTSC (Illuminant C) and
+					CIE 1931 RGB (Illuminant E) are adapted to the D65 interchange white used by sRGB/Lab/Oklab
+					math. D65 gamuts are unchanged.
+				</li>
+				<li>
+					<strong>Display assumed sRGB.</strong> Vision simulation and on-screen preview assume an
+					sRGB-compliant monitor. Custom display primaries and calibration are planned.
 				</li>
 			</ul>
 			<h2>Privacy</h2>
