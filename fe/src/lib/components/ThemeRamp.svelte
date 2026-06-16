@@ -15,7 +15,7 @@
 		pipelinesDiffer as themePipelinesDiffer
 	} from '$lib/engine/ramp-list-ui';
 
-	import type { AxisSpreadConfig, ExplorerState, ListPipeline, PlacePolicy, RampList, SpreadDir, SplineConstraint, ThemeAnchor } from '$lib/engine/types';
+	import type { AxisSpreadConfig, ExplorerState, GamutKey, ListPipeline, PlacePolicy, RampList, SpreadDir, SplineConstraint, ThemeAnchor, ThemeStop } from '$lib/engine/types';
 	import type { SurfaceProjectionMethod } from '$lib/color/boundary-project';
 	import { MAX_RAMP_STOPS } from '$lib/engine/types';
 	import type { DerivedMatrices } from '$lib/renderer/uniforms';
@@ -74,7 +74,17 @@
 		{ value: 'adaptive-cusp', label: 'Adaptive cusp' }
 	];
 	const SURFACE_ALPHA_PRESETS = [0.05, 0.5, 5] as const;
-	const GAMUT_MAP_TARGET = 'sRGB';
+	const ACTIVE_GAMUT_LABELS: Record<GamutKey, string> = {
+		srgb: 'sRGB',
+		p3: 'P3',
+		rec2020: 'Rec.2020',
+		ntsc: 'NTSC',
+		ebu: 'EBU',
+		smptec: 'SMPTE-C',
+		cie: 'CIE RGB'
+	};
+	const activeGamutLabel = $derived(ACTIVE_GAMUT_LABELS[explorer.gamut as GamutKey]);
+	const gamutMapUsesNonSrgbTarget = $derived(explorer.gamut !== 'srgb');
 	const projectionUsesFocus = $derived(P.main.projection === 'project-0.5' || P.main.projection === 'adaptive-0.5');
 	const projectionUsesAlpha = $derived(P.main.projection.startsWith('adaptive-'));
 	const extensionUsesFocus = $derived(P.extension.projection === 'project-0.5' || P.extension.projection === 'adaptive-0.5');
@@ -166,6 +176,23 @@
 
 	const oogBefore = $derived(explorer.theme.rawStops.reduce((n: number, s: { inG: boolean }) => (s.inG ? n : n + 1), 0));
 	const oogAfter = $derived(explorer.theme.stops.reduce((n: number, s: { inG: boolean }) => (s.inG ? n : n + 1), 0));
+	const gamutMapDiffCount = $derived(
+		explorer.theme.rawStops.reduce((n: number, raw: ThemeStop, i: number) => {
+			const fin = explorer.theme.stops[i];
+			return fin && raw.hex !== fin.hex ? n + 1 : n;
+		}, 0)
+	);
+
+	function stopPreviewStyle(stop: ThemeStop): string {
+		const sim = simulateCvdSrgb(stop.srgbLin, explorer.cvd, explorer.cvdSev);
+		const rgb = sim.map((v) => {
+			const c = Math.min(Math.max(v, 0), 1);
+			const encoded = c <= 0.0031308 ? 12.92 * c : 1.055 * Math.pow(c, 1 / 2.4) - 0.055;
+			return Math.round(encoded * 255);
+		});
+		const oog = stop.inG ? '' : 'outline: 1px dashed var(--warn); outline-offset: -2px;';
+		return `background: rgb(${rgb.join(',')}); ${oog}`;
+	}
 
 	// 2-D output: Expand produced a grid, or multiple lists each contributed a ramp.
 	const isPalette = $derived(explorer.theme.grid.length > 0);
@@ -807,8 +834,8 @@
 
 {#if showGamutMap}
 	<div class="target-row" aria-label="Gamut map target">
-		<span>Target gamut</span>
-		<strong>{GAMUT_MAP_TARGET}</strong>
+		<span>Active colorspace</span>
+		<strong>{activeGamutLabel}</strong>
 	</div>
 	<label class="field-row">
 		<span>Gamut mapping</span>
@@ -822,8 +849,13 @@
 		</select>
 	</label>
 	<p class="note">
-		This terminal ramp policy reconciles generated stops with the sRGB export target. It is independent of the Explorer gamut and does not reshape the 3D solid.
+		Terminal ramp policy that maps generated stops into the active colorspace (above). sRGB is the default
+		today because the analytic mapper is sRGB-only; other active colorspaces await the generic solver. Independent
+		of the Explorer view — does not reshape the 3D solid.
 	</p>
+	{#if gamutMapUsesNonSrgbTarget}
+		<p class="note note-warn">Non-sRGB active colorspace selected — gamut mapping still uses the sRGB analytic path until the generic target solver ships.</p>
+	{/if}
 	{#if gamutMapUsesAlpha || gamutMapUsesFocus}
 		<details class="advanced">
 			<summary>Advanced gamut mapping</summary>
@@ -836,7 +868,7 @@
 					step={0.01}
 					format={(value) => value.toFixed(2)}
 				/>
-				<p class="note">Focus L is the neutral-axis lightness that generated colors project toward before intersecting the sRGB target gamut.</p>
+				<p class="note">Focus L is the neutral-axis lightness that generated colors project toward before intersecting the active colorspace boundary.</p>
 			{/if}
 			{#if gamutMapUsesAlpha}
 				<SliderRow
@@ -859,7 +891,7 @@
 					{/each}
 					<span>{gamutMapAlphaStatus}</span>
 				</div>
-				<p class="note">Alpha changes how adaptive methods project generated ramp stops into the export gamut. It is independent of the Interpolate curve constraint alpha.</p>
+				<p class="note">Alpha changes how adaptive methods project generated ramp stops into the active colorspace. It is independent of the Interpolate curve constraint alpha.</p>
 			{/if}
 		</details>
 	{/if}
@@ -868,11 +900,33 @@
 			{oogBefore} out of gamut{explorer.theme.gamutMap === 'none' ? '' : ` → ${oogAfter} after mapping`}
 		</p>
 		{#if explorer.theme.gamutMap !== 'none'}
-			<div class="raw-final">
-				<span class="rf-label">Raw</span>
-				<PaletteStrip layout="fluid" rows={[explorer.theme.rawStops]} cvd={explorer.cvd} cvdSev={explorer.cvdSev} ariaLabel="Raw ramp before gamut mapping" />
-				<span class="rf-label">Final</span>
-				<PaletteStrip layout="fluid" rows={[explorer.theme.stops]} cvd={explorer.cvd} cvdSev={explorer.cvdSev} ariaLabel="Final ramp after gamut mapping" />
+			<div class="gamut-map-diff" aria-label="Per-stop gamut map before and after">
+				<div class="gamut-map-diff-legend">
+					<span class="rf-label">Before / after</span>
+					{#if gamutMapDiffCount > 0}
+						<span class="gamut-map-diff-count">{gamutMapDiffCount} remapped</span>
+					{:else}
+						<span class="gamut-map-diff-count">No color change</span>
+					{/if}
+				</div>
+				<div class="gamut-map-diff-row">
+					{#each explorer.theme.rawStops as raw, i}
+						{@const fin = explorer.theme.stops[i]}
+						{#if fin}
+							{@const remapped = raw.hex !== fin.hex}
+							<div
+								class="gamut-map-diff-cell"
+								class:remapped
+								title={remapped
+									? `${raw.hex} → ${fin.hex}${raw.inG && fin.inG ? '' : ' (gamut status may differ)'}`
+									: `${raw.hex} (unchanged)`}
+							>
+								<div class="gamut-map-diff-half before" style={stopPreviewStyle(raw)}></div>
+								<div class="gamut-map-diff-half after" style={stopPreviewStyle(fin)}></div>
+							</div>
+						{/if}
+					{/each}
+				</div>
 			</div>
 		{/if}
 	{/if}
@@ -1094,15 +1148,53 @@
 		color: var(--muted);
 		font-size: 0.846rem;
 	}
-	.raw-final {
-		display: grid;
-		gap: 3px;
-		margin-top: 4px;
-	}
 	.rf-label {
 		color: var(--dim);
 		font-size: 0.692rem;
 		text-transform: uppercase;
 		letter-spacing: 0.06em;
+	}
+	.note-warn {
+		color: var(--warn);
+	}
+	.gamut-map-diff {
+		display: grid;
+		gap: 4px;
+		margin-top: 6px;
+	}
+	.gamut-map-diff-legend {
+		display: flex;
+		align-items: baseline;
+		justify-content: space-between;
+		gap: 8px;
+	}
+	.gamut-map-diff-count {
+		color: var(--dim);
+		font-size: 0.769rem;
+	}
+	.gamut-map-diff-row {
+		display: flex;
+		gap: 2px;
+	}
+	.gamut-map-diff-cell {
+		flex: 1;
+		min-width: 0;
+		display: grid;
+		grid-template-rows: 1fr 1fr;
+		height: 28px;
+		border-radius: 4px;
+		overflow: hidden;
+		box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--line), transparent 20%);
+	}
+	.gamut-map-diff-cell.remapped {
+		box-shadow:
+			inset 0 0 0 1px color-mix(in srgb, var(--accent), transparent 35%),
+			0 0 0 1px color-mix(in srgb, var(--accent), transparent 55%);
+	}
+	.gamut-map-diff-half {
+		min-height: 0;
+	}
+	.gamut-map-diff-half.after {
+		box-shadow: inset 0 1px 0 color-mix(in srgb, var(--txt), transparent 88%);
 	}
 </style>
