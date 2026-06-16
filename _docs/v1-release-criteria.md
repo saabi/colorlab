@@ -34,16 +34,24 @@ Complete gates **in order**. After each gate:
 1. Ensure `fe/`: `npm run check` and `npm test` pass.
 2. Update task checkboxes in **this file** (same PR as the work, or immediately after).
 3. Update [CHANGELOG.md](../CHANGELOG.md) and [Roadmap.md](Roadmap.md) when user-visible scope changes.
-4. Commit; tag when the gate specifies a version.
-5. **Notify** (PR description, chat, or release notes) with: version tag, what shipped, known limitations, next gate.
-6. **Push** branch and tags to remotes:
+4. Commit release work (`chore: release vX.Y.Z` or feature commits that precede the tag).
+5. **Tag** the release commit (must match `fe/package.json` `"version"`):
+
+```sh
+git tag v1.0.0-beta.1   # gate examples: v1.0.0-beta.N | v1.0.0-rc.N | v1.0.0
+```
+
+6. **Notify** (PR description, chat, or release notes) with: version tag, what shipped, known limitations, next gate.
+7. **Push** branch and tags to remotes:
 
 ```sh
 git push github main --tags
 git push gitlab main --tags
 ```
 
-7. Deploy production build when the gate is a public beta/RC/1.0 cut (`npm run build` in `fe/`, then PM2 per repo root).
+8. Deploy production build when the gate is a public beta/RC/1.0 cut (`npm run build` in `fe/`, then PM2 per repo root).
+
+Full semver and pre-release patterns: [RELEASING.md § Release checklist](../RELEASING.md#release-checklist).
 
 ---
 
