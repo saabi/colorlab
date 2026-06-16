@@ -1,8 +1,9 @@
-import { RGB2LMS, coneLMS } from '$lib/color/pipeline';
-import { m3 } from '$lib/color/math';
+import { GAMUTS, rgbToXyzM } from '$lib/color/pipeline';
+import { m3, type Mat3 } from '$lib/color/math';
 import { TRC } from '$lib/color/transfer';
 import { simulateCvdSrgb } from '$lib/color/cvd';
 import { fitCanvas } from './canvas';
+import { DEFAULT_OBSERVERS } from '$lib/color/fundamentals';
 import {
 	CONE_PANEL_NM_MAX,
 	CONE_PANEL_NM_MIN,
@@ -24,7 +25,7 @@ function drawSpectrumBackground(
 	nmB: number,
 	state: ExplorerState
 ) {
-	const key = `${w}:${nmA}:${nmB}:${state.cvd}:${state.cvdSev.toFixed(3)}`;
+	const key = `${w}:${nmA}:${nmB}:${state.cvd}:${state.cvdSev.toFixed(3)}:${state.observerModel}`;
 	if (!spectrumCache || spectrumCache.key !== key) {
 		const cv = document.createElement('canvas');
 		cv.width = w;
@@ -32,11 +33,17 @@ function drawSpectrumBackground(
 		const c2 = cv.getContext('2d');
 		if (!c2) return;
 		const img = c2.createImageData(w, 1);
+		
+		const observer = DEFAULT_OBSERVERS[state.observerModel] || DEFAULT_OBSERVERS['stockman-sharpe-2deg'];
+		const srgb2xyz = rgbToXyzM(GAMUTS.srgb.P, GAMUTS.srgb.W);
+		const rgb2lms = m3.mul(observer.toLmsMatrix, srgb2xyz);
+		const lms2rgb = m3.mul(m3.inv(srgb2xyz), observer.toXyzMatrix);
+
 		for (let i = 0; i < w; i += 1) {
 			const nm = nmA + ((nmB - nmA) * i) / Math.max(w - 1, 1);
 			const rgb = spectrumColor(nm);
 			const lin = rgb.map((v) => TRC.srgb.dec(v / 255)) as [number, number, number];
-			const sim = simulateCvdSrgb(lin, state.cvd, state.cvdSev);
+			const sim = simulateCvdSrgb(lin, state.cvd, state.cvdSev, rgb2lms, lms2rgb);
 			const enc = sim.map((v) => Math.round(TRC.srgb.enc(Math.min(Math.max(v, 0), 1)) * 255));
 			img.data[i * 4] = enc[0];
 			img.data[i * 4 + 1] = enc[1];
@@ -71,9 +78,12 @@ export function drawConesPanel(canvas: HTMLCanvasElement, ch: TransformChain | n
 	const cols = ['#e0533d', '#39c46f', '#5b8def'];
 	let mx = 0;
 	const samp: Array<[number, number, number]> = [];
+
+	const observer = DEFAULT_OBSERVERS[state.observerModel] || DEFAULT_OBSERVERS['stockman-sharpe-2deg'];
+
 	for (let i = 0; i <= pw; i += 1) {
 		const nm = nmA + ((nmB - nmA) * i) / pw;
-		const c = coneLMS(nm);
+		const c = observer.evaluateLms(nm);
 		samp.push(c);
 		mx = Math.max(mx, c[0], c[1], c[2]);
 	}
@@ -110,7 +120,11 @@ export function drawConesPanel(canvas: HTMLCanvasElement, ch: TransformChain | n
 	}
 	const bw = 16;
 	const bx = w - 66;
-	const cvdLms = m3.mulV(RGB2LMS, ch.cvdLin);
+
+	const srgb2xyz = rgbToXyzM(GAMUTS.srgb.P, GAMUTS.srgb.W);
+	const srgb2lms = m3.mul(observer.toLmsMatrix, srgb2xyz);
+	const cvdLms = m3.mulV(srgb2lms, ch.cvdLin);
+
 	const active = state.cvd !== 'none' && state.cvdSev > 0.001;
 	const m = Math.max(...ch.lms.map(Math.abs), ...(active ? cvdLms.map(Math.abs) : []), 1e-6);
 	ch.lms.forEach((v, i) => {

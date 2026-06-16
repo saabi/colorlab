@@ -18,7 +18,7 @@ export interface DerivedMatrices {
 	lms2rgb: Mat3;
 }
 
-export function rebuildMatrices(gamut: GamutKey, observerKey = 'stockman-sharpe-2deg'): DerivedMatrices {
+export function rebuildMatrices(gamut: GamutKey, observerKey = 'stockman-sharpe-2deg', _trigger = 0): DerivedMatrices {
 	const g = GAMUTS[gamut];
 	const rgb2xyz = rgbToXyzM(g.P, g.W);
 	const srgb2xyz = rgbToXyzM(GAMUTS.srgb.P, GAMUTS.srgb.W);
@@ -45,7 +45,7 @@ export function rebuildMatrices(gamut: GamutKey, observerKey = 'stockman-sharpe-
 	};
 }
 
-export function rebuildShell(shell: ShellKey, observerKey = 'stockman-sharpe-2deg'): DerivedMatrices | null {
+export function rebuildShell(shell: ShellKey, observerKey = 'stockman-sharpe-2deg', _trigger = 0): DerivedMatrices | null {
 	if (shell === 'none') return null;
-	return rebuildMatrices(shell, observerKey);
+	return rebuildMatrices(shell, observerKey, _trigger);
 }

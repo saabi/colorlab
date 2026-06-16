@@ -1,9 +1,10 @@
 import { dot3, m3, type Vec3 } from '$lib/color/math';
 import { CVD, applyCVD } from '$lib/color/cvd';
 import { SPACES } from '$lib/color/registry';
-import { GAMUTS, LMS2RGB, RGB2LMS, XYZ2LMS2, lsrgb2oklab, xyz2lab } from '$lib/color/pipeline';
+import { GAMUTS, rgbToXyzM, lsrgb2oklab, xyz2lab } from '$lib/color/pipeline';
 import { camRay, type Camera } from './camera';
 import { planeND } from './plane';
+import { DEFAULT_OBSERVERS } from '$lib/color/fundamentals';
 
 import type { ExplorerState, TransformChain } from './types';
 import type { DerivedMatrices } from '$lib/renderer/uniforms';
@@ -70,7 +71,10 @@ export function chain(rgbLin: Vec3, state: ExplorerState, matrices: DerivedMatri
 	const g = GAMUTS[state.gamut];
 	const enc = rgbLin.map((v) => g.trc.enc(clamp01(v))) as Vec3;
 	const xyz = m3.mulV(matrices.rgb2xyz, rgbLin);
-	const lms = m3.mulV(XYZ2LMS2, xyz);
+	
+	const observer = DEFAULT_OBSERVERS[state.observerModel] || DEFAULT_OBSERVERS['stockman-sharpe-2deg'];
+	const lms = m3.mulV(observer.toLmsMatrix, xyz);
+	
 	const lab = xyz2lab(xyz);
 	const srgbLin = m3.mulV(matrices.toSrgbLin.toSrgb, rgbLin);
 	const ok = lsrgb2oklab(srgbLin);
@@ -78,9 +82,13 @@ export function chain(rgbLin: Vec3, state: ExplorerState, matrices: DerivedMatri
 	const Hh = ((Math.atan2(ok[2], ok[1]) * 180) / Math.PI + 360) % 360;
 	let cvdLin = srgbLin;
 	if (CVD[state.cvd] && state.cvdSev > 0.001) {
-		const sourceLms = m3.mulV(RGB2LMS, srgbLin);
+		const srgb2xyz = rgbToXyzM(GAMUTS.srgb.P, GAMUTS.srgb.W);
+		const srgb2lms = m3.mul(observer.toLmsMatrix, srgb2xyz);
+		const lms2srgb = m3.mul(m3.inv(srgb2xyz), observer.toXyzMatrix);
+		
+		const sourceLms = m3.mulV(srgb2lms, srgbLin);
 		const sim = applyCVD(sourceLms, state.cvd, state.cvdSev);
-		cvdLin = m3.mulV(LMS2RGB, sim);
+		cvdLin = m3.mulV(lms2srgb, sim);
 	}
 	return { enc, rgbLin, xyz, lms, lab, ok, oklch: [ok[0], C, Hh], srgbLin, cvdLin };
 }

@@ -6,6 +6,7 @@
 	import { WebGlRenderer } from '$lib/renderer/webgl-renderer';
 	import { rebuildMatrices, rebuildShell } from '$lib/renderer/uniforms';
 	import { chain, pick } from '$lib/engine/picking';
+	import { getObserverModel } from '$lib/color/fundamentals';
 	import { activePipeline, anchorWorld, buildRamp } from '$lib/engine/theme';
 	import { MAX_CAMERA_DIST, MAX_CAMERA_PITCH, MIN_CAMERA_DIST, panCamera, projectToScreen, resetCamera as resetCameraState } from '$lib/engine/camera';
 	import GestureReferencePopover from './GestureReferencePopover.svelte';
@@ -78,8 +79,15 @@
 	let prevSpaceMode: SpaceMode = explorer.spaceMode;
 	const MORPH_DURATION_MS = 400;
 
-	const matrices = $derived(rebuildMatrices(explorer.gamut, explorer.observerModel));
-	const shellMatrices = $derived(explorer.hideAids ? null : rebuildShell(explorer.shell, explorer.observerModel));
+	const matrices = $derived(rebuildMatrices(explorer.gamut, explorer.observerModel, explorer.observerLoadedTrigger));
+	const shellMatrices = $derived(explorer.hideAids ? null : rebuildShell(explorer.shell, explorer.observerModel, explorer.observerLoadedTrigger));
+
+	$effect(() => {
+		const model = explorer.observerModel;
+		getObserverModel(model).then(() => {
+			explorer.observerLoadedTrigger += 1;
+		});
+	});
 	// All point edits/selection/picking target the active source list.
 	const themePoints = $derived(explorer.theme.lists[explorer.theme.activeList]?.anchors ?? []) as ThemeAnchor[];
 	const activeRampPipeline = $derived(activePipeline(explorer.theme));

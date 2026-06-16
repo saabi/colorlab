@@ -115,6 +115,7 @@ function createExplorerDefaults(): ExplorerState {
 		cvdSev: 1,
 		observerModel: 'stockman-sharpe-2deg',
 		chromaticityDiagram: 'cie1931-xy',
+		observerLoadedTrigger: 0,
 		theme: {
 			lists: [rampList([])],
 			activeList: 0,

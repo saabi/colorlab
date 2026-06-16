@@ -98,6 +98,7 @@
 		explorer.cvdSev;
 		explorer.chromaticityDiagram;
 		explorer.observerModel;
+		explorer.observerLoadedTrigger;
 		activeTab;
 		queueDrawPanels();
 	});

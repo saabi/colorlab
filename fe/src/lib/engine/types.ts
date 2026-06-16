@@ -162,6 +162,7 @@ export interface ExplorerState {
 	cvdSev: number;
 	observerModel: string;
 	chromaticityDiagram: string;
+	observerLoadedTrigger: number;
 	theme: {
 		/** Ordered source ramps (persisted). Each carries its own anchors + pipeline —
 		 *  multiple lists = multiple parallel ramps. Always >= 1 list. */
@@ -214,7 +215,7 @@ export type PersistedTheme = Omit<
 // autoPerformance/minAverageFps/autoRotate are app preferences (localStorage) — not part of saved documents.
 export type PersistedExplorer = Omit<
 	ExplorerState,
-	'hover' | 'theme' | 'autoPerformance' | 'minAverageFps' | 'autoRotate'
+	'hover' | 'theme' | 'autoPerformance' | 'minAverageFps' | 'autoRotate' | 'observerLoadedTrigger'
 > & {
 	theme: PersistedTheme;
 };
