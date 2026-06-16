@@ -286,7 +286,8 @@ The CVD simulation is performed by projecting RGB colors into the LMS color spac
 1. Expand [`spectral-dataset-catalog.md`](spectral-dataset-catalog.md) with a
    source/license/provenance inventory for every known/sourceable observer
    dataset, XYZ-like space, chromaticity diagram, and locus-geometry family
-   listed above.
+   listed above. **Done (sources):** [`spectral-dataset-sources.md`](spectral-dataset-sources.md)
+   records verified URLs and compares them with [`data/`](../data/).
 2. Write a scratch script under `fe/src/lib/color/scratch/compare-fundamentals.ts` to load cataloged CVRL/CIE/reference datasets that are permitted for local development.
 3. Compare the current Gaussian-derivative formula from `pipeline.ts` against the relevant reference data to identify its closest source model and quantify errors across the full visible range, with special attention to the low-energy tails.
 4. Do **not** choose a single permanent canonical dataset at this stage. Select

@@ -170,9 +170,12 @@ models. The UI should label them as transform spaces, not observer datasets.
 
 ## Initial Source Leads
 
-- CIE open datasets for CIE 1931 2° and CIE 1964 10° CMFs.
-- CVRL / UCL Colour & Vision Research Laboratory tables for cone fundamentals,
-  CIE functions, Stiles & Burch data, and related historical datasets.
-- Original and review literature for Judd, Vos, Smith & Pokorny, Stockman &
-  Sharpe, Stiles & Burch, Wright/Guild, Wyman/Sloan/Shirley, and modern observer
-  variability datasets.
+Verified download URLs, `data/` file inventory, and script coverage are documented in
+[`spectral-dataset-sources.md`](spectral-dataset-sources.md).
+
+Summary:
+
+- CIE open datasets: https://cie.co.at/data-tables → `https://files.cie.co.at/*.csv`
+- CVRL / UCL tables: http://www.cvrl.org/ (POST forms; see sources doc for endpoints)
+- Original and review literature for Wright/Guild, ICVIO variability, Wyman/Sloan/Shirley,
+  Govardovskii templates, and CAT/HPE matrices where no tabular download exists
