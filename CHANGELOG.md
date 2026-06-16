@@ -45,7 +45,7 @@ The canonical version string is `fe/package.json` → `"version"`. Update this f
 - Spectral locus generation now uses the observer dataset wavelength range and avoids out-of-range zero endpoints.
 - Ramp Builder status hierarchy — parent step shows selected list context; Source colors substep shows active-list point count.
 - Pipeline and help copy clarifying path-shape surface projection vs terminal export gamut mapping.
-- Gamut Map UI, help, and tutorial copy now explicitly identify the current output target as sRGB.
+- Gamut Map help, pipeline node copy, and popover note — terminal map targets the **active colorspace** (sRGB by default; analytic mapper sRGB-only today).
 - Canonical backlog in `_docs/Roadmap.md` with maintenance rules.
 - v1 release track in `_docs/v1-release-criteria.md` — Beta → RC → 1.0.0 gates, task checklist, and notify+push workflow.
 - Light-theme secondary contrast (Normal / High / Maximum) darkens `--dim` and `--faint` instead of reusing dark-mode lightening rules.

@@ -74,7 +74,7 @@ These were listed as pre-beta gaps in an earlier review; they are **done** on `m
 |----|------|-------|--------|-------|
 | **A1** | **Bradford chromatic adaptation** in shared `DerivedMatrices` (CPU, WebGL, picking parity) | Claude | ✅ | **Done.** `color/adapt.ts` Bradford CAT; `rebuildMatrices` adapts `rgb2xyz` (active white → D65), interchange `white` = D65. D65 gamuts identity. Parity automatic (all consume `DerivedMatrices`; no shader change). Tests in `color/adapt.test.ts`. |
 | **A1-alt** | *If A1 slips:* UI guard on non-D65 active gamuts | — | n/a | Not needed — A1 shipped. |
-| **A2** | **Gamut-map / Active-gamut copy cleanup** — UI and help match roadmap (terminal map targets active colorspace; sRGB is default, not eternal truth) | — | ⬜ | Roadmap #7. Cosmetic but currently misleading. |
+| **A2** | **Gamut-map / Active-gamut copy cleanup** — UI and help match roadmap (terminal map targets active colorspace; sRGB is default, not eternal truth) | Lane 2 | ✅ | `help-copy.ts`, `pipeline-nodes.ts`, `PipelinePopover.svelte` (`693b1b1`). |
 | **A3** | **OOG before/after swatch preview** on Gamut Map node | Lane 3 | ✅ | Per-stop before/after chips + active-colorspace copy in `ThemeRamp.svelte` (`6c7bce7`). |
 | **A4** | **Schema confidence** — fixtures for v12→v13 and representative real saves in `parse.test.ts` | Claude | ✅ | **Done** (`c026b32`). v12→v13 fixture + lossless round-trips for every bundled example, the default (idempotent), and a divergent multi-list save. |
 | **A5** | **Beta limitations** section — README and/or in-app Info panel | — | ✅ | README table + Info panel list (`6f4d5ec`, polished `A5`). WebGL2, gamut-map scope, non-D65 CAT, display assumption. |
