@@ -30,14 +30,14 @@ Steps 1–2 open every track before any track-specific content. New sessions ope
 ### Step 1: Turn off auto-rotation
 
 - **Concept:** Color Lab opens in a slow-orbit showcase mode so the solid reads clearly on first load. Tutorials need a stable scene while you read and click. Auto-rotate is a sidebar footer preference — it is runtime-only and never saved to documents.
-- **Try it:** Find "Auto-rotate" in the left sidebar footer and turn it off.
+- **Try it:** Find "Auto-rotate" under **View aids** in the left sidebar footer (Viewport preferences) and turn it off.
 - **Success check:** The solid stops orbiting. Dragging the viewport now orbits only when you push; it does not fight back.
 - **Common mistake:** Confusing auto-rotate with camera reset or world-space rotation of the solid. Camera Reset (View step) returns the viewpoint to a default angle; world-space layout is set by World space — neither is auto-rotate.
 
 ### Step 2: Show overlay aids
 
 - **Concept:** "Hide aids" suppresses the surface grid, slice/cylinder outlines, reference shell, and ramp markers — all at once, without losing the individual settings. Turning aids back on reveals the scaffolding you will need in later steps. The floor grid is a separate toggle and does not respond to Hide aids.
-- **Try it:** Disable "Hide aids" in the left sidebar footer (the solid's surface grid and other overlays will become active when their pipeline stages are on).
+- **Try it:** Disable "Hide aids" under **View aids** in the left sidebar footer (the solid's surface grid and other overlays will become active when their pipeline stages are on).
 - **Success check:** When relevant stages are active, overlays such as the surface grid and outlines are now visible. The floor grid is already under its own footer toggle.
 - **Common mistake:** Expecting the floor grid to respond to Hide aids — it does not. Toggle it independently if you need to change it.
 

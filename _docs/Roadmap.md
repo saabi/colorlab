@@ -44,6 +44,7 @@ Update `_docs/Roadmap.md` when you:
 - **Ramp Builder polish** — status hierarchy (parent = list context, Sources = active-list points), per-substep enable toggles in sidebar headers. **Plan:** [`ramp-builder-status-hierarchy-plan.md`](ramp-builder-status-hierarchy-plan.md)
 - **Light UI theme** — dark/light appearance toggle in Accessibility panel; `:root[data-theme='light']` token set in `app.css`; persisted in `colorlab:preferences`; light-theme secondary contrast overrides in `a11y.css`. WebGL viewport backdrop is independent (see neutral backdrop).
 - **Neutral explorer backdrop** — Oklab L = 0.5 surround toggle in Viewport preferences; WebGL clear color + viewport letterbox; persisted in `colorlab:preferences`.
+- **Sidebar Viewport preferences footer** — View aids (2×2) and Performance (stacked) in a horizontal two-column layout. **Plan:** [`sidebar-footer-layout-proposal.md`](sidebar-footer-layout-proposal.md).
 
 ---
 

@@ -47,6 +47,7 @@ The canonical version string is `fe/package.json` → `"version"`. Update this f
 - Gamut Map UI, help, and tutorial copy now explicitly identify the current output target as sRGB.
 - Canonical backlog in `_docs/Roadmap.md` with maintenance rules.
 - Light-theme secondary contrast (Normal / High / Maximum) darkens `--dim` and `--faint` instead of reusing dark-mode lightening rules.
+- Sidebar Viewport preferences footer — View aids and Performance in side-by-side columns; View aids in a 2×2 grid (floor grid, hide aids, auto-rotate, neutral backdrop); Performance stacked vertically (auto-reduce, min FPS).
 
 ## [0.0.1] - 2026-06-09
 

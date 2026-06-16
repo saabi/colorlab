@@ -215,7 +215,7 @@ No keyboard navigation. A user without a pointing device can change the color on
 GestureReferencePopover covers mouse and touch but lists no keyboard shortcuts. The viewport canvas `aria-label` gives no hint that keyboard shortcuts exist.
 
 #### G7 — Sidebar footer is a `<div>` not `<footer>`
-Minor semantic issue. The `.sidebar-footer` block (floor grid, hide aids, auto-rotate, performance) should be `<footer>` inside the left-panel `<aside>` once G1 is fixed.
+Minor semantic issue. The `.sidebar-footer` block (floor grid, hide aids, auto-rotate, neutral backdrop, performance) should be `<footer>` inside the left-panel `<aside>` once G1 is fixed.
 
 ### Design decisions
 
