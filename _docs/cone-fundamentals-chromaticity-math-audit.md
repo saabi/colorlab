@@ -6,14 +6,16 @@ Implementation status:
 
 - Implemented in this pass:
   - table-backed MacLeod-Boynton spectral locus coordinates;
-  - calibrated MacLeod-Boynton arbitrary LMS projection matching the bundled
-    2° spectral table;
+  - calibrated MacLeod-Boynton arbitrary-stimulus projection through the fixed
+    Stockman-Sharpe 2° source basis, matching the bundled 2° spectral table;
+  - calibrated MacLeod-Boynton inverse from `(l, s)` back to a fixed 2° source
+    XYZ direction for diagram fill;
   - fixed-lightness Oklab and CIELAB opponent-plane projections and labels;
   - sampled fixed-lightness gamut boundaries for Oklab/CIELAB opponent planes;
   - observer-aware labels for CIE xy/uv/u'v' panel modes;
   - observer-range-safe spectral locus generation;
   - table-comparison regression tests for CIE xy, CIE 2006 xF/yF, and
-    MacLeod-Boynton locus and arbitrary LMS projection data;
+    MacLeod-Boynton locus, source-basis projection, and inverse data;
   - fixed-lightness gamut-boundary regression tests for Oklab/CIELAB.
 - Deferred:
   - formal source-metadata field for MacLeod-Boynton normalization constants.
@@ -32,7 +34,7 @@ Scope reviewed:
 
 Validation run:
 
-- `npm test` in `fe/`: passed, 131 tests.
+- `npm test` in `fe/`: passed, 134 tests.
 - `npm run check` in `fe/`: passed, 0 diagnostics.
 - Direct CSV numeric probes against generated datasets.
 
@@ -46,9 +48,10 @@ standard for XYZ inputs.
 The audit found three exposed diagram modes that should not be considered valid
 chromaticity diagrams unless handled with explicit mode-specific semantics:
 
-1. **MacLeod-Boynton**: arbitrary-stimulus projection now uses calibrated
-   per-cone scale factors that match the bundled MacLeod-Boynton coordinate
-   table for Stockman-Sharpe 2° LMS samples.
+1. **MacLeod-Boynton**: arbitrary-stimulus projection now converts XYZ into the
+   fixed Stockman-Sharpe 2° source LMS basis before applying calibrated per-cone
+   scale factors. This prevents the locus and hover marker from switching basis
+   when the active observer is CIE 1931, CIE 1964, Judd, or Judd-Vos.
 2. **Oklab `(a, b)`**: this is not a chromaticity diagram; it is now handled as
    a fixed-lightness opponent-plane view.
 3. **CIELAB `(a*, b*)`**: this is not a chromaticity diagram; it is a
@@ -145,7 +148,8 @@ Implemented fix:
 
 - Use the bundled `smb_cc_2deg_1nm` table for the spectral locus when the
   diagram is MacLeod-Boynton.
-- For arbitrary LMS stimuli, use:
+- For arbitrary stimuli, first convert XYZ through the Stockman-Sharpe 2° source
+  basis, then use:
 
 ```ts
 l = 1.9806536312072827 * L / (1.9806536312072827 * L + M)
@@ -163,6 +167,19 @@ Current UI behavior:
 
 - Label as `MacLeod-Boynton 2° (l, s)`.
 - Keep the spectral locus table-backed.
+- Keep the projection source-basis fixed even when a different observer dataset
+  is selected in the LMS/fundamentals panel.
+- Use the inverse direction:
+
+```ts
+L = l / 1.9806536312072827
+M = 1 - l
+S = s / 0.10668241929719655
+XYZ = StockmanSharpe2DegLmsToXyz * [L, M, S]
+```
+
+This restores the filled primary triangle without falling back to xy-like
+unprojection.
 
 ### 2. Oklab `(a, b)` Is Not A Chromaticity Diagram
 
@@ -299,9 +316,9 @@ projective chromaticity coordinates.
 
 It is not appropriate for:
 
-- MacLeod-Boynton background fill unless a defensible inverse from `(l, s)` back
-  to display XYZ is added; the locus and hover marker are now calibrated, but
-  the panel intentionally avoids fake xy-like fill in this mode.
+- MacLeod-Boynton background fill uses the calibrated inverse source direction
+  described above. It is suitable for display-preview fill because the panel
+  normalizes RGB by max channel after unprojection.
 - Oklab and CIELAB opponent-plane views unless a fixed lightness slice is used
   consistently for all plotted elements. This is now implemented.
 

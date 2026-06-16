@@ -4,7 +4,7 @@ import { TRC } from '$lib/color/transfer';
 import { fitCanvas } from './canvas';
 import { SPECTRUM_NM_MAX, SPECTRUM_NM_MIN } from './spectrum-panel';
 import { DEFAULT_OBSERVERS } from '$lib/color/fundamentals';
-import { DIAGRAMS } from '$lib/color/diagrams';
+import { DIAGRAMS, macLeodBoynton2DegToXyz } from '$lib/color/diagrams';
 import {
 	createGamutInclusionTest,
 	generateOpponentPlaneGamutBoundary,
@@ -51,7 +51,7 @@ function unproject2d(x: number, y: number, diagramKey: string): Vec3 | null {
 		if (y <= 1e-4) return null;
 		return [x / y, 1.0, (1.0 - x - y) / y];
 	}
-	if (diagramKey === 'macleod-boynton') return null;
+	if (diagramKey === 'macleod-boynton') return macLeodBoynton2DegToXyz(x, y);
 	if (diagramKey === 'cie1976-upvp' || diagramKey === 'cie1960-uv') {
 		let u = x;
 		let v = y;

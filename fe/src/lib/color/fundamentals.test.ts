@@ -1,8 +1,16 @@
 import { describe, it, expect } from 'vitest';
 import { interpolateDataset, DEFAULT_OBSERVERS, observerDisplayLabel, observerShortLabel } from './fundamentals';
-import { DIAGRAMS, diagramDisplayLabel, diagramShortLabel, lmsToMacLeodBoynton } from './diagrams';
+import {
+	DIAGRAMS,
+	diagramDisplayLabel,
+	diagramShortLabel,
+	lmsToMacLeodBoynton,
+	macLeodBoynton2DegToXyz,
+	xyzToMacLeodBoynton2Deg
+} from './diagrams';
 import { generateSpectralLocus } from './locus';
 import { generateOpponentPlaneGamutBoundary, isXyzInsideGamut, opponentPlaneToXyz } from './diagram-boundary';
+import { m3 } from './math';
 import type { SpectralDataset } from './types';
 import { ciexy2006_2deg_1nm } from './data/ciexy2006_2deg_1nm';
 import { ciexy31_1nm } from './data/ciexy31_1nm';
@@ -151,14 +159,45 @@ describe('fundamentals & registries', () => {
 			const lms = obs.evaluateLms(nm);
 			const projected = diag.project(obs.evaluateXyz(nm), lms);
 			const direct = lmsToMacLeodBoynton(lms);
+			const fromXyz = xyzToMacLeodBoynton2Deg(obs.evaluateXyz(nm));
 			const expected = [sample(smb_cc_2deg_1nm, nm, 'Mb1'), sample(smb_cc_2deg_1nm, nm, 'Mb3')];
-			expect(projected).toEqual(direct);
+			expect(projected).toEqual(fromXyz);
+			expect(fromXyz[0]).toBeCloseTo(direct[0], 12);
+			expect(fromXyz[1]).toBeCloseTo(direct[1], 12);
 			maxL = Math.max(maxL, Math.abs(projected[0] - expected[0]));
 			if (expected[1] > 1e-5) maxS = Math.max(maxS, Math.abs(projected[1] - expected[1]));
 		}
 
 		expect(maxL).toBeLessThan(2e-6);
 		expect(maxS).toBeLessThan(4e-6);
+	});
+
+	it('should keep MacLeod-Boynton projection on its 2deg source basis regardless of active observer LMS', () => {
+		const diag = DIAGRAMS['macleod-boynton'];
+		const xyz = DEFAULT_OBSERVERS['stockman-sharpe-2deg'].evaluateXyz(482);
+		const activeObserverLms = m3.mulV(DEFAULT_OBSERVERS['ciexyz31-2deg'].toLmsMatrix, xyz);
+		const projected = diag.project(xyz, activeObserverLms);
+		const expected = xyzToMacLeodBoynton2Deg(xyz);
+
+		expect(projected).toEqual(expected);
+		expect(projected[0]).toBeGreaterThan(0.5);
+		expect(projected[0]).toBeLessThan(0.7);
+		expect(projected[1]).toBeGreaterThan(0.05);
+		expect(projected[1]).toBeLessThan(0.1);
+	});
+
+	it('should unproject MacLeod-Boynton coordinates back to the same chromatic direction', () => {
+		for (const nm of [430, 482, 520, 555]) {
+			const expected = [
+				sample(smb_cc_2deg_1nm, nm, 'Mb1'),
+				sample(smb_cc_2deg_1nm, nm, 'Mb3')
+			];
+			const xyz = macLeodBoynton2DegToXyz(expected[0], expected[1]);
+			expect(xyz).not.toBeNull();
+			const projected = xyzToMacLeodBoynton2Deg(xyz!);
+			expect(projected[0]).toBeCloseTo(expected[0], 10);
+			expect(projected[1]).toBeCloseTo(expected[1], 10);
+		}
 	});
 
 	it('should generate fixed-lightness opponent-plane gamut boundaries inside the target gamut', () => {

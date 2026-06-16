@@ -1,6 +1,6 @@
 import { m3, type Vec3 } from './math';
 import { GAMUTS, rgbToXyzM, lsrgb2oklab, xyz2lab } from './pipeline';
-import { interpolateDataset } from './fundamentals';
+import { DEFAULT_OBSERVERS, interpolateDataset } from './fundamentals';
 import { smb_cc_2deg_1nm } from './data/smb_cc_2deg_1nm';
 
 export interface ChromaticityDiagram {
@@ -23,6 +23,20 @@ export function lmsToMacLeodBoynton(lms: Vec3): [number, number] {
 	const denom = MB_L_SCALE * L + M;
 	if (denom <= 0) return [0, 0];
 	return [(MB_L_SCALE * L) / denom, (MB_S_SCALE * S) / denom];
+}
+
+export function xyzToMacLeodBoynton2Deg(xyz: Vec3): [number, number] {
+	const sourceObserver = DEFAULT_OBSERVERS['stockman-sharpe-2deg'];
+	return lmsToMacLeodBoynton(m3.mulV(sourceObserver.toLmsMatrix, xyz));
+}
+
+export function macLeodBoynton2DegToXyz(l: number, s: number): Vec3 | null {
+	if (!Number.isFinite(l) || !Number.isFinite(s) || l < 0 || l > 1 || s < 0) return null;
+	const sourceObserver = DEFAULT_OBSERVERS['stockman-sharpe-2deg'];
+	// MacLeod-Boynton chromaticity is scale-invariant. Use denominator = 1
+	// to recover a source-basis LMS direction, then convert that direction to XYZ.
+	const lms: Vec3 = [l / MB_L_SCALE, 1 - l, s / MB_S_SCALE];
+	return m3.mulV(sourceObserver.toXyzMatrix, lms);
 }
 
 function observerCoordinateLabel(observerKey: string): string {
@@ -130,8 +144,8 @@ export const DIAGRAMS: Record<string, ChromaticityDiagram> = {
 		xAxisLabel: 'l',
 		yAxisLabel: 's',
 		kind: 'chromaticity',
-		project: (xyz, lms) => {
-			return lmsToMacLeodBoynton(lms);
+		project: (xyz) => {
+			return xyzToMacLeodBoynton2Deg(xyz);
 		},
 		projectWavelength: (nm) => {
 			const l = interpolateDataset(smb_cc_2deg_1nm, nm, 'Mb1');

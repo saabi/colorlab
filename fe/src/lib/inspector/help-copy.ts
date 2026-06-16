@@ -85,7 +85,7 @@ export const INSPECTOR_HELP: Record<InspectorPanelId, PanelHelpContent> = {
 	xy: {
 		title: 'Chromaticity / plane view',
 		summary:
-			'Observer-aware chromaticity or fixed-lightness opponent-plane view. CIE modes use the selected observer label; MacLeod-Boynton uses table-backed 2° locus coordinates with calibrated LMS projection; Oklab and CIELAB show sampled fixed-lightness gamut cross-sections. Marker shows the hovered stimulus; sRGB fill is a display preview where an inverse is defined.',
+			'Observer-aware chromaticity or fixed-lightness opponent-plane view. CIE modes use the selected observer label; MacLeod-Boynton uses a fixed table-backed 2° source basis; Oklab and CIELAB show sampled fixed-lightness gamut cross-sections. Marker shows the hovered stimulus; sRGB fill is a display preview where an inverse is defined.',
 		sources: [
 			{ label: 'CIE colorimetry and selected observer dataset' },
 			{ label: 'Spectral locus from the active observer model or table-backed diagram source' },
