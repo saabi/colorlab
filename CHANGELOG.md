@@ -8,6 +8,12 @@ The canonical version string is `fe/package.json` → `"version"`. Update this f
 
 ## [Unreleased]
 
+## [1.0.0-beta.1] - 2026-06-16
+
+First public beta of the v1 release track. Feature-complete enough for real use;
+saved documents may still change with migrations before `1.0.0`. Known limitations
+are documented in the README and the in-app Info panel.
+
 ### Added
 
 - Modular registries for observer models and chromaticity diagrams (fully backward compatible).
