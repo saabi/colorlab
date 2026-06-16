@@ -7,7 +7,7 @@
 	import { drawConesPanel } from '$lib/panels/cones-panel';
 	import { drawTransferPanel } from '$lib/panels/transfer-panel';
 	import { drawXyPanel } from '$lib/panels/xy-panel';
-	import { diagramDisplayLabel, diagramShortLabel } from '$lib/color/diagrams';
+	import { diagramDisplayLabel, diagramInspectorNote, diagramShortLabel } from '$lib/color/diagrams';
 	import { observerShortLabel } from '$lib/color/fundamentals';
 
 	import type { ExplorerState } from '$lib/engine/types';
@@ -24,6 +24,7 @@
 	const conesLabel = $derived(observerShortLabel(explorer.observerModel));
 	const xyLabel = $derived(diagramDisplayLabel(explorer.chromaticityDiagram, explorer.observerModel));
 	const xyTabLabel = $derived(diagramShortLabel(explorer.chromaticityDiagram));
+	const xyNote = $derived(diagramInspectorNote(explorer.chromaticityDiagram));
 
 	// The exported palette (2-D grid when present — Expand or multiple lists — else
 	// the 1-D active ramp as one row).
@@ -175,9 +176,7 @@
 		<PanelHeader label={xyLabel} panelId="xy" bind:openHelp />
 		<canvas bind:this={xyCanvas} class="panel-canvas tall" aria-label="Chromaticity and opponent-plane panel"></canvas>
 
-		<p class="note">
-			General colors are tristimulus excitations, not points on the spectral locus. The label reflects the active observer.
-		</p>
+		<p class="note">{xyNote}</p>
 	</section>
 
 	<section class:active={activeTab === 'values'} class="inspector-tab-panel values-panel">

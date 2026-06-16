@@ -85,9 +85,10 @@ export const INSPECTOR_HELP: Record<InspectorPanelId, PanelHelpContent> = {
 	xy: {
 		title: 'Chromaticity / plane view',
 		summary:
-			'Observer-aware chromaticity or fixed-lightness opponent-plane view. CIE modes use the selected observer label; MacLeod-Boynton uses a fixed table-backed 2° source basis; Oklab and CIELAB show sampled fixed-lightness gamut cross-sections. Marker shows the hovered stimulus; sRGB fill is a display preview where an inverse is defined.',
+			'Observer-aware chromaticity or fixed-lightness opponent-plane view. CIE modes project the active observer\'s XYZ coordinates. MacLeod-Boynton is fixed to the bundled CIE 2° table and Stockman-Sharpe 2° LMS basis — it does not follow the Observer model selector. Oklab and CIELAB show sampled fixed-lightness gamut cross-sections. Marker shows the hovered stimulus; sRGB fill is a display preview where an inverse is defined.',
 		sources: [
-			{ label: 'CIE colorimetry and selected observer dataset' },
+			{ label: 'CIE colorimetry and selected observer dataset (CIE xy/uv/u′v′ modes)' },
+			{ label: 'CIE MacLeod-Boynton 2° chromaticity table (fixed SS 2° LMS basis)' },
 			{ label: 'Spectral locus from the active observer model or table-backed diagram source' },
 			{ label: 'Composite colors are off-locus excitations, not spectral points' }
 		]

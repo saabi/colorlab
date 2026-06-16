@@ -95,6 +95,23 @@ export function diagramShortLabel(diagramKey: string): string {
 	}
 }
 
+/** Inspector/sidebar footnote for the active chromaticity or plane view. */
+export function diagramInspectorNote(diagramKey: string): string {
+	switch (diagramKey) {
+		case 'macleod-boynton':
+			return 'Bundled CIE MacLeod-Boynton 2° table and Stockman-Sharpe 2° LMS basis — independent of the Observer model above.';
+		case 'oklab-ab':
+		case 'cielab-ab':
+			return 'Fixed-lightness opponent-plane cross-section, not a chromaticity diagram.';
+		case 'cie1931-xy':
+		case 'cie1976-upvp':
+		case 'cie1960-uv':
+			return 'Chromaticity projection of the active observer\'s XYZ coordinates.';
+		default:
+			return 'General colors are tristimulus excitations, not points on the spectral locus.';
+	}
+}
+
 const SRGB_XYZ = rgbToXyzM(GAMUTS.srgb.P, GAMUTS.srgb.W);
 const XYZ2SRGB = m3.inv(SRGB_XYZ);
 

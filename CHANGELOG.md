@@ -37,6 +37,7 @@ The canonical version string is `fe/package.json` → `"version"`. Update this f
 - App-wide themed scrollbars (`--scrollbar-*` tokens; Firefox `scrollbar-color` + WebKit `::-webkit-scrollbar`).
 - Chromaticity instrument copy now distinguishes true CIE chromaticity diagrams from Oklab/CIELAB opponent-plane views.
 - Chromaticity panel and selector labels now reflect the active observer model instead of always implying CIE 1931 coordinates.
+- MacLeod-Boynton diagram selector and panel footnote state the fixed CIE 2° table / SS 2° LMS basis, independent of the Observer model selector.
 - LMS fundamentals panel header names the active observer dataset (compact label).
 - Spectral locus generation now uses the observer dataset wavelength range and avoids out-of-range zero endpoints.
 - Ramp Builder status hierarchy — parent step shows selected list context; Source colors substep shows active-list point count.

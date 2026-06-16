@@ -1,13 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { interpolateDataset, DEFAULT_OBSERVERS, observerDisplayLabel, observerShortLabel } from './fundamentals';
-import {
-	DIAGRAMS,
-	diagramDisplayLabel,
-	diagramShortLabel,
-	lmsToMacLeodBoynton,
-	macLeodBoynton2DegToXyz,
-	xyzToMacLeodBoynton2Deg
-} from './diagrams';
+import { DIAGRAMS, diagramDisplayLabel, diagramInspectorNote, diagramShortLabel, lmsToMacLeodBoynton, macLeodBoynton2DegToXyz, xyzToMacLeodBoynton2Deg } from './diagrams';
 import { generateSpectralLocus } from './locus';
 import { generateOpponentPlaneGamutBoundary, isXyzInsideGamut, opponentPlaneToXyz } from './diagram-boundary';
 import { m3 } from './math';
@@ -223,6 +216,8 @@ describe('fundamentals & registries', () => {
 		expect(diagramDisplayLabel('macleod-boynton', 'stockman-sharpe-2deg')).toBe('MacLeod-Boynton 2° (l, s)');
 		expect(diagramShortLabel('oklab-ab')).toBe('a b');
 		expect(diagramShortLabel('cielab-ab')).toBe('a*b*');
+		expect(diagramInspectorNote('macleod-boynton')).toContain('independent of the Observer model');
+		expect(diagramInspectorNote('cie1931-xy')).toContain('active observer');
 	});
 
 	it('should label observer datasets for the cone fundamentals panel', () => {

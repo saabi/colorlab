@@ -14,7 +14,7 @@
 	import { getPipelineNode, isNodeEnabled, type PipelineNodeId } from './pipeline-nodes';
 	import { activePipeline } from '$lib/engine/theme';
 	import { getObserverModel } from '$lib/color/fundamentals';
-	import { diagramDisplayLabel } from '$lib/color/diagrams';
+	import { diagramDisplayLabel, diagramInspectorNote } from '$lib/color/diagrams';
 
 	import type { ExplorerState } from '$lib/engine/types';
 	import type { Camera } from '$lib/engine/camera';
@@ -183,9 +183,7 @@
 						<option value="oklab-ab">{diagramDisplayLabel('oklab-ab', explorer.observerModel)}</option>
 						<option value="cielab-ab">{diagramDisplayLabel('cielab-ab', explorer.observerModel)}</option>
 					</select>
-					<p class="note">
-						Chromaticity labels follow the selected observer. Oklab and CIELAB are fixed-lightness opponent-plane views.
-					</p>
+					<p class="note">{diagramInspectorNote(explorer.chromaticityDiagram)}</p>
 				</div>
 				<div class="separator">
 					<SliderRow label="Solid opacity" bind:value={explorer.solidAlpha} min={0.05} max={1} step={0.05} format={(value) => value.toFixed(2)} />
