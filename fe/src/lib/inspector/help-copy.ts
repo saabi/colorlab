@@ -125,7 +125,8 @@ export const PIPELINE_HELP: Record<PipelineHelpId, PanelHelpContent> = {
 			'Ramp-only gamut mapping, CVD preview severity, camera, or display-aid visibility.'
 		),
 		details: [
-			'Non-D65 gamuts (NTSC = Illuminant C, CIE 1931 RGB = Illuminant E) are adapted to the D65 interchange white with a Bradford chromatic adaptation before any Lab/Oklab world-space layout, so their neutral axis stays achromatic. D65 gamuts (sRGB, P3, Rec.2020, …) pass through unchanged. CPU, WebGL, and picking share the adapted matrices.'
+			'Non-D65 gamuts (NTSC = Illuminant C, CIE 1931 RGB = Illuminant E) are adapted to the D65 interchange white with a Bradford chromatic adaptation before any Lab/Oklab world-space layout, so their neutral axis stays achromatic. D65 gamuts (sRGB, P3, Rec.2020, …) pass through unchanged. CPU, WebGL, and picking share the adapted matrices.',
+			'The Observer model selected here (color-matching functions) drives the WebGL solid, CVD simulation, the Cones panel, and the CIE chromaticity diagrams — the rgb↔lms matrices are re-derived at runtime. The MacLeod–Boynton diagram is intentionally pinned to a fixed 2° basis and does not follow the selector.'
 		],
 		sources: [
 			{ label: 'pipeline.ts gamut registry' },

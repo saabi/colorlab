@@ -140,7 +140,7 @@
 				<p class="note">
 					Changing primaries reshapes the solid through the same <PipelinePopover cvd={explorer.cvd} cvdSev={explorer.cvdSev} />.
 				</p>
-				<div class="separator">
+				<div class="separator" data-tutorial="observer-model">
 					<label class="row" for="observer-select"><span>Observer model</span></label>
 					<select id="observer-select" value={explorer.observerModel} onchange={(e) => handleObserverChange(e.currentTarget.value)}>
 						<option value="stockman-sharpe-2deg">Stockman & Sharpe (2000) 2°</option>

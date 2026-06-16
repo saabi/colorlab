@@ -47,6 +47,18 @@ export const PRELUDE_STEPS: TutorialStep[] = [
 		zone: 'sidebar-inline',
 		target: '[data-tutorial="hide-aids"]',
 		skip: (e) => !e.hideAids
+	},
+	{
+		title: 'The pipeline rail',
+		concept:
+			'The rail at the top of the sidebar is a read-only map of every stage — Explorer (Gamut, World, Tessellation, Clip, View, Vision) and Ramp (Sources, Gamut map, Export). Each node shows its live status, and out-of-gamut stops surface as a warning chip. The rail owns no parameters; it is navigation plus a status dashboard.',
+		tryIt: 'Click a node in the rail — the matching step below opens and scrolls into view. Arrow keys move focus along the rail (roving focus); press Enter to jump.',
+		successCheck:
+			'Clicking a rail node expands and scrolls to that step\'s controls. Arrow keys move focus along the rail without leaving the page.',
+		commonMistake:
+			'Trying to change a setting from the rail. It only navigates and reports status — edit values in the step controls it scrolls you to.',
+		zone: 'sidebar-inline',
+		target: '[data-tutorial="pipeline-rail"]'
 	}
 ];
 
@@ -139,8 +151,8 @@ export const A_PIPELINE_STEPS: TutorialStep[] = [
 	{
 		title: 'Gamut — primaries and transfer',
 		concept:
-			'The Gamut stage decides which physical device the RGB cube represents: its primary chromaticities and transfer curve. The same (R, G, B) triple encodes a different spectral stimulus in sRGB vs Rec. 2020 because the primaries sit at different colorimetric positions.',
-		tryIt: 'Switch gamuts while hovering the same screen position. Watch the XYZ values in the inspector change even though the cursor did not move. Set active gamut to Display P3 and enable the sRGB shell overlay to see P3-exclusive colors.',
+			'The Gamut stage decides which physical device the RGB cube represents: its primary chromaticities and transfer curve. The same (R, G, B) triple encodes a different spectral stimulus in sRGB vs Rec. 2020 because the primaries sit at different colorimetric positions. Non-D65 gamuts (NTSC = Illuminant C, CIE 1931 RGB = Illuminant E) are Bradford-adapted to the D65 interchange white before the perceptual layout, so their neutral axis stays achromatic.',
+		tryIt: 'Switch gamuts while hovering the same screen position. Watch the XYZ values in the inspector change even though the cursor did not move. Set active gamut to Display P3 and enable the sRGB shell overlay to see P3-exclusive colors. Try NTSC 1953 or CIE 1931 RGB — the white vertex stays neutral, not tinted.',
 		successCheck:
 			'You can explain why (R=1, G=0, B=0) encodes a different stimulus in sRGB vs Rec. 2020 — and see that difference as a geometric shift in the solid.',
 		commonMistake:
@@ -148,6 +160,18 @@ export const A_PIPELINE_STEPS: TutorialStep[] = [
 		zone: 'sidebar-inline',
 		target: '[data-tutorial="node-gamut"]',
 		suggestedExample: 'example:p3-shell'
+	},
+	{
+		title: 'Observer model — whose eyes',
+		concept:
+			'The Observer model (inside the Gamut step) selects the color-matching functions used everywhere downstream: the WebGL solid, CVD simulation, the Cones panel, and the CIE chromaticity diagrams. Stockman & Sharpe (2°/10°) are physiological cone fundamentals; CIE 1931 2° and CIE 1964 10° are the classic standard observers. Changing it re-derives the rgb↔lms matrices at runtime.',
+		tryIt: 'In the Gamut step, switch Observer model between CIE 1931 2° and CIE 1964 10°. Watch the Cones panel header and the CIE diagram labels update. Note the MacLeod–Boynton diagram does not follow — it is pinned to a fixed 2° basis.',
+		successCheck:
+			'The Cones panel names the active observer dataset and the CIE chromaticity labels reflect it. MacLeod–Boynton stays on its fixed 2° basis regardless of the selector.',
+		commonMistake:
+			'Expecting the MacLeod–Boynton diagram to track the Observer model. It is intentionally fixed to a calibrated 2° table, independent of the selector.',
+		zone: 'sidebar-inline',
+		target: '[data-tutorial="observer-model"]'
 	},
 	{
 		title: 'World space — geometry only',
@@ -278,14 +302,14 @@ export const B_QUICK_STEPS: TutorialStep[] = [
 		target: '[data-tutorial="node-export"]'
 	},
 	{
-		title: 'Save the document',
+		title: 'Save, share, and import',
 		concept:
-			'Color Lab stores ramp parameters as named documents. Saving writes all pipeline settings and camera position to localStorage. The session state (last-open) is written automatically on change; named documents require an explicit Save. More tutorials are available — click the Tutorial button again to explore the Explorer lanes or the Pipeline deep-dive.',
-		tryIt: 'Click Save or Save as in the document bar at the top. Give the document a name. Reload the browser tab — your ramp should restore automatically.',
+			'Color Lab stores ramp parameters as named documents in this browser. The session (last-open) state is written automatically; a named checkpoint requires an explicit Save. To take a document elsewhere: Save to file writes a JSON document; Share (in the document bar\'s More menu) copies a shareable link or the raw JSON; Import (also in More) restores from a file, a URL, pasted JSON, or a #s=… link hash. Everything stays in your browser — nothing is uploaded. More tutorials are available — click the Tutorial button again to explore the Explorer lanes or the Pipeline deep-dive.',
+		tryIt: 'Click Save (or Save as) in the document bar and name the document; reload the tab to confirm it restores. Then open the More menu → Share → Copy link, and paste that link into a new tab to watch the document rebuild from the URL.',
 		successCheck:
-			'After reloading, source anchors, interpolation settings, and step count are all present without re-entering anything. The named document appears in the document list.',
+			'After reloading, source anchors, interpolation settings, and step count are all present. A copied share link opens the same document in a fresh tab, and Import accepts a file, pasted JSON, or a #s=… hash.',
 		commonMistake:
-			'Confusing the session (auto-restored last-open state) with a named document. The session always restores the last state, but a named checkpoint requires an explicit Save.',
+			'Confusing the session (auto-restored last-open state) with a named document. The session always restores the last state, but a named checkpoint requires an explicit Save. Sharing exports the document data into the link/JSON — it is not a server upload.',
 		zone: 'docbar-adjacent',
 		target: '[data-tutorial="docbar-save"]'
 	}

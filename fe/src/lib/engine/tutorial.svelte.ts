@@ -32,25 +32,25 @@ export const TRACKS: Record<TrackId, TutorialTrack> = {
 	'a-quick': {
 		id: 'a-quick',
 		label: 'A-quick',
-		durationMin: 15,
+		durationMin: 17,
 		steps: [...PRELUDE_STEPS, ...A_QUICK_STEPS]
 	},
 	'a-pipeline': {
 		id: 'a-pipeline',
 		label: 'A-pipeline',
-		durationMin: 25,
+		durationMin: 29,
 		steps: [...PRELUDE_STEPS, ...A_PIPELINE_STEPS]
 	},
 	'b-quick': {
 		id: 'b-quick',
 		label: 'B-quick',
-		durationMin: 15,
+		durationMin: 17,
 		steps: [...PRELUDE_STEPS, ...B_QUICK_STEPS]
 	},
 	'b-pipeline': {
 		id: 'b-pipeline',
 		label: 'B-pipeline',
-		durationMin: 30,
+		durationMin: 32,
 		steps: [...PRELUDE_STEPS, ...B_PIPELINE_STEPS]
 	}
 };

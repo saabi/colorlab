@@ -44,7 +44,7 @@
 
 <!-- Read-only pipeline map + status dashboard. Clicking a step opens and scrolls
      to its controls below; it does not own any parameters. -->
-<nav class="pipeline-rail" aria-label="Pipeline steps">
+<nav class="pipeline-rail" aria-label="Pipeline steps" data-tutorial="pipeline-rail">
 	{#each LANES as lane}
 		<div class="rail-lane">
 			<span class="rail-lane-name">{lane}</span>

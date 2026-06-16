@@ -8,6 +8,10 @@ The canonical version string is `fe/package.json` → `"version"`. Update this f
 
 ## [Unreleased]
 
+### Added
+
+- Tutorial coverage for beta.1 features — a "pipeline rail" prelude step (all tracks), an "Observer model" step in the Explorer pipeline track, and Share/Import/Save-to-file guidance folded into the Quick Ramp save step; `pipelineGamut` help now also documents the Observer model's reach.
+
 ### Changed
 
 - Dark/light theme switch moved out of the "Text" (Readability) panel into a dedicated sun/moon toggle in the header (desktop); on mobile it is a normal overflow-menu row.
