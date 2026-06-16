@@ -36,6 +36,18 @@
 	let readabilityOpen = $state(false);
 	let aboutOpen = $state(false);
 
+	// WebGL2 is required (no fallback). Surface a warning badge only when it is
+	// unavailable; otherwise the header stays clean.
+	let webgl2Available = $state(true);
+	$effect(() => {
+		if (!browser) return;
+		try {
+			webgl2Available = !!document.createElement('canvas').getContext('webgl2');
+		} catch {
+			webgl2Available = false;
+		}
+	});
+
 	// Minimal transient notice. NOTE: intentionally small — the deferred
 	// shared-toast task generalizes this together with Viewport's `gestureStatus`.
 	let notice = $state<{ text: string; id: number } | null>(null);
@@ -147,8 +159,11 @@
 			<div class="app-header-trail">
 				<A11yPanel bind:open={readabilityOpen} />
 				<ThemeToggle />
+				<span class="trail-divider" aria-hidden="true"></span>
 				<AppInfo bind:open={aboutOpen} />
-				<span class="badge">WebGL2</span>
+				{#if !webgl2Available}
+					<span class="badge badge-warn" title="WebGL2 is unavailable in this browser — the 3D solid will not render.">No WebGL2</span>
+				{/if}
 			</div>
 		</header>
 

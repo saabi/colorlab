@@ -43,9 +43,10 @@
 		aria-expanded={open}
 		aria-controls="readability-panel"
 		aria-label="Readability preferences"
+		title="Readability (font size, contrast, line height)"
 		onclick={() => (open = !open)}
 	>
-		Text
+		Aa
 	</button>
 
 	{#if open}

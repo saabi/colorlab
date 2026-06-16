@@ -17,6 +17,7 @@ The canonical version string is `fe/package.json` → `"version"`. Update this f
 - Dark/light theme switch moved out of the "Text" (Readability) panel into a dedicated sun/moon toggle in the header (desktop); on mobile it is a normal overflow-menu row.
 - Header GitHub link now shows the GitHub mark (logo) instead of the word "GitHub"; the in-panel Info links stay as text.
 - Header **Privacy** button renamed to **About** — the panel covers authorship, open source, changelog, beta limitations, and privacy.
+- Desktop header top-right decluttered — the "by <author>" credit moves to the About panel (still linked there); the Readability trigger is an "Aa" icon paired with the theme toggle; a subtle divider separates the controls from the meta cluster; the version shows as `v1.0.0` with a small `beta.1` tag; the WebGL2 badge now appears only as a warning when WebGL2 is unavailable.
 
 ### Fixed
 

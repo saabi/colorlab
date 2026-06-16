@@ -298,6 +298,35 @@ input[type="checkbox"] {
 	align-items: center;
 }
 
+.app-header .badge-warn {
+	border-color: color-mix(in srgb, var(--warn) 55%, transparent);
+	background: color-mix(in srgb, var(--warn) 14%, transparent);
+	color: var(--warn);
+}
+
+.app-header .trail-divider {
+	flex: 0 0 auto;
+	width: 1px;
+	height: 18px;
+	background: var(--divider-on-surface);
+}
+
+.app-info-version {
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+}
+
+.app-info-pretag {
+	border-radius: 4px;
+	background: color-mix(in srgb, var(--accent) 16%, transparent);
+	color: var(--accent);
+	padding: 0 5px;
+	font-size: 0.72rem;
+	font-weight: 600;
+	letter-spacing: 0.02em;
+}
+
 .app-info {
 	position: relative;
 	display: inline-flex;
