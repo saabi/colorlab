@@ -79,7 +79,7 @@ These were listed as pre-beta gaps in an earlier review; they are **done** on `m
 | **A4** | **Schema confidence** — fixtures for v12→v13 and representative real saves in `parse.test.ts` | Claude | ✅ | **Done** (`c026b32`). v12→v13 fixture + lossless round-trips for every bundled example, the default (idempotent), and a divergent multi-list save. |
 | **A5** | **Beta limitations** section — README and/or in-app Info panel | — | ✅ | README table + Info panel list (`6f4d5ec`, polished `A5`). WebGL2, gamut-map scope, non-D65 CAT, display assumption. |
 | **A6** | **Manual smoke QA** — desktop + mobile critical paths | Claude | 🟡 | Automated Playwright/WebKit smoke pass done (2026-06-16): load, A1 non-D65 render, orbit, pick, slice, cylinder, gamut switch, light/dark + a11y controls, mobile layout — **0 console errors**. Remaining items need human/real-browser sign-off (see checklist + note). |
-| **A7** | **Cut `1.0.0-beta.1`** — bump `fe/package.json`, move `[Unreleased]` → dated beta section in CHANGELOG, tag, push, deploy | Claude | 🟡 | **Prep staged (2026-06-16):** version → `1.0.0-beta.1`, CHANGELOG `[1.0.0-beta.1] - 2026-06-16`. **Awaiting user go for tag + push (github/gitlab) + PM2 deploy.** Optional subtle “Beta” near version link in header. |
+| **A7** | **Cut `1.0.0-beta.1`** — bump `fe/package.json`, move `[Unreleased]` → dated beta section in CHANGELOG, tag, push, deploy | Claude | 🟡 | **2026-06-16:** version → `1.0.0-beta.1`, CHANGELOG dated, **tag `v1.0.0-beta.1` pushed to github + gitlab** (commit `a7cbd1b`). **PM2 production deploy intentionally held** pending the human cross-browser/interaction smoke pass. Optional subtle “Beta” near version link in header. |
 
 ### A6 — Smoke QA checklist
 
