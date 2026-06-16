@@ -473,7 +473,7 @@ input[type="checkbox"] {
 }
 
 .document-more-item:not(:disabled):hover {
-	background: rgba(255, 255, 255, 0.06);
+	background: var(--hover-on-surface);
 	color: var(--accent);
 }
 
@@ -494,7 +494,7 @@ input[type="checkbox"] {
 
 .document-more-icon-label,
 .document-more-item-mobile,
-.document-more-mobile-tools {
+.document-more-sep-mobile {
 	display: none;
 }
 
@@ -1852,24 +1852,14 @@ input[type="checkbox"] {
 		min-width: min(220px, calc(100vw - 20px));
 	}
 
-	.document-more-item-mobile {
+	.document-more-item-mobile,
+	.document-more-sep-mobile {
 		display: block;
 	}
 
-	.document-more-mobile-tools {
-		display: grid;
-		gap: 0;
-		border-top: 1px solid rgba(255, 255, 255, 0.08);
-		margin-top: 4px;
-		padding-top: 4px;
-	}
-
-	.app-header .badge {
-		display: none;
-	}
-
 	.app-header > .a11y-wrap,
-	.app-header > .app-info {
+	.app-header > .app-info,
+	.app-header .theme-toggle {
 		display: none;
 	}
 
@@ -1881,35 +1871,8 @@ input[type="checkbox"] {
 		display: block;
 	}
 
-	.document-more-mobile-tools .a11y-trigger,
-	.app-info-about {
-		display: block;
-		width: 100%;
-		border: 1px solid var(--line);
-		border-radius: 4px;
-		background: var(--panel);
-		padding: 3px 8px;
-		font-size: 0.769rem;
-	}
-
-	.document-more-mobile-tools .a11y-trigger,
-	.document-more-mobile-tools .app-info-about {
-		border: none;
-		background: transparent;
-		color: var(--text);
-		padding: 6px 8px;
-		font-size: 0.846rem;
-		font-weight: 400;
-		text-align: left;
-		box-shadow: none;
-	}
-
-	.document-more-mobile-tools .a11y-trigger:hover,
-	.document-more-mobile-tools .app-info-about:hover,
-	.document-more-mobile-tools .a11y-trigger[aria-expanded="true"],
-	.document-more-mobile-tools .app-info-about[aria-expanded="true"] {
-		background: var(--hover-on-surface);
-		color: var(--accent);
+	.app-header .badge {
+		display: none;
 	}
 
 	.app-info-panel {

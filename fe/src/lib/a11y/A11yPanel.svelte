@@ -10,7 +10,7 @@
 		type SecondaryContrast
 	} from './preferences.svelte';
 
-	let open = $state(false);
+	let { open = $bindable(false) } = $props<{ open?: boolean }>();
 	let root: HTMLDivElement;
 
 	const contrastLabel: Record<SecondaryContrast, string> = {

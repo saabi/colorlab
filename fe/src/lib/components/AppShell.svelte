@@ -33,6 +33,8 @@
 	let touchTool: TouchTool = $state('auto');
 	const tutorial = createTutorialState(() => explorer);
 	let lanePickerOpen = $state(false);
+	let readabilityOpen = $state(false);
+	let aboutOpen = $state(false);
 
 	// Minimal transient notice. NOTE: intentionally small — the deferred
 	// shared-toast task generalizes this together with Viewport's `gestureStatus`.
@@ -134,10 +136,17 @@
 				<h1>COLOR LAB</h1>
 			</div>
 			<span class="sub">Gamut Explorer &amp; Ramp Generator</span>
-			<DocumentBar {session} {history} {notify} onTutorialClick={() => (lanePickerOpen = true)} />
-			<A11yPanel />
+			<DocumentBar
+				{session}
+				{history}
+				{notify}
+				onTutorialClick={() => (lanePickerOpen = true)}
+				onOpenReadability={() => (readabilityOpen = true)}
+				onOpenAbout={() => (aboutOpen = true)}
+			/>
+			<A11yPanel bind:open={readabilityOpen} />
 			<ThemeToggle />
-			<AppInfo />
+			<AppInfo bind:open={aboutOpen} />
 			<span class="badge">WebGL2</span>
 		</header>
 

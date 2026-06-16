@@ -3,10 +3,8 @@
 	import NamePromptDialog from './NamePromptDialog.svelte';
 	import ShareDialog from './ShareDialog.svelte';
 	import ImportDialog from './ImportDialog.svelte';
-	import AppInfo from './AppInfo.svelte';
-	import A11yPanel from '$lib/a11y/A11yPanel.svelte';
-	import ThemeToggle from './ThemeToggle.svelte';
 	import { track } from '$lib/analytics/umami';
+	import { readAppPreferences, toggleUiTheme, type UiTheme } from '$lib/preferences/app.svelte';
 	import { getGuideNoteContext } from '$lib/guide-note/context';
 	import { UNTITLED_SELECT_ID } from '$lib/documents/session.svelte';
 	import { snapshotToJsonString } from '$lib/documents/share';
@@ -18,12 +16,16 @@
 		session,
 		history,
 		notify,
-		onTutorialClick
+		onTutorialClick,
+		onOpenReadability,
+		onOpenAbout
 	} = $props<{
 		session: DocumentSession;
 		history: HistoryController;
 		notify?: (text: string) => void;
 		onTutorialClick?: () => void;
+		onOpenReadability?: () => void;
+		onOpenAbout?: () => void;
 	}>();
 
 	let selectValue = $state(UNTITLED_SELECT_ID);
@@ -38,6 +40,10 @@
 	let deleteConfirmOpen = $state(false);
 	let shareOpen = $state(false);
 	let importOpen = $state(false);
+	let uiTheme = $state<UiTheme>('dark');
+
+	const themeMenuLabel = $derived(uiTheme === 'dark' ? 'Light theme' : 'Dark theme');
+	const themeMenuIcon = $derived(uiTheme === 'dark' ? '☾' : '☀');
 
 	const guideNote = getGuideNoteContext();
 
@@ -47,6 +53,10 @@
 
 	$effect(() => {
 		selectValue = session.activeSelectId;
+	});
+
+	$effect(() => {
+		if (moreOpen) uiTheme = readAppPreferences().theme;
 	});
 
 	function closeMore() {
@@ -302,11 +312,43 @@
 							Tutorial
 						</button>
 					{/if}
-					<div class="document-more-mobile-tools">
-						<A11yPanel />
-						<ThemeToggle />
-						<AppInfo />
-					</div>
+					<div class="document-more-sep document-more-sep-mobile" role="separator"></div>
+					<button
+						type="button"
+						role="menuitem"
+						class="document-more-item document-more-item-mobile"
+						onclick={() => {
+							onOpenReadability?.();
+							closeMore();
+						}}
+					>
+						<span class="document-more-icon" aria-hidden="true">Aa</span>
+						Readability…
+					</button>
+					<button
+						type="button"
+						role="menuitem"
+						class="document-more-item document-more-item-mobile"
+						onclick={() => {
+							uiTheme = toggleUiTheme();
+							closeMore();
+						}}
+					>
+						<span class="document-more-icon" aria-hidden="true">{themeMenuIcon}</span>
+						{themeMenuLabel}
+					</button>
+					<button
+						type="button"
+						role="menuitem"
+						class="document-more-item document-more-item-mobile"
+						onclick={() => {
+							onOpenAbout?.();
+							closeMore();
+						}}
+					>
+						<span class="document-more-icon" aria-hidden="true">ⓘ</span>
+						About
+					</button>
 				</div>
 			{/if}
 		</div>

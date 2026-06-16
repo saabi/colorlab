@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { APP_VERSION, CHANGELOG_URL, REPO_URL } from '$lib/app-meta';
 
-	let open = $state(false);
+	let { open = $bindable(false) } = $props<{ open?: boolean }>();
 	let root: HTMLDivElement | undefined = $state();
 
 	function toggle() {

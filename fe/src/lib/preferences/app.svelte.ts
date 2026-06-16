@@ -102,3 +102,9 @@ export function setUiTheme(theme: UiTheme) {
 	const prefs = readAppPreferences();
 	persistAppPreferences({ ...prefs, theme });
 }
+
+export function toggleUiTheme(): UiTheme {
+	const next: UiTheme = readAppPreferences().theme === 'dark' ? 'light' : 'dark';
+	setUiTheme(next);
+	return next;
+}

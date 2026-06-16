@@ -10,7 +10,7 @@ The canonical version string is `fe/package.json` → `"version"`. Update this f
 
 ### Changed
 
-- Dark/light theme switch moved out of the "Text" (Readability) panel into a dedicated sun/moon toggle in the header (desktop + mobile More menu); the Readability panel now covers font scale, secondary contrast, and line height only.
+- Dark/light theme switch moved out of the "Text" (Readability) panel into a dedicated sun/moon toggle in the header (desktop); on mobile it is a normal overflow-menu row.
 - Header GitHub link now shows the GitHub mark (logo) instead of the word "GitHub"; the in-panel Info links stay as text.
 - Header **Privacy** button renamed to **About** — the panel covers authorship, open source, changelog, beta limitations, and privacy.
 
@@ -19,6 +19,7 @@ The canonical version string is `fe/package.json` → `"version"`. Update this f
 - Light theme — header and floating-surface backgrounds (app header, sidebar footer, viewport toolbar, help/tutorial/lane-picker popovers, pipeline tooltip, ramp substep cards) no longer reuse dark-theme fills with dark text; surfaces use theme-aware tokens (`--header-bg`, `--popover-bg`, `--surface-toolbar`, etc.) with lighter values under `data-theme='light'`.
 - Aliased `--border`, `--muted`, and `--text` to the canonical palette tokens so component-scoped styles resolve consistently in both themes.
 - Tutorial and help copy corrected for beta.1 behavior — the multi-list tutorial no longer claims lists "share interpolation settings" (each list owns its pipeline since schema v13); gamut-map/export/palette copy says "active colorspace (sRGB by default)" instead of "sRGB"; `pipelineExpand` help describes the two-axis Spread (rows = related ramps, columns = per-stop variants); `pipelineGamut` help documents the Bradford CAT for non-D65 gamuts.
+- Mobile overflow menu — Readability, theme, and About are normal menu rows (icon + label) instead of embedded header widgets with mismatched pill styles.
 
 ## [1.0.0-beta.1] - 2026-06-16
 
