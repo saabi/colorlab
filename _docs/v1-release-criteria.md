@@ -78,19 +78,25 @@ These were listed as pre-beta gaps in an earlier review; they are **done** on `m
 | **A3** | **OOG before/after swatch preview** on Gamut Map node | Lane 3 | ✅ | Per-stop before/after chips + active-colorspace copy in `ThemeRamp.svelte` (`6c7bce7`). |
 | **A4** | **Schema confidence** — fixtures for v12→v13 and representative real saves in `parse.test.ts` | Claude | ✅ | **Done** (`c026b32`). v12→v13 fixture + lossless round-trips for every bundled example, the default (idempotent), and a divergent multi-list save. |
 | **A5** | **Beta limitations** section — README and/or in-app Info panel | — | ✅ | README table + Info panel list (`6f4d5ec`, polished `A5`). WebGL2, gamut-map scope, non-D65 CAT, display assumption. |
-| **A6** | **Manual smoke QA** — desktop + mobile critical paths | — | ⬜ | Checklist below. |
+| **A6** | **Manual smoke QA** — desktop + mobile critical paths | Claude | 🟡 | Automated Playwright/WebKit smoke pass done (2026-06-16): load, A1 non-D65 render, orbit, pick, slice, cylinder, gamut switch, light/dark + a11y controls, mobile layout — **0 console errors**. Remaining items need human/real-browser sign-off (see checklist + note). |
 | **A7** | **Cut `1.0.0-beta.1`** — bump `fe/package.json`, move `[Unreleased]` → dated beta section in CHANGELOG, tag, push, deploy | — | ⬜ | Optional subtle “Beta” near version link in header. |
 
 ### A6 — Smoke QA checklist
 
-- [ ] Orbit / pan / slice / cylinder / morph in Chrome, Firefox, Safari
-- [ ] Pick solid → inspector chain; hover matches render
-- [ ] Ramp: add point, undo/redo labels, per-list pipeline, export CSS/DTCG
-- [ ] Share: copy link + JSON; import file / paste / `#s=…` hash
-- [ ] Light + dark theme; a11y font scale + secondary contrast (both themes)
-- [ ] Neutral backdrop on/off; floor grid underside tracks clear color
-- [ ] Mobile drawer (≤820px): above paths still reachable
-- [ ] Document save/reload in `localStorage`; named documents registry
+Legend: ✅ verified by automated pass · 🟡 partially verified · ⬜ needs human / real-browser sign-off.
+
+- [x] 🟡 Orbit / pan / slice / cylinder / morph in Chrome, Firefox, Safari — **orbit, slice, cylinder verified (WebKit/Safari engine); pan + morph not driven.** Chromium renders WebGL via swiftshader but headless screenshots stall in this WSL env; the cached Firefox build couldn't launch (missing profile lock). **Chrome + Firefox engines need a human/real-GPU pass.**
+- [x] Pick solid → inspector chain — click placed a marker and populated the sample inspector (WebKit). "Hover matches render" is a visual-parity check, not asserted programmatically.
+- [ ] Ramp: add point, undo/redo labels, per-list pipeline, export CSS/DTCG — **not driven through the UI** (controls behind Ramp Builder / Palette tab). Undo/redo affordances present; serialization + per-list pipeline divergence covered by unit tests (`parse.test.ts` A4 round-trips, `theme-spline.test.ts`). Needs human UI pass.
+- [ ] Share: copy link + JSON; import file / paste / `#s=…` hash — **not driven through the UI.** The serialize→parse round-trip is covered by `parse.test.ts` (A4). Needs human UI pass.
+- [x] 🟡 Light + dark theme; a11y font scale + secondary contrast — light theme toggled live; Font scale (100–175%) and Secondary contrast (Normal/High/Maximum) controls present and functional; dark is the default baseline. Contrast levels not exhaustively screenshotted in both themes.
+- [ ] Neutral backdrop on/off; floor grid underside tracks clear color — not driven.
+- [x] Mobile layout (≤820px) — 390px viewport renders hamburger, compact toolbar, WebGL solid, and instrument tabs. Drawer open/close not exercised.
+- [ ] Document save/reload in `localStorage`; named documents registry — not driven (Save affordance present; partial coverage via parse round-trip tests).
+
+**Spot-check — A1 non-D65 fix (key correctness gate):** switched the active gamut to **NTSC 1953 (Illuminant C)** and **CIE 1931 RGB (Illuminant E)**; in both the solid's white vertex renders **neutral (no tint)** while the xy-chromaticity triangle changes per gamut — confirming the Bradford CAT adapts each white to the D65 interchange point. ✅
+
+**Automated pass details:** Playwright 1.56.0 driving the cached WebKit engine against `vite dev`; 0 console/page errors across load, gamut switching, theme toggle, orbit/pick/slice/cylinder, and mobile resize. `npm run check` 0 errors, `npm test` 145 passed. Cross-browser (Chrome/Firefox) and the interaction-heavy paths above remain for a human smoke pass before the beta is published.
 
 ### Phase A gate
 
