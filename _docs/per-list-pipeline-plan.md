@@ -1,8 +1,8 @@
 # Per-List Ramp Pipeline Plan
 
-Status: design proposal. Implements Roadmap **#3 (per-list pipeline instances)**
-and folds in **#4 (independent main-curve vs extension constraints)** because they
-share one breaking schema change. See
+Status: **implemented** (schema v13; `check`/`test`/`build` green). Implements
+Roadmap **#3 (per-list pipeline instances)** and folds in **#4 (independent
+main-curve vs extension constraints)** — both shipped together as planned. See
 [`color-space-role-architecture.md`](color-space-role-architecture.md) §"Source
 Lists as Pipeline Instances" and §"Constraint Domains".
 
@@ -182,17 +182,17 @@ Helpers `activeAnchors`/`anchorWorld` adapt to `RampList` (anchors now nested).
   **active list's** pipeline.
 - A lightweight indicator that lists can differ (e.g. the list chip shows mode).
 
-## Phasing
+## Phasing — all complete
 
-1. **Data model + migration + engine + active-list UI.** Restructure to
-   `RampList`/`ListPipeline`; migrate; thread per-list pipeline through the stage
-   functions; point all `ThemeRamp` bindings at the active list. **For a
-   single-list document this is behavior-identical.** Largest phase.
-2. **Multi-list pipeline UX.** "Apply to all," duplicate-with-pipeline, per-list
-   indicators; verify lists with divergent settings render correctly.
-3. **Wire extension constraint (#4).** Honor `pipeline.extension` in the Expand
-   stage (project/clamp generated variants); add its compact UI. Schema already
-   carries the field, so no migration here.
+1. **Data model + migration + engine + active-list UI.** ✅ `RampList`/
+   `ListPipeline`; `migrateV12ToV13`; per-list stage functions; `ThemeRamp` bound
+   to `activePipeline()`. Single-list documents are behavior-identical.
+2. **Multi-list pipeline UX.** ✅ Add-clones-active, duplicate-with-pipeline,
+   "Apply pipeline to all" (gated by `pipelinesDiffer`), divergence note, per-chip
+   mode cue.
+3. **Wire extension constraint (#4).** ✅ `expandList` honors `pipeline.extension`
+   via `constrainGenerated`; full extension UI in `ThemeRamp` (constraint /
+   projection / advanced focus+alpha). No migration (field shipped in v13).
 
 ## Test plan
 

@@ -36,6 +36,7 @@ Update `_docs/Roadmap.md` when you:
 - **Open source** — MIT license, CI, CONTRIBUTING / RELEASING docs, dual GitHub/GitLab remotes
 - **Document sharing & ingestion v1** — Save to file, Share (copy link · copy JSON), Import (file · URL · paste · `#s=…` hash); client-side only via `parseSnapshot`
 - **Themed scrollbars** — app-wide dark-UI scrollbar tokens (`scrollbar-color` + `::-webkit-scrollbar`) in `app.css`
+- **Per-list ramp pipelines** (schema v13) — each source list owns its interpolation / placement / expand / constraint settings; independent **main-curve and extension constraints** (#3 + #4); shared terminal `gamutMap` targets the active colorspace. Multi-list UX: add-clones-active, duplicate, "apply to all," divergence cue. **Plan:** [`per-list-pipeline-plan.md`](per-list-pipeline-plan.md)
 
 ---
 
@@ -48,8 +49,8 @@ Aligned with the **recommended next order** in [`surface-constraint-gamut-projec
 1. **Color-space role cleanup** — reflect the three-role model in UI/docs: Active gamut = working/export intent, World space = layout/interpolation coordinate system, Display gamut = physical display capability. Includes a planned **global Color Context** surface: move Active gamut and Display gamut/profile selection out of the Explorer pipeline when chromatic adaptation / display-gamut work gives that surface real behavior. The Explorer lane keeps reference shell and future Explorer display-gamut clipping/mapping controls. Also documents that `srgbLin` already **is** the gamut-independent colorimetric anchor (linear sRGB ↔ XYZ D65 is a fixed bijection); the proposed XYZ-D65 source-storage migration is **deferred** (representational relabeling, not a correctness fix — not worth a schema break). See [`color-space-role-architecture.md`](color-space-role-architecture.md).
 2. **White point & chromatic adaptation** — add a standard CAT (Bradford) wherever whites differ, for active color spaces and the display gamut; D65↔D65 stays a no-op. Today there is **no** adaptation, so non-D65 gamuts (NTSC = Illuminant C, CIE = Illuminant E) and any calibrated display white render wrong. Put the adaptation matrix in the shared `DerivedMatrices` bundle for CPU/GPU/picking parity.
 3. **Observer, XYZ, locus & chromaticity dataset registry** — catalog all known/sourceable observer datasets, XYZ-like spaces, locus curves/surfaces, and chromaticity diagrams; audit the current LMS/spectral evaluator against them; keep or replace analytical segments based on measured error; then add registries for exploration/comparison. Downloaded source data belongs under `data/`. This supports the LMS/spectrum panels, spectral locus overlays, direct xy picking, future display-gamut diagnostics, and CVD parity. The evaluator correction can ship without a schema bump while the observer identity stays the same; user-selectable observer models belong to the global Color Context only after CVD/panel parity is ready. **Plans:** [`lms-fundamentals-chromaticity-plan.md`](lms-fundamentals-chromaticity-plan.md), [`spectral-dataset-catalog.md`](spectral-dataset-catalog.md).
-4. **Per-list ramp pipeline instances** — each source list owns its own interpolation, placement, extension, and constraint settings (the engine already computes per-list rows; the settings are still global). The architecture payoff; needs a schema bump (v12 → v13). **Plan:** [`per-list-pipeline-plan.md`](per-list-pipeline-plan.md).
-5. **Separate main-curve and extension constraints** — Interpolate constraints and Extend/Expand constraints independently configurable, per source list. Batched into #4's schema bump (see plan); wiring lands in a later phase.
+4. ✅ **Per-list ramp pipeline instances** — **shipped** (schema v13). Each source list owns its interpolation / placement / expand / constraint settings; shared terminal `gamutMap`. **Plan:** [`per-list-pipeline-plan.md`](per-list-pipeline-plan.md).
+5. ✅ **Separate main-curve and extension constraints** — **shipped** with #4: `pipeline.main` and `pipeline.extension` are independent (engine + UI).
 6. **Display gamut preferences + Color Context UI** — store display profiles/calibration in `localStorage`; users may have multiple displays. Initial default remains sRGB. Depends on #2 for correct white handling and should share the global Color Context surface with future observer/fundamentals settings from #3. This is the preferred moment to move Display gamut out of the Explorer pipeline.
 
 ### Small scope, high value (projection params track)
@@ -124,8 +125,8 @@ Key points:
 - catalog known/sourceable observer datasets, XYZ-like spaces, locus curves/surfaces, and chromaticity diagrams; audit/correct the current LMS/spectral evaluator against them; then add registries before relying on advanced spectral/chromaticity diagnostics;
 - Display gamut profiles live in `localStorage`, not shared document state;
 - Active gamut and Display gamut should become global Color Context controls, not Explorer pipeline controls; Explorer keeps reference shell and display-mapping/clipping controls;
-- each source list owns independent pipeline settings (per-list pipelines) — the next architecture build, behind a schema bump (see [`per-list-pipeline-plan.md`](per-list-pipeline-plan.md));
-- main curve and extension constraints are independent.
+- each source list owns independent pipeline settings (per-list pipelines) — **shipped** in schema v13 (see [`per-list-pipeline-plan.md`](per-list-pipeline-plan.md));
+- main curve and extension constraints are independent — **shipped**.
 
 ### Pipeline-driven parameter UI
 
