@@ -38,7 +38,7 @@ export const PRELUDE_STEPS: TutorialStep[] = [
 	{
 		title: 'Show overlay aids',
 		concept:
-			'"Hide aids" suppresses the surface grid, slice/cylinder outlines, reference shell, and ramp markers all at once — without losing the individual settings. Turning it off reveals the scaffolding you will use in later steps. The floor grid is a separate toggle.',
+			'"Hide aids" suppresses the surface grid, slice/cylinder outlines, reference shell, and ramp markers all at once — without losing the individual settings. Turning it off reveals the scaffolding you will use in later steps. The floor grid is a separate toggle. Two comfort options sit nearby: a neutral L = 0.5 backdrop (same sidebar footer) calms the surround for judging color, and the Text button in the header scales fonts, contrast, and line height if you need it.',
 		tryIt: 'Disable "Hide aids" in the left sidebar footer.',
 		successCheck:
 			'When relevant pipeline stages are active, overlays such as the surface grid and outlines are now visible.',
@@ -132,7 +132,7 @@ export const A_QUICK_STEPS: TutorialStep[] = [
 	{
 		title: 'Inspector panels — what each adds',
 		concept:
-			'The right inspector has five tabs. Values is the full numeric chain (used above). Transfer plots the gamut\'s encoding curve. Cones shows LMS excitations. The chromaticity tab plots the selected observer-aware diagram or fixed-lightness opponent-plane view. All update from the same hover hit — they are views of the same calculation, not independent lookups. More tutorials are available — click the Tutorial button again to explore the Ramp lanes.',
+			'The right inspector has five tabs. Values is the full numeric chain (used above). Transfer plots the gamut\'s encoding curve. Cones shows LMS excitations. The chromaticity tab plots either a true observer-aware chromaticity diagram (CIE xy, u\'v\', or MacLeod–Boynton) or a fixed-lightness opponent-plane view (Oklab a/b, CIELAB a*/b*). All update from the same hover hit — they are views of the same calculation, not independent lookups. More tutorials are available — click the Tutorial button again to explore the Ramp lanes.',
 		tryIt: 'Hover a vivid green and click through Transfer, Cones, and the chromaticity tab. Notice all three panels respond to the same cursor movement without any extra click.',
 		successCheck:
 			'All tabs update when the cursor moves over the solid. You can correlate LMS bar heights with the chromaticity or opponent-plane position of the same color.',
@@ -172,6 +172,18 @@ export const A_PIPELINE_STEPS: TutorialStep[] = [
 			'Expecting the MacLeod–Boynton diagram to track the Observer model. It is intentionally fixed to a calibrated 2° table, independent of the selector.',
 		zone: 'sidebar-inline',
 		target: '[data-tutorial="observer-model"]'
+	},
+	{
+		title: 'Chromaticity & opponent-plane diagrams',
+		concept:
+			'The inspector\'s chromaticity tab plots one of two diagram families. True chromaticity diagrams (CIE 1931 xy, CIE 1976 u\'v\', CIE 1960 uv, MacLeod–Boynton) show hue and saturation independent of luminance and follow the Observer model — except MacLeod–Boynton, pinned to a fixed 2° basis. Opponent-plane views (Oklab a/b, CIELAB a*/b*) instead slice the perceptual space at a fixed lightness, with a sampled gamut-boundary outline.',
+		tryIt: 'Open the chromaticity tab and set the diagram selector to Oklab a/b. Hover the solid — the marker tracks the a/b position at the hovered lightness. Switch to CIE 1931 xy and note the spectral-locus horseshoe instead.',
+		successCheck:
+			'You can tell a luminance-independent chromaticity diagram (horseshoe locus) from a fixed-lightness opponent plane (Oklab a/b square), and the hovered color\'s marker matches across tabs.',
+		commonMistake:
+			'Reading the Oklab a/b plane as a CIE chromaticity diagram. It is a perceptual opponent slice at one lightness, not a luminance-free chromaticity space.',
+		zone: 'inspector-adjacent',
+		target: '[data-tutorial="inspector-tabs"]'
 	},
 	{
 		title: 'World space — geometry only',
@@ -374,7 +386,7 @@ export const B_PIPELINE_STEPS: TutorialStep[] = [
 		title: 'Gamut map — ramp-only OOG policy',
 		concept:
 			'Gamut map is the terminal ramp stage: it brings out-of-gamut stops into the active colorspace output target (sRGB by default) before export. "Clip (clamp)" hard-clips each RGB channel. "Preserve chroma" reduces chroma in Oklch (keeps hue and lightness). "None" passes OOG stops through unchanged. This target is separate from the Explorer Gamut setting, the spline surface constraint, and CVD.',
-		tryIt: 'Load "P3 OOG stops" via the button above — a ramp with a P3-exclusive vivid green anchor that sits beyond the active colorspace target boundary. The OOG badge on the Gamut map node shows how many stops exceed the target (sRGB by default). Switch between "Clip (clamp)" and "Preserve chroma" and watch the affected stops shift in the Palette tab.',
+		tryIt: 'Load "P3 OOG stops" via the button above — a ramp with a P3-exclusive vivid green anchor that sits beyond the active colorspace target boundary. The OOG badge on the Gamut map node shows how many stops exceed the target (sRGB by default). Switch between "Clip (clamp)" and "Preserve chroma" and watch the affected stops shift in the Palette tab. The Gamut map panel also shows a Raw → Final before/after chip pair and an "N out of gamut → M after mapping" count when a policy is active.',
 		successCheck:
 			'With "Preserve chroma," OOG stops shift inward in chroma while keeping hue angle. With "Clip (clamp)," they may shift hue because channels clamp independently.',
 		commonMistake:

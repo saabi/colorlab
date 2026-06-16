@@ -10,7 +10,7 @@ The canonical version string is `fe/package.json` → `"version"`. Update this f
 
 ### Added
 
-- Tutorial coverage for beta.1 features — a "pipeline rail" prelude step (all tracks), an "Observer model" step in the Explorer pipeline track, and Share/Import/Save-to-file guidance folded into the Quick Ramp save step; `pipelineGamut` help now also documents the Observer model's reach.
+- Tutorial coverage for beta.1 features — a "pipeline rail" prelude step (all tracks), an "Observer model" step and a "Chromaticity & opponent-plane diagrams" step in the Explorer pipeline track, and Share/Import/Save-to-file guidance folded into the Quick Ramp save step; `pipelineGamut` help now also documents the Observer model's reach. Tutorial copy further names the Oklab a/b · CIELAB a*/b* opponent planes, points to the neutral backdrop + Readability controls in the prelude, and notes the gamut-map before/after diff.
 
 ### Changed
 

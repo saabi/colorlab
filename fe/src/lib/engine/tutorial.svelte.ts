@@ -38,7 +38,7 @@ export const TRACKS: Record<TrackId, TutorialTrack> = {
 	'a-pipeline': {
 		id: 'a-pipeline',
 		label: 'A-pipeline',
-		durationMin: 29,
+		durationMin: 31,
 		steps: [...PRELUDE_STEPS, ...A_PIPELINE_STEPS]
 	},
 	'b-quick': {
