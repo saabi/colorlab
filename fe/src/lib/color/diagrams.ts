@@ -15,6 +15,16 @@ export interface ChromaticityDiagram {
 	kind?: 'chromaticity' | 'opponent-plane' | 'experimental';
 }
 
+const MB_L_SCALE = 1.9806536312072827;
+const MB_S_SCALE = 0.10668241929719655;
+
+export function lmsToMacLeodBoynton(lms: Vec3): [number, number] {
+	const [L, M, S] = lms;
+	const denom = MB_L_SCALE * L + M;
+	if (denom <= 0) return [0, 0];
+	return [(MB_L_SCALE * L) / denom, (MB_S_SCALE * S) / denom];
+}
+
 function observerCoordinateLabel(observerKey: string): string {
 	if (observerKey.includes('stockman-sharpe-10deg') || observerKey.includes('ss10deg')) return 'CIE 2006 10° xF yF';
 	if (observerKey.includes('stockman-sharpe-2deg') || observerKey.includes('ss2deg')) return 'CIE 2006 2° xF yF';
@@ -42,7 +52,7 @@ export function diagramDisplayLabel(diagramKey: string, observerKey: string): st
 		case 'cie1960-uv':
 			return `CIE 1960 UCS uv - ${observerName(observerKey)}`;
 		case 'macleod-boynton':
-			return 'MacLeod-Boynton locus (experimental stimulus projection)';
+			return 'MacLeod-Boynton 2° (l, s)';
 		case 'oklab-ab':
 			return 'Oklab a/b plane (L fixed)';
 		case 'cielab-ab':
@@ -116,15 +126,12 @@ export const DIAGRAMS: Record<string, ChromaticityDiagram> = {
 	},
 	'macleod-boynton': {
 		key: 'macleod-boynton',
-		label: 'MacLeod-Boynton locus (experimental stimulus projection)',
+		label: 'MacLeod-Boynton 2° (l, s)',
 		xAxisLabel: 'l',
 		yAxisLabel: 's',
-		kind: 'experimental',
+		kind: 'chromaticity',
 		project: (xyz, lms) => {
-			const [L, M, S] = lms;
-			const sumLM = L + M;
-			if (sumLM <= 0) return [0.0, 0.0];
-			return [L / sumLM, S / sumLM];
+			return lmsToMacLeodBoynton(lms);
 		},
 		projectWavelength: (nm) => {
 			const l = interpolateDataset(smb_cc_2deg_1nm, nm, 'Mb1');

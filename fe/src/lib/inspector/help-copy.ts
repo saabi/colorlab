@@ -70,14 +70,11 @@ export const INSPECTOR_HELP: Record<InspectorPanelId, PanelHelpContent> = {
 		]
 	},
 	cones: {
-		title: 'Cone fundamentals L M S',
+		title: 'Cone fundamentals / LMS excitations',
 		summary:
-			'Cone sensitivity curves (L/M/S) with a CVD-aware visible-spectrum strip behind them. Bars are LMS excitations for the hovered color (integrals over the spectrum), not samples on the \u03bb-curves. Dominant-wavelength marker shown only for spectral colors.',
+			'Observer dataset sensitivity curves (L/M/S) with a CVD-aware visible-spectrum strip behind them. The panel title names the active observer dataset; bars are LMS excitations for the hovered color (integrals over the spectrum), not samples on the \u03bb-curves. Dominant-wavelength marker shown only for spectral colors.',
 		sources: [
-			{
-				label:
-					'Multi-Gaussian cone fits in pipeline.ts (ported from legacy colorspaces.glsl; shared LMS2XYZ2 basis)'
-			},
+			{ label: 'Selected observer spectral dataset' },
 			{ label: 'CVD simulation at LMS stage (Vi\u00e9not/Brettel-style projection; design \u00a714)' },
 			{
 				label:
@@ -88,10 +85,10 @@ export const INSPECTOR_HELP: Record<InspectorPanelId, PanelHelpContent> = {
 	xy: {
 		title: 'Chromaticity / plane view',
 		summary:
-			'Observer-aware chromaticity or fixed-lightness opponent-plane view. CIE modes use the selected observer label; Oklab and CIELAB show sampled fixed-lightness gamut cross-sections. Marker shows the hovered stimulus; sRGB fill is a display preview where an inverse is defined.',
+			'Observer-aware chromaticity or fixed-lightness opponent-plane view. CIE modes use the selected observer label; MacLeod-Boynton uses table-backed 2° locus coordinates with calibrated LMS projection; Oklab and CIELAB show sampled fixed-lightness gamut cross-sections. Marker shows the hovered stimulus; sRGB fill is a display preview where an inverse is defined.',
 		sources: [
 			{ label: 'CIE colorimetry and selected observer dataset' },
-			{ label: 'Spectral locus from the active observer model' },
+			{ label: 'Spectral locus from the active observer model or table-backed diagram source' },
 			{ label: 'Composite colors are off-locus excitations, not spectral points' }
 		]
 	},

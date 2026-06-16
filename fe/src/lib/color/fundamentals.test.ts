@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { interpolateDataset, DEFAULT_OBSERVERS } from './fundamentals';
-import { DIAGRAMS, diagramDisplayLabel, diagramShortLabel } from './diagrams';
+import { interpolateDataset, DEFAULT_OBSERVERS, observerDisplayLabel, observerShortLabel } from './fundamentals';
+import { DIAGRAMS, diagramDisplayLabel, diagramShortLabel, lmsToMacLeodBoynton } from './diagrams';
 import { generateSpectralLocus } from './locus';
 import { generateOpponentPlaneGamutBoundary, isXyzInsideGamut, opponentPlaneToXyz } from './diagram-boundary';
 import type { SpectralDataset } from './types';
@@ -141,6 +141,26 @@ describe('fundamentals & registries', () => {
 		}
 	});
 
+	it('should calibrate MacLeod-Boynton arbitrary LMS projection to the bundled spectral table', () => {
+		const obs = DEFAULT_OBSERVERS['stockman-sharpe-2deg'];
+		const diag = DIAGRAMS['macleod-boynton'];
+		let maxL = 0;
+		let maxS = 0;
+
+		for (let nm = 390; nm <= 830; nm += 5) {
+			const lms = obs.evaluateLms(nm);
+			const projected = diag.project(obs.evaluateXyz(nm), lms);
+			const direct = lmsToMacLeodBoynton(lms);
+			const expected = [sample(smb_cc_2deg_1nm, nm, 'Mb1'), sample(smb_cc_2deg_1nm, nm, 'Mb3')];
+			expect(projected).toEqual(direct);
+			maxL = Math.max(maxL, Math.abs(projected[0] - expected[0]));
+			if (expected[1] > 1e-5) maxS = Math.max(maxS, Math.abs(projected[1] - expected[1]));
+		}
+
+		expect(maxL).toBeLessThan(2e-6);
+		expect(maxS).toBeLessThan(4e-6);
+	});
+
 	it('should generate fixed-lightness opponent-plane gamut boundaries inside the target gamut', () => {
 		for (const diagramKey of ['oklab-ab', 'cielab-ab']) {
 			const boundary = generateOpponentPlaneGamutBoundary(diagramKey, 'srgb', 48);
@@ -161,7 +181,16 @@ describe('fundamentals & registries', () => {
 		expect(diagramDisplayLabel('cie1931-xy', 'stockman-sharpe-10deg')).toBe('CIE 2006 10° xF yF');
 		expect(diagramDisplayLabel('cie1931-xy', 'ciexyz64-10deg')).toBe('CIE 1964 10° x10 y10');
 		expect(diagramDisplayLabel('cie1976-upvp', 'stockman-sharpe-2deg')).toContain('CIE 2006 2° observer');
+		expect(diagramDisplayLabel('macleod-boynton', 'stockman-sharpe-2deg')).toBe('MacLeod-Boynton 2° (l, s)');
 		expect(diagramShortLabel('oklab-ab')).toBe('a b');
 		expect(diagramShortLabel('cielab-ab')).toBe('a*b*');
+	});
+
+	it('should label observer datasets for the cone fundamentals panel', () => {
+		expect(observerDisplayLabel('stockman-sharpe-2deg')).toBe('Stockman & Sharpe (2000) 2° Cone Fundamentals');
+		expect(observerDisplayLabel('ciexyz31-2deg')).toBe('CIE 1931 2° XYZ CMFs');
+		expect(observerShortLabel('stockman-sharpe-2deg')).toBe('Stockman & Sharpe (2000) 2°');
+		expect(observerShortLabel('ciexyz31-2deg')).toBe('CIE 1931 2°');
+		expect(observerShortLabel('ciexyzjv-5nm')).toBe('Judd-Vos 1978 2°');
 	});
 });

@@ -153,6 +153,32 @@ export const DEFAULT_OBSERVERS: Record<string, ObserverModel> = {
 	'ciexyz31-2deg': createObserverModel('ciexyz31-2deg', ciexyz31_1nm)
 };
 
+const OBSERVER_FALLBACK_LABELS: Record<string, string> = {
+	'stockman-sharpe-2deg': 'Stockman & Sharpe (2000) 2° Cone Fundamentals',
+	'stockman-sharpe-10deg': 'Stockman & Sharpe (2000) 10° Cone Fundamentals',
+	'ciexyz31-2deg': 'CIE 1931 2° XYZ CMFs',
+	'ciexyz64-10deg': 'CIE 1964 10° XYZ CMFs',
+	'ciexyzj-5nm': 'Judd 1951 modified CIE 1931 CMFs',
+	'ciexyzjv-5nm': 'Judd-Vos 1978 modified CIE 1931 CMFs'
+};
+
+const OBSERVER_SHORT_LABELS: Record<string, string> = {
+	'stockman-sharpe-2deg': 'Stockman & Sharpe (2000) 2°',
+	'stockman-sharpe-10deg': 'Stockman & Sharpe (2000) 10°',
+	'ciexyz31-2deg': 'CIE 1931 2°',
+	'ciexyz64-10deg': 'CIE 1964 10°',
+	'ciexyzj-5nm': 'Judd 1951 2°',
+	'ciexyzjv-5nm': 'Judd-Vos 1978 2°'
+};
+
+export function observerDisplayLabel(observerKey: string): string {
+	return DEFAULT_OBSERVERS[observerKey]?.label ?? OBSERVER_FALLBACK_LABELS[observerKey] ?? observerKey;
+}
+
+export function observerShortLabel(observerKey: string): string {
+	return OBSERVER_SHORT_LABELS[observerKey] ?? observerDisplayLabel(observerKey);
+}
+
 /**
  * Asynchronously loads any registered observer dataset.
  */

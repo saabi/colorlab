@@ -6,16 +6,17 @@ Implementation status:
 
 - Implemented in this pass:
   - table-backed MacLeod-Boynton spectral locus coordinates;
+  - calibrated MacLeod-Boynton arbitrary LMS projection matching the bundled
+    2° spectral table;
   - fixed-lightness Oklab and CIELAB opponent-plane projections and labels;
   - sampled fixed-lightness gamut boundaries for Oklab/CIELAB opponent planes;
   - observer-aware labels for CIE xy/uv/u'v' panel modes;
   - observer-range-safe spectral locus generation;
   - table-comparison regression tests for CIE xy, CIE 2006 xF/yF, and
-    MacLeod-Boynton locus data;
+    MacLeod-Boynton locus and arbitrary LMS projection data;
   - fixed-lightness gamut-boundary regression tests for Oklab/CIELAB.
 - Deferred:
-  - verified MacLeod-Boynton projection/inverse for arbitrary non-spectral
-    stimuli.
+  - formal source-metadata field for MacLeod-Boynton normalization constants.
 
 Scope reviewed:
 
@@ -31,7 +32,7 @@ Scope reviewed:
 
 Validation run:
 
-- `npm test` in `fe/`: passed, 129 tests.
+- `npm test` in `fe/`: passed, 131 tests.
 - `npm run check` in `fe/`: passed, 0 diagnostics.
 - Direct CSV numeric probes against generated datasets.
 
@@ -45,9 +46,9 @@ standard for XYZ inputs.
 The audit found three exposed diagram modes that should not be considered valid
 chromaticity diagrams unless handled with explicit mode-specific semantics:
 
-1. **MacLeod-Boynton**: arbitrary-stimulus projection does not yet match the
-   normalization of the bundled
-   MacLeod-Boynton coordinate table.
+1. **MacLeod-Boynton**: arbitrary-stimulus projection now uses calibrated
+   per-cone scale factors that match the bundled MacLeod-Boynton coordinate
+   table for Stockman-Sharpe 2° LMS samples.
 2. **Oklab `(a, b)`**: this is not a chromaticity diagram; it is now handled as
    a fixed-lightness opponent-plane view.
 3. **CIELAB `(a*, b*)`**: this is not a chromaticity diagram; it is a
@@ -111,7 +112,7 @@ Verdict: **valid**.
 
 ## Findings
 
-### 1. MacLeod-Boynton Projection Is Not Currently Valid
+### 1. MacLeod-Boynton Projection Is Now Calibrated
 
 Current implementation in `diagrams.ts`:
 
@@ -136,23 +137,32 @@ Examples:
 | 555 | `[0.5024, 0.000626]` | `[0.6666, 0.000045]` |
 | 700 | `[0.9417, 0]` | `[0.9697, 0]` |
 
-The bundled table likely includes the conventional MacLeod-Boynton
-normalization/scaling. The current formula is an unscaled LMS ratio, so it is
-not equivalent to the source data.
+The bundled table includes a conventional MacLeod-Boynton normalization/scaling.
+The old formula was an unscaled LMS ratio, so it was not equivalent to the
+source data.
 
-Required fix:
+Implemented fix:
 
 - Use the bundled `smb_cc_2deg_1nm` table for the spectral locus when the
   diagram is MacLeod-Boynton.
-- For arbitrary XYZ stimuli, implement the same normalization used by the source
-  table, or defer arbitrary MB projection until the scale is verified.
-- Do not use the current simple `S/(L+M)` value as the plotted `s` coordinate
-  while labeling it MacLeod-Boynton.
+- For arbitrary LMS stimuli, use:
 
-Recommended short-term UI behavior:
+```ts
+l = 1.9806536312072827 * L / (1.9806536312072827 * L + M)
+s = 0.10668241929719655 * S / (1.9806536312072827 * L + M)
+```
 
-- Either hide MacLeod-Boynton until table-backed projection is implemented, or
-  label it explicitly as `Unscaled LMS ratio (experimental)`.
+Validation against `smb_cc_2deg_1nm.csv` using Stockman-Sharpe 2° LMS:
+
+- `l`: max absolute error `< 2e-6` across the 390-830 nm table.
+- `s`: max absolute error `< 4e-6` where the source `s` coordinate is above
+  `1e-5`; lower long-wavelength tail values are at source-table quantization
+  limits.
+
+Current UI behavior:
+
+- Label as `MacLeod-Boynton 2° (l, s)`.
+- Keep the spectral locus table-backed.
 
 ### 2. Oklab `(a, b)` Is Not A Chromaticity Diagram
 
@@ -289,22 +299,27 @@ projective chromaticity coordinates.
 
 It is not appropriate for:
 
-- MacLeod-Boynton until the correct inverse/normalization is implemented.
+- MacLeod-Boynton background fill unless a defensible inverse from `(l, s)` back
+  to display XYZ is added; the locus and hover marker are now calibrated, but
+  the panel intentionally avoids fake xy-like fill in this mode.
 - Oklab and CIELAB opponent-plane views unless a fixed lightness slice is used
-  consistently for all plotted elements.
+  consistently for all plotted elements. This is now implemented.
 
 ## Recommended Implementation Order
 
 1. **Restrict or relabel invalid modes immediately**
    - Keep `cie1931-xy`, `cie1960-uv`, and `cie1976-upvp`.
-   - Hide or mark MacLeod-Boynton as experimental until it is table-backed.
+   - Label MacLeod-Boynton as `MacLeod-Boynton 2° (l, s)` now that the locus
+     and LMS projection are calibrated.
    - Relabel Oklab/CIELAB as fixed-lightness opponent-plane views, not
      chromaticity diagrams.
 
 2. **Fix MacLeod-Boynton**
    - Use `smb_cc_2deg_1nm` for locus plotting.
    - Derive/verify the conventional transform and scale for arbitrary stimuli.
-   - Add a test comparing spectral locus points against the bundled table.
+   - Add tests comparing spectral locus points and arbitrary LMS projection
+     against the bundled table.
+   - Status: implemented.
 
 3. **Split diagram kinds**
    - `chromaticityDiagram`: CIE xy/uv/u'v'/MacLeod-Boynton once fixed.

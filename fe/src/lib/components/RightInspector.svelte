@@ -8,6 +8,7 @@
 	import { drawTransferPanel } from '$lib/panels/transfer-panel';
 	import { drawXyPanel } from '$lib/panels/xy-panel';
 	import { diagramDisplayLabel, diagramShortLabel } from '$lib/color/diagrams';
+	import { observerShortLabel } from '$lib/color/fundamentals';
 
 	import type { ExplorerState } from '$lib/engine/types';
 	import type { Vec3 } from '$lib/color/math';
@@ -20,6 +21,7 @@
 	let activeTab = $state<'transfer' | 'cones' | 'xy' | 'values' | 'palette'>('transfer');
 	let openHelp = $state<string | null>(null);
 
+	const conesLabel = $derived(observerShortLabel(explorer.observerModel));
 	const xyLabel = $derived(diagramDisplayLabel(explorer.chromaticityDiagram, explorer.observerModel));
 	const xyTabLabel = $derived(diagramShortLabel(explorer.chromaticityDiagram));
 
@@ -161,7 +163,7 @@
 
 	<section class:active={activeTab === 'cones'} class="inspector-tab-panel">
 		<PanelHeader
-			label="Cone fundamentals L M S"
+			label={conesLabel}
 			panelId="cones"
 			meta={spectrumLabel}
 			bind:openHelp

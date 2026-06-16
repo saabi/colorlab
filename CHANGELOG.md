@@ -15,7 +15,7 @@ The canonical version string is `fe/package.json` → `"version"`. Update this f
 - Dynamic observer matrix generator that calculates custom `rgb2lms` / `lms2rgb` conversion matrices at runtime for WebGL rendering, CVD simulation, and color inspector picking.
 - Dynamic locus range and autofit bounding box calculations in 2D chromaticity panels.
 - Oklab a/b and CIELAB a*/b* fixed-lightness opponent-plane views with coordinate unprojection, sampled gamut-boundary cross-sections, and interactive inspection.
-- Table-backed MacLeod-Boynton spectral locus coordinates, with arbitrary stimulus projection still marked experimental until normalization is verified.
+- Table-backed MacLeod-Boynton spectral locus coordinates plus calibrated arbitrary LMS projection matching the bundled 2° source table.
 - Observer model and chromaticity diagram selections stored in local app preferences and fully validated/persisted in localStorage snapshots.
 - Document sharing & ingestion v1 — Save to file, Share (copy link · copy JSON), Import (file · URL · paste · `#s=…` hash); all paths use `parseSnapshot`.
 - Per-list ramp pipelines (document schema v13) — each source ramp owns its interpolation, placement, expand, and constraint settings; independent main-curve vs extension constraints. The terminal gamut map stays a single shared step targeting the active colorspace.
