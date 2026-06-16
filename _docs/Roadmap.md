@@ -36,7 +36,7 @@ Update `_docs/Roadmap.md` when you:
 - **Undo/redo v1** — debounced `ParameterSnapshot` history
 - **Instruments** — conservative spectrum wavelength marker (suppressed when angular distance to locus > 0.06 rad)
 - **Accessibility** — skip link, landmarks, keyboard baseline, text readability preferences (font scale, contrast, line height)
-- **Layout & polish** — tablet drawer (≤1024px), full mobile layout (≤820px), floor grid underside, header isotype, app preferences in `localStorage`
+- **Layout & polish** — tablet drawer (≤1024px), full mobile layout (≤820px), floor grid underside, header isotype, app preferences in `localStorage` *(breakpoints are pixel-based today; glyph-width responsive infrastructure planned — see #14)*
 - **Open source** — MIT license, CI, CONTRIBUTING / RELEASING docs, dual GitHub/GitLab remotes
 - **Document sharing & ingestion v1** — Save to file, Share (copy link · copy JSON), Import (file · URL · paste · `#s=…` hash); client-side only via `parseSnapshot`
 - **Themed scrollbars** — app-wide dark-UI scrollbar tokens (`scrollbar-color` + `::-webkit-scrollbar`) in `app.css`
@@ -70,36 +70,40 @@ Aligned with the **recommended next order** in [`surface-constraint-gamut-projec
 
 7. **Target model copy cleanup** — recent UI names sRGB as the fixed Gamut Map target, but roadmap direction is Active gamut for ramp output and Display gamut for Explorer display mapping. Update UI copy as the implementation catches up.
 8. **Explorer display-gamut classification** — classify Active gamut against Display gamut (shader first) before projected display preview. Whether to clip/map the Explorer view to Display gamut belongs in the Explorer pipeline; selecting Active/Display gamuts does not.
+9. **PNG ramp strip export** — export each generated ramp as a **horizontal 1×N sRGB PNG** (one pixel per final stop, post gamut-map — same colors as CSS/DTCG export and `PaletteStrip`). **Multi-list:** one strip per source list when Expand is off (`theme.stops` / per-list rows); with Expand on, one strip per row of `theme.grid`. **Target apps:** DaVinci Resolve, TouchDesigner, Resolume, Fusion (Text+ glyph fill texture — load the PNG directly as a fill map). Workflow: design in Color Lab → download strip(s) → drop into the compositor. Optional: hi-res strip from the interpolate curve (not just placed stops); zip when multiple lists/rows. Natural home: Export step beside CSS/DTCG (`theme.ts` + canvas/`OffscreenCanvas`); later movable to the modular engine (#30).
 
 ### Small scope, polish
 
-9. ✅ **Undo transaction labels** — **shipped**: one-shot `history.hintLabel(label)` that the debounced observer prefers; labeled point/list/ramp edits (ThemeRamp + Viewport) and gamut/world-space changes. See [`undo-redo-state-design.md`](undo-redo-state-design.md).
+10. ✅ **Undo transaction labels** — **shipped**: one-shot `history.hintLabel(label)` that the debounced observer prefers; labeled point/list/ramp edits (ThemeRamp + Viewport) and gamut/world-space changes. See [`undo-redo-state-design.md`](undo-redo-state-design.md).
 
 ### Medium scope
 
-10. ✅ **Light UI color scheme** — **shipped**: dark/light toggle in Accessibility panel; `:root[data-theme='light']` tokens in `app.css`; persisted in `colorlab:preferences` with flash-free bootstrap in `app.html`; light-theme secondary contrast overrides in `a11y.css`. WebGL viewport backdrop is independent (see #11).
-11. ✅ **Neutral explorer backdrop** — **shipped**: Oklab L = 0.5 surround toggle in sidebar footer Viewport preferences; WebGL clear color, floor-grid underside, and viewport letterbox; persisted in `colorlab:preferences` (not documents). Does not change the color solid.
-12. ✅ **Pipeline node UI (Phase 1)** — **shipped**: `PipelineRail.svelte` (read-only map + status dashboard) over the `PIPELINE_NODES` registry; clicking a step opens + scrolls its sidebar controls; arrow-key roving on the rail. Sidebar already renders node-ordered sections with status/affects/enablement. See [`pipeline-node-ui-proposal.md`](pipeline-node-ui-proposal.md).
-13. **OOG badges + raw/final preview** — OOG count badges on Interpolate/Gamut Map pipeline nodes **shipped**; before/after stop swatch diff preview on Gamut Map/Export remains open.
-14. ✅ **Okhsl/Okhsv picker coordinates** — **shipped**: the picker already supported Okhsl/Okhsv via plane+bar; added direct per-channel sliders (H/S/L · H/S/V, and every space) for the selected stop in `ColorPicker.svelte`.
-15. **Direct xy chromaticity picking** — click/drag in the xy panel; define which Y/L is held constant and which chromaticity diagram/observer is active. Depends on the diagram registry in #3.
-16. **Gamut boundary snap tools** — stop-level UX on top of existing Oklab boundary projection.
+11. ✅ **Light UI color scheme** — **shipped**: dark/light toggle in Accessibility panel; `:root[data-theme='light']` tokens in `app.css`; persisted in `colorlab:preferences` with flash-free bootstrap in `app.html`; light-theme secondary contrast overrides in `a11y.css`. WebGL viewport backdrop is independent (see #12).
+12. ✅ **Neutral explorer backdrop** — **shipped**: Oklab L = 0.5 surround toggle in sidebar footer Viewport preferences; WebGL clear color, floor-grid underside, and viewport letterbox; persisted in `colorlab:preferences` (not documents). Does not change the color solid.
+13. ✅ **Pipeline node UI (Phase 1)** — **shipped**: `PipelineRail.svelte` (read-only map + status dashboard) over the `PIPELINE_NODES` registry; clicking a step opens + scrolls its sidebar controls; arrow-key roving on the rail. Sidebar already renders node-ordered sections with status/affects/enablement. See [`pipeline-node-ui-proposal.md`](pipeline-node-ui-proposal.md).
+14. **Glyph-width responsive breakpoints** — replace pixel `max-width` layout gates (1024 / 820 / 520 px in `app.css`; `mobile.ts` `matchMedia`) with infrastructure that classifies the viewport from **glyph (ch) width**, not raw pixels. Layout mode then tracks typographic measure — more predictable on real devices and stable when the Readability panel changes font scale. Prior art: [`ScreenSensor`](https://github.com/nestauk/dsp_waifinder/blob/dbedf0b5e879838ea15f08fa208493b1ba5ed7dc/fe/src/routes/%2Blayout.svelte#L127) in dsp_waifinder (same author; `@svizzle/ui` applies screen classes from measured glyph width). Color Lab will likely use a small in-app sensor + CSS class hooks rather than a new dependency.
+15. **OOG badges + raw/final preview** — OOG count badges on Interpolate/Gamut Map pipeline nodes **shipped**; before/after stop swatch diff preview on Gamut Map/Export remains open.
+16. ✅ **Okhsl/Okhsv picker coordinates** — **shipped**: the picker already supported Okhsl/Okhsv via plane+bar; added direct per-channel sliders (H/S/L · H/S/V, and every space) for the selected stop in `ColorPicker.svelte`.
+17. **Direct xy chromaticity picking** — click/drag in the xy panel; define which Y/L is held constant and which chromaticity diagram/observer is active. Depends on the diagram registry in #3.
+18. **Gamut boundary snap tools** — stop-level UX on top of existing Oklab boundary projection.
 
 ### Large / design-first
 
-17. **Generic active/display gamut solver** — matrix-based boundary solver for Active gamut and Display gamut relationships; keep sRGB analytic fast path where useful.
-18. **Custom Display Gamut** — calibration wizard UX before implementation.
-19. **Gradient designer improvements** — editable stops, per-stop OKLCh/Okhsl, CSS gradient preview.
-20. **Pipeline node UI (Phases 2–4)** — node-scoped parameter panel, full pipeline-driven layout, mobile optimization. **Note:** the Gamut/Color-Context split is blocked on the colorimetry work and documented in [`gamut-step-organization-observations.md`](gamut-step-organization-observations.md) — extract World/Clip/Vision/Display panels first; leave Gamut/Color Context for last.
+19. **Generic active/display gamut solver** — matrix-based boundary solver for Active gamut and Display gamut relationships; keep sRGB analytic fast path where useful.
+20. **Custom Display Gamut** — calibration wizard UX before implementation.
+21. **Gradient designer improvements** — editable stops, per-stop OKLCh/Okhsl, CSS gradient preview.
+22. **Pipeline node UI (Phases 2–4)** — node-scoped parameter panel, full pipeline-driven layout, mobile optimization (pairs with #14 glyph-width breakpoints). **Note:** the Gamut/Color-Context split is blocked on the colorimetry work and documented in [`gamut-step-organization-observations.md`](gamut-step-organization-observations.md) — extract World/Clip/Vision/Display panels first; leave Gamut/Color Context for last.
 
 ### Research / deferred
 
-21. Gamut compression — display/ramp policy after Active/Display gamut model stabilizes
-22. Projected Explorer display overlay vs geometry replacement (open question)
-23. Spectral/chromaticity intensity volume — depends on the observer/fundamentals registry (**registry shipped**; volume overlay still open)
-24. GPU/codegen evaluation (surface plan Phase 8; criteria-gated)
-25. WebGPU, HDR, EDID defaults, Color Accumulator, in-scene text — see design review
-26. **Additional MacLeod-Boynton / LMS-ratio diagram modes** — only with source-backed tables or explicit normalization policy per fundamentals dataset; an active-observer LMS ratio view would be a separate, honestly labeled mode (not “MacLeod-Boynton”). **Audit:** [`cone-fundamentals-chromaticity-math-audit.md`](cone-fundamentals-chromaticity-math-audit.md) §Future Work.
+23. Gamut compression — display/ramp policy after Active/Display gamut model stabilizes
+24. Projected Explorer display overlay vs geometry replacement (open question)
+25. Spectral/chromaticity intensity volume — depends on the observer/fundamentals registry (**registry shipped**; volume overlay still open)
+26. GPU/codegen evaluation (surface plan Phase 8; criteria-gated)
+27. WebGPU, HDR, EDID defaults, Color Accumulator, in-scene text — see design review
+28. **Additional MacLeod-Boynton / LMS-ratio diagram modes** — only with source-backed tables or explicit normalization policy per fundamentals dataset; an active-observer LMS ratio view would be a separate, honestly labeled mode (not “MacLeod-Boynton”). **Audit:** [`cone-fundamentals-chromaticity-math-audit.md`](cone-fundamentals-chromaticity-math-audit.md) §Future Work.
+29. **Compact ramp interchange format (+ optional npm package)** — a small JSON schema for **anchors + per-list pipeline + terminal gamut-map policy** (and optionally baked final stops), distinct from the full `ParameterSnapshot` (explorer/camera/view). Goal: other apps can import/export ramps without pulling the whole document model. **Existing ecosystem:** [DTCG](https://www.designtokens.org/) parsers ([@styleframe/dtcg](https://www.styleframe.dev/docs/getting-started/integrations/dtcg), [@trufflehq/design-tokens-format-module](https://www.npmjs.com/package/@trufflehq/design-tokens-format-module)) handle token trees, not interpolation recipes; [colors-on-the-curve](https://www.npmjs.com/package/colors-on-the-curve) and [Huescale](https://github.com/ryannono/Huescale) generate/export palettes (HSL or OKLCH) with `$extensions` metadata but not Color Lab's Oklab pipeline model. **Options:** (a) homebrew schema + in-repo parse/encode only — zero consumer deps; (b) thin first-party npm module under our control (`@saabi/colorlab-ramp` or similar) centralizing compact encode/decode/migrate, consumed by `fe/` and third parties — one optional dependency. Today's exports: final stops only (`exportTokens` / `exportDTCG` in `theme.ts`); share links carry gzip'd full snapshots (`documents/share.ts`). A ramp bundle would sit between those — recipe + optional resolved output.
+30. **Modular color engine (npm-installable, UI-free)** — extract the computation layer so integrators can `npm install` the ramp/color pipeline without SvelteKit or WebGL. **Natural core today:** `lib/color/` (math, gamuts, Bradford CAT, interp spaces, gamut map, boundary projection) is already pure TS with no app state. **Ramp pipeline** (`buildRamp` / `finalizeRamp` in `engine/theme.ts`) is the integration surface but is coupled to `ExplorerState`, `DerivedMatrices`, and 3D `world` coords on `ThemeStop`. **Target API:** accept anchors + per-list `ListPipeline` + active gamut (+ optional display gamut) → return linear-sRGB / OKLch stops, hi-res curves, and expand grids; integrators choose **live evaluation** on demand or **runtime bake** into lookup tables for indexed access. **Packaging options:** (a) monorepo package consumed by `fe/` via workspace (`packages/engine`); (b) publish `@saabi/colorlab-engine` (or similar) — pairs with #29 interchange format; UI app becomes a thin shell over the same module. **Out of scope for the package:** WebGL renderer, picking, camera, document UI — those stay in `fe/`. PNG strip encoding (#9) is a natural export helper on the same module.
 
 ---
 
@@ -160,6 +164,14 @@ v1 plus transaction labels are done: a one-shot `history.hintLabel` lets discret
 **Plan:** [`state-sharing-ingestion-plan.md`](state-sharing-ingestion-plan.md)  
 **Status:** v1 shipped — Save to file, Share (link + JSON), Import (file · URL · paste · `#s=…` hash). Deferred: `?src=` deep-link, shared toast system, File System Access API.
 
+**Ramp interchange (research):** v1 shares the full `ParameterSnapshot` (explorer + camera + theme). Export emits **final stops** as CSS or DTCG JSON (`theme.ts`); DTCG uses `$extensions['gamut.explorer']` for oklch/OOG metadata. A slimmer **ramp bundle** — compact JSON with anchors, per-list `ListPipeline`, and shared `gamutMap` — could be easier for other apps to ingest than a document or than DTCG alone (which has no interpolation model). See priority **#29**; no close npm equivalent found (DTCG parsers ≠ ramp recipes). Delivery options: in-repo schema only, or a first-party npm package for shared parse/format logic.
+
+**Modular engine (research):** The same ramp bundle could feed an **npm-installable engine** (#30) — `lib/color/` plus a UI-free `buildRamp` — so integrators generate interpolated colors live or bake lookup tables at runtime without pulling Svelte/WebGL. `fe/` would depend on the published/workspace package; one implementation, two consumers (app + third parties).
+
+### Ramp export (video / compositor workflow)
+
+**Status:** CSS oklch + DTCG JSON shipped (`ThemeRamp` Export step). **Planned (#9):** **PNG ramp strips** — each row of final colors as a 1×N horizontal sRGB image (one pixel per stop, post gamut-map). One file per source list (Expand off) or per expanded row (`theme.grid`). Primary use: load as a **1D gradient texture** in DaVinci Resolve, TouchDesigner, Resolume, and Fusion (e.g. Text+ glyph fill). Multi-list documents → multiple strips or a zip download. Same color path as `PaletteStrip` / `exportTokens`; implementation via canvas or `OffscreenCanvas` in `theme.ts`.
+
 ### UI & appearance
 
 **Status:** Dark (default) and light UI schemes (`:root` / `:root[data-theme='light']` tokens in `app.css`; toggle in Accessibility panel, persisted in `colorlab:preferences`). Viewport surround defaults to dark UI clear color; optional **neutral backdrop** (Oklab L = 0.5) in Viewport preferences. Scrollbars themed via `--scrollbar-*` tokens.
@@ -168,6 +180,7 @@ v1 plus transaction labels are done: a one-shot `history.hintLabel` lets discret
 |------|-------|
 | ✅ Light color scheme | **Shipped** — second token set + `colorlab:preferences` persistence; light secondary-contrast overrides |
 | ✅ Neutral explorer backdrop | **Shipped** — Oklab L = 0.5 WebGL clear + viewport letterbox; Viewport preferences toggle |
+| **Glyph-width responsive breakpoints** | **Planned** — classify layout from measured glyph (`ch`) width instead of pixel `max-width` gates (`1024` / `820` / `520` in `app.css`; `NARROW_LAYOUT_MAX_WIDTH` / `MOBILE_LAYOUT_MAX_WIDTH` in `mobile.ts`). Keeps narrow/tablet/mobile modes predictable on real hardware and coherent when Readability font scale changes. Prior art: [`ScreenSensor` in dsp_waifinder](https://github.com/nestauk/dsp_waifinder/blob/dbedf0b5e879838ea15f08fa208493b1ba5ed7dc/fe/src/routes/%2Blayout.svelte#L127) (`$_screen?.classes` from glyph-width sensor). Likely a small in-app width sensor + root/body class hooks; update `isNarrowLayout` / `isMobileLayout` to read the same classification. Pairs with pipeline node UI mobile work (#22). |
 
 ### Feature backlog
 
@@ -179,6 +192,10 @@ v1 plus transaction labels are done: a one-shot `history.hintLabel` lets discret
 | Gradient designer improvements | Builds on existing ramp model |
 | ✅ Okhsl/Okhsv picker coordinates | **Shipped** — per-channel H/S/L · H/S/V sliders for the selected stop in `ColorPicker.svelte`. |
 | ✅ Observer fundamentals + chromaticity diagrams | **Shipped**. Registries, dataset catalog, reference-validated evaluation, observer-aware CIE xy/uv/u′v′, Oklab/CIELAB opponent-plane views, MacLeod-Boynton 2°, dynamic WebGL shaders/picking support. Audit: [`cone-fundamentals-chromaticity-math-audit.md`](cone-fundamentals-chromaticity-math-audit.md). |
+| Glyph-width responsive breakpoints | Replace pixel layout gates with ch-width classification; composes with Readability font scale. See priority #14 and UI & appearance table. |
+| PNG ramp strip export | 1×N horizontal sRGB PNG per list/row for Resolve, TouchDesigner, Resolume, Fusion Text+. See #9. |
+| Compact ramp interchange / npm package | Anchors + pipeline recipe JSON for third-party apps; optional `@saabi/colorlab-ramp`. See #29. |
+| Modular color engine (npm) | UI-free `lib/color` + ramp pipeline; live eval or runtime bake. See #30. |
 | Direct xy chromaticity picking | Needs luminance hold policy and active diagram/observer semantics |
 | Gamut boundary snap tools | Stop-level UX on top of boundary projection |
 | Spectral/chromaticity intensity volume | Optional reference layer; depends on reference-validated observer/fundamentals registry |
