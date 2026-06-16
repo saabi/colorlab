@@ -6,6 +6,9 @@
 	import ThemeRamp from './ThemeRamp.svelte';
 	import ToggleRow from './ToggleRow.svelte';
 	import PanelHelp from './PanelHelp.svelte';
+	import PipelineRail from './PipelineRail.svelte';
+	import { tick } from 'svelte';
+	import { track } from '$lib/analytics/umami';
 	import { MAX_CAMERA_DIST, MAX_CAMERA_FOV, MAX_CAMERA_PITCH, MIN_CAMERA_DIST, MIN_CAMERA_FOV, resetCamera } from '$lib/engine/camera';
 	import { getPipelineNode, isNodeEnabled, type PipelineNodeId } from './pipeline-nodes';
 
@@ -26,6 +29,21 @@
 	const isOpen = (id: string) => explorer.openSteps.includes(id);
 	function toggleStep(id: string) {
 		explorer.openSteps = isOpen(id) ? explorer.openSteps.filter((s: string) => s !== id) : [...explorer.openSteps, id];
+	}
+
+	// Pipeline rail: open the matching step (if collapsed) and scroll its controls
+	// into view. The rail is navigation only — it owns no parameters.
+	const RAMP_SUBSTEPS = new Set<PipelineNodeId>(['sources', 'interpolate', 'adjust', 'expand']);
+	async function selectNode(id: PipelineNodeId) {
+		// Substeps live inside the collapsible ramp-builder group — open it first.
+		if (RAMP_SUBSTEPS.has(id) && !isOpen('ramp-builder')) toggleStep('ramp-builder');
+		if (!isOpen(id)) toggleStep(id);
+		await tick();
+		const el =
+			document.querySelector(`[data-tutorial="node-${id}"]`) ??
+			document.getElementById(`ramp-substep-${id}`);
+		el?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+		track('pipeline_node_select', { node: id });
 	}
 
 	// Per-step header metadata (status / affects / warn / enablement) sourced from pipeline-nodes.ts.
@@ -91,6 +109,7 @@
 
 <aside class="side-panel left-panel" aria-label="Controls" data-tutorial="sidebar">
 	<div class="left-panel-scroll">
+	<PipelineRail {explorer} openIds={explorer.openSteps} onSelect={selectNode} />
 	<!-- EXPLORER lane: data -> geometry -> view -> eye -->
 	<section class="lane-band" aria-label="Explorer pipeline">
 		<div class="lane-band-title">
