@@ -61,8 +61,8 @@
 			{/each}
 		</span>
 		<span class="pipeline-note">
-			The display step assumes an sRGB-compliant monitor. Future versions will let you set custom
-			chromaticities and gamma; the pipeline will update to match.
+			The display step assumes an sRGB-compliant monitor. The ramp Gamut map targets the active
+			colorspace — sRGB by default; support for other active-colorspace targets is planned.
 		</span>
 	</span>
 </span>

@@ -268,16 +268,16 @@ export const PIPELINE_HELP: Record<PipelineHelpId, PanelHelpContent> = {
 	},
 	pipelineGamutMap: {
 		title: 'Gamut map',
-		summary: 'Applies the terminal ramp-only policy for generated stops after interpolation, placement, and expansion. The current output target is sRGB.',
+		summary: 'Applies the terminal ramp-only policy for generated stops after interpolation, placement, and expansion. The output target is the active colorspace — currently sRGB by default.',
 		stageRows: stageRows(
-			'Generated ramp or palette stops, possibly outside the sRGB output target.',
-			'Clipping or Oklab projection method used to bring those stops into sRGB. Focus-based methods expose focus lightness; adaptive methods also expose alpha. This is a terminal correction, not a curve constraint.',
+			'Generated ramp or palette stops, possibly outside the active colorspace.',
+			'Clipping or Oklab projection method used to bring those stops into the active colorspace. Focus-based methods expose focus lightness; adaptive methods also expose alpha. This is a terminal correction, not a curve constraint.',
 			'Final in-gamut ramp colors for preview, palette display, and export.',
 			'The 3D explorer solid, hover readouts, CVD simulation, source anchors, or the upstream curve path.'
 		),
 		details: [
-			'This stage is deliberately separate from Interpolate. Surface projection answers “where should the path run?”; Gamut map answers “what should exported/generated colors become if they are outside the sRGB target gamut?”',
-			'The Explorer Gamut setting controls the 3D solid being studied. The Gamut map target controls ramp output; for now that target is fixed to sRGB.'
+			'This stage is deliberately separate from Interpolate. Surface projection answers "where should the path run?"; Gamut map answers "what should exported/generated colors become if they are outside the active colorspace?"',
+			'The Explorer Gamut setting controls the 3D solid being studied. The Gamut map target is the active colorspace; sRGB is the current default because the analytic mapper is sRGB-specific. Support for other active-gamut targets is planned.'
 		],
 		sources: [
 			{ label: 'gamut-map.ts' },
@@ -287,7 +287,7 @@ export const PIPELINE_HELP: Record<PipelineHelpId, PanelHelpContent> = {
 	},
 	pipelineExport: {
 		title: 'Export',
-		summary: 'Serializes final ramp colors after interpolation, adjustment, and sRGB-target gamut mapping.',
+		summary: 'Serializes final ramp colors after interpolation, placement, and gamut mapping to the active colorspace.',
 		stageRows: stageRows(
 			'Final ramp stops.',
 			'Export action and output text format.',

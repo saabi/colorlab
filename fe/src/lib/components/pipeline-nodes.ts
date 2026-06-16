@@ -200,14 +200,14 @@ export const PIPELINE_NODES: PipelineNode[] = [
 		lane: 'Ramp',
 		label: 'Gamut map',
 		shortLabel: 'Map',
-		description: 'Terminal ramp-only policy that brings generated stops into the sRGB export target after the path is built and sampled.',
+		description: 'Terminal ramp-only policy that brings generated stops into the active colorspace after the path is built and sampled. The active colorspace is sRGB by default.',
 		affects: 'Export',
 		requiresSource: true,
 		status: (state) =>
-			`sRGB · ${state.theme.gamutMap}${usesFocus(state.theme.gamutMap) ? ` L ${state.theme.gamutMapParams.focusL.toFixed(2)}` : ''}${
+			`sRGB (active) · ${state.theme.gamutMap}${usesFocus(state.theme.gamutMap) ? ` L ${state.theme.gamutMapParams.focusL.toFixed(2)}` : ''}${
 				state.theme.gamutMap.startsWith('adaptive-') ? ` α ${state.theme.gamutMapParams.alpha.toFixed(2)}` : ''
 			}`,
-		// Stops still outside sRGB after the policy runs (only when policy is 'none').
+		// Stops still outside the active colorspace after the policy runs (only when policy is 'none').
 		warn: (state) => {
 			const n = oogCount(state.theme.stops);
 			return n ? `${n} OOG` : null;
