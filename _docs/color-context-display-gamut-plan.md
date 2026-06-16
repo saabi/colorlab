@@ -63,9 +63,15 @@ UI before the shader math).
   A-pipeline "Gamut" tutorial directs the gamut switch to Color Context. Observer/shell/
   overlays/opacity left in place (fundamentals agent's lane). Verified: single selector,
   0 console errors. The Explorer Gamut step keeps its `node-gamut` anchor + shell controls.
-- ⬜ **Phase 3** — active↔display Bradford CAT in `DerivedMatrices` + shader classification.
-  Note: the Phase 2 warning is **chromaticity-only** (primary containment in xy); Phase 3 adds
-  the luminance/white-aware shader classification.
+- ✅ **Phase 3a** — display-gamut matrices in the shared `DerivedMatrices`: `rgb2displayRgb`
+  (active→display RGB; in-display iff all channels ∈ [0,1]) + `displayWhite`, carrying the
+  active↔display Bradford CAT (identity for D65 profiles). `rebuildMatrices` gains a
+  `displayGamut` param (default `srgb` → no-op today). Tests in `adapt.test.ts` (identity,
+  in-cube, P3-green-on-sRGB flagged, white reported). No visible change yet.
+- ⬜ **Phase 3b** — wire the display preference into the reactive matrices flow (Viewport/
+  AppShell read `displayGamut` from prefs), add the GLSL classification + a uniform, and a UI
+  toggle to visualize Active-gamut colors outside the Display gamut. Keep CPU/GPU/picker
+  parity (single shared bundle). This is the larger, shader-touching step.
 
 ## Phases (each independently shippable)
 

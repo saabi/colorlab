@@ -82,7 +82,7 @@
 	const MORPH_DURATION_MS = 400;
 
 	const history = getHistoryContext();
-	const matrices = $derived(rebuildMatrices(explorer.gamut, explorer.observerModel, explorer.observerLoadedTrigger));
+	const matrices = $derived(rebuildMatrices(explorer.gamut, explorer.observerModel, 'srgb', explorer.observerLoadedTrigger));
 	const shellMatrices = $derived(explorer.hideAids ? null : rebuildShell(explorer.shell, explorer.observerModel, explorer.observerLoadedTrigger));
 
 	$effect(() => {

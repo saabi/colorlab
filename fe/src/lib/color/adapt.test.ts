@@ -40,6 +40,32 @@ describe('rebuildMatrices D65 adaptation', () => {
 	});
 });
 
+describe('rebuildMatrices display-gamut mapping (rgb2displayRgb)', () => {
+	it('is identity when active gamut equals display gamut', () => {
+		const m = rebuildMatrices('p3', 'stockman-sharpe-2deg', 'p3').rgb2displayRgb;
+		m.forEach((v, i) => expect(Math.abs(v - IDENTITY[i])).toBeLessThan(1e-9));
+	});
+
+	it('keeps an in-display color inside the [0,1] cube', () => {
+		// A mid grey in sRGB stays in-gamut on any wider display.
+		const { rgb2displayRgb } = rebuildMatrices('srgb', 'stockman-sharpe-2deg', 'rec2020');
+		const out = m3.mulV(rgb2displayRgb, [0.5, 0.5, 0.5]);
+		out.forEach((c) => expect(c).toBeGreaterThanOrEqual(-1e-6));
+		out.forEach((c) => expect(c).toBeLessThanOrEqual(1 + 1e-6));
+	});
+
+	it('flags an out-of-display color (P3 pure green on an sRGB display) as out of [0,1]', () => {
+		const { rgb2displayRgb } = rebuildMatrices('p3', 'stockman-sharpe-2deg', 'srgb');
+		const out = m3.mulV(rgb2displayRgb, [0, 1, 0]); // pure P3 green
+		const outside = out.some((c) => c < -1e-4 || c > 1 + 1e-4);
+		expect(outside).toBe(true);
+	});
+
+	it('reports the display white point', () => {
+		expect(rebuildMatrices('srgb', 'stockman-sharpe-2deg', 'p3').displayWhite).toEqual(GAMUTS.p3.W);
+	});
+});
+
 // Local reference: native (unadapted) rgb→XYZ for a gamut.
 function rgbToXyzMReference(key: keyof typeof GAMUTS) {
 	const g = GAMUTS[key];

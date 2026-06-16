@@ -17,9 +17,21 @@ export interface DerivedMatrices {
 	white: Vec3;
 	rgb2lms: Mat3;
 	lms2rgb: Mat3;
+	/**
+	 * Active-gamut RGB → display-gamut RGB. A color is within the display gamut iff every
+	 * channel of `rgb2displayRgb · activeRgb` lands in [0,1]. Carries the active↔display
+	 * Bradford CAT (identity when whites match; all built-in display profiles are D65 today).
+	 */
+	rgb2displayRgb: Mat3;
+	displayWhite: Vec3;
 }
 
-export function rebuildMatrices(gamut: GamutKey, observerKey = 'stockman-sharpe-2deg', _trigger = 0): DerivedMatrices {
+export function rebuildMatrices(
+	gamut: GamutKey,
+	observerKey = 'stockman-sharpe-2deg',
+	displayGamut: GamutKey = 'srgb',
+	_trigger = 0
+): DerivedMatrices {
 	const g = GAMUTS[gamut];
 	const d65 = GAMUTS.srgb.W;
 	// Chromatically adapt the active gamut's XYZ to the D65 interchange white via
@@ -40,6 +52,13 @@ export function rebuildMatrices(gamut: GamutKey, observerKey = 'stockman-sharpe-
 	const rgb2lms = m3.mul(activeObserver.toLmsMatrix, rgb2xyz);
 	const lms2rgb = m3.mul(m3.inv(rgb2xyz), activeObserver.toXyzMatrix);
 
+	// Display-gamut path: map active-gamut RGB → display-gamut RGB through the shared D65
+	// interchange. The display profile's own white is Bradford-adapted to D65 (identity for
+	// D65 profiles), so `rgb2displayRgb` composes cleanly with the D65-relative `rgb2xyz`.
+	const d = GAMUTS[displayGamut];
+	const displayRgb2xyz = m3.mul(bradfordAdaptation(d.W, d65), rgbToXyzM(d.P, d.W));
+	const rgb2displayRgb = m3.mul(m3.inv(displayRgb2xyz), rgb2xyz);
+
 	return {
 		rgb2xyz,
 		xyz2rgb: m3.inv(rgb2xyz),
@@ -50,11 +69,13 @@ export function rebuildMatrices(gamut: GamutKey, observerKey = 'stockman-sharpe-
 		toSrgbLin: { toSrgb: gamut2srgbLin, fromSrgb: m3.inv(gamut2srgbLin) },
 		white: d65,
 		rgb2lms,
-		lms2rgb
+		lms2rgb,
+		rgb2displayRgb,
+		displayWhite: d.W
 	};
 }
 
 export function rebuildShell(shell: ShellKey, observerKey = 'stockman-sharpe-2deg', _trigger = 0): DerivedMatrices | null {
 	if (shell === 'none') return null;
-	return rebuildMatrices(shell, observerKey, _trigger);
+	return rebuildMatrices(shell, observerKey, 'srgb', _trigger);
 }
