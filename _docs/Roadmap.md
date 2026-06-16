@@ -40,6 +40,7 @@ Update `_docs/Roadmap.md` when you:
 - **Per-list ramp pipelines** (schema v13) — each source list owns its interpolation / placement / expand / constraint settings; independent **main-curve and extension constraints** (#3 + #4); shared terminal `gamutMap` targets the active colorspace. Multi-list UX: add-clones-active, duplicate, "apply to all," divergence cue. **Plan:** [`per-list-pipeline-plan.md`](per-list-pipeline-plan.md)
 - **Pipeline rail (node UI Phase 1)** — read-only `PipelineRail` map + status dashboard over the `PIPELINE_NODES` registry; click a step to open + scroll its sidebar controls; arrow-key roving. **Plan:** [`pipeline-node-ui-proposal.md`](pipeline-node-ui-proposal.md)
 - **Named undo/redo transaction labels** — one-shot `history.hintLabel` so point/list/ramp edits and gamut/world-space changes show specific labels (e.g. "Undo Add point"). **Design:** [`undo-redo-state-design.md`](undo-redo-state-design.md)
+- **Color picker per-channel sliders** — direct H/S/L · H/S/V (and any space) sliders for the selected ramp stop in `ColorPicker.svelte`, alongside the existing plane/bar.
 - **Ramp Builder polish** — status hierarchy (parent = list context, Sources = active-list points), per-substep enable toggles in sidebar headers. **Plan:** [`ramp-builder-status-hierarchy-plan.md`](ramp-builder-status-hierarchy-plan.md)
 
 ---
@@ -72,7 +73,7 @@ Aligned with the **recommended next order** in [`surface-constraint-gamut-projec
 11. **Neutral explorer backdrop** — colorimetrically neutral surround for the 3D viewport: **Oklab L = 0.5** (a\* = b\* = 0) for WebGL clear color and/or the letterbox around the canvas, so the solid is judged without UI chroma bias. **Placement:** either a third UI scheme or — leaner — a toggle in the sidebar footer **Viewport preferences** panel (`LeftControls`, beside View aids / Performance), persisted in app preferences (not the document). Does not change the color solid itself.
 12. ✅ **Pipeline node UI (Phase 1)** — **shipped**: `PipelineRail.svelte` (read-only map + status dashboard) over the `PIPELINE_NODES` registry; clicking a step opens + scrolls its sidebar controls; arrow-key roving on the rail. Sidebar already renders node-ordered sections with status/affects/enablement. See [`pipeline-node-ui-proposal.md`](pipeline-node-ui-proposal.md).
 13. **OOG badges + raw/final preview** — OOG count badges on Interpolate/Gamut Map pipeline nodes **shipped**; before/after stop swatch diff preview on Gamut Map/Export remains open.
-14. **Okhsl/Okhsv picker coordinates** — H/S/L or H/S/V sliders for the selected ramp stop (`okhsv.ts` exists).
+14. ✅ **Okhsl/Okhsv picker coordinates** — **shipped**: the picker already supported Okhsl/Okhsv via plane+bar; added direct per-channel sliders (H/S/L · H/S/V, and every space) for the selected stop in `ColorPicker.svelte`.
 15. **Direct xy chromaticity picking** — click/drag in the xy panel; define which Y/L is held constant and which chromaticity diagram/observer is active. Depends on the diagram registry in #3.
 16. **Gamut boundary snap tools** — stop-level UX on top of existing Oklab boundary projection.
 
@@ -170,7 +171,7 @@ Open question: should neutral backdrop apply only inside the WebGL canvas letter
 | Neutral explorer backdrop | Oklab L 0.5 viewport surround; policies-panel option |
 | Custom Display Gamut | Wizard UX design before implementation |
 | Gradient designer improvements | Builds on existing ramp model |
-| Okhsl/Okhsv picker coordinates | Sliders for selected stop only |
+| ✅ Okhsl/Okhsv picker coordinates | **Shipped** — per-channel H/S/L · H/S/V sliders for the selected stop in `ColorPicker.svelte`. |
 | ✅ Observer fundamentals + chromaticity diagrams | **Shipped**. Registries, dataset catalog, reference-validated evaluation, observer-aware CIE xy/uv/u′v′, Oklab/CIELAB opponent-plane views, MacLeod-Boynton 2°, dynamic WebGL shaders/picking support. Audit: [`cone-fundamentals-chromaticity-math-audit.md`](cone-fundamentals-chromaticity-math-audit.md). |
 | Direct xy chromaticity picking | Needs luminance hold policy and active diagram/observer semantics |
 | Gamut boundary snap tools | Stop-level UX on top of boundary projection |
