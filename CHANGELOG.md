@@ -12,6 +12,7 @@ The canonical version string is `fe/package.json` → `"version"`. Update this f
 
 - Dark/light theme switch moved out of the "Text" (Readability) panel into a dedicated sun/moon toggle in the header (desktop + mobile More menu); the Readability panel now covers font scale, secondary contrast, and line height only.
 - Header GitHub link now shows the GitHub mark (logo) instead of the word "GitHub"; the in-panel Info links stay as text.
+- Header **Privacy** button renamed to **About** — the panel covers authorship, open source, changelog, beta limitations, and privacy.
 
 ### Fixed
 

@@ -43,17 +43,17 @@
 	</span>
 	<button
 		type="button"
-		class="app-info-privacy"
+		class="app-info-about"
 		aria-expanded={open}
-		aria-controls="app-privacy-panel"
+		aria-controls="app-about-panel"
+		aria-label="About Color Lab"
 		onclick={toggle}
 	>
-		<span class="app-info-privacy-label">Privacy</span>
-		<span class="app-info-mobile-label">Info</span>
+		About
 	</button>
 
 	{#if open}
-		<div id="app-privacy-panel" class="app-info-panel" role="dialog" aria-label="About Color Lab">
+		<div id="app-about-panel" class="app-info-panel" role="dialog" aria-label="About Color Lab">
 			<h2>About</h2>
 			<p>
 				Color Lab is a color science instrument created by

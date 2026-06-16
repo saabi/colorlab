@@ -291,7 +291,7 @@ input[type="checkbox"] {
 	text-decoration: none;
 }
 
-.app-info-privacy {
+.app-info-about {
 	width: auto;
 	border: 0;
 	border-radius: 0;
@@ -301,13 +301,9 @@ input[type="checkbox"] {
 	font-size: 0.846rem;
 }
 
-.app-info-privacy:hover,
-.app-info-privacy[aria-expanded="true"] {
+.app-info-about:hover,
+.app-info-about[aria-expanded="true"] {
 	color: var(--accent);
-}
-
-.app-info-mobile-label {
-	display: none;
 }
 
 .app-info-panel {
@@ -1886,7 +1882,7 @@ input[type="checkbox"] {
 	}
 
 	.document-more-mobile-tools .a11y-trigger,
-	.app-info-privacy {
+	.app-info-about {
 		display: block;
 		width: 100%;
 		border: 1px solid var(--line);
@@ -1897,7 +1893,7 @@ input[type="checkbox"] {
 	}
 
 	.document-more-mobile-tools .a11y-trigger,
-	.document-more-mobile-tools .app-info-privacy {
+	.document-more-mobile-tools .app-info-about {
 		border: none;
 		background: transparent;
 		color: var(--text);
@@ -1909,19 +1905,11 @@ input[type="checkbox"] {
 	}
 
 	.document-more-mobile-tools .a11y-trigger:hover,
-	.document-more-mobile-tools .app-info-privacy:hover,
+	.document-more-mobile-tools .app-info-about:hover,
 	.document-more-mobile-tools .a11y-trigger[aria-expanded="true"],
-	.document-more-mobile-tools .app-info-privacy[aria-expanded="true"] {
-		background: rgba(255, 255, 255, 0.06);
+	.document-more-mobile-tools .app-info-about[aria-expanded="true"] {
+		background: var(--hover-on-surface);
 		color: var(--accent);
-	}
-
-	.app-info-privacy-label {
-		display: none;
-	}
-
-	.app-info-mobile-label {
-		display: inline;
 	}
 
 	.app-info-panel {
