@@ -75,6 +75,26 @@
 				</a>
 				on GitHub.
 			</p>
+			<h2>Beta limitations</h2>
+			<p>
+				Color Lab is in early beta. A few things to know:
+			</p>
+			<ul>
+				<li>
+					<strong>WebGL2 required.</strong> There is no canvas or CPU fallback. If your browser
+					does not support WebGL2, the 3D solid will not render.
+				</li>
+				<li>
+					<strong>Ramp gamut map targets sRGB by default.</strong> The terminal gamut-map step
+					maps generated stops to the active colorspace. Today the analytic mapper is
+					sRGB-specific, so other gamuts are not yet supported as output targets.
+				</li>
+				<li>
+					<strong>Non-D65 gamuts now use chromatic adaptation.</strong> Bradford CAT was added
+					in this release — NTSC (Illuminant C) and CIE 1931 RGB (Illuminant E) were silently
+					incorrect in earlier versions and now render correctly.
+				</li>
+			</ul>
 			<h2>Privacy</h2>
 			<p>
 				Color Lab stores your saved parameter sets in this browser's local storage. They are not uploaded by the app.

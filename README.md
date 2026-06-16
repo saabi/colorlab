@@ -33,6 +33,17 @@ Open the URL Vite prints (default `http://localhost:5173`).
 
 For build, deploy, environment variables, and project structure, see [`fe/README.md`](fe/README.md).
 
+## Beta limitations
+
+Color Lab is in early beta (`1.0.0-beta`). The core workflows are stable, but note the following:
+
+| Area | Status |
+|------|--------|
+| **WebGL2** | Required — no canvas/CPU fallback. Unsupported browsers will not render the 3D solid. |
+| **Ramp gamut map** | The terminal gamut-map step targets the **active colorspace** (sRGB by default). The analytic mapper is sRGB-specific; mapping to other active gamuts is planned but not yet implemented. |
+| **Non-D65 gamuts** | Bradford chromatic adaptation is applied in this release — NTSC (Illuminant C) and CIE 1931 RGB (Illuminant E) now render correctly. Earlier releases were silently wrong for these gamuts. |
+| **Display gamut** | Assumed to be an sRGB-compliant monitor. Custom display primaries and calibration are planned for a future release. |
+
 ## Documentation
 
 - [`CHANGELOG.md`](CHANGELOG.md) — release history (linked in the live app)
