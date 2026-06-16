@@ -1,4 +1,5 @@
-import { type Vec3 } from './math';
+import { m3, type Vec3 } from './math';
+import { GAMUTS, rgbToXyzM, lsrgb2oklab, xyz2lab } from './pipeline';
 
 export interface ChromaticityDiagram {
 	key: string;
@@ -8,6 +9,9 @@ export interface ChromaticityDiagram {
 	// Projects XYZ and/or LMS coordinates onto 2D chromaticity space
 	project(xyz: Vec3, lms: Vec3): [number, number];
 }
+
+const SRGB_XYZ = rgbToXyzM(GAMUTS.srgb.P, GAMUTS.srgb.W);
+const XYZ2SRGB = m3.inv(SRGB_XYZ);
 
 export const DIAGRAMS: Record<string, ChromaticityDiagram> = {
 	'cie1931-xy': {
@@ -56,6 +60,27 @@ export const DIAGRAMS: Record<string, ChromaticityDiagram> = {
 			const sumLM = L + M;
 			if (sumLM <= 0) return [0.0, 0.0];
 			return [L / sumLM, S / sumLM];
+		}
+	},
+	'oklab-ab': {
+		key: 'oklab-ab',
+		label: 'Oklab (a, b)',
+		xAxisLabel: 'a',
+		yAxisLabel: 'b',
+		project: (xyz) => {
+			const srgbLin = m3.mulV(XYZ2SRGB, xyz);
+			const ok = lsrgb2oklab([Math.max(0, srgbLin[0]), Math.max(0, srgbLin[1]), Math.max(0, srgbLin[2])]);
+			return [ok[1], ok[2]];
+		}
+	},
+	'cielab-ab': {
+		key: 'cielab-ab',
+		label: 'CIELAB (a*, b*)',
+		xAxisLabel: 'a*',
+		yAxisLabel: 'b*',
+		project: (xyz) => {
+			const lab = xyz2lab(xyz);
+			return [lab[1], lab[2]];
 		}
 	}
 };

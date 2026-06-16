@@ -48,7 +48,9 @@ const CHROMATICITY_DIAGRAMS: readonly string[] = [
 	'cie1931-xy',
 	'cie1976-upvp',
 	'cie1960-uv',
-	'macleod-boynton'
+	'macleod-boynton',
+	'oklab-ab',
+	'cielab-ab'
 ];
 const THEME_MODES: readonly ThemeMode[] = ['linear', 'spline'];
 const PLACE_POLICIES: readonly PlacePolicy[] = ['even', 'uniform', 'tones', 'contrast'];

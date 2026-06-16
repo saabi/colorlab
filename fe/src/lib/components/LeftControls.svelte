@@ -177,6 +177,8 @@
 						<option value="cie1976-upvp">CIE 1976 UCS (u', v')</option>
 						<option value="cie1960-uv">CIE 1960 UCS (u, v)</option>
 						<option value="macleod-boynton">MacLeod-Boynton (l, s)</option>
+						<option value="oklab-ab">Oklab (a, b)</option>
+						<option value="cielab-ab">CIELAB (a*, b*)</option>
 					</select>
 					<p class="note">Projection space used by the chromaticity instrument panel.</p>
 				</div>

@@ -1,5 +1,5 @@
 import { m3, type Vec3 } from '$lib/color/math';
-import { GAMUTS, rgbToXyzM } from '$lib/color/pipeline';
+import { GAMUTS, rgbToXyzM, oklab2lsrgb, lab2xyz } from '$lib/color/pipeline';
 import { TRC } from '$lib/color/transfer';
 import { fitCanvas } from './canvas';
 import { SPECTRUM_NM_MAX, SPECTRUM_NM_MIN } from './spectrum-panel';
@@ -48,6 +48,16 @@ function unproject2d(x: number, y: number, diagramKey: string): Vec3 | null {
 		// Inverse u'v' -> XYZ:
 		// X = 9u' / 4v', Y = 1.0, Z = (12 - 3u' - 20v') / 4v'
 		return [(9 * u) / (4 * v), 1.0, (12 - 3 * u - 20 * v) / (4 * v)];
+	}
+	if (diagramKey === 'oklab-ab') {
+		const oklab: Vec3 = [0.5, x, y];
+		const srgbLin = oklab2lsrgb(oklab);
+		const srgbMat = rgbToXyzM(GAMUTS.srgb.P, GAMUTS.srgb.W);
+		return m3.mulV(srgbMat, srgbLin);
+	}
+	if (diagramKey === 'cielab-ab') {
+		const lab: Vec3 = [50.0, x, y];
+		return lab2xyz(lab);
 	}
 	return null;
 }
