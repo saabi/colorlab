@@ -4,7 +4,7 @@ A browser-based color science instrument for exploring RGB gamuts as interactive
 
 Orbit gamuts from sRGB through P3 and Rec.2020 in linear RGB, CIELAB, Oklab, and related spaces. Slice volumes on arbitrary planes, hover any point to trace it through transfer curves, cone fundamentals, and chromaticity diagrams, then export CSS or DTCG design tokens with optional WCAG contrast fitting.
 
-Built with **SvelteKit 5**, **TypeScript**, and **WebGL2**. Parameter sets are saved in the browser; nothing is uploaded by default.
+Built with **SvelteKit 2 + Svelte 5**, **TypeScript**, and **WebGL2**. Parameter sets are saved in the browser; nothing is uploaded by default.
 
 **Live site:** [colorlab.ferreyrapons.com](https://colorlab.ferreyrapons.com)
 

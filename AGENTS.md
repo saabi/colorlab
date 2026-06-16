@@ -64,7 +64,7 @@ For deeper design decisions, research, and workflows, consult the following file
 - [RELEASING.md](RELEASING.md) — Semantic versioning and release checklist.
 - [_docs/design.md](_docs/design.md) — Core architecture, color-pipeline design, and WebGL2 rendering/instancing details.
 - [_docs/references.md](_docs/references.md) — Industry standards bibliography (CIE, ISO, IEC, ITU, SMPTE, CSS, DTCG).
-- [_docs/svelte-migration.md](_docs/svelte-migration.md) — Historical design notes on the SvelteKit 5 migration.
+- [_docs/svelte-migration.md](_docs/svelte-migration.md) — Historical design notes on the SvelteKit 2 + Svelte 5 migration.
 - [_docs/spline-surface-ramp-plan.md](_docs/spline-surface-ramp-plan.md) — Implementation proposal and plan for the 3D surface spline tools.
 - [_docs/color-spaces-evaluation.md](_docs/color-spaces-evaluation.md) — Evaluation and math comparing JzAzBz, CAM16-UCS, IPT, and OKLrCH.
 - [fe/src/lib/documents/README.md](fe/src/lib/documents/README.md) — Authoritative Svelte local storage schema persistence rules.

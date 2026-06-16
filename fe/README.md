@@ -1,6 +1,6 @@
 # COLOR LAB frontend
 
-SvelteKit 5 + TypeScript frontend for **COLOR LAB — Gamut Explorer**.
+SvelteKit 2 + Svelte 5 + TypeScript frontend for **COLOR LAB — Gamut Explorer**.
 
 **Live site:** [colorlab.ferreyrapons.com](https://colorlab.ferreyrapons.com)
 
