@@ -75,7 +75,7 @@ These were listed as pre-beta gaps in an earlier review; they are **done** on `m
 | **A1** | **Bradford chromatic adaptation** in shared `DerivedMatrices` (CPU, WebGL, picking parity) | Claude | ✅ | **Done.** `color/adapt.ts` Bradford CAT; `rebuildMatrices` adapts `rgb2xyz` (active white → D65), interchange `white` = D65. D65 gamuts identity. Parity automatic (all consume `DerivedMatrices`; no shader change). Tests in `color/adapt.test.ts`. |
 | **A1-alt** | *If A1 slips:* UI guard on non-D65 active gamuts | — | n/a | Not needed — A1 shipped. |
 | **A2** | **Gamut-map / Active-gamut copy cleanup** — UI and help match roadmap (terminal map targets active colorspace; sRGB is default, not eternal truth) | — | ⬜ | Roadmap #7. Cosmetic but currently misleading. |
-| **A3** | **OOG before/after swatch preview** on Gamut Map node | — | ⬜ | Roadmap #13 remainder; low effort, high clarity. |
+| **A3** | **OOG before/after swatch preview** on Gamut Map node | Lane 3 | ✅ | Per-stop before/after chips + active-colorspace copy in `ThemeRamp.svelte` (`6c7bce7`). |
 | **A4** | **Schema confidence** — fixtures for v12→v13 and representative real saves in `parse.test.ts` | — | ⬜ | Beta may still migrate; tests must prove it. |
 | **A5** | **Beta limitations** section — README and/or in-app Info panel | — | ⬜ | Must include: non-D65 status (per A1/A1-alt), sRGB gamut-map scope, WebGL requirement. |
 | **A6** | **Manual smoke QA** — desktop + mobile critical paths | — | ⬜ | Checklist below. |
