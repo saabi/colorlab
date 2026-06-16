@@ -19,6 +19,7 @@ interface CachedFill {
 	h: number;
 	observerKey: string;
 	diagramKey: string;
+	gamutKey: string;
 	cv: HTMLCanvasElement;
 }
 
@@ -61,27 +62,6 @@ export function drawXyPanel(canvas: HTMLCanvasElement, ch: TransformChain | null
 	const observer = DEFAULT_OBSERVERS[obsKey] || DEFAULT_OBSERVERS['stockman-sharpe-2deg'];
 	const diagram = DIAGRAMS[diagKey] || DIAGRAMS['cie1931-xy'];
 
-	// Establish coordinates mapping depending on the diagram type
-	let xMin = 0.0, xMax = 0.8, yMin = 0.0, yMax = 0.9;
-	if (diagKey === 'cie1976-upvp') {
-		xMin = 0.0; xMax = 0.7; yMin = 0.0; yMax = 0.7;
-	} else if (diagKey === 'cie1960-uv') {
-		xMin = 0.0; xMax = 0.6; yMin = 0.0; yMax = 0.6;
-	} else if (diagKey === 'macleod-boynton') {
-		xMin = 0.4; xMax = 1.0; yMin = 0.0; yMax = 0.08;
-	}
-
-	const xRange = xMax - xMin;
-	const yRange = yMax - yMin;
-
-	const x0 = 10;
-	const y0 = h - 8;
-	const pw = w - 20;
-	const ph = h - 16;
-
-	const sx = (x: number) => x0 + ((x - xMin) / xRange) * pw;
-	const sy = (y: number) => y0 - ((y - yMin) / yRange) * ph;
-
 	// 1. Rebuild Locus Cache if needed
 	if (!locusCache || locusCache.observerKey !== obsKey || locusCache.diagramKey !== diagKey) {
 		const points: Array<[number, number]> = [];
@@ -94,8 +74,65 @@ export function drawXyPanel(canvas: HTMLCanvasElement, ch: TransformChain | null
 		locusCache = { observerKey: obsKey, diagramKey: diagKey, points };
 	}
 
-	// 2. Rebuild sRGB Gamut Background Fill if needed
-	if (!srgbFill || srgbFill.w !== w || srgbFill.h !== h || srgbFill.observerKey !== obsKey || srgbFill.diagramKey !== diagKey) {
+	// 2. Compute 2D projected coordinates of gamuts
+	const srgbMat = rgbToXyzM(GAMUTS.srgb.P, GAMUTS.srgb.W);
+	const rXyz: Vec3 = [srgbMat[0], srgbMat[3], srgbMat[6]];
+	const gXyz: Vec3 = [srgbMat[1], srgbMat[4], srgbMat[7]];
+	const bXyz: Vec3 = [srgbMat[2], srgbMat[5], srgbMat[8]];
+
+	const r2d = diagram.project(rXyz, m3.mulV(observer.toLmsMatrix, rXyz));
+	const g2d = diagram.project(gXyz, m3.mulV(observer.toLmsMatrix, gXyz));
+	const b2d = diagram.project(bXyz, m3.mulV(observer.toLmsMatrix, bXyz));
+
+	const g = GAMUTS[state.gamut];
+	const actMat = rgbToXyzM(g.P, g.W);
+	const arXyz: Vec3 = [actMat[0], actMat[3], actMat[6]];
+	const agXyz: Vec3 = [actMat[1], actMat[4], actMat[7]];
+	const abXyz: Vec3 = [actMat[2], actMat[5], actMat[8]];
+
+	const ar2d = diagram.project(arXyz, m3.mulV(observer.toLmsMatrix, arXyz));
+	const ag2d = diagram.project(agXyz, m3.mulV(observer.toLmsMatrix, agXyz));
+	const ab2d = diagram.project(abXyz, m3.mulV(observer.toLmsMatrix, abXyz));
+
+	// 3. Calculate bounds dynamically (autofit)
+	let xMin = Infinity, xMax = -Infinity;
+	let yMin = Infinity, yMax = -Infinity;
+
+	locusCache.points.forEach(([x, y]) => {
+		if (x < xMin) xMin = x;
+		if (x > xMax) xMax = x;
+		if (y < yMin) yMin = y;
+		if (y > yMax) yMax = y;
+	});
+
+	[r2d, g2d, b2d, ar2d, ag2d, ab2d].forEach(([x, y]) => {
+		if (x < xMin) xMin = x;
+		if (x > xMax) xMax = x;
+		if (y < yMin) yMin = y;
+		if (y > yMax) yMax = y;
+	});
+
+	// Add 5% padding
+	const padX = (xMax - xMin) * 0.05 || 0.05;
+	const padY = (yMax - yMin) * 0.05 || 0.05;
+	xMin -= padX;
+	xMax += padX;
+	yMin -= padY;
+	yMax += padY;
+
+	const xRange = xMax - xMin;
+	const yRange = yMax - yMin;
+
+	const x0 = 10;
+	const y0 = h - 8;
+	const pw = w - 20;
+	const ph = h - 16;
+
+	const sx = (x: number) => x0 + ((x - xMin) / xRange) * pw;
+	const sy = (y: number) => y0 - ((y - yMin) / yRange) * ph;
+
+	// 4. Rebuild sRGB Gamut Background Fill if needed
+	if (!srgbFill || srgbFill.w !== w || srgbFill.h !== h || srgbFill.observerKey !== obsKey || srgbFill.diagramKey !== diagKey || srgbFill.gamutKey !== state.gamut) {
 		const cv = document.createElement('canvas');
 		cv.width = w;
 		cv.height = h;
@@ -103,16 +140,6 @@ export function drawXyPanel(canvas: HTMLCanvasElement, ch: TransformChain | null
 		if (c2) {
 			const img = c2.createImageData(w, h);
 			
-			// Compute 2D coordinates of sRGB primaries
-			const srgbMat = rgbToXyzM(GAMUTS.srgb.P, GAMUTS.srgb.W);
-			const rXyz: Vec3 = [srgbMat[0], srgbMat[3], srgbMat[6]];
-			const gXyz: Vec3 = [srgbMat[1], srgbMat[4], srgbMat[7]];
-			const bXyz: Vec3 = [srgbMat[2], srgbMat[5], srgbMat[8]];
-
-			const r2d = diagram.project(rXyz, m3.mulV(observer.toLmsMatrix, rXyz));
-			const g2d = diagram.project(gXyz, m3.mulV(observer.toLmsMatrix, gXyz));
-			const b2d = diagram.project(bXyz, m3.mulV(observer.toLmsMatrix, bXyz));
-
 			// Barycentric boundary check helper for drawing gamut triangle
 			const det = (r2d[0] - b2d[0]) * (g2d[1] - b2d[1]) - (g2d[0] - b2d[0]) * (r2d[1] - b2d[1]);
 
@@ -143,7 +170,7 @@ export function drawXyPanel(canvas: HTMLCanvasElement, ch: TransformChain | null
 			}
 			c2.putImageData(img, 0, 0);
 		}
-		srgbFill = { w, h, observerKey: obsKey, diagramKey: diagKey, cv };
+		srgbFill = { w, h, observerKey: obsKey, diagramKey: diagKey, gamutKey: state.gamut, cv };
 	}
 
 	// Draw background
@@ -161,15 +188,6 @@ export function drawXyPanel(canvas: HTMLCanvasElement, ch: TransformChain | null
 	ctx.stroke();
 
 	// Draw sRGB Gamut Boundary
-	const srgbMat = rgbToXyzM(GAMUTS.srgb.P, GAMUTS.srgb.W);
-	const rXyz: Vec3 = [srgbMat[0], srgbMat[3], srgbMat[6]];
-	const gXyz: Vec3 = [srgbMat[1], srgbMat[4], srgbMat[7]];
-	const bXyz: Vec3 = [srgbMat[2], srgbMat[5], srgbMat[8]];
-
-	const r2d = diagram.project(rXyz, m3.mulV(observer.toLmsMatrix, rXyz));
-	const g2d = diagram.project(gXyz, m3.mulV(observer.toLmsMatrix, gXyz));
-	const b2d = diagram.project(bXyz, m3.mulV(observer.toLmsMatrix, bXyz));
-
 	ctx.strokeStyle = '#9a9ba1';
 	ctx.lineWidth = 1;
 	ctx.beginPath();
@@ -180,16 +198,6 @@ export function drawXyPanel(canvas: HTMLCanvasElement, ch: TransformChain | null
 	ctx.stroke();
 
 	// Draw Active Gamut Boundary
-	const g = GAMUTS[state.gamut];
-	const actMat = rgbToXyzM(g.P, g.W);
-	const arXyz: Vec3 = [actMat[0], actMat[3], actMat[6]];
-	const agXyz: Vec3 = [actMat[1], actMat[4], actMat[7]];
-	const abXyz: Vec3 = [actMat[2], actMat[5], actMat[8]];
-
-	const ar2d = diagram.project(arXyz, m3.mulV(observer.toLmsMatrix, arXyz));
-	const ag2d = diagram.project(agXyz, m3.mulV(observer.toLmsMatrix, agXyz));
-	const ab2d = diagram.project(abXyz, m3.mulV(observer.toLmsMatrix, abXyz));
-
 	ctx.strokeStyle = '#d6a93a';
 	ctx.lineWidth = 1.3;
 	if (state.gamut === 'srgb') ctx.setLineDash([4, 3]);
