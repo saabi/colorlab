@@ -11,6 +11,7 @@
 		"start": "node build",
 		"preview": "vite preview",
 		"prepare": "svelte-kit sync || echo ''",
+		"postinstall": "node scripts/ensure-rolldown-binding.mjs",
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
 		"test": "vitest run"
@@ -20,11 +21,18 @@
 		"@sveltejs/kit": "^2.63.0",
 		"@sveltejs/vite-plugin-svelte": "^7.1.2",
 		"@types/node": "^25.9.2",
+		"glslify": "^7.1.1",
 		"svelte": "^5.56.1",
 		"svelte-check": "^4.6.0",
 		"typescript": "^6.0.3",
 		"vite": "^8.0.16",
-		"glslify": "^7.1.1",
 		"vitest": "^4.1.9"
+	},
+	"optionalDependencies": {
+		"@rolldown/binding-darwin-arm64": "1.0.3",
+		"@rolldown/binding-darwin-x64": "1.0.3",
+		"@rolldown/binding-linux-x64-gnu": "1.0.3",
+		"@rolldown/binding-linux-x64-musl": "1.0.3",
+		"@rolldown/binding-win32-x64-msvc": "1.0.3"
 	}
 }

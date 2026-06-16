@@ -26,6 +26,14 @@ SvelteKit 5 + TypeScript frontend for **COLOR LAB — Gamut Explorer**.
 
 ## Development
 
+Requires **Node.js 20.19+ or 22.12+** (Vite 8 / Rolldown). If `npm run dev` fails with
+`Cannot find native binding`, reinstall dependencies:
+
+```sh
+rm -rf node_modules
+npm ci
+```
+
 ```sh
 npm install
 npm run dev
