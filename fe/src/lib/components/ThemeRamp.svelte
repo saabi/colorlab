@@ -287,6 +287,25 @@
 		track('theme_source_list', { action: 'apply_pipeline_all' });
 	}
 
+	function duplicateActiveList() {
+		const src = explorer.theme.lists[explorer.theme.activeList];
+		if (!src) return;
+		const copy: RampList = {
+			anchors: src.anchors.map((a: ThemeAnchor) => ({ srgbLin: [...a.srgbLin] as [number, number, number] })),
+			pipeline: clonePipeline(src.pipeline)
+		};
+		const at = explorer.theme.activeList + 1;
+		explorer.theme.lists = [
+			...explorer.theme.lists.slice(0, at),
+			copy,
+			...explorer.theme.lists.slice(at)
+		];
+		explorer.theme.activeList = at;
+		explorer.theme.selectedPoint = null;
+		buildRamp(explorer, matrices);
+		track('theme_source_list', { action: 'duplicate' });
+	}
+
 	function removeActiveList() {
 		if (explorer.theme.lists.length <= 1) return;
 		const index = explorer.theme.activeList;
@@ -401,13 +420,14 @@
 				class:active={i === explorer.theme.activeList}
 				role="tab"
 				aria-selected={i === explorer.theme.activeList}
-				title={`List ${i + 1} — ${list.anchors.length} pt${list.anchors.length === 1 ? '' : 's'}`}
+				title={`List ${i + 1} — ${list.anchors.length} pt${list.anchors.length === 1 ? '' : 's'} · ${list.pipeline.mode}`}
 				onclick={() => selectList(i)}
 			>
 				{i + 1}
 			</button>
 		{/each}
 		<button type="button" class="list-chip list-add" title="Add a new source list" onclick={addList}>+</button>
+		<button type="button" class="list-chip list-dup" title="Duplicate the active list (colors + pipeline)" onclick={duplicateActiveList}>⧉</button>
 		{#if explorer.theme.lists.length > 1}
 			<button type="button" class="list-chip list-del" title="Remove the active list" onclick={removeActiveList}>×</button>
 		{/if}
