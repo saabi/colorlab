@@ -192,15 +192,20 @@ math, and future chromaticity picking/reference layers.
 
 Recommended sequencing:
 
-1. First, audit the current default analytical fundamentals evaluator against
-   authoritative reference data, keeping accurate analytical segments and
-   replacing only the regions/methods that fail error or tail-behavior criteria.
-   This does not require document schema changes or new user settings.
-2. Next, add `fundamentals.ts` / `diagrams.ts` registries behind the corrected
-   default behavior.
-3. Expose a chromaticity diagram selector in Explorer Reference / instrument UI
+1. First, catalog all known/sourceable observer datasets, XYZ-like spaces,
+   chromaticity diagrams, and locus curves/surfaces with provenance, licensing,
+   wavelength range, sampling, normalization, and storage metadata. Downloaded
+   source data belongs under `data/`.
+2. Audit the current default analytical fundamentals evaluator against the
+   catalog, keeping accurate analytical segments and replacing only the
+   regions/methods that fail error or tail-behavior criteria. This does not
+   require document schema changes or new user settings.
+3. Next, add fundamentals, XYZ-space, diagram, and locus registries behind the
+   corrected default behavior, designed for later comparison/exploration rather
+   than only one canonical observer.
+4. Expose a chromaticity diagram selector in Explorer Reference / instrument UI
    if it only changes the panel projection.
-4. Expose observer-model selection only after CVD matrices, spectrum/LMS panels,
+5. Expose observer-model selection only after CVD matrices, spectrum/LMS panels,
    chromaticity overlays, and picking all agree.
 
 Persistence policy:
