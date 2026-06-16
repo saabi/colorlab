@@ -9,11 +9,9 @@
 		setA11yPreference,
 		type SecondaryContrast
 	} from './preferences.svelte';
-	import { readAppPreferences, setUiTheme, type UiTheme } from '$lib/preferences/app.svelte';
 
 	let open = $state(false);
 	let root: HTMLDivElement;
-	let theme = $state<UiTheme>('dark');
 
 	const contrastLabel: Record<SecondaryContrast, string> = {
 		normal: 'Normal',
@@ -23,7 +21,6 @@
 
 	$effect(() => {
 		loadA11yPreferences();
-		theme = readAppPreferences().theme;
 	});
 
 	function onDocumentPointerDown(event: PointerEvent) {
@@ -57,28 +54,6 @@
 				<h2>Readability</h2>
 				<button type="button" class="a11y-reset" onclick={resetA11yPreferences}>Reset</button>
 			</div>
-
-			<fieldset>
-				<legend>Appearance</legend>
-				<div class="a11y-options">
-					<button
-						type="button"
-						class:active={theme === 'dark'}
-						aria-pressed={theme === 'dark'}
-						onclick={() => {
-							theme = 'dark';
-							setUiTheme('dark');
-						}}>Dark</button>
-					<button
-						type="button"
-						class:active={theme === 'light'}
-						aria-pressed={theme === 'light'}
-						onclick={() => {
-							theme = 'light';
-							setUiTheme('light');
-						}}>Light</button>
-				</div>
-			</fieldset>
 
 			<fieldset>
 				<legend>Font scale</legend>

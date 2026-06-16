@@ -4,6 +4,7 @@
 	import Viewport from './Viewport.svelte';
 	import AppInfo from './AppInfo.svelte';
 	import A11yPanel from '$lib/a11y/A11yPanel.svelte';
+	import ThemeToggle from './ThemeToggle.svelte';
 	import DocumentBar from './DocumentBar.svelte';
 	import GuideNoteEditorHost from './GuideNoteEditorHost.svelte';
 	import LanePicker from './LanePicker.svelte';
@@ -135,6 +136,7 @@
 			<span class="sub">Gamut Explorer &amp; Ramp Generator</span>
 			<DocumentBar {session} {history} {notify} onTutorialClick={() => (lanePickerOpen = true)} />
 			<A11yPanel />
+			<ThemeToggle />
 			<AppInfo />
 			<span class="badge">WebGL2</span>
 		</header>

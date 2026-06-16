@@ -5,6 +5,7 @@
 	import ImportDialog from './ImportDialog.svelte';
 	import AppInfo from './AppInfo.svelte';
 	import A11yPanel from '$lib/a11y/A11yPanel.svelte';
+	import ThemeToggle from './ThemeToggle.svelte';
 	import { track } from '$lib/analytics/umami';
 	import { getGuideNoteContext } from '$lib/guide-note/context';
 	import { UNTITLED_SELECT_ID } from '$lib/documents/session.svelte';
@@ -303,6 +304,7 @@
 					{/if}
 					<div class="document-more-mobile-tools">
 						<A11yPanel />
+						<ThemeToggle />
 						<AppInfo />
 					</div>
 				</div>

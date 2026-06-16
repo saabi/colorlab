@@ -246,6 +246,16 @@ input[type="checkbox"] {
 	text-underline-offset: 2px;
 }
 
+.app-info-gh {
+	display: inline-flex;
+	align-items: center;
+	vertical-align: middle;
+}
+
+.app-info-gh:hover {
+	text-decoration: none;
+}
+
 .app-info-privacy {
 	width: auto;
 	border: 0;
