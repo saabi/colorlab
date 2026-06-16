@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
 import { CURRENT_SNAPSHOT_VERSION } from './types';
-import { defaultSnapshot } from './snapshot';
+import { defaultSnapshot, toSnapshot } from './snapshot';
 import { detectSchemaVersion, parseSnapshot } from './parse';
+import { listExampleDocuments } from './examples';
+import { createAppState } from '$lib/engine/state.svelte';
 
 describe('detectSchemaVersion', () => {
 	it('returns 0 for legacy saves without schemaVersion', () => {
@@ -563,5 +565,52 @@ describe('parseSnapshot', () => {
 		expect('minAverageFps' in (snap?.explorer ?? {})).toBe(false);
 		expect('autoRotate' in (snap?.explorer ?? {})).toBe(false);
 		expect('neutralBackdrop' in (snap?.explorer ?? {})).toBe(false);
+	});
+});
+
+describe('real-save round-trips', () => {
+	const reparse = (snapshot: unknown) => parseSnapshot(JSON.parse(JSON.stringify(snapshot)));
+
+	it('round-trips every bundled example document losslessly (no migration)', () => {
+		const examples = listExampleDocuments();
+		expect(examples.length).toBeGreaterThan(0);
+		for (const doc of examples) {
+			const result = reparse(doc.snapshot);
+			expect(result.rejectReason, doc.name).toBeUndefined();
+			expect(result.migrated, doc.name).toBe(false);
+			expect(result.snapshot, doc.name).toEqual(doc.snapshot);
+		}
+	});
+
+	it('round-trips the default document and is idempotent', () => {
+		const snap = defaultSnapshot();
+		const once = reparse(snap).snapshot;
+		expect(once).toEqual(snap);
+		expect(reparse(once).snapshot).toEqual(once);
+	});
+
+	it('round-trips a multi-list save with divergent per-list pipelines', () => {
+		const app = createAppState();
+		const base = app.explorer.theme.lists[0].pipeline;
+		app.explorer.theme.lists = [
+			app.explorer.theme.lists[0],
+			{
+				anchors: [{ srgbLin: [0.2, 0.4, 0.6] }, { srgbLin: [0.8, 0.1, 0.1] }],
+				pipeline: { ...base, mode: 'linear', splineSpace: 'oklch', steps: 7, expandOn: true }
+			}
+		];
+		app.explorer.theme.activeList = 1;
+		app.explorer.theme.gamutMap = 'preserve-chroma';
+		const snap = toSnapshot(app);
+
+		const result = reparse(snap);
+		expect(result.migrated).toBe(false);
+		expect(result.snapshot).toEqual(snap);
+		// Divergent per-list settings survive the round-trip.
+		const p1 = result.snapshot?.explorer.theme.lists[1].pipeline;
+		expect(p1?.mode).toBe('linear');
+		expect(p1?.steps).toBe(7);
+		expect(p1?.expandOn).toBe(true);
+		expect(result.snapshot?.explorer.theme.gamutMap).toBe('preserve-chroma');
 	});
 });
