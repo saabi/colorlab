@@ -160,6 +160,8 @@ export interface ExplorerState {
 	guideNoteDismissed: boolean;
 	cvd: CvdMode;
 	cvdSev: number;
+	observerModel: string;
+	chromaticityDiagram: string;
 	theme: {
 		/** Ordered source ramps (persisted). Each carries its own anchors + pipeline —
 		 *  multiple lists = multiple parallel ramps. Always >= 1 list. */

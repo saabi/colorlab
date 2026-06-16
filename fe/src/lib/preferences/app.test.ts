@@ -19,7 +19,9 @@ describe('app preferences', () => {
 		).toEqual({
 			autoRotate: false,
 			autoPerformance: false,
-			minAverageFps: 15
+			minAverageFps: 15,
+			observerModel: 'stockman-sharpe-2deg',
+			chromaticityDiagram: 'cie1931-xy'
 		});
 	});
 });

@@ -97,6 +97,8 @@ export function toPersistedExplorer(explorer: ExplorerState): PersistedExplorer 
 		guideNoteDismissed: explorer.guideNoteDismissed,
 		cvd: explorer.cvd,
 		cvdSev: explorer.cvdSev,
+		observerModel: explorer.observerModel,
+		chromaticityDiagram: explorer.chromaticityDiagram,
 		theme: {
 			lists: theme.lists.map(cloneRampList),
 			activeList: theme.activeList,

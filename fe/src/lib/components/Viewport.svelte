@@ -78,8 +78,8 @@
 	let prevSpaceMode: SpaceMode = explorer.spaceMode;
 	const MORPH_DURATION_MS = 400;
 
-	const matrices = $derived(rebuildMatrices(explorer.gamut));
-	const shellMatrices = $derived(explorer.hideAids ? null : rebuildShell(explorer.shell));
+	const matrices = $derived(rebuildMatrices(explorer.gamut, explorer.observerModel));
+	const shellMatrices = $derived(explorer.hideAids ? null : rebuildShell(explorer.shell, explorer.observerModel));
 	// All point edits/selection/picking target the active source list.
 	const themePoints = $derived(explorer.theme.lists[explorer.theme.activeList]?.anchors ?? []) as ThemeAnchor[];
 	const activeRampPipeline = $derived(activePipeline(explorer.theme));

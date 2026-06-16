@@ -1,11 +1,13 @@
 import type { ExplorerState, MinAverageFps } from '$lib/engine/types';
 
-export type AppPreferences = Pick<ExplorerState, 'autoRotate' | 'autoPerformance' | 'minAverageFps'>;
+export type AppPreferences = Pick<ExplorerState, 'autoRotate' | 'autoPerformance' | 'minAverageFps' | 'observerModel' | 'chromaticityDiagram'>;
 
 export const DEFAULT_APP_PREFERENCES: AppPreferences = {
 	autoRotate: true,
 	autoPerformance: true,
-	minAverageFps: 30
+	minAverageFps: 30,
+	observerModel: 'stockman-sharpe-2deg',
+	chromaticityDiagram: 'cie1931-xy'
 };
 
 const STORAGE_KEY = 'colorlab:preferences';
@@ -26,7 +28,11 @@ export function sanitizeAppPreferences(raw: unknown): AppPreferences {
 				: DEFAULT_APP_PREFERENCES.autoPerformance,
 		minAverageFps: includesMinFps(prefs.minAverageFps)
 			? prefs.minAverageFps
-			: DEFAULT_APP_PREFERENCES.minAverageFps
+			: DEFAULT_APP_PREFERENCES.minAverageFps,
+		observerModel:
+			typeof prefs.observerModel === 'string' ? prefs.observerModel : DEFAULT_APP_PREFERENCES.observerModel,
+		chromaticityDiagram:
+			typeof prefs.chromaticityDiagram === 'string' ? prefs.chromaticityDiagram : DEFAULT_APP_PREFERENCES.chromaticityDiagram
 	};
 }
 
@@ -34,6 +40,8 @@ export function applyAppPreferences(explorer: ExplorerState, prefs: AppPreferenc
 	explorer.autoRotate = prefs.autoRotate;
 	explorer.autoPerformance = prefs.autoPerformance;
 	explorer.minAverageFps = prefs.minAverageFps;
+	explorer.observerModel = prefs.observerModel;
+	explorer.chromaticityDiagram = prefs.chromaticityDiagram;
 }
 
 export function readAppPreferences(): AppPreferences {

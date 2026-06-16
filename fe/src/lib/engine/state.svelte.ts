@@ -113,6 +113,8 @@ function createExplorerDefaults(): ExplorerState {
 		guideNoteDismissed: false,
 		cvd: 'none',
 		cvdSev: 1,
+		observerModel: 'stockman-sharpe-2deg',
+		chromaticityDiagram: 'cie1931-xy',
 		theme: {
 			lists: [rampList([])],
 			activeList: 0,

@@ -7,6 +7,7 @@
 	import { drawConesPanel } from '$lib/panels/cones-panel';
 	import { drawTransferPanel } from '$lib/panels/transfer-panel';
 	import { drawXyPanel } from '$lib/panels/xy-panel';
+	import { DIAGRAMS } from '$lib/color/diagrams';
 
 	import type { ExplorerState } from '$lib/engine/types';
 	import type { Vec3 } from '$lib/color/math';
@@ -18,6 +19,17 @@
 	let spectrumLabel = $state('');
 	let activeTab = $state<'transfer' | 'cones' | 'xy' | 'values' | 'palette'>('transfer');
 	let openHelp = $state<string | null>(null);
+
+	const xyLabel = $derived(DIAGRAMS[explorer.chromaticityDiagram]?.label || 'Chromaticity');
+	const xyTabLabel = $derived(
+		explorer.chromaticityDiagram === 'cie1931-xy'
+			? 'xy'
+			: explorer.chromaticityDiagram === 'cie1976-upvp'
+				? "u'v'"
+				: explorer.chromaticityDiagram === 'cie1960-uv'
+					? 'uv'
+					: 'l s'
+	);
 
 	// The exported palette (2-D grid when present — Expand or multiple lists — else
 	// the 1-D active ramp as one row).
@@ -84,6 +96,8 @@
 		explorer.gamut;
 		explorer.cvd;
 		explorer.cvdSev;
+		explorer.chromaticityDiagram;
+		explorer.observerModel;
 		activeTab;
 		queueDrawPanels();
 	});
@@ -123,7 +137,7 @@
 			class:active={activeTab === 'xy'}
 			onclick={() => {
 				setActiveTab('xy');
-			}}>xy</button
+			}}>{xyTabLabel}</button
 		>
 		<button
 			type="button"
@@ -163,7 +177,7 @@
 	</section>
 
 	<section class:active={activeTab === 'xy'} class="inspector-tab-panel">
-		<PanelHeader label="CIE xy chromaticity" panelId="xy" bind:openHelp />
+		<PanelHeader label={xyLabel} panelId="xy" bind:openHelp />
 		<canvas bind:this={xyCanvas} class="panel-canvas tall" aria-label="CIE xy chromaticity panel"></canvas>
 
 		<p class="note">

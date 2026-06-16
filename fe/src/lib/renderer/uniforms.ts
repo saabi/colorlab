@@ -18,7 +18,7 @@ export interface DerivedMatrices {
 	lms2rgb: Mat3;
 }
 
-export function rebuildMatrices(gamut: GamutKey): DerivedMatrices {
+export function rebuildMatrices(gamut: GamutKey, observerKey = 'stockman-sharpe-2deg'): DerivedMatrices {
 	const g = GAMUTS[gamut];
 	const rgb2xyz = rgbToXyzM(g.P, g.W);
 	const srgb2xyz = rgbToXyzM(GAMUTS.srgb.P, GAMUTS.srgb.W);
@@ -26,8 +26,8 @@ export function rebuildMatrices(gamut: GamutKey): DerivedMatrices {
 	const gamut2srgbLin = m3.mul(xyz2srgb, rgb2xyz);
 	const okM1 = m3.mul(OK_M1, gamut2srgbLin);
 
-	// Compute dynamic LMS conversion matrices relative to the active gamut
-	const activeObserver = DEFAULT_OBSERVERS['stockman-sharpe-2deg'];
+	// Compute dynamic LMS conversion matrices relative to the active gamut and active observer
+	const activeObserver = DEFAULT_OBSERVERS[observerKey as keyof typeof DEFAULT_OBSERVERS] || DEFAULT_OBSERVERS['stockman-sharpe-2deg'];
 	const rgb2lms = m3.mul(activeObserver.toLmsMatrix, rgb2xyz);
 	const lms2rgb = m3.mul(m3.inv(rgb2xyz), activeObserver.toXyzMatrix);
 
@@ -45,7 +45,7 @@ export function rebuildMatrices(gamut: GamutKey): DerivedMatrices {
 	};
 }
 
-export function rebuildShell(shell: ShellKey): DerivedMatrices | null {
+export function rebuildShell(shell: ShellKey, observerKey = 'stockman-sharpe-2deg'): DerivedMatrices | null {
 	if (shell === 'none') return null;
-	return rebuildMatrices(shell);
+	return rebuildMatrices(shell, observerKey);
 }

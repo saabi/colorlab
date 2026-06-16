@@ -12,6 +12,7 @@
 	import { MAX_CAMERA_DIST, MAX_CAMERA_FOV, MAX_CAMERA_PITCH, MIN_CAMERA_DIST, MIN_CAMERA_FOV, resetCamera } from '$lib/engine/camera';
 	import { getPipelineNode, isNodeEnabled, type PipelineNodeId } from './pipeline-nodes';
 	import { activePipeline } from '$lib/engine/theme';
+	import { getObserverModel } from '$lib/color/fundamentals';
 
 	import type { ExplorerState } from '$lib/engine/types';
 	import type { Camera } from '$lib/engine/camera';
@@ -45,6 +46,12 @@
 			document.getElementById(`ramp-substep-${id}`);
 		el?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 		track('pipeline_node_select', { node: id });
+	}
+
+	async function handleObserverChange(key: string) {
+		await getObserverModel(key);
+		explorer.observerModel = key;
+		track('observer_change', { observer: key });
 	}
 
 	// Per-step header metadata (status / affects / warn / enablement) sourced from pipeline-nodes.ts.
@@ -131,6 +138,18 @@
 					Changing primaries reshapes the solid through the same <PipelinePopover cvd={explorer.cvd} cvdSev={explorer.cvdSev} />.
 				</p>
 				<div class="separator">
+					<label class="row" for="observer-select"><span>Observer model</span></label>
+					<select id="observer-select" value={explorer.observerModel} onchange={(e) => handleObserverChange(e.currentTarget.value)}>
+						<option value="stockman-sharpe-2deg">Stockman & Sharpe (2000) 2°</option>
+						<option value="stockman-sharpe-10deg">Stockman & Sharpe (2000) 10°</option>
+						<option value="ciexyz31-2deg">CIE 1931 2° Standard Observer</option>
+						<option value="ciexyz64-10deg">CIE 1964 10° Standard Observer</option>
+						<option value="ciexyzj-5nm">Judd 1951 2° Modified</option>
+						<option value="ciexyzjv-5nm">Judd-Vos 1978 2° Modified</option>
+					</select>
+					<p class="note">Visual observer model used for color calculations and CVD simulation.</p>
+				</div>
+				<div class="separator">
 					<label class="row" for="shell-select"><span>Reference gamut shell</span></label>
 					<select id="shell-select" bind:value={explorer.shell}>
 						<option value="none">None</option>
@@ -150,6 +169,16 @@
 						<option value="spectral-surface">Spectral locus surface</option>
 					</select>
 					<p class="note">Spectral locus at XYZ chromaticity (X+Y+Z=1). Surface sweeps from black to the rim by stimulus magnitude.</p>
+				</div>
+				<div class="separator">
+					<label class="row" for="chroma-diagram-select"><span>Chromaticity diagram</span></label>
+					<select id="chroma-diagram-select" bind:value={explorer.chromaticityDiagram}>
+						<option value="cie1931-xy">CIE 1931 (x, y) / CIE 2006 (xF, yF)</option>
+						<option value="cie1976-upvp">CIE 1976 UCS (u', v')</option>
+						<option value="cie1960-uv">CIE 1960 UCS (u, v)</option>
+						<option value="macleod-boynton">MacLeod-Boynton (l, s)</option>
+					</select>
+					<p class="note">Projection space used by the chromaticity instrument panel.</p>
 				</div>
 				<div class="separator">
 					<SliderRow label="Solid opacity" bind:value={explorer.solidAlpha} min={0.05} max={1} step={0.05} format={(value) => value.toFixed(2)} />

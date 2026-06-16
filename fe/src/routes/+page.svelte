@@ -29,8 +29,8 @@
 
 	$effect(() => {
 		if (!browser) return;
-		const { autoRotate, autoPerformance, minAverageFps } = appState.explorer;
-		persistAppPreferences({ autoRotate, autoPerformance, minAverageFps });
+		const { autoRotate, autoPerformance, minAverageFps, observerModel, chromaticityDiagram } = appState.explorer;
+		persistAppPreferences({ autoRotate, autoPerformance, minAverageFps, observerModel, chromaticityDiagram });
 	});
 
 	// Shared-link (`#s=`) ingestion happens in AppShell so it can surface a notice.

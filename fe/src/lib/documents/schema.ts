@@ -36,6 +36,20 @@ const PLANE_MODES: readonly PlaneMode[] = ['L', 'H', 'C'];
 const SHELLS: readonly ShellKey[] = ['none', 'srgb', 'p3', 'rec2020', 'ntsc', 'cie'];
 const CHROMA_OVERLAYS: readonly ChromaticityOverlayKey[] = ['off', 'spectral-locus', 'spectral-surface'];
 const CVD_MODES: readonly CvdMode[] = ['none', 'protan', 'deutan', 'tritan'];
+const OBSERVER_MODELS: readonly string[] = [
+	'stockman-sharpe-2deg',
+	'stockman-sharpe-10deg',
+	'ciexyz31-2deg',
+	'ciexyz64-10deg',
+	'ciexyzj-5nm',
+	'ciexyzjv-5nm'
+];
+const CHROMATICITY_DIAGRAMS: readonly string[] = [
+	'cie1931-xy',
+	'cie1976-upvp',
+	'cie1960-uv',
+	'macleod-boynton'
+];
 const THEME_MODES: readonly ThemeMode[] = ['linear', 'spline'];
 const PLACE_POLICIES: readonly PlacePolicy[] = ['even', 'uniform', 'tones', 'contrast'];
 const SPREAD_DIRS: readonly SpreadDir[] = ['off', 'ramp', 'sym', 'edges'];
@@ -339,6 +353,8 @@ function coerceExplorer(raw: unknown, defaults: PersistedExplorer): PersistedExp
 				: defaults.guideNoteDismissed,
 		cvd: enumOf(explorer.cvd, CVD_MODES, defaults.cvd, 'cvd'),
 		cvdSev: finiteNumber(explorer.cvdSev, defaults.cvdSev, 'cvdSev'),
+		observerModel: enumOf(explorer.observerModel, OBSERVER_MODELS, defaults.observerModel, 'observerModel'),
+		chromaticityDiagram: enumOf(explorer.chromaticityDiagram, CHROMATICITY_DIAGRAMS, defaults.chromaticityDiagram, 'chromaticityDiagram'),
 		theme: coerceTheme(explorer.theme, defaults.theme)
 	};
 }

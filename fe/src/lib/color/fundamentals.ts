@@ -148,7 +148,7 @@ export function createObserverModel(key: string, dataset: SpectralDataset): Obse
 }
 
 // Eagerly loaded default observers
-export const DEFAULT_OBSERVERS = {
+export const DEFAULT_OBSERVERS: Record<string, ObserverModel> = {
 	'stockman-sharpe-2deg': createObserverModel('stockman-sharpe-2deg', ss2deg_1nm),
 	'ciexyz31-2deg': createObserverModel('ciexyz31-2deg', ciexyz31_1nm)
 };
@@ -158,8 +158,10 @@ export const DEFAULT_OBSERVERS = {
  */
 export async function getObserverModel(key: string): Promise<ObserverModel> {
 	if (key in DEFAULT_OBSERVERS) {
-		return DEFAULT_OBSERVERS[key as keyof typeof DEFAULT_OBSERVERS];
+		return DEFAULT_OBSERVERS[key];
 	}
 	const dataset = await loadDataset(key);
-	return createObserverModel(key, dataset);
+	const model = createObserverModel(key, dataset);
+	DEFAULT_OBSERVERS[key] = model;
+	return model;
 }
