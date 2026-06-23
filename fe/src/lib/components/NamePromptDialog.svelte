@@ -1,6 +1,20 @@
-<script lang="ts">
+<script module lang="ts">
+	// ===== IMPORTS =====
 	import { focusTrap } from '$lib/actions/focusTrap';
 
+	// ===== TYPES =====
+	interface Props {
+		open: boolean;
+		title: string;
+		label?: string;
+		initialValue?: string;
+		onSubmit: (name: string) => void;
+		onCancel: () => void;
+	}
+</script>
+
+<script lang="ts">
+	// ===== PROPS =====
 	let {
 		open = false,
 		title = '',
@@ -8,18 +22,13 @@
 		initialValue = '',
 		onSubmit,
 		onCancel
-	} = $props<{
-		open: boolean;
-		title: string;
-		label?: string;
-		initialValue?: string;
-		onSubmit: (name: string) => void;
-		onCancel: () => void;
-	}>();
+	}: Props = $props();
 
+	// ===== STATE =====
 	let value = $state('');
 	let inputEl: HTMLInputElement | undefined = $state();
 
+	// ===== EFFECTS =====
 	$effect(() => {
 		if (open) {
 			value = initialValue;
@@ -30,6 +39,7 @@
 		}
 	});
 
+	// ===== FUNCTIONS =====
 	function submit() {
 		const name = value.trim();
 		if (!name) return;

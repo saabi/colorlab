@@ -1,24 +1,32 @@
-<script lang="ts">
+<script module lang="ts">
+	// ===== IMPORTS =====
 	import { track } from '$lib/analytics/umami';
 	import { getGuideNoteContext } from '$lib/guide-note/context';
-
 	import type { GuideNotePlacement } from '$lib/engine/types';
 
+	// ===== TYPES =====
+	interface Props {
+		note?: string | null;
+		placement?: GuideNotePlacement;
+		dismissed?: boolean;
+		variant: GuideNotePlacement;
+	}
+</script>
+
+<script lang="ts">
+	// ===== PROPS =====
 	let {
 		note = $bindable<string | null>(null),
 		placement = $bindable<GuideNotePlacement>('sidebar'),
 		dismissed = $bindable(false),
 		variant
-	} = $props<{
-		note?: string | null;
-		placement?: GuideNotePlacement;
-		dismissed?: boolean;
-		variant: GuideNotePlacement;
-	}>();
+	}: Props = $props();
 
+	// ===== DERIVED =====
 	const guideNote = getGuideNoteContext();
 	const paragraphs = $derived((note ?? '').split(/\n\n+/).filter(Boolean));
 
+	// ===== FUNCTIONS =====
 	function dismiss() {
 		dismissed = true;
 		track('guide_note_dismiss', { variant });

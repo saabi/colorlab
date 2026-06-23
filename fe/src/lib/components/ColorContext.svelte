@@ -1,6 +1,7 @@
-<script lang="ts">
+<script module lang="ts">
+	// ===== IMPORTS =====
 	import { GAMUTS } from '$lib/color/pipeline';
-	import type { ExplorerState, GamutKey } from '$lib/engine/types';
+	import type { ExplorerState } from '$lib/engine/types';
 	import type { HistoryController } from '$lib/history/history.svelte';
 	import {
 		DISPLAY_GAMUT_LABELS,
@@ -10,11 +11,13 @@
 		type DisplayGamutId
 	} from '$lib/preferences/app.svelte';
 
-	let { explorer = $bindable(), history } = $props<{
+	// ===== TYPES =====
+	interface Props {
 		explorer: ExplorerState;
 		history?: HistoryController | null;
-	}>();
+	}
 
+	// ===== STATIC CONSTANTS =====
 	const activeOptions = [
 		{ value: 'srgb', label: 'sRGB / Rec.709' },
 		{ value: 'p3', label: 'DCI-P3 D65' },
@@ -24,12 +27,31 @@
 		{ value: 'smptec', label: 'SMPTE-C' },
 		{ value: 'cie', label: 'CIE 1931 RGB' }
 	] as const;
+</script>
 
+<script lang="ts">
+	// ===== PROPS =====
+	let { explorer = $bindable(), history }: Props = $props();
+
+	// ===== STATE =====
 	let displayGamut = $state<DisplayGamutId>('srgb');
+
+	// ===== DERIVED =====
+	// Chromaticity-only check: does the active gamut have primaries the display can't show?
+	const exceedsDisplay = $derived.by(() => {
+		const active = GAMUTS[explorer.gamut as keyof typeof GAMUTS];
+		const disp = GAMUTS[displayGamut];
+		if (!active || !disp) return false;
+		const tri = primariesXY(disp.P);
+		return primariesXY(active.P).some((pt) => !inTriangle(pt, tri[0], tri[1], tri[2]));
+	});
+
+	// ===== EFFECTS =====
 	$effect(() => {
 		displayGamut = readAppPreferences().displayGamut;
 	});
 
+	// ===== FUNCTIONS =====
 	// R/G/B primary chromaticities (x, y) from a gamut's P matrix (row-major 3×3).
 	function primariesXY(P: number[]): Array<[number, number]> {
 		return [
@@ -54,15 +76,6 @@
 		const hasPos = d1 > 1e-6 || d2 > 1e-6 || d3 > 1e-6;
 		return !(hasNeg && hasPos);
 	}
-
-	// Chromaticity-only check: does the active gamut have primaries the display can't show?
-	const exceedsDisplay = $derived.by(() => {
-		const active = GAMUTS[explorer.gamut as keyof typeof GAMUTS];
-		const disp = GAMUTS[displayGamut];
-		if (!active || !disp) return false;
-		const tri = primariesXY(disp.P);
-		return primariesXY(active.P).some((pt) => !inTriangle(pt, tri[0], tri[1], tri[2]));
-	});
 
 	function onDisplayChange(value: string) {
 		displayGamut = value as DisplayGamutId;

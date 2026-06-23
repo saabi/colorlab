@@ -1,26 +1,61 @@
-<script lang="ts">
-	import { onMount } from 'svelte';
+<script module lang="ts">
+	// ===== IMPORTS =====
 	import { HELP_BY_ID, type HelpId } from '$lib/inspector/help-copy';
 
+	// ===== TYPES =====
+	interface Props {
+		helpId: HelpId;
+		instanceId?: string;
+		openHelp?: string | null;
+	}
+</script>
+
+<script lang="ts">
+	// ===== IMPORTS =====
+	import { onMount } from 'svelte';
+
+	// ===== PROPS =====
 	let {
 		helpId,
 		instanceId = helpId,
 		openHelp = $bindable(null as string | null)
-	}: {
-		helpId: HelpId;
-		instanceId?: string;
-		openHelp?: string | null;
-	} = $props();
+	}: Props = $props();
 
+	// ===== STATE =====
 	let popoverStyle = $state('');
-	let buttonEl = $state<HTMLButtonElement | null>(null);
+
+	// ===== DERIVED =====
 	const openKey = $derived(`${helpId}:${instanceId}`);
 	let popoverId = $derived(`panel-help-${openKey.replace(/[^a-zA-Z0-9_-]+/g, '-')}`);
-
 	const content = $derived(HELP_BY_ID[helpId]);
 	const open = $derived(openHelp === openKey);
 	const visibleSources = $derived(content.sources.filter((source) => !isRepoInternalSource(source.label)));
 
+	// ===== REFS =====
+	let buttonEl = $state<HTMLButtonElement | null>(null);
+
+	// ===== LIFECYCLE =====
+	onMount(() => {
+		const onDocClick = (event: MouseEvent) => {
+			if (!open) return;
+			const target = event.target as Node;
+			if (buttonEl?.contains(target)) return;
+			const popover = document.getElementById(popoverId);
+			if (popover?.contains(target)) return;
+			close();
+		};
+		const onKeyDown = (event: KeyboardEvent) => {
+			if (open && event.key === 'Escape') close();
+		};
+		document.addEventListener('click', onDocClick, true);
+		document.addEventListener('keydown', onKeyDown);
+		return () => {
+			document.removeEventListener('click', onDocClick, true);
+			document.removeEventListener('keydown', onKeyDown);
+		};
+	});
+
+	// ===== FUNCTIONS =====
 	function isRepoInternalSource(label: string) {
 		return /\b[\w-]+\.(?:ts|svelte|md|glsl|vert|frag)\b/.test(label) || /\bdesign\.md\b/.test(label) || /\bWebGL renderer\b/.test(label) || /\bshader\b/i.test(label);
 	}
@@ -46,26 +81,6 @@
 	function close() {
 		if (open) openHelp = null;
 	}
-
-	onMount(() => {
-		const onDocClick = (event: MouseEvent) => {
-			if (!open) return;
-			const target = event.target as Node;
-			if (buttonEl?.contains(target)) return;
-			const popover = document.getElementById(popoverId);
-			if (popover?.contains(target)) return;
-			close();
-		};
-		const onKeyDown = (event: KeyboardEvent) => {
-			if (open && event.key === 'Escape') close();
-		};
-		document.addEventListener('click', onDocClick, true);
-		document.addEventListener('keydown', onKeyDown);
-		return () => {
-			document.removeEventListener('click', onDocClick, true);
-			document.removeEventListener('keydown', onKeyDown);
-		};
-	});
 </script>
 
 <span class="panel-help">

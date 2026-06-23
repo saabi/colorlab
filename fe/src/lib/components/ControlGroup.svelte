@@ -1,23 +1,13 @@
-<script lang="ts">
+<script module lang="ts">
+	// ===== IMPORTS =====
+	import type { Snippet } from 'svelte';
 	import PanelHelp from './PanelHelp.svelte';
 	import type { HelpId } from '$lib/inspector/help-copy';
 
-	let {
-		title,
-		children,
-		open = false,
-		onToggle,
-		helpId,
-		openHelp = $bindable(null as string | null),
-		index,
-		status,
-		affects,
-		warn = null,
-		disabled = false,
-		tutorialId = undefined
-	} = $props<{
+	// ===== TYPES =====
+	interface Props {
 		title: string;
-		children: import('svelte').Snippet;
+		children: Snippet;
 		/** Controlled expanded state (owned by the parent so it can be persisted). */
 		open?: boolean;
 		onToggle?: () => void;
@@ -35,13 +25,35 @@
 		disabled?: boolean;
 		/** data-tutorial attribute value for this group's root section. */
 		tutorialId?: string;
-	}>();
+	}
+</script>
 
-	const contentId = $derived(`group-${title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`);
+<script lang="ts">
+	// ===== PROPS =====
+	let {
+		title,
+		children,
+		open = false,
+		onToggle,
+		helpId,
+		openHelp = $bindable(null as string | null),
+		index,
+		status,
+		affects,
+		warn = null,
+		disabled = false,
+		tutorialId = undefined
+	}: Props = $props();
 
+	// ===== STATE =====
 	// Pulse the marker when the status value changes ("what changed?" feedback).
 	let pulse = $state(false);
 	let prevStatus: string | undefined;
+
+	// ===== DERIVED =====
+	const contentId = $derived(`group-${title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`);
+
+	// ===== EFFECTS =====
 	$effect(() => {
 		const s = status;
 		if (prevStatus !== undefined && s !== prevStatus) {

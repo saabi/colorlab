@@ -1,25 +1,39 @@
-<script lang="ts">
+<script module lang="ts">
+	// ===== IMPORTS =====
 	import type { CvdMode } from '$lib/engine/types';
 
-	let { cvd = 'none', cvdSev = 1 } = $props<{ cvd?: CvdMode; cvdSev?: number }>();
-	let open = $state(false);
-	let popoverStyle = $state('');
+	// ===== TYPES =====
+	interface Props {
+		cvd?: CvdMode;
+		cvdSev?: number;
+	}
 
 	type PipelineStep = { label: string; detail: string; disabled: boolean };
 
-	const baseSteps = [
+	// ===== STATIC CONSTANTS =====
+	const BASE_STEPS = [
 		{ label: 'Encoded RGB', detail: 'selector primaries + transfer curve', disabled: false },
 		{ label: 'Linear RGB', detail: 'cube coordinates', disabled: false },
 		{ label: 'XYZ', detail: 'gamut matrix', disabled: false },
 		{ label: 'World space', detail: 'RGB cube, XYZ, Lab, or Oklab', disabled: false }
 	] satisfies PipelineStep[];
+</script>
 
+<script lang="ts">
+	// ===== PROPS =====
+	let { cvd = 'none', cvdSev = 1 }: Props = $props();
+
+	// ===== STATE =====
+	let open = $state(false);
+	let popoverStyle = $state('');
+
+	// ===== DERIVED =====
 	const cvdLabel = $derived(
 		cvd === 'none' ? 'Color vision' : `${cvd[0].toUpperCase()}${cvd.slice(1)} ${cvdSev.toFixed(2)}`
 	);
 
 	const steps = $derived<PipelineStep[]>([
-		...baseSteps,
+		...BASE_STEPS,
 		{
 			label: cvdLabel,
 			detail: cvd === 'none' ? 'LMS simulation disabled' : 'LMS deficiency transform',
@@ -28,6 +42,7 @@
 		{ label: 'Display', detail: 'sRGB-compliant monitor', disabled: false }
 	]);
 
+	// ===== FUNCTIONS =====
 	function placePopover(event: MouseEvent | FocusEvent) {
 		const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
 		const width = Math.min(520, window.innerWidth - 24);

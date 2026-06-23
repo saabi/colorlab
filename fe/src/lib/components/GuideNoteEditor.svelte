@@ -1,27 +1,35 @@
-<script lang="ts">
+<script module lang="ts">
+	// ===== IMPORTS =====
 	import { focusTrap } from '$lib/actions/focusTrap';
 	import { track } from '$lib/analytics/umami';
-
 	import type { GuideNotePlacement } from '$lib/engine/types';
 
+	// ===== TYPES =====
+	interface Props {
+		open: boolean;
+		initialNote?: string;
+		initialPlacement?: GuideNotePlacement;
+		onSave: (note: string | null, placement: GuideNotePlacement) => void;
+		onCancel: () => void;
+	}
+</script>
+
+<script lang="ts">
+	// ===== PROPS =====
 	let {
 		open = false,
 		initialNote = '',
 		initialPlacement = 'sidebar',
 		onSave,
 		onCancel
-	} = $props<{
-		open: boolean;
-		initialNote?: string;
-		initialPlacement?: GuideNotePlacement;
-		onSave: (note: string | null, placement: GuideNotePlacement) => void;
-		onCancel: () => void;
-	}>();
+	}: Props = $props();
 
+	// ===== STATE =====
 	let draftNote = $state('');
 	let draftPlacement = $state<GuideNotePlacement>('sidebar');
 	let textareaEl: HTMLTextAreaElement | undefined = $state();
 
+	// ===== EFFECTS =====
 	$effect(() => {
 		if (open) {
 			draftNote = initialNote;
@@ -33,6 +41,7 @@
 		}
 	});
 
+	// ===== FUNCTIONS =====
 	function save() {
 		const trimmed = draftNote.trim();
 		onSave(trimmed || null, draftPlacement);

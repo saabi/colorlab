@@ -1,28 +1,26 @@
-<script lang="ts">
+<script module lang="ts">
+	// ===== IMPORTS =====
 	import { focusTrap } from '$lib/actions/focusTrap';
 	import { MOBILE_LAYOUT_MAX_WIDTH } from '$lib/engine/mobile';
 	import { TRACKS, type TrackId, type TutorialState } from '$lib/engine/tutorial.svelte';
 
-	let {
-		tutorial,
-		onClose
-	}: {
+	// ===== TYPES =====
+	interface Props {
 		tutorial: TutorialState;
 		onClose: () => void;
-	} = $props();
+	}
+</script>
 
+<script lang="ts">
+	// ===== PROPS =====
+	let { tutorial, onClose }: Props = $props();
+
+	// ===== STATE =====
 	let purpose = $state<'explore' | 'design'>('explore');
 	let depth = $state<'quick' | 'pipeline'>('quick');
 	let isMobile = $state(false);
 
-	$effect(() => {
-		const mq = window.matchMedia(`(max-width: ${MOBILE_LAYOUT_MAX_WIDTH}px)`);
-		isMobile = mq.matches;
-		const handler = (e: MediaQueryListEvent) => { isMobile = e.matches; };
-		mq.addEventListener('change', handler);
-		return () => mq.removeEventListener('change', handler);
-	});
-
+	// ===== DERIVED =====
 	const selectedTrack = $derived<TrackId>(
 		purpose === 'explore'
 			? depth === 'quick'
@@ -32,9 +30,18 @@
 				? 'b-quick'
 				: 'b-pipeline'
 	);
-
 	const selectedTrackInfo = $derived(TRACKS[selectedTrack]);
 
+	// ===== EFFECTS =====
+	$effect(() => {
+		const mq = window.matchMedia(`(max-width: ${MOBILE_LAYOUT_MAX_WIDTH}px)`);
+		isMobile = mq.matches;
+		const handler = (e: MediaQueryListEvent) => { isMobile = e.matches; };
+		mq.addEventListener('change', handler);
+		return () => mq.removeEventListener('change', handler);
+	});
+
+	// ===== FUNCTIONS =====
 	function start() {
 		tutorial.start(selectedTrack);
 		onClose();

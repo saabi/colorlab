@@ -1,24 +1,36 @@
-<script lang="ts">
+<script module lang="ts">
+	// ===== IMPORTS =====
 	import { focusTrap } from '$lib/actions/focusTrap';
 	import { track } from '$lib/analytics/umami';
 	import { buildShareUrl, snapshotToJsonString } from '$lib/documents/share';
-
 	import type { ParameterSnapshot } from '$lib/documents/types';
 
-	let { open = false, getSnapshot, notify, onClose } = $props<{
+	// ===== TYPES =====
+	interface Props {
 		open: boolean;
 		getSnapshot: () => ParameterSnapshot;
 		notify?: (text: string) => void;
 		onClose: () => void;
-	}>();
+	}
 
+	// ===== STATIC CONSTANTS =====
 	// Beyond this, some browsers/clients truncate links — steer users to the file.
 	const URL_SOFT_LIMIT = 8000;
+</script>
 
+<script lang="ts">
+	// ===== PROPS =====
+	let { open = false, getSnapshot, notify, onClose }: Props = $props();
+
+	// ===== STATE =====
 	let shareUrl = $state('');
 	let building = $state(false);
 	let error = $state('');
 
+	// ===== DERIVED =====
+	const tooLong = $derived(shareUrl.length > URL_SOFT_LIMIT);
+
+	// ===== EFFECTS =====
 	$effect(() => {
 		if (!open) {
 			shareUrl = '';
@@ -40,8 +52,7 @@
 			});
 	});
 
-	const tooLong = $derived(shareUrl.length > URL_SOFT_LIMIT);
-
+	// ===== FUNCTIONS =====
 	async function copyText(text: string, label: string, mode: 'url' | 'json') {
 		if (!text) return;
 		try {

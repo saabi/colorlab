@@ -1,17 +1,16 @@
-<script lang="ts">
+<script module lang="ts">
+	// ===== IMPORTS =====
 	import { track } from '$lib/analytics/umami';
-
 	import type { ExplorerState } from '$lib/engine/types';
 
-	let {
-		state = $bindable(),
-		touchTool = $bindable()
-	} = $props<{
+	// ===== TYPES =====
+	interface Props {
 		state: ExplorerState;
 		touchTool: 'auto' | 'slice' | 'cylinder' | 'add';
-	}>();
+	}
 
-	const spaces = [
+	// ===== STATIC CONSTANTS =====
+	const SPACES = [
 		{ value: 3, label: 'Oklab' },
 		{ value: 2, label: 'CIELAB' },
 		{ value: 1, label: 'XYZ' },
@@ -19,7 +18,7 @@
 		{ value: 5, label: 'Luma' }
 	] as const;
 
-	const gamuts = [
+	const GAMUTS = [
 		{ value: 'srgb', label: 'sRGB' },
 		{ value: 'p3', label: 'P3' },
 		{ value: 'rec2020', label: 'Rec.2020' },
@@ -28,7 +27,16 @@
 		{ value: 'smptec', label: 'SMPTE-C' },
 		{ value: 'cie', label: 'CIE RGB' }
 	] as const;
+</script>
 
+<script lang="ts">
+	// ===== PROPS =====
+	let {
+		state = $bindable(),
+		touchTool = $bindable()
+	}: Props = $props();
+
+	// ===== FUNCTIONS =====
 	function onTouchToolChange() {
 		track('touch_tool_change', { tool: touchTool });
 	}
@@ -38,7 +46,7 @@
 	<label>
 		<span>Space</span>
 		<select bind:value={state.spaceMode}>
-			{#each spaces as space}
+			{#each SPACES as space}
 				<option value={space.value}>{space.label}</option>
 			{/each}
 		</select>
@@ -47,7 +55,7 @@
 	<label>
 		<span>Gamut</span>
 		<select bind:value={state.gamut}>
-			{#each gamuts as gamut}
+			{#each GAMUTS as gamut}
 				<option value={gamut.value}>{gamut.label}</option>
 			{/each}
 		</select>

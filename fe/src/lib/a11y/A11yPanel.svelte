@@ -1,4 +1,5 @@
-<script lang="ts">
+<script module lang="ts">
+	// ===== IMPORTS =====
 	import {
 		FONT_SCALE_OPTIONS,
 		LINE_HEIGHT_OPTIONS,
@@ -10,30 +11,43 @@
 		type SecondaryContrast
 	} from './preferences.svelte';
 
-	let { open = $bindable(false) } = $props<{ open?: boolean }>();
-	let root: HTMLDivElement;
+	// ===== TYPES =====
+	interface Props {
+		open?: boolean;
+	}
 
+	// ===== STATIC CONSTANTS =====
 	const contrastLabel: Record<SecondaryContrast, string> = {
 		normal: 'Normal',
 		high: 'High',
 		maximum: 'Maximum'
 	};
+</script>
 
+<script lang="ts">
+	// ===== PROPS =====
+	let { open = $bindable(false) }: Props = $props();
+
+	// ===== EFFECTS =====
 	$effect(() => {
 		loadA11yPreferences();
 	});
 
+	$effect(() => {
+		document.addEventListener('pointerdown', onDocumentPointerDown);
+		return () => document.removeEventListener('pointerdown', onDocumentPointerDown);
+	});
+
+	// ===== REFS =====
+	let root: HTMLDivElement;
+
+	// ===== FUNCTIONS =====
 	function onDocumentPointerDown(event: PointerEvent) {
 		if (!open) return;
 		const target = event.target;
 		if (target instanceof Node && root?.contains(target)) return;
 		open = false;
 	}
-
-	$effect(() => {
-		document.addEventListener('pointerdown', onDocumentPointerDown);
-		return () => document.removeEventListener('pointerdown', onDocumentPointerDown);
-	});
 </script>
 
 <div bind:this={root} class="a11y-wrap">

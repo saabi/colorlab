@@ -1,18 +1,23 @@
-<script lang="ts">
+<script module lang="ts">
+	// ===== IMPORTS =====
 	import type { TutorialState } from '$lib/engine/tutorial.svelte';
 
-	let {
-		tutorial,
-		hideAids = false,
-		loadExample
-	}: {
+	// ===== TYPES =====
+	interface Props {
 		tutorial: TutorialState;
 		hideAids?: boolean;
 		loadExample?: (id: string) => void | Promise<void>;
-	} = $props();
+	}
+</script>
 
+<script lang="ts">
+	// ===== PROPS =====
+	let { tutorial, hideAids = false, loadExample }: Props = $props();
+
+	// ===== STATE =====
 	let cardStyle = $state('');
 
+	// ===== DERIVED =====
 	// Tone rows for each field
 	const rows = $derived(
 		tutorial.step
@@ -41,6 +46,7 @@
 		return '';
 	});
 
+	// ===== EFFECTS =====
 	// Highlight the target element
 	$effect(() => {
 		const selector = tutorial.step?.target;
@@ -121,6 +127,7 @@
 		return () => window.removeEventListener('resize', place);
 	});
 
+	// ===== FUNCTIONS =====
 	function onTutorialKeydown(event: KeyboardEvent) {
 		if (event.key !== 'Escape') return;
 		event.stopPropagation();

@@ -1,4 +1,5 @@
-<script lang="ts">
+<script module lang="ts">
+	// ===== IMPORTS =====
 	import LeftControls from './LeftControls.svelte';
 	import RightInspector from './RightInspector.svelte';
 	import Viewport from './Viewport.svelte';
@@ -21,24 +22,43 @@
 	import type { HistoryController } from '$lib/history/history.svelte';
 	import type { TouchTool } from './Viewport.svelte';
 
+	// ===== TYPES =====
+	interface Props {
+		state: AppState;
+		session: DocumentSession;
+		history: HistoryController;
+	}
+
+	// ===== STATIC CONSTANTS =====
+	const TUTORIAL_WELCOMED_KEY = 'colorlab:tutorial-welcomed';
+</script>
+
+<script lang="ts">
+	// ===== PROPS =====
 	let {
 		state: appState = $bindable(),
 		session,
 		history
-	} = $props<{ state: AppState; session: DocumentSession; history: HistoryController }>();
-	const explorer = $derived(appState.explorer);
-	const camera = $derived(appState.camera);
-	const matrices = $derived(rebuildMatrices(explorer.gamut));
+	}: Props = $props();
+
+	// ===== STATE =====
 	let drawerOpen = $state(false);
 	let touchTool: TouchTool = $state('auto');
-	const tutorial = createTutorialState(() => explorer);
 	let lanePickerOpen = $state(false);
 	let readabilityOpen = $state(false);
 	let aboutOpen = $state(false);
+	let webgl2Available = $state(true);
+	let notice = $state<{ text: string; id: number } | null>(null);
+	let noticeTimer: ReturnType<typeof setTimeout> | undefined;
 
+	// ===== DERIVED =====
+	const explorer = $derived(appState.explorer);
+	const camera = $derived(appState.camera);
+	const matrices = $derived(rebuildMatrices(explorer.gamut));
+
+	// ===== EFFECTS =====
 	// WebGL2 is required (no fallback). Surface a warning badge only when it is
 	// unavailable; otherwise the header stays clean.
-	let webgl2Available = $state(true);
 	$effect(() => {
 		if (!browser) return;
 		try {
@@ -48,16 +68,22 @@
 		}
 	});
 
-	// Minimal transient notice. NOTE: intentionally small — the deferred
-	// shared-toast task generalizes this together with Viewport's `gestureStatus`.
-	let notice = $state<{ text: string; id: number } | null>(null);
-	let noticeTimer: ReturnType<typeof setTimeout> | undefined;
-	function notify(text: string) {
-		notice = { text, id: Date.now() };
-		clearTimeout(noticeTimer);
-		noticeTimer = setTimeout(() => (notice = null), 2500);
-	}
+	$effect(() => {
+		if (!localStorage.getItem(TUTORIAL_WELCOMED_KEY)) {
+			lanePickerOpen = true;
+			localStorage.setItem(TUTORIAL_WELCOMED_KEY, '1');
+		}
+	});
 
+	$effect(() => {
+		const snapshot = toSnapshot(appState);
+		if (!history.matchesCurrent(snapshot)) history.scheduleCapture('Edit parameters');
+	});
+
+	// ===== INSTANCE CONSTANTS =====
+	const tutorial = createTutorialState(() => explorer);
+
+	// ===== LIFECYCLE =====
 	// A `#s=...` hash carries a shared snapshot. Apply it over whatever the
 	// session restored, then strip the token so reloads/saves start clean.
 	onMount(() => {
@@ -76,18 +102,14 @@
 		})();
 	});
 
-	const TUTORIAL_WELCOMED_KEY = 'colorlab:tutorial-welcomed';
-	$effect(() => {
-		if (!localStorage.getItem(TUTORIAL_WELCOMED_KEY)) {
-			lanePickerOpen = true;
-			localStorage.setItem(TUTORIAL_WELCOMED_KEY, '1');
-		}
-	});
-
-	$effect(() => {
-		const snapshot = toSnapshot(appState);
-		if (!history.matchesCurrent(snapshot)) history.scheduleCapture('Edit parameters');
-	});
+	// ===== FUNCTIONS =====
+	// Minimal transient notice. NOTE: intentionally small — the deferred
+	// shared-toast task generalizes this together with Viewport's `gestureStatus`.
+	function notify(text: string) {
+		notice = { text, id: Date.now() };
+		clearTimeout(noticeTimer);
+		noticeTimer = setTimeout(() => (notice = null), 2500);
+	}
 
 	/** Tutorial examples need shell, slice outlines, and ramp markers visible. */
 	async function loadTutorialExample(id: string) {

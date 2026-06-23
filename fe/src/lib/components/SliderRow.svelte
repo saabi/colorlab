@@ -1,4 +1,17 @@
+<script module lang="ts">
+	// ===== TYPES =====
+	interface Props {
+		label: string;
+		value: number;
+		min: number;
+		max: number;
+		step: number;
+		format?: (next: number) => string;
+	}
+</script>
+
 <script lang="ts">
+	// ===== PROPS =====
 	let {
 		label,
 		value = $bindable(),
@@ -6,15 +19,9 @@
 		max,
 		step,
 		format = (next: number) => String(next)
-	} = $props<{
-		label: string;
-		value: number;
-		min: number;
-		max: number;
-		step: number;
-		format?: (next: number) => string;
-	}>();
+	}: Props = $props();
 
+	// ===== DERIVED =====
 	const id = $derived(`slider-${label.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`);
 </script>
 

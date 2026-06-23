@@ -1,31 +1,46 @@
-<script lang="ts">
+<script module lang="ts">
+	// ===== IMPORTS =====
 	import { PIPELINE_NODES, isNodeEnabled, type PipelineLane, type PipelineNodeId } from './pipeline-nodes';
-
 	import type { ExplorerState } from '$lib/engine/types';
 
-	let { explorer, openIds, onSelect } = $props<{
+	// ===== TYPES =====
+	interface Props {
 		explorer: ExplorerState;
 		/** Step ids currently expanded in the sidebar (highlighted on the rail). */
 		openIds: string[];
 		onSelect: (id: PipelineNodeId) => void;
-	}>();
+	}
 
+	// ===== STATIC CONSTANTS =====
 	const LANES: readonly PipelineLane[] = ['Explorer', 'Ramp'];
 	// Aggregate/container nodes are not navigation targets.
 	const HIDDEN: readonly PipelineNodeId[] = ['all', 'ramp-builder'];
-	const laneNodes = (lane: PipelineLane) =>
-		PIPELINE_NODES.filter((n) => n.lane === lane && !HIDDEN.includes(n.id));
 
+	function laneNodes(lane: PipelineLane) {
+		return PIPELINE_NODES.filter((n) => n.lane === lane && !HIDDEN.includes(n.id));
+	}
+</script>
+
+<script lang="ts">
+	// ===== PROPS =====
+	let { explorer, openIds, onSelect }: Props = $props();
+
+	// ===== STATE =====
 	// Roving-tabindex keyboard navigation across all (enabled) rail chips.
+	let activeId = $state<PipelineNodeId | null>(null);
+
+	// ===== DERIVED =====
 	const enabledIds = $derived(
 		LANES.flatMap(laneNodes)
 			.filter((n) => isNodeEnabled(n, explorer))
 			.map((n) => n.id)
 	);
-	let activeId = $state<PipelineNodeId | null>(null);
 	const tabId = $derived(activeId && enabledIds.includes(activeId) ? activeId : (enabledIds[0] ?? null));
+
+	// ===== REFS =====
 	const btns: Partial<Record<PipelineNodeId, HTMLButtonElement>> = {};
 
+	// ===== FUNCTIONS =====
 	function onKeydown(event: KeyboardEvent, id: PipelineNodeId) {
 		const idx = enabledIds.indexOf(id);
 		if (idx < 0 || !enabledIds.length) return;

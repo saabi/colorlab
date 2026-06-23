@@ -1,4 +1,5 @@
-<script lang="ts">
+<script module lang="ts">
+	// ===== IMPORTS =====
 	import ControlGroup from './ControlGroup.svelte';
 	import PipelinePopover from './PipelinePopover.svelte';
 	import SegmentedControl from './SegmentedControl.svelte';
@@ -22,70 +23,16 @@
 	import type { DerivedMatrices } from '$lib/renderer/uniforms';
 	import type { TouchTool } from './Viewport.svelte';
 
-	let {
-		explorer = $bindable(),
-		matrices,
-		camera = $bindable(),
-		touchTool = $bindable('auto')
-	} = $props<{ explorer: ExplorerState; matrices: DerivedMatrices; camera: Camera; touchTool: TouchTool }>();
-	let openHelp = $state<string | null>(null);
-	const history = getHistoryContext();
-
-	// Expanded steps are persisted UI state on the explorer (one source of truth).
-	const isOpen = (id: string) => explorer.openSteps.includes(id);
-	function toggleStep(id: string) {
-		explorer.openSteps = isOpen(id) ? explorer.openSteps.filter((s: string) => s !== id) : [...explorer.openSteps, id];
+	// ===== TYPES =====
+	interface Props {
+		explorer: ExplorerState;
+		matrices: DerivedMatrices;
+		camera: Camera;
+		touchTool: TouchTool;
 	}
 
-	// Pipeline rail: open the matching step (if collapsed) and scroll its controls
-	// into view. The rail is navigation only — it owns no parameters.
+	// ===== STATIC CONSTANTS =====
 	const RAMP_SUBSTEPS = new Set<PipelineNodeId>(['sources', 'interpolate', 'adjust', 'expand']);
-	async function selectNode(id: PipelineNodeId) {
-		// Substeps live inside the collapsible ramp-builder group — open it first.
-		if (RAMP_SUBSTEPS.has(id) && !isOpen('ramp-builder')) toggleStep('ramp-builder');
-		if (!isOpen(id)) toggleStep(id);
-		await tick();
-		const el =
-			document.querySelector(`[data-tutorial="node-${id}"]`) ??
-			document.getElementById(`ramp-substep-${id}`);
-		el?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-		track('pipeline_node_select', { node: id });
-	}
-
-	async function handleObserverChange(key: string) {
-		await getObserverModel(key);
-		explorer.observerModel = key;
-		track('observer_change', { observer: key });
-	}
-
-	// Per-step header metadata (status / affects / warn / enablement) sourced from pipeline-nodes.ts.
-	const meta = (id: PipelineNodeId) => {
-		const node = getPipelineNode(id);
-		return {
-			label: node.label,
-			affects: node.affects,
-			status: node.status(explorer),
-			warn: node.warn?.(explorer) ?? null,
-			disabled: !isNodeEnabled(node, explorer)
-		};
-	};
-	const m = $derived({
-		gamut: meta('gamut'),
-		world: meta('world'),
-		tessellation: meta('tessellation'),
-		clip: meta('clip'),
-		view: meta('view'),
-		cvd: meta('cvd'),
-		rampBuilder: meta('ramp-builder'),
-		sources: meta('sources'),
-		interpolate: meta('interpolate'),
-		adjust: meta('adjust'),
-		expand: meta('expand'),
-		gamutMap: meta('gamut-map'),
-		exportStep: meta('export')
-	});
-
-	const P = $derived(activePipeline(explorer.theme));
 
 	const spaces = [
 		{ value: 3, label: 'Oklab' },
@@ -103,6 +50,80 @@
 		{ value: 512, label: '512 x 512 / face - high-end' }
 	] as const;
 	const minAverageFpsOptions = [15, 30, 60] as const;
+</script>
+
+<script lang="ts">
+	// ===== PROPS =====
+	let {
+		explorer = $bindable(),
+		matrices,
+		camera = $bindable(),
+		touchTool = $bindable('auto')
+	}: Props = $props();
+
+	// ===== STATE =====
+	let openHelp = $state<string | null>(null);
+
+	// ===== FUNCTIONS =====
+	// Expanded steps are persisted UI state on the explorer (one source of truth).
+	const isOpen = (id: string) => explorer.openSteps.includes(id);
+	function toggleStep(id: string) {
+		explorer.openSteps = isOpen(id) ? explorer.openSteps.filter((s: string) => s !== id) : [...explorer.openSteps, id];
+	}
+
+	// Per-step header metadata (status / affects / warn / enablement) sourced from pipeline-nodes.ts.
+	function meta(id: PipelineNodeId) {
+		const node = getPipelineNode(id);
+		return {
+			label: node.label,
+			affects: node.affects,
+			status: node.status(explorer),
+			warn: node.warn?.(explorer) ?? null,
+			disabled: !isNodeEnabled(node, explorer)
+		};
+	}
+
+	// ===== DERIVED =====
+	const P = $derived(activePipeline(explorer.theme));
+	const m = $derived({
+		gamut: meta('gamut'),
+		world: meta('world'),
+		tessellation: meta('tessellation'),
+		clip: meta('clip'),
+		view: meta('view'),
+		cvd: meta('cvd'),
+		rampBuilder: meta('ramp-builder'),
+		sources: meta('sources'),
+		interpolate: meta('interpolate'),
+		adjust: meta('adjust'),
+		expand: meta('expand'),
+		gamutMap: meta('gamut-map'),
+		exportStep: meta('export')
+	});
+
+	// ===== INSTANCE CONSTANTS =====
+	const history = getHistoryContext();
+
+	// ===== FUNCTIONS =====
+	// Pipeline rail: open the matching step (if collapsed) and scroll its controls
+	// into view. The rail is navigation only — it owns no parameters.
+	async function selectNode(id: PipelineNodeId) {
+		// Substeps live inside the collapsible ramp-builder group — open it first.
+		if (RAMP_SUBSTEPS.has(id) && !isOpen('ramp-builder')) toggleStep('ramp-builder');
+		if (!isOpen(id)) toggleStep(id);
+		await tick();
+		const el =
+			document.querySelector(`[data-tutorial="node-${id}"]`) ??
+			document.getElementById(`ramp-substep-${id}`);
+		el?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+		track('pipeline_node_select', { node: id });
+	}
+
+	async function handleObserverChange(key: string) {
+		await getObserverModel(key);
+		explorer.observerModel = key;
+		track('observer_change', { observer: key });
+	}
 
 	function setCameraTarget(index: 0 | 1 | 2, value: number) {
 		const next: [number, number, number] = [camera.target[0], camera.target[1], camera.target[2]];

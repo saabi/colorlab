@@ -1,4 +1,5 @@
-<script lang="ts">
+<script module lang="ts">
+	// ===== IMPORTS =====
 	import { onMount } from 'svelte';
 	import { browser } from '$app/environment';
 	import AppShell from '$lib/components/AppShell.svelte';
@@ -8,7 +9,10 @@
 	import { createHistory } from '$lib/history/history.svelte';
 	import { setHistoryContext } from '$lib/history/context';
 	import { loadAppPreferences, persistAppPreferences } from '$lib/preferences/app.svelte';
+</script>
 
+<script lang="ts">
+	// ===== STATE =====
 	const mobile = browser && isMobileLayout();
 	let appState = $state(createAppState({ mobile }));
 	const history = createHistory(() => appState);
@@ -19,6 +23,7 @@
 
 	let sessionInitialized = false;
 
+	// ===== EFFECTS =====
 	// Run before child Viewport mounts WebGL so tessellation is capped on mobile.
 	$effect.pre(() => {
 		if (!browser || sessionInitialized) return;
@@ -41,6 +46,7 @@
 		});
 	});
 
+	// ===== LIFECYCLE =====
 	// Shared-link (`#s=`) ingestion happens in AppShell so it can surface a notice.
 	onMount(() => {
 		const onBeforeUnload = (event: BeforeUnloadEvent) => {

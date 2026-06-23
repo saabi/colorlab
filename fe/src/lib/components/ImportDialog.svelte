@@ -1,35 +1,45 @@
-<script lang="ts">
+<script module lang="ts">
+	// ===== IMPORTS =====
 	import { focusTrap } from '$lib/actions/focusTrap';
 	import {
 		resolveSnapshotFromUrl,
 		snapshotFromJsonString,
 		type UrlImportResult
 	} from '$lib/documents/share';
-
 	import type { DocumentSession } from '$lib/documents/session.svelte';
 	import type { ParseSnapshotResult } from '$lib/documents/parse';
 
-	let { open = false, session, notify, onClose } = $props<{
+	// ===== TYPES =====
+	interface Props {
 		open: boolean;
 		session: DocumentSession;
 		notify?: (text: string) => void;
 		onClose: () => void;
-	}>();
+	}
 
 	type Mode = 'file' | 'url' | 'paste';
+
+	// ===== STATIC CONSTANTS =====
 	const MODES: Array<{ value: Mode; label: string }> = [
 		{ value: 'file', label: 'From file' },
 		{ value: 'url', label: 'From URL' },
 		{ value: 'paste', label: 'Paste JSON' }
 	];
 	const SOURCE_LABEL: Record<Mode, string> = { file: 'file', url: 'URL', paste: 'pasted JSON' };
+</script>
 
+<script lang="ts">
+	// ===== PROPS =====
+	let { open = false, session, notify, onClose }: Props = $props();
+
+	// ===== STATE =====
 	let mode = $state<Mode>('file');
 	let urlValue = $state('');
 	let pasteValue = $state('');
 	let busy = $state(false);
 	let error = $state('');
 
+	// ===== EFFECTS =====
 	$effect(() => {
 		if (!open) {
 			mode = 'file';
@@ -40,6 +50,7 @@
 		}
 	});
 
+	// ===== FUNCTIONS =====
 	function describe(result: ParseSnapshotResult | UrlImportResult): string {
 		const reason = (result as UrlImportResult).reason;
 		if (reason === 'network') return 'Could not reach that URL — the network or CORS policy blocked it.';

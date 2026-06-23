@@ -1,13 +1,19 @@
-<script lang="ts">
-	import { onMount } from 'svelte';
-	import { track } from '$lib/analytics/umami';
+<script module lang="ts">
+	// ===== IMPORTS =====
 	import { MOBILE_LAYOUT_MAX_WIDTH } from '$lib/engine/mobile';
 
-	let { open = $bindable() } = $props<{ open: boolean }>();
-	let root: HTMLDivElement;
-	let tab = $state<'pointer' | 'touch' | 'keyboard'>('pointer');
+	// ===== TYPES =====
+	interface Props {
+		open: boolean;
+	}
 
-	const pointerGroups = [
+	type GestureGroup = {
+		title: string;
+		items: [string, string][];
+	};
+
+	// ===== STATIC CONSTANTS =====
+	const POINTER_GROUPS: GestureGroup[] = [
 		{
 			title: 'View',
 			items: [
@@ -35,7 +41,7 @@
 		}
 	];
 
-	const touchGroups = [
+	const TOUCH_GROUPS: GestureGroup[] = [
 		{
 			title: 'View',
 			items: [
@@ -62,7 +68,7 @@
 		}
 	];
 
-	const keyboardGroups = [
+	const KEYBOARD_GROUPS: GestureGroup[] = [
 		{
 			title: 'View',
 			items: [
@@ -101,23 +107,40 @@
 			]
 		}
 	];
+</script>
 
+<script lang="ts">
+	// ===== IMPORTS =====
+	import { onMount } from 'svelte';
+	import { track } from '$lib/analytics/umami';
+
+	// ===== PROPS =====
+	let { open = $bindable() }: Props = $props();
+
+	// ===== STATE =====
+	let tab = $state<'pointer' | 'touch' | 'keyboard'>('pointer');
+
+	// ===== DERIVED =====
 	const groups = $derived(
-		tab === 'pointer' ? pointerGroups : tab === 'touch' ? touchGroups : keyboardGroups
+		tab === 'pointer' ? POINTER_GROUPS : tab === 'touch' ? TOUCH_GROUPS : KEYBOARD_GROUPS
 	);
 
+	// ===== REFS =====
+	let root: HTMLDivElement;
+
+	// ===== LIFECYCLE =====
+	onMount(() => {
+		document.addEventListener('pointerdown', onDocumentPointerDown);
+		return () => document.removeEventListener('pointerdown', onDocumentPointerDown);
+	});
+
+	// ===== FUNCTIONS =====
 	function onDocumentPointerDown(event: PointerEvent) {
 		if (!open) return;
 		const target = event.target;
 		if (target instanceof Node && root?.contains(target)) return;
 		open = false;
 	}
-
-	onMount(() => {
-		document.addEventListener('pointerdown', onDocumentPointerDown);
-		return () => document.removeEventListener('pointerdown', onDocumentPointerDown);
-	});
-
 </script>
 
 <div bind:this={root} class="gesture-reference">

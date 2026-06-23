@@ -1,26 +1,38 @@
-<script lang="ts">
+<script module lang="ts">
+	// ===== IMPORTS =====
 	import { INTERP_SPACES, INTERP_SPACE_KEYS, type InterpSpaceKey } from '$lib/color/interp';
 	import { TRC } from '$lib/color/transfer';
 	import { srgbHex } from '$lib/engine/theme';
 
 	import type { Vec3 } from '$lib/color/math';
 
+	// ===== TYPES =====
+	interface Props {
+		value: Vec3;
+		onchange: (srgbLin: Vec3) => void;
+	}
+
+	// ===== STATIC CONSTANTS =====
 	const PLANE_SIZE = 120;
 	const BAR_W = 20;
 	const BAR_H = 120;
 	const clamp = (v: number, min: number, max: number) => Math.min(Math.max(v, min), max);
 	const clamp01 = (v: number) => clamp(v, 0, 1);
 	const tuple = (v: Vec3): Vec3 => [v[0], v[1], v[2]];
+</script>
 
-	let { value, onchange }: { value: Vec3; onchange: (srgbLin: Vec3) => void } = $props();
+<script lang="ts">
+	// ===== PROPS =====
+	let { value, onchange }: Props = $props();
+
+	// ===== STATE =====
 	let spaceKey = $state<InterpSpaceKey>('okhsv');
 	let barAxis = $state(0);
 	let coords = $state<Vec3>([0, 0, 0]);
 	let hexText = $state('#000000');
-	let planeCanvas: HTMLCanvasElement;
-	let barCanvas: HTMLCanvasElement;
 	let raf = 0;
 
+	// ===== DERIVED =====
 	const space = $derived(INTERP_SPACES[spaceKey]);
 	const planeAxes = $derived(([0, 1, 2] as const).filter((axis) => axis !== barAxis));
 	const xAxis = $derived(planeAxes[0]);
@@ -30,6 +42,18 @@
 	const barMarkerTop = $derived(`${(1 - coordToUnit(coords[barAxis], barAxis)) * 100}%`);
 	const liveText = $derived(`Selected color ${srgbHex(value).toUpperCase()}`);
 
+	// ===== EFFECTS =====
+	$effect(() => {
+		coords = space.fromSrgbLin(value);
+		hexText = srgbHex(value).toUpperCase();
+		scheduleDraw();
+	});
+
+	// ===== REFS =====
+	let planeCanvas: HTMLCanvasElement;
+	let barCanvas: HTMLCanvasElement;
+
+	// ===== FUNCTIONS =====
 	function defaultBarAxis(key: InterpSpaceKey) {
 		return INTERP_SPACES[key].cyclic ?? 0;
 	}
@@ -230,12 +254,6 @@
 		const rgb = parseHex(text);
 		if (rgb) onchange(rgb);
 	}
-
-	$effect(() => {
-		coords = space.fromSrgbLin(value);
-		hexText = srgbHex(value).toUpperCase();
-		scheduleDraw();
-	});
 </script>
 
 <div class="picker">

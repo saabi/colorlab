@@ -1,19 +1,26 @@
-<script lang="ts">
+<script module lang="ts">
+	// ===== IMPORTS =====
 	import { focusTrap } from '$lib/actions/focusTrap';
 
+	// ===== TYPES =====
+	interface Props {
+		open: boolean;
+		message: string;
+		confirmLabel?: string;
+		onDiscard: () => void;
+		onCancel: () => void;
+	}
+</script>
+
+<script lang="ts">
+	// ===== PROPS =====
 	let {
 		open = false,
 		message = '',
 		confirmLabel = 'Discard',
 		onDiscard,
 		onCancel
-	} = $props<{
-		open: boolean;
-		message: string;
-		confirmLabel?: string;
-		onDiscard: () => void;
-		onCancel: () => void;
-	}>();
+	}: Props = $props();
 </script>
 
 {#if open}

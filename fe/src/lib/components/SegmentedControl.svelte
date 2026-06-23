@@ -1,15 +1,21 @@
+<script module lang="ts">
+	// ===== TYPES =====
+	interface Props<T extends string> {
+		value: T;
+		options: Array<{ value: T; label: string }>;
+		columns?: number;
+		onchange?: (value: T) => void;
+	}
+</script>
+
 <script lang="ts" generics="T extends string">
+	// ===== PROPS =====
 	let {
 		value = $bindable(),
 		options,
 		columns = options.length,
 		onchange
-	} = $props<{
-		value: T;
-		options: Array<{ value: T; label: string }>;
-		columns?: number;
-		onchange?: (value: T) => void;
-	}>();
+	}: Props<T> = $props();
 </script>
 
 <div class="segmented" style={`--segments: ${columns}`}>

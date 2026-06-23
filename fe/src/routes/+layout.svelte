@@ -1,12 +1,29 @@
+<script module lang="ts">
+	// ===== IMPORTS =====
+	import type { Snippet } from 'svelte';
+	import type { LayoutData } from './$types';
+
+	// ===== TYPES =====
+	interface Props {
+		children: Snippet;
+		data: LayoutData;
+	}
+</script>
+
 <script lang="ts">
+	// ===== IMPORTS =====
 	import { browser } from '$app/environment';
 	import '../app.css';
 	import '$lib/a11y/a11y.css';
 	import { injectUmami } from '$lib/analytics/umami';
 
-	let { children, data } = $props();
+	// ===== PROPS =====
+	let { children, data }: Props = $props();
+
+	// ===== DERIVED =====
 	const meta = $derived(data.meta);
 
+	// ===== EFFECTS =====
 	$effect(() => {
 		if (browser) injectUmami();
 	});

@@ -1,8 +1,14 @@
-<script lang="ts">
-	let { label, checked = $bindable() } = $props<{
+<script module lang="ts">
+	// ===== TYPES =====
+	interface Props {
 		label: string;
 		checked: boolean;
-	}>();
+	}
+</script>
+
+<script lang="ts">
+	// ===== PROPS =====
+	let { label, checked = $bindable() }: Props = $props();
 </script>
 
 <label class="row">

@@ -1,4 +1,5 @@
-<script lang="ts">
+<script module lang="ts">
+	// ===== IMPORTS =====
 	import SegmentedControl from './SegmentedControl.svelte';
 	import SliderRow from './SliderRow.svelte';
 	import ToggleRow from './ToggleRow.svelte';
@@ -21,36 +22,17 @@
 	import type { DerivedMatrices } from '$lib/renderer/uniforms';
 	import type { TouchTool } from './Viewport.svelte';
 
+	// ===== TYPES =====
 	type RampPanel = 'all' | 'list-manager' | 'sources' | 'interpolate' | 'adjust' | 'expand' | 'gamut-map' | 'export';
 
-	let {
-		state: explorer = $bindable(),
-		matrices,
-		touchTool = $bindable('auto'),
-		panel = 'all'
-	} = $props<{ state: ExplorerState; matrices: DerivedMatrices; touchTool?: TouchTool; panel?: RampPanel }>();
-	let exportText = $state('');
-	let pickerOpen = $state(false);
-	let stagedPickerColor = $state<[number, number, number]>([0.5, 0.5, 0.5]);
-	const history = getHistoryContext();
-
-	// All point edits/selection target the active source list and its pipeline.
-	const points = $derived(explorer.theme.lists[explorer.theme.activeList]?.anchors ?? []) as ThemeAnchor[];
-	const P = $derived(activePipeline(explorer.theme));
-	const pipelinesDiffer = $derived(themePipelinesDiffer(explorer.theme));
-	const listsSummary = $derived(formatListsSummary(explorer.theme));
-	function setPoints(next: ThemeAnchor[]) {
-		explorer.theme.lists[explorer.theme.activeList].anchors = next;
+	interface Props {
+		state: ExplorerState;
+		matrices: DerivedMatrices;
+		touchTool?: TouchTool;
+		panel?: RampPanel;
 	}
 
-	const showAll = $derived(panel === 'all');
-	const showListManager = $derived(showAll || panel === 'list-manager');
-	const showSources = $derived(showAll || panel === 'sources');
-	const showInterpolate = $derived(showAll || panel === 'interpolate');
-	const showAdjust = $derived(showAll || panel === 'adjust');
-	const showExpand = $derived(showAll || panel === 'expand');
-	const showGamutMap = $derived(showAll || panel === 'gamut-map');
-	const showExport = $derived(showAll || panel === 'export');
+	// ===== STATIC CONSTANTS =====
 	const touchToolOptions: Array<{ value: TouchTool; label: string }> = [
 		{ value: 'auto', label: 'Auto inspect' },
 		{ value: 'slice', label: 'Slice offset' },
@@ -73,7 +55,9 @@
 		{ value: 'adaptive-0.5', label: 'Adaptive focus' },
 		{ value: 'adaptive-cusp', label: 'Adaptive cusp' }
 	];
+
 	const SURFACE_ALPHA_PRESETS = [0.05, 0.5, 5] as const;
+
 	const ACTIVE_GAMUT_LABELS: Record<GamutKey, string> = {
 		srgb: 'sRGB',
 		p3: 'P3',
@@ -83,6 +67,66 @@
 		smptec: 'SMPTE-C',
 		cie: 'CIE RGB'
 	};
+
+	// Global out-of-gamut policy (applies to every theme mode + export).
+	const GAMUT_MAP_OPTIONS: Array<{ value: ExplorerState['theme']['gamutMap']; label: string }> = [
+		{ value: 'none', label: 'None (show OOG)' },
+		{ value: 'clip', label: 'Clip (clamp)' },
+		{ value: 'preserve-chroma', label: 'Preserve chroma' },
+		{ value: 'project-0.5', label: 'Project to focus' },
+		{ value: 'project-cusp', label: 'Project to cusp' },
+		{ value: 'adaptive-0.5', label: 'Adaptive focus' },
+		{ value: 'adaptive-cusp', label: 'Adaptive (cusp)' }
+	];
+
+	// Generalized Spread: presets only set the row/column generator parameters.
+	const SPREAD_DIR_OPTIONS: Array<{ value: SpreadDir; label: string }> = [
+		{ value: 'off', label: 'Off' },
+		{ value: 'ramp', label: 'Ramp (0 → δ)' },
+		{ value: 'sym', label: 'Symmetric (−δ → +δ)' },
+		{ value: 'edges', label: 'Edges (0 → δ at ends)' }
+	];
+
+	const PLACE_OPTIONS: Array<{ value: PlacePolicy; label: string }> = [
+		{ value: 'even', label: 'Even (perceptual ΔE)' },
+		{ value: 'uniform', label: 'Uniform (curve parameter)' },
+		{ value: 'tones', label: 'Lightness tones' },
+		{ value: 'contrast', label: 'Contrast ladder' }
+	];
+
+	const off = () => ({ delta: 0, dir: 'off' as const });
+</script>
+
+<script lang="ts">
+	// ===== PROPS =====
+	let {
+		state: explorer = $bindable(),
+		matrices,
+		touchTool = $bindable('auto'),
+		panel = 'all'
+	}: Props = $props();
+
+	// ===== STATE =====
+	let exportText = $state('');
+	let pickerOpen = $state(false);
+	let stagedPickerColor = $state<[number, number, number]>([0.5, 0.5, 0.5]);
+
+	// ===== DERIVED =====
+	// All point edits/selection target the active source list and its pipeline.
+	const points = $derived(explorer.theme.lists[explorer.theme.activeList]?.anchors ?? []) as ThemeAnchor[];
+	const P = $derived(activePipeline(explorer.theme));
+	const pipelinesDiffer = $derived(themePipelinesDiffer(explorer.theme));
+	const listsSummary = $derived(formatListsSummary(explorer.theme));
+
+	const showAll = $derived(panel === 'all');
+	const showListManager = $derived(showAll || panel === 'list-manager');
+	const showSources = $derived(showAll || panel === 'sources');
+	const showInterpolate = $derived(showAll || panel === 'interpolate');
+	const showAdjust = $derived(showAll || panel === 'adjust');
+	const showExpand = $derived(showAll || panel === 'expand');
+	const showGamutMap = $derived(showAll || panel === 'gamut-map');
+	const showExport = $derived(showAll || panel === 'export');
+
 	const activeGamutLabel = $derived(ACTIVE_GAMUT_LABELS[explorer.gamut as GamutKey]);
 	const gamutMapUsesNonSrgbTarget = $derived(explorer.gamut !== 'srgb');
 	const projectionUsesFocus = $derived(P.main.projection === 'project-0.5' || P.main.projection === 'adaptive-0.5');
@@ -134,16 +178,37 @@
 		}
 	});
 
-	// Global out-of-gamut policy (applies to every theme mode + export).
-	const GAMUT_MAP_OPTIONS: Array<{ value: ExplorerState['theme']['gamutMap']; label: string }> = [
-		{ value: 'none', label: 'None (show OOG)' },
-		{ value: 'clip', label: 'Clip (clamp)' },
-		{ value: 'preserve-chroma', label: 'Preserve chroma' },
-		{ value: 'project-0.5', label: 'Project to focus' },
-		{ value: 'project-cusp', label: 'Project to cusp' },
-		{ value: 'adaptive-0.5', label: 'Adaptive focus' },
-		{ value: 'adaptive-cusp', label: 'Adaptive (cusp)' }
-	];
+	const oogBefore = $derived(explorer.theme.rawStops.reduce((n: number, s: { inG: boolean }) => (s.inG ? n : n + 1), 0));
+	const oogAfter = $derived(explorer.theme.stops.reduce((n: number, s: { inG: boolean }) => (s.inG ? n : n + 1), 0));
+	const gamutMapDiffCount = $derived(
+		explorer.theme.rawStops.reduce((n: number, raw: ThemeStop, i: number) => {
+			const fin = explorer.theme.stops[i];
+			return fin && raw.hex !== fin.hex ? n + 1 : n;
+		}, 0)
+	);
+
+	// 2-D output: Expand produced a grid, or multiple lists each contributed a ramp.
+	const isPalette = $derived(explorer.theme.grid.length > 0);
+
+	const pickerValue = $derived(
+		explorer.theme.selectedPoint !== null && points[explorer.theme.selectedPoint]
+			? points[explorer.theme.selectedPoint].srgbLin
+			: stagedPickerColor
+	);
+
+	// Long-hue only matters for cyclic (cylindrical) interpolation spaces.
+	const spaceIsCyclic = $derived(
+		P.splineSpace !== 'world' &&
+			INTERP_SPACES[P.splineSpace as keyof typeof INTERP_SPACES]?.cyclic !== null
+	);
+
+	// ===== INSTANCE CONSTANTS =====
+	const history = getHistoryContext();
+
+	// ===== FUNCTIONS =====
+	function setPoints(next: ThemeAnchor[]) {
+		explorer.theme.lists[explorer.theme.activeList].anchors = next;
+	}
 
 	function setGamutMap(method: ExplorerState['theme']['gamutMap']) {
 		history?.hintLabel('Gamut map');
@@ -174,15 +239,6 @@
 		explorer.theme.gamutMapParams.alpha = alpha;
 	}
 
-	const oogBefore = $derived(explorer.theme.rawStops.reduce((n: number, s: { inG: boolean }) => (s.inG ? n : n + 1), 0));
-	const oogAfter = $derived(explorer.theme.stops.reduce((n: number, s: { inG: boolean }) => (s.inG ? n : n + 1), 0));
-	const gamutMapDiffCount = $derived(
-		explorer.theme.rawStops.reduce((n: number, raw: ThemeStop, i: number) => {
-			const fin = explorer.theme.stops[i];
-			return fin && raw.hex !== fin.hex ? n + 1 : n;
-		}, 0)
-	);
-
 	function stopPreviewStyle(stop: ThemeStop): string {
 		const sim = simulateCvdSrgb(stop.srgbLin, explorer.cvd, explorer.cvdSev);
 		const rgb = sim.map((v) => {
@@ -194,9 +250,6 @@
 		return `background: rgb(${rgb.join(',')}); ${oog}`;
 	}
 
-	// 2-D output: Expand produced a grid, or multiple lists each contributed a ramp.
-	const isPalette = $derived(explorer.theme.grid.length > 0);
-
 	function showExportText(kind: 'css' | 'json') {
 		if (isPalette) {
 			exportText = kind === 'css' ? exportTokensGrid(explorer.theme.grid) : exportDTCGGrid(explorer.theme.grid);
@@ -207,15 +260,14 @@
 		track('theme_export', { format: kind === 'css' ? 'css' : 'dtcg' });
 	}
 
-	// Generalized Spread: presets only set the row/column generator parameters.
-	const SPREAD_DIR_OPTIONS: Array<{ value: SpreadDir; label: string }> = [
-		{ value: 'off', label: 'Off' },
-		{ value: 'ramp', label: 'Ramp (0 → δ)' },
-		{ value: 'sym', label: 'Symmetric (−δ → +δ)' },
-		{ value: 'edges', label: 'Edges (0 → δ at ends)' }
-	];
+	function setSpread(rows: AxisSpreadConfig | null, cols: AxisSpreadConfig | null) {
+		history?.hintLabel('Expand preset');
+		P.expandOn = true;
+		P.expandRows = rows ?? { count: 1, hue: off(), chroma: off(), light: off() };
+		P.expandCols = cols ?? { count: 1, hue: off(), chroma: off(), light: off() };
+		track('theme_expand_preset');
+	}
 
-	const off = () => ({ delta: 0, dir: 'off' as const });
 	const EXPAND_PRESETS: Array<{ label: string; apply: () => void }> = [
 		{
 			label: 'Complementary',
@@ -243,14 +295,6 @@
 		}
 	];
 
-	function setSpread(rows: AxisSpreadConfig | null, cols: AxisSpreadConfig | null) {
-		history?.hintLabel('Expand preset');
-		P.expandOn = true;
-		P.expandRows = rows ?? { count: 1, hue: off(), chroma: off(), light: off() };
-		P.expandCols = cols ?? { count: 1, hue: off(), chroma: off(), light: off() };
-		track('theme_expand_preset');
-	}
-
 	function setThemeMode(mode: typeof P.mode) {
 		history?.hintLabel('Ramp mode');
 		P.mode = mode;
@@ -264,18 +308,6 @@
 	function toggleAddPoint() {
 		explorer.theme.arm = explorer.theme.arm === 'add' ? null : 'add';
 	}
-
-	const pickerValue = $derived(
-		explorer.theme.selectedPoint !== null && points[explorer.theme.selectedPoint]
-			? points[explorer.theme.selectedPoint].srgbLin
-			: stagedPickerColor
-	);
-
-	// Long-hue only matters for cyclic (cylindrical) interpolation spaces.
-	const spaceIsCyclic = $derived(
-		P.splineSpace !== 'world' &&
-			INTERP_SPACES[P.splineSpace as keyof typeof INTERP_SPACES]?.cyclic !== null
-	);
 
 	// Presets are just (path type + space) shortcuts over the single interpolator.
 	function applyPreset(kind: 'segment' | 'arc' | 'spline') {
@@ -432,13 +464,6 @@
 		buildRamp(explorer, matrices);
 		track('theme_spline_point', { action: 'reorder_panel' });
 	}
-
-	const PLACE_OPTIONS: Array<{ value: PlacePolicy; label: string }> = [
-		{ value: 'even', label: 'Even (perceptual ΔE)' },
-		{ value: 'uniform', label: 'Uniform (curve parameter)' },
-		{ value: 'tones', label: 'Lightness tones' },
-		{ value: 'contrast', label: 'Contrast ladder' }
-	];
 
 	function rampChipStyle(stop: { srgbLin: [number, number, number]; inG: boolean }) {
 		const simulated = simulateCvdSrgb(stop.srgbLin, explorer.cvd, explorer.cvdSev);

@@ -1,14 +1,27 @@
-<script lang="ts">
+<script module lang="ts">
+	// ===== IMPORTS =====
 	import { APP_VERSION, CHANGELOG_URL, REPO_URL } from '$lib/app-meta';
 
-	// Split "1.0.0-beta.1" → base "1.0.0" + pre-release tag "beta.1" for a subtle tag.
-	const versionMatch = APP_VERSION.match(/^(\d+\.\d+\.\d+)(?:-(.+))?$/);
-	const versionBase = versionMatch ? versionMatch[1] : APP_VERSION;
-	const versionPre = versionMatch?.[2] ?? '';
+	// ===== TYPES =====
+	interface Props {
+		open?: boolean;
+	}
 
-	let { open = $bindable(false) } = $props<{ open?: boolean }>();
+	// ===== STATIC CONSTANTS =====
+	// Split "1.0.0-beta.1" → base "1.0.0" + pre-release tag "beta.1" for a subtle tag.
+	const VERSION_MATCH = APP_VERSION.match(/^(\d+\.\d+\.\d+)(?:-(.+))?$/);
+	const VERSION_BASE = VERSION_MATCH ? VERSION_MATCH[1] : APP_VERSION;
+	const VERSION_PRE = VERSION_MATCH?.[2] ?? '';
+</script>
+
+<script lang="ts">
+	// ===== PROPS =====
+	let { open = $bindable(false) }: Props = $props();
+
+	// ===== REFS =====
 	let root: HTMLDivElement | undefined = $state();
 
+	// ===== FUNCTIONS =====
 	function toggle() {
 		open = !open;
 	}
@@ -37,7 +50,7 @@
 			</svg>
 		</a>
 		<a href={CHANGELOG_URL} class="app-info-version" target="_blank" rel="noopener noreferrer" title="View changelog">
-			v{versionBase}{#if versionPre}<span class="app-info-pretag">{versionPre}</span>{/if}
+			v{VERSION_BASE}{#if VERSION_PRE}<span class="app-info-pretag">{VERSION_PRE}</span>{/if}
 		</a>
 	</span>
 	<button

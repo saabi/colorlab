@@ -1,4 +1,5 @@
-<script lang="ts">
+<script module lang="ts">
+	// ===== IMPORTS =====
 	import ConfirmDialog from './ConfirmDialog.svelte';
 	import NamePromptDialog from './NamePromptDialog.svelte';
 	import ShareDialog from './ShareDialog.svelte';
@@ -12,6 +13,19 @@
 	import type { DocumentSession } from '$lib/documents/session.svelte';
 	import type { HistoryController } from '$lib/history/history.svelte';
 
+	// ===== TYPES =====
+	interface Props {
+		session: DocumentSession;
+		history: HistoryController;
+		notify?: (text: string) => void;
+		onTutorialClick?: () => void;
+		onOpenReadability?: () => void;
+		onOpenAbout?: () => void;
+	}
+</script>
+
+<script lang="ts">
+	// ===== PROPS =====
 	let {
 		session,
 		history,
@@ -19,38 +33,28 @@
 		onTutorialClick,
 		onOpenReadability,
 		onOpenAbout
-	} = $props<{
-		session: DocumentSession;
-		history: HistoryController;
-		notify?: (text: string) => void;
-		onTutorialClick?: () => void;
-		onOpenReadability?: () => void;
-		onOpenAbout?: () => void;
-	}>();
+	}: Props = $props();
 
+	// ===== STATE =====
 	let selectValue = $state(UNTITLED_SELECT_ID);
 	let moreOpen = $state(false);
-	let moreRoot: HTMLDivElement | undefined = $state();
-
 	let namePromptOpen = $state(false);
 	let namePromptTitle = $state('');
 	let namePromptInitial = $state('');
 	let namePromptMode = $state<'save' | 'saveAs' | 'rename'>('save');
-
 	let deleteConfirmOpen = $state(false);
 	let shareOpen = $state(false);
 	let importOpen = $state(false);
 	let uiTheme = $state<UiTheme>('dark');
 
+	// ===== DERIVED =====
 	const themeMenuLabel = $derived(uiTheme === 'dark' ? 'Light theme' : 'Dark theme');
 	const themeMenuIcon = $derived(uiTheme === 'dark' ? '☾' : '☀');
-
-	const guideNote = getGuideNoteContext();
-
 	const switcherTitle = $derived(
 		`${session.activeName}${session.isDirty ? ' (unsaved)' : ''}`
 	);
 
+	// ===== EFFECTS =====
 	$effect(() => {
 		selectValue = session.activeSelectId;
 	});
@@ -59,6 +63,13 @@
 		if (moreOpen) uiTheme = readAppPreferences().theme;
 	});
 
+	// ===== INSTANCE CONSTANTS =====
+	const guideNote = getGuideNoteContext();
+
+	// ===== REFS =====
+	let moreRoot: HTMLDivElement | undefined = $state();
+
+	// ===== FUNCTIONS =====
 	function closeMore() {
 		moreOpen = false;
 	}

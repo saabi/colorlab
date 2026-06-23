@@ -1,17 +1,24 @@
-<script lang="ts">
+<script module lang="ts">
+	// ===== IMPORTS =====
 	import { readAppPreferences, toggleUiTheme, type UiTheme } from '$lib/preferences/app.svelte';
+</script>
 
+<script lang="ts">
+	// ===== STATE =====
 	let theme = $state<UiTheme>('dark');
 
+	// ===== DERIVED =====
+	const actionLabel = $derived(theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme');
+
+	// ===== EFFECTS =====
 	$effect(() => {
 		theme = readAppPreferences().theme;
 	});
 
+	// ===== FUNCTIONS =====
 	function toggle() {
 		theme = toggleUiTheme();
 	}
-
-	const actionLabel = $derived(theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme');
 </script>
 
 <button type="button" class="theme-toggle" onclick={toggle} aria-label={actionLabel} title={actionLabel}>

@@ -1,5 +1,5 @@
-<script lang="ts">
-	import { onMount } from 'svelte';
+<script module lang="ts">
+	// ===== IMPORTS =====
 	import PanelHeader from './PanelHeader.svelte';
 	import PaletteStrip from './PaletteStrip.svelte';
 	import TeachingNote from './TeachingNote.svelte';
@@ -9,18 +9,28 @@
 	import { drawXyPanel } from '$lib/panels/xy-panel';
 	import { diagramDisplayLabel, diagramInspectorNote, diagramShortLabel } from '$lib/color/diagrams';
 	import { observerShortLabel } from '$lib/color/fundamentals';
-
 	import type { ExplorerState } from '$lib/engine/types';
 	import type { Vec3 } from '$lib/color/math';
 
-	let { state: explorer } = $props<{ state: ExplorerState }>();
-	let transferCanvas: HTMLCanvasElement;
-	let conesCanvas: HTMLCanvasElement;
-	let xyCanvas: HTMLCanvasElement;
+	// ===== TYPES =====
+	interface Props {
+		state: ExplorerState;
+	}
+</script>
+
+<script lang="ts">
+	// ===== IMPORTS =====
+	import { onMount } from 'svelte';
+
+	// ===== PROPS =====
+	let { state: explorer }: Props = $props();
+
+	// ===== STATE =====
 	let spectrumLabel = $state('');
 	let activeTab = $state<'transfer' | 'cones' | 'xy' | 'values' | 'palette'>('transfer');
 	let openHelp = $state<string | null>(null);
 
+	// ===== DERIVED =====
 	const conesLabel = $derived(observerShortLabel(explorer.observerModel));
 	const xyLabel = $derived(diagramDisplayLabel(explorer.chromaticityDiagram, explorer.observerModel));
 	const xyTabLabel = $derived(diagramShortLabel(explorer.chromaticityDiagram));
@@ -36,12 +46,6 @@
 				: []
 	);
 
-	const fmt = (value: number, places = 3) => (Math.abs(value) < 1e-4 ? 0 : value).toFixed(places);
-	const fmtVec = (vec: Vec3, places = 3) => vec.map((v: number) => fmt(v, places)).join(' ');
-	const encSrgb = (v: number) => {
-		const c = Math.min(Math.max(v, 0), 1);
-		return c <= 0.0031308 ? 12.92 * c : 1.055 * Math.pow(c, 1 / 2.4) - 0.055;
-	};
 	const rows = $derived.by(() => {
 		const ch = explorer.hover?.chain;
 		if (!ch) return [['hover the solid...', '']];
@@ -61,31 +65,8 @@
 		const disp = ch.cvdLin.map((v: number) => Math.round(encSrgb(v) * 255));
 		return `background: rgb(${disp.join(',')}); color: ${explorer.hover?.inGamut ? '#0008' : '#fffb'};`;
 	});
-	const drawable = (canvas: HTMLCanvasElement | undefined) => !!canvas && canvas.clientWidth > 0 && canvas.clientHeight > 0;
 
-	function setActiveTab(tab: typeof activeTab) {
-		activeTab = tab;
-		track('inspector_tab', { tab });
-	}
-
-	function drawPanels() {
-		const ch = explorer.hover?.chain ?? null;
-		if (drawable(transferCanvas)) drawTransferPanel(transferCanvas, ch, explorer);
-		if (drawable(conesCanvas)) spectrumLabel = drawConesPanel(conesCanvas, ch, explorer);
-		if (drawable(xyCanvas)) drawXyPanel(xyCanvas, ch, explorer);
-	}
-
-	function queueDrawPanels() {
-		requestAnimationFrame(drawPanels);
-	}
-
-	onMount(() => {
-		const ro = new ResizeObserver(drawPanels);
-		[transferCanvas, conesCanvas, xyCanvas].forEach((canvas) => ro.observe(canvas));
-		drawPanels();
-		return () => ro.disconnect();
-	});
-
+	// ===== EFFECTS =====
 	$effect(() => {
 		explorer.hover;
 		explorer.gamut;
@@ -102,6 +83,53 @@
 		activeTab;
 		openHelp = null;
 	});
+
+	// ===== REFS =====
+	let transferCanvas: HTMLCanvasElement;
+	let conesCanvas: HTMLCanvasElement;
+	let xyCanvas: HTMLCanvasElement;
+
+	// ===== LIFECYCLE =====
+	onMount(() => {
+		const ro = new ResizeObserver(drawPanels);
+		[transferCanvas, conesCanvas, xyCanvas].forEach((canvas) => ro.observe(canvas));
+		drawPanels();
+		return () => ro.disconnect();
+	});
+
+	// ===== FUNCTIONS =====
+	function fmt(value: number, places = 3) {
+		return (Math.abs(value) < 1e-4 ? 0 : value).toFixed(places);
+	}
+
+	function fmtVec(vec: Vec3, places = 3) {
+		return vec.map((v: number) => fmt(v, places)).join(' ');
+	}
+
+	function encSrgb(v: number) {
+		const c = Math.min(Math.max(v, 0), 1);
+		return c <= 0.0031308 ? 12.92 * c : 1.055 * Math.pow(c, 1 / 2.4) - 0.055;
+	}
+
+	function drawable(canvas: HTMLCanvasElement | undefined) {
+		return !!canvas && canvas.clientWidth > 0 && canvas.clientHeight > 0;
+	}
+
+	function setActiveTab(tab: typeof activeTab) {
+		activeTab = tab;
+		track('inspector_tab', { tab });
+	}
+
+	function drawPanels() {
+		const ch = explorer.hover?.chain ?? null;
+		if (drawable(transferCanvas)) drawTransferPanel(transferCanvas, ch, explorer);
+		if (drawable(conesCanvas)) spectrumLabel = drawConesPanel(conesCanvas, ch, explorer);
+		if (drawable(xyCanvas)) drawXyPanel(xyCanvas, ch, explorer);
+	}
+
+	function queueDrawPanels() {
+		requestAnimationFrame(drawPanels);
+	}
 </script>
 
 <aside class="side-panel right-panel" data-tutorial="inspector">

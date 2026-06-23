@@ -1,7 +1,22 @@
-<script lang="ts">
+<script module lang="ts">
+	// ===== IMPORTS =====
 	import { simulateCvdSrgb } from '$lib/color/cvd';
 	import type { CvdMode, ThemeStop } from '$lib/engine/types';
 
+	// ===== TYPES =====
+	interface Props {
+		rows: ThemeStop[][];
+		layout?: 'fixed' | 'fluid';
+		swatch?: number;
+		rowHeight?: number;
+		gap?: number;
+		cvd?: CvdMode;
+		cvdSev?: number;
+		ariaLabel?: string;
+	}
+</script>
+
+<script lang="ts">
 	// Reusable swatch grid for generated ramps/palettes. One inner array per row;
 	// pass `[stops]` for a 1-D ramp or the full grid for a 2-D palette. Colors are
 	// shown exactly as exported (post gamut-map), with a CVD preview and an
@@ -10,6 +25,8 @@
 	// layout='fixed': swatch-px squares, rows wrap (viewport pin, inspector tab).
 	// layout='fluid': chips stretch to fill the available width at rowHeight px,
 	//                 no wrap (sidebar previews — the original .ramp look).
+
+	// ===== PROPS =====
 	let {
 		rows,
 		layout = 'fixed',
@@ -19,17 +36,9 @@
 		cvd = 'none',
 		cvdSev = 1,
 		ariaLabel = 'Generated palette'
-	} = $props<{
-		rows: ThemeStop[][];
-		layout?: 'fixed' | 'fluid';
-		swatch?: number;
-		rowHeight?: number;
-		gap?: number;
-		cvd?: CvdMode;
-		cvdSev?: number;
-		ariaLabel?: string;
-	}>();
+	}: Props = $props();
 
+	// ===== FUNCTIONS =====
 	function chipStyle(stop: ThemeStop) {
 		const sim = simulateCvdSrgb(stop.srgbLin, cvd, cvdSev);
 		const rgb = sim.map((v) => {

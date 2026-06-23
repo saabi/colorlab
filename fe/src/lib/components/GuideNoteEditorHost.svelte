@@ -1,21 +1,29 @@
-<script lang="ts">
+<script module lang="ts">
+	// ===== IMPORTS =====
 	import { track } from '$lib/analytics/umami';
 	import { setGuideNoteContext } from '$lib/guide-note/context';
 	import GuideNoteEditor from './GuideNoteEditor.svelte';
-
 	import type { ExplorerState } from '$lib/engine/types';
 	import type { Snippet } from 'svelte';
 
+	// ===== TYPES =====
+	interface Props {
+		explorer: ExplorerState;
+		children: Snippet;
+	}
+</script>
+
+<script lang="ts">
+	// ===== PROPS =====
 	let {
 		explorer = $bindable(),
 		children
-	} = $props<{
-		explorer: ExplorerState;
-		children: Snippet;
-	}>();
+	}: Props = $props();
 
+	// ===== STATE =====
 	let open = $state(false);
 
+	// ===== EFFECTS =====
 	setGuideNoteContext({
 		openEditor: () => {
 			open = true;
@@ -23,6 +31,7 @@
 		}
 	});
 
+	// ===== FUNCTIONS =====
 	function onSave(note: string | null, placement: ExplorerState['guideNotePlacement']) {
 		open = false;
 		explorer.guideNote = note;
